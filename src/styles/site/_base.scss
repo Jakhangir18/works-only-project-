@@ -41,3 +41,33 @@ body {
 
   font-family: inherit;
 }
+
+.site-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: color(primary);
+
+  .site-loader__label {
+    color: color(secondary);
+    font: 700 11px / 1 font-family(fraktion);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    animation: loaderPulse 0.9s ease-in-out infinite alternate;
+  }
+}
+
+@keyframes loaderPulse {
+  from {
+    opacity: 0.35;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
