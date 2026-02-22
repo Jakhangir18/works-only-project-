@@ -1,0 +1,109 @@
+---
+// RocketBackground.astro
+// Fixed background layer rendering the rocket frame sequence.
+// Positioned behind all content, responds to scroll progress of RocketStorySection.
+---
+
+<div class="rocket-bg js-rocket-bg">
+  <div class="rocket-bg__container js-rocket-container">
+    <canvas class="rocket-bg__canvas js-rocket-canvas" width="1400" height="1400"></canvas>
+  </div>
+</div>
+
+<style lang="scss">
+  /* ── Fixed background layer, only visible during rocket section ── */
+  .rocket-bg {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #000;
+    pointer-events: none;
+    z-index: 1;
+    overflow: hidden;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    
+    &.is-active {
+      opacity: 1;
+    }
+  }
+
+  .rocket-bg__container {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    will-change: transform;
+    transform-origin: 50% 50%;
+  }
+
+  .rocket-bg__canvas {
+    display: block;
+    max-width: 60vw;
+    max-height: 80vh;
+    width: auto;
+    height: auto;
+  }
+</style>
+
+<script>
+  /**
+   * Rocket background frame renderer.
+   * Loads all frames and updates based on progress passed from parent scroll handler.
+   * Activates background only during rocket section scroll.
+   */
+  (function initRocketBg() {
+    const canvas = document.querySelector('.js-rocket-canvas') as HTMLCanvasElement
+    const bg = document.querySelector('.js-rocket-bg') as HTMLElement
+    if (!canvas || !bg) return
+
+    const ctx = canvas.getContext('2d')!
+    const TOTAL = 240
+    const PATH = '/1/ezgif-frame-'
+    const EXT = '.jpg'
+
+    const images: HTMLImageElement[] = new Array(TOTAL).fill(null)
+    let lastFrameIdx = -1
+
+    /* ── Draw frame centered on canvas ── */
+    function drawFrame(img: HTMLImageElement) {
+      if (!img?.complete || !img.naturalWidth) return
+      const W = canvas.width, H = canvas.height
+      const scale = Math.min(W / img.naturalWidth, H / img.naturalHeight)
+      const dw = img.naturalWidth * scale, dh = img.naturalHeight * scale
+      ctx.clearRect(0, 0, W, H)
+      ctx.drawImage(img, (W - dw) * 0.5, (H - dh) * 0.5, dw, dh)
+    }
+
+    /* ── Update frame based on progress 0..1 ── */
+    window.updateRocketFrame = function(progress: number) {
+      const frameIdx = Math.min(TOTAL - 1, Math.round(progress * (TOTAL - 1)))
+      if (frameIdx !== lastFrameIdx) {
+        lastFrameIdx = frameIdx
+        const img = images[frameIdx]
+        if (img?.complete && img.naturalWidth) drawFrame(img)
+      }
+      
+      // Toggle background visibility based on progress
+      // Keep visible once started (don't fade out at end)
+      if (progress > 0) {
+        bg.classList.add('is-active')
+      } else {
+        bg.classList.remove('is-active')
+      }
+    }
+
+    /* ── Preload all frames ── */
+    for (let i = 0; i < TOTAL; i++) {
+      const img = new Image()
+      img.decoding = 'async'
+      img.src = `${PATH}${String(i + 1).padStart(3, '0')}${EXT}`
+      images[i] = img
+    }
+
+    // Initial frame
+    setTimeout(() => window.updateRocketFrame?.(0), 50)
+  })()
+</script>

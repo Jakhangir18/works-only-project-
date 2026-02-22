@@ -1,0 +1,147 @@
+---
+// ContactSection.astro
+// Final contact section with "Let's Work Together" and Spline 3D robot
+import SplineScene from './SplineScene.astro'
+---
+
+<section class="contact-section">
+  <!-- Left: Contact Information -->
+  <div class="contact-section__left">
+    <h1 class="contact-section__title">Let's work together</h1>
+    
+    <div class="contact-section__cta">
+      <p class="contact-section__label">Connect with me</p>
+      <a href="mailto:tynshimj@oregonstate.edu" class="contact-section__email">
+        tynshimj@oregonstate.edu
+      </a>
+    </div>
+  </div>
+
+  <!-- Right: Spline 3D Robot -->
+  <div class="contact-section__right">
+    <SplineScene 
+      embedUrl="https://my.spline.design/WVgnc5UCrLR3tVLe/"
+      className="spline-container"
+    />
+  </div>
+</section>
+
+<style lang="scss">
+  @use '../styles/helpers/fonts' as *;
+  @use '../styles/helpers/responsive' as *;
+
+  .contact-section {
+    position: relative;
+    background: #000;
+    padding: 0;
+    min-height: 100vh;
+    z-index: 20;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 100vh;
+    align-items: stretch;
+    gap: 0;
+
+    @media (max-width: 1024px) {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto 60vh;
+      gap: 0;
+      padding: 0;
+    }
+
+    @media (max-width: 640px) {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto 50vh;
+      gap: 0;
+      padding: 0;
+    }
+  }
+
+  .contact-section__left {
+    padding: clamp(3rem, 8vh, 8rem) clamp(2rem, 6vw, 6rem) clamp(3rem, 8vh, 8rem) clamp(2rem, 6vw, 6rem);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: clamp(3rem, 6vh, 8rem);
+
+    @media (max-width: 1024px) {
+      padding: 0 clamp(2rem, 6vw, 6rem);
+      text-align: center;
+    }
+  }
+
+  .contact-section__title {
+    font-family: font-family(editorial);
+    font-size: clamp(3rem, 8vw, 5.5rem);
+    font-weight: 700;
+    line-height: 1.1;
+    color: #fff;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+
+    @media (max-width: 1024px) {
+      font-size: clamp(2.5rem, 7vw, 4rem);
+    }
+  }
+
+  .contact-section__cta {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+
+    @media (max-width: 1024px) {
+      align-items: center;
+    }
+  }
+
+  .contact-section__label {
+    font-family: font-family(fraktion);
+    font-size: clamp(0.875rem, 1vw, 1rem);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.6);
+    margin: 0;
+  }
+
+  .contact-section__email {
+    font-family: font-family(editorial);
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 700;
+    color: #fff;
+    text-decoration: none;
+    transition: opacity 0.3s ease;
+    display: inline-block;
+    width: fit-content;
+
+    &:hover {
+      opacity: 0.8;
+    }
+
+    @media (max-width: 1024px) {
+      text-align: center;
+    }
+  }
+
+  .contact-section__right {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #000;
+  }
+
+  .spline-container {
+    width: 100%;
+    height: 100%;
+  }
+
+  :global(.spline-container .spline-scene),
+  :global(.spline-container iframe) {
+    width: 100% !important;
+    height: 100% !important;
+    border: none;
+    display: block;
+  }
+
+</style>

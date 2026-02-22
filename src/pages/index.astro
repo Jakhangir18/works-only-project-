@@ -1,7 +1,9 @@
 ---
 import HeroHome from '../components/HeroHome.astro'
-import HeroSequence from '../components/HeroSequence.astro'
+import TransitionVideo from '../components/TransitionVideo.astro'
+import WhyWorkWithMe from '../components/WhyWorkWithMe.astro'
 import SWork from '../components/SWork.astro'
+import ContactSection from '../components/ContactSection.astro'
 import '../styles/global.scss'
 ---
 
@@ -84,11 +86,14 @@ import '../styles/global.scss'
 
     <div class="site-wrapper js-site-wrapper" style="opacity: 0;">
       <HeroHome />
-      <HeroSequence />
+      <TransitionVideo />
+      <WhyWorkWithMe />
 
       <div class="works-layer">
         <SWork />
       </div>
+      
+      <ContactSection />
     </div><!-- .site-wrapper -->
   </body>
 
@@ -403,7 +408,7 @@ import '../styles/global.scss'
     .works-layer {
       position: relative;
       z-index: 40;
-      background: var(--color-primary);
+      background: #000000;
     }
   </style>
 </html>

@@ -40,6 +40,10 @@ const titles = [
     </div>
   </div>
 
+  <div class="hero-home__invitation">
+    <p>Want to see how I think?</p>
+  </div>
+
 </section>
 
 <style lang="scss">
@@ -148,6 +152,25 @@ const titles = [
     left: 50%;
     z-index: 10;
     transform: translateX(-50%);
+  }
+
+  .hero-home__invitation {
+    position: absolute;
+    top: clamp(6rem, 8vh, 8rem);
+    right: clamp(2rem, 6vw, 6rem);
+    z-index: 10;
+
+    p {
+      margin: 0;
+      color: rgba(255, 255, 255, 0.4);
+      font: 400 1rem / 1.5 font-family(fraktion);
+      letter-spacing: 0.01em;
+      transition: color 0.3s ease;
+    }
+
+    &:hover p {
+      color: rgba(255, 255, 255, 0.7);
+    }
   }
 
   .mouse-scroll {

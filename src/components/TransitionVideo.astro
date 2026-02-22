@@ -1,0 +1,29 @@
+---
+// TransitionVideo.astro
+// Wrapper that imports the new rocket story architecture:
+// - RocketBackground: fixed rocket rendering layer
+// - TextSlidesOverlay: fixed text overlay layer
+// - RocketStorySection: scroll spacer that drives progress
+
+import RocketBackground from './RocketBackground.astro'
+import TextSlidesOverlay from './TextSlidesOverlay.astro'
+import RocketStorySection from './RocketStorySection.astro'
+---
+
+<!-- Rocket background (fixed, behind all content, shown only during rocket section) -->
+<RocketBackground />
+
+<!-- Text overlay (fixed, above rocket, shown only during rocket section) -->
+<TextSlidesOverlay />
+
+<!-- Scroll spacer (800vh tall, drives progress) -->
+<RocketStorySection />
+
+<script>
+  import { initRocketMotionController } from '../utils/rocketFrameAnimator'
+  
+  // Initialize rocket motion controller when DOM is ready
+  requestAnimationFrame(() => {
+    initRocketMotionController()
+  })
+</script>

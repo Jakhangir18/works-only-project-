@@ -1,0 +1,279 @@
+---
+// TextSlidesOverlay.astro
+// Fixed overlay layer rendering the 4 text slides.
+// Positioned above rocket, responds to scroll progress of RocketStorySection.
+---
+
+<div class="text-overlay js-text-overlay">
+  <div class="text-overlay__slides">
+
+    <!-- Slide 1: Who? — слева, анимация слева -->
+    <div class="text-overlay__slide js-slide slide-1" data-slide="1" data-from="0.0" data-to="0.25">
+      <span class="text-overlay__kicker">01 — WHO?</span>
+      <h2 class="text-overlay__head">
+        A developer who thinks<br/>
+        <em>like an engineer.</em>
+      </h2>
+      <p class="text-overlay__body">
+        I approach problems systemically, build solutions structurally, and believe that good code reflects clear thinking.
+      </p>
+    </div>
+
+    <!-- Slide 2: What? — справа, анимация справа -->
+    <div class="text-overlay__slide js-slide slide-2" data-slide="2" data-from="0.25" data-to="0.50">
+      <span class="text-overlay__kicker">02 — WHAT?</span>
+      <h2 class="text-overlay__head">
+        Thoughtful, interactive<br/>
+        <em>digital experiences.</em>
+      </h2>
+      <p class="text-overlay__body">
+        Every interaction feels intentional. Every transition carries meaning. Every detail serves a purpose.
+      </p>
+    </div>
+
+    <!-- Slide 3: How? — справа, остается там же -->
+    <div class="text-overlay__slide js-slide slide-3" data-slide="3" data-from="0.50" data-to="0.75">
+      <span class="text-overlay__kicker">03 — HOW?</span>
+      <h2 class="text-overlay__head">
+        Think in systems.<br/>
+        <em>Code with clarity.</em>
+      </h2>
+      <p class="text-overlay__body">
+        I start with structure before syntax. Turn complexity into clarity. Transform chaos into order, and logic into movement.
+      </p>
+    </div>
+
+    <!-- Slide 4: Why? — разделено: сверху слева и снизу справа -->
+    <div class="text-overlay__slide js-slide slide-4" data-slide="4" data-from="0.75" data-to="1.0">
+      <div class="slide-4__top">
+        <span class="text-overlay__kicker">04 — WHY?</span>
+      </div>
+      <div class="slide-4__bottom">
+        <h2 class="text-overlay__head">
+          Because boring<br/>
+          <em>is not an option.</em>
+        </h2>
+        <p class="text-overlay__body">
+          Every project should create a sense of motion and progress. Static is forgotten. Movement is remembered.
+        </p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<style lang="scss">
+  @use '../styles/helpers/fonts' as *;
+
+  /* ── Fixed overlay layer, only visible during rocket section ── */
+  .text-overlay {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 10;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    
+    &.is-active {
+      opacity: 1;
+    }
+  }
+
+  .text-overlay__slides {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* ── Individual slides with different positioning ── */
+  .text-overlay__slide {
+    position: absolute;
+    opacity: 0;
+    will-change: opacity, transform;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  /* Slide 1: Слева, центр */
+  .slide-1 {
+    left: clamp(2rem, 6vw, 6rem);
+    top: 50%;
+    max-width: 42vw;
+  }
+
+  /* Slide 2: Справа, центр */
+  .slide-2 {
+    right: clamp(2rem, 6vw, 6rem);
+    top: 50%;
+    max-width: 42vw;
+    align-items: flex-end;
+    text-align: right;
+  }
+
+  /* Slide 3: Справа, центр (как Slide 2) */
+  .slide-3 {
+    right: clamp(2rem, 6vw, 6rem);
+    top: 50%;
+    max-width: 42vw;
+    align-items: flex-end;
+    text-align: right;
+  }
+
+  /* Slide 4: Разделенный макет */
+  .slide-4 {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: clamp(2rem, 6vw, 6rem);
+    gap: 0;
+    top: 0;
+    left: 0;
+  }
+
+  .slide-4__top {
+    align-self: flex-start;
+  }
+
+  .slide-4__bottom {
+    align-self: flex-end;
+    text-align: right;
+    max-width: 48vw;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    align-items: flex-end;
+  }
+
+  .text-overlay__kicker {
+    font-family: font-family(fraktion);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  .text-overlay__head {
+    font-family: font-family(editorial);
+    font-weight: 400;
+    font-size: clamp(2.6rem, 5.2vw, 5.8rem);
+    line-height: 1.02;
+    color: #fff;
+
+    em {
+      font-style: italic;
+      color: rgba(255, 255, 255, 0.5);
+    }
+  }
+
+  .text-overlay__body {
+    font-family: font-family(fraktion);
+    font-size: clamp(0.875rem, 1.2vw, 1.0625rem);
+    line-height: 1.7;
+    color: rgba(255, 255, 255, 0.45);
+    max-width: 42ch;
+  }
+
+  @media (max-width: 768px) {
+    .slide-1, .slide-2, .slide-3 {
+      left: 2rem;
+      right: 2rem;
+      max-width: calc(100vw - 4rem);
+      text-align: left;
+      align-items: flex-start;
+    }
+
+    .slide-4 {
+      padding: 2rem;
+    }
+
+    .slide-4__bottom {
+      max-width: 100%;
+      text-align: left;
+      align-items: flex-start;
+    }
+  }
+</style>
+
+<script>
+  /**
+   * Text slides handler with position-based animations.
+   * Слайд 1: анимация слева
+   * Слайд 2: анимация справа
+   * Слайд 3: остается справа, плавно меняется
+   * Слайд 4: разделенный макет
+   */
+  (function initTextOverlay() {
+    const slides = Array.from(document.querySelectorAll('.js-slide')) as HTMLElement[]
+    const overlay = document.querySelector('.js-text-overlay') as HTMLElement
+
+    const FADE = 0.04 // fade duration as fraction (reduced for longer hold time)
+
+    /* ── Calculate opacity for a slide at given progress ── */
+    function slideOpacity(from: number, to: number, progress: number): number {
+      if (progress <= from) return 0
+      if (progress < from + FADE) return (progress - from) / FADE
+      if (progress < to - FADE) return 1
+      if (progress < to) return 1 - (progress - (to - FADE)) / FADE
+      return 0
+    }
+
+    /* ── Update all slides with directional animations ── */
+    window.updateTextSlides = function(progress: number) {
+      slides.forEach((slide, index) => {
+        const from = parseFloat(slide.dataset.from!)
+        const to = parseFloat(slide.dataset.to!)
+        const op = slideOpacity(from, to, progress)
+        
+        slide.style.opacity = String(op)
+        
+        // Directional animations based on slide number
+        const slideNum = parseInt(slide.dataset.slide!)
+        let translateX = 0
+        let translateY = 0
+        
+        if (slideNum === 1) {
+          // Slide 1: приходит слева, вертикально центрирован
+          translateX = (1 - op) * -60
+          translateY = -50 // процент для центрирования
+        } else if (slideNum === 2) {
+          // Slide 2: приходит справа, вертикально центрирован
+          translateX = (1 - op) * 60
+          translateY = -50 // процент для центрирования
+        } else if (slideNum === 3) {
+          // Slide 3: плавная смена на месте (справа), вертикально центрирован
+          translateX = 0
+          translateY = -50 + (1 - op) * 2 // центр + небольшой сдвиг
+        } else if (slideNum === 4) {
+          // Slide 4: элементы приходят сверху/снизу
+          translateX = 0
+          translateY = (1 - op) * 30
+        }
+        
+        // Применяем transform с процентами для слайдов 1-3
+        if (slideNum <= 3) {
+          slide.style.transform = `translate(${translateX}px, calc(${translateY}% + ${(1 - op) * 10}px))`
+        } else {
+          slide.style.transform = `translate(${translateX}px, ${translateY}px)`
+        }
+      })
+      
+      // Toggle overlay visibility based on progress
+      // Keep visible once started (don't fade out at end)
+      if (progress > 0) {
+        overlay.classList.add('is-active')
+      } else {
+        overlay.classList.remove('is-active')
+      }
+    }
+
+    // Initial update
+    window.updateTextSlides?.(0)
+  })()
+</script>
