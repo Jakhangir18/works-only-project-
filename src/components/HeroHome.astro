@@ -1,0 +1,201 @@
+---
+import Navigation from './Navigation.astro'
+import DottedSurface from './DottedSurface.astro'
+import MorphingText from './MorphingText.astro'
+
+const titles = [
+  'Full-Stack Developer',
+  'Creative Designer',
+  'Digital Creator',
+  'Tech Innovator',
+]
+---
+
+<section class="hero-home" id="home">
+  <Navigation />
+  <DottedSurface />
+  
+  <div class="hero-home__content">
+    <div class="hero-home__inner">
+      <div class="hero-home__greeting">
+        <p>Hello, I'm</p>
+      </div>
+
+      <h1 class="hero-home__name">
+        <span class="hero-home__name__first">Jackhangir</span>
+        <span class="hero-home__name__last">Tynshimov</span>
+      </h1>
+
+      <div class="hero-home__title">
+        <MorphingText texts={titles} className="hero-home__morphing" />
+      </div>
+    </div>
+  </div>
+
+  <div class="hero-home__scroll">
+    <div class="mouse-scroll">
+      <div class="mouse">
+        <div class="mouse-wheel"></div>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<style lang="scss">
+  @use '../styles/helpers/fonts' as *;
+  @use '../styles/helpers/colors' as *;
+  @use '../styles/helpers/responsive' as *;
+
+  .hero-home {
+    position: relative;
+    
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    min-height: 101vh;
+    overflow: hidden;
+
+    background: #000000;
+  }
+
+  .hero-home__content {
+    position: relative;
+    z-index: 10;
+
+    width: 100%;
+    max-width: 1400px;
+    padding: 2rem;
+    padding-top: 4rem;
+    margin-top: -8rem;
+
+    @include mq(tablet) {
+      padding: 4rem;
+      padding-top: 5rem;
+      margin-top: -10rem;
+    }
+  }
+
+  .hero-home__inner {
+    position: relative;
+  }
+
+  .hero-home__name {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin: 0 0 1.5rem;
+
+    color: color(primary);
+    font: 400 clamp(3rem, 10vw, 8rem) / 0.9 font-family(editorial);
+    letter-spacing: -0.02em;
+
+    @include mq(tablet) {
+      margin-bottom: 2rem;
+    }
+
+    span {
+      display: block;
+    }
+  }
+
+  .hero-home__greeting {
+    margin-bottom: 1rem;
+    
+    p {
+      margin: 0;
+      color: color(primary);
+      font: 400 1.125rem / 1.5 font-family(fraktion);
+      opacity: 0.7;
+    }
+  }
+
+  .hero-home__name__first {
+    opacity: 0.95;
+  }
+
+  .hero-home__name__last {
+    font-weight: 600;
+  }
+
+  .hero-home__title {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 1rem;
+    margin-bottom: 0;
+
+    color: color(primary);
+
+    @include mq(tablet) {
+      margin-bottom: 0;
+    }
+  }
+
+  .hero-home__title-prefix {
+    display: none;
+  }
+
+  .hero-home__morphing {
+    width: 100%;
+    max-width: 900px;
+  }
+
+  .hero-home__scroll {
+    position: absolute;
+    bottom: 3rem;
+    left: 50%;
+    z-index: 10;
+    transform: translateX(-50%);
+  }
+
+  .mouse-scroll {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .mouse {
+    width: 26px;
+    height: 40px;
+    border: 2px solid color(primary);
+    border-radius: 13px;
+    position: relative;
+    opacity: 0.6;
+    animation: mouseFloat 2s ease-in-out infinite;
+  }
+
+  .mouse-wheel {
+    width: 3px;
+    height: 8px;
+    background: color(primary);
+    border-radius: 2px;
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    animation: mouseWheel 2s ease-in-out infinite;
+  }
+
+  @keyframes mouseFloat {
+    0%, 100% {
+      opacity: 0.4;
+    }
+    50% {
+      opacity: 0.8;
+    }
+  }
+
+  @keyframes mouseWheel {
+    0% {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+    100% {
+      opacity: 0;
+      transform: translateX(-50%) translateY(12px);
+    }
+  }
+</style>
