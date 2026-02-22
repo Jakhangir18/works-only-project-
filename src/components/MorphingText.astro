@@ -1,0 +1,178 @@
+---
+const {
+  texts = ['Hello', 'World'],
+  className = '',
+} = Astro.props
+
+interface Props {
+  texts: string[]
+  className?: string
+}
+---
+
+<div class:list={['morphing-text', className]} data-morphing-text data-texts={JSON.stringify(texts)}>
+  <span class="morphing-text__text1" data-text1></span>
+  <span class="morphing-text__text2" data-text2></span>
+  
+  <svg id="morphing-filters" class="morphing-text__filters" preserveAspectRatio="xMidYMid slice">
+    <defs>
+      <filter id="threshold">
+        <feColorMatrix
+          in="SourceGraphic"
+          type="matrix"
+          values="1 0 0 0 0
+                  0 1 0 0 0
+                  0 0 1 0 0
+                  0 0 0 255 -140"
+        />
+      </filter>
+    </defs>
+  </svg>
+</div>
+
+<script>
+  const morphTime = 1.5
+  const cooldownTime = 0.5
+
+  class MorphingTextAnimation {
+    container: HTMLElement
+    text1: HTMLSpanElement
+    text2: HTMLSpanElement
+    texts: string[]
+    
+    textIndex: number = 0
+    morph: number = 0
+    cooldown: number = cooldownTime
+    time: Date = new Date()
+    animationId: number = 0
+
+    constructor(container: HTMLElement) {
+      this.container = container
+      this.text1 = container.querySelector('[data-text1]')!
+      this.text2 = container.querySelector('[data-text2]')!
+      
+      const textsAttr = container.dataset.texts
+      this.texts = textsAttr ? JSON.parse(textsAttr) : ['Hello', 'World']
+
+      this.animate()
+    }
+
+    setStyles(fraction: number) {
+      this.text2.style.filter = `blur(${Math.min(8 / fraction - 8, 100)}px)`
+      this.text2.style.opacity = `${Math.pow(fraction, 0.4) * 100}%`
+
+      const invertedFraction = 1 - fraction
+      this.text1.style.filter = `blur(${Math.min(8 / invertedFraction - 8, 100)}px)`
+      this.text1.style.opacity = `${Math.pow(invertedFraction, 0.4) * 100}%`
+
+      this.text1.textContent = this.texts[this.textIndex % this.texts.length]
+      this.text2.textContent = this.texts[(this.textIndex + 1) % this.texts.length]
+    }
+
+    doMorph() {
+      this.morph -= this.cooldown
+      this.cooldown = 0
+
+      let fraction = this.morph / morphTime
+
+      if (fraction > 1) {
+        this.cooldown = cooldownTime
+        fraction = 1
+      }
+
+      this.setStyles(fraction)
+
+      if (fraction === 1) {
+        this.textIndex++
+      }
+    }
+
+    doCooldown() {
+      this.morph = 0
+      
+      this.text2.style.filter = 'none'
+      this.text2.style.opacity = '100%'
+      this.text1.style.filter = 'none'
+      this.text1.style.opacity = '0%'
+    }
+
+    animate = () => {
+      this.animationId = requestAnimationFrame(this.animate)
+
+      const newTime = new Date()
+      const dt = (newTime.getTime() - this.time.getTime()) / 1000
+      this.time = newTime
+
+      this.cooldown -= dt
+
+      if (this.cooldown <= 0) {
+        this.doMorph()
+      } else {
+        this.doCooldown()
+      }
+    }
+
+    destroy() {
+      cancelAnimationFrame(this.animationId)
+    }
+  }
+
+  const mount = () => {
+    const container = document.querySelector('[data-morphing-text]') as HTMLElement
+    if (!container) return
+
+    const animation = new MorphingTextAnimation(container)
+
+    return () => {
+      animation.destroy()
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', mount, { once: true })
+  } else {
+    mount()
+  }
+</script>
+
+<style lang="scss">
+  @use '../styles/helpers/fonts' as *;
+
+  .morphing-text {
+    position: relative;
+    
+    width: 100%;
+    max-width: 1200px;
+    height: 4rem;
+    margin: 0 auto;
+
+    font-family: font-family(editorial);
+    font-size: clamp(2.5rem, 8vw, 6rem);
+    font-weight: 400;
+    line-height: 1;
+    text-align: center;
+
+    filter: url(#threshold) blur(0.6px);
+
+    @media (min-width: 768px) {
+      height: 6rem;
+    }
+  }
+
+  .morphing-text__text1,
+  .morphing-text__text2 {
+    position: absolute;
+    inset: 0;
+    
+    display: inline-block;
+    width: 100%;
+    margin: auto;
+  }
+
+  .morphing-text__filters {
+    position: absolute;
+    width: 0;
+    height: 0;
+    visibility: hidden;
+  }
+</style>
