@@ -1,0 +1,15 @@
+---
+import ProjectLayout from '../../components/ProjectLayout.astro'
+---
+
+<ProjectLayout
+  title="Portfolio Rocket Experience"
+  number="05"
+  accentColor="#f9fafb"
+  heroColor="#0a0a0a"
+  intro="This portfolio itself — a cinematic, scroll-driven web experience built in Astro, powered by GSAP and a custom frame-sequencing engine, designed to transform 240 extracted video frames into an interactive rocket launch narrative."
+  problem="Standard portfolio websites present work as static pages — they tell rather than show. For a developer focused on motion, systems, and premium digital craft, a conventional portfolio would be a contradiction in terms. The challenge was to design an experience that demonstrates capabilities through the medium itself, not just describes them — while remaining performant, accessible, and production-grade."
+  approach="I extracted 240 frames from a rocket launch sequence and built a custom scroll-progress engine in Astro that maps window scroll position to individual frames, creating the illusion of a video controlled by the user's scroll. Four cinematic text slides overlay the sequence with directional animations. The layout system uses fixed positioning layers with z-index orchestration rather than traditional page flow, enabling simultaneous visual narratives."
+  solution="The site ships with a zero-JavaScript-framework approach (pure Astro + vanilla TS), GSAP for scroll triggers and easing, a bento grid skills section, a canvas-based frame renderer for the rocket sequence, a Spline 3D robot on the contact page, and full responsive support. Build output is a static HTML site with sub-2-second load time."
+  outcome="The portfolio communicates technical depth, design sensibility, and engineering rigor before a single word is read. The scroll-driven rocket sequence creates a memorable first impression that differentiates the work from any conventional developer portfolio. It serves as both a professional introduction and a live demonstration of exactly the kind of cinematic web experience I build for clients."
+/>

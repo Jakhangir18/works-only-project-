@@ -3,31 +3,48 @@ const { caption, cssClass, index, site, src, total } = Astro.props
 
 // A random string with the syntax '[a-z][0-9]{3}-index-total'
 const key = Math.random().toString(36).slice(2, 6) + '-' + index + '/' + total
+
+// Internal links (project pages) open in same tab; external open in new tab
+const isInternal = site.startsWith('/')
+
+// Accent colors per project
+const colorMap: Record<string, { bg: string; accent: string }> = {
+  '/work/gochain':            { bg: '#071a0f', accent: '#4ade80' },
+  '/work/private-clinic':    { bg: '#0e0a18', accent: '#a78bfa' },
+  '/work/ams-device':        { bg: '#080f1a', accent: '#60a5fa' },
+  '/work/engineering-rocket':{ bg: '#180a06', accent: '#fb923c' },
+  '/work/portfolio-rocket':  { bg: '#0d0d0d', accent: '#f5f5f5' },
+}
+const palette = colorMap[site] ?? { bg: '#111', accent: '#fff' }
 ---
 
 <a-work class={cssClass}>
+  <!-- Hidden video kept for SWork.js compatibility -->
+  <video
+    data-src={src}
+    class="a__video js-video"
+    loop
+    muted
+    playsinline
+    width="1082"
+    height="636"
+    style="display:none"
+  ></video>
+
   <div class="a__inner">
-    <a href={site} target="_blank">
-      <video
-        data-src={src}
-        class="a__video js-video"
-        loop
-        muted
-        playsinline
-        width="1082"
-        height="636"
-      >
-      </video>
+    <a href={site} target={isInternal ? '_self' : '_blank'} rel={isInternal ? undefined : 'noopener noreferrer'}>
+      <!-- Styled project card -->
+      <div class="a__card" style={`background:${palette.bg};`}>
+        <div class="a__card__index" style={`color:${palette.accent};`}>{index}</div>
+        <div class="a__card__title" style={`color:#fff;`}>{caption}</div>
+        <div class="a__card__cta" style={`color:${palette.accent};`}>View project →</div>
+        <div class="a__card__grid"></div>
+      </div>
 
       <div class="a__caption">
-        <div class="a__caption__text">
-          {caption}
-        </div><!-- .a__caption__text -->
-
-        <div class="a__caption__key">
-          #{key}
-        </div><!-- .a__caption__key -->
-      </div><!-- .a__caption -->
+        <div class="a__caption__text">{caption}</div>
+        <div class="a__caption__key">#{key}</div>
+      </div>
     </a>
   </div><!-- .a__inner -->
 </a-work>
@@ -79,9 +96,8 @@ const key = Math.random().toString(36).slice(2, 6) + '-' + index + '/' + total
      * Gets in view
      */
     inView() {
-      this.video.play()
+      if (this.video) this.video.play()
       this.isPlaying = true
-
       this.classList.add('is-inview')
     }
 
@@ -89,9 +105,8 @@ const key = Math.random().toString(36).slice(2, 6) + '-' + index + '/' + total
      * Gets out view
      */
     outView() {
-      this.video.pause()
+      if (this.video) this.video.pause()
       this.isPlaying = false
-
       this.classList.remove('is-inview')
     }
 
@@ -142,18 +157,69 @@ const key = Math.random().toString(36).slice(2, 6) + '-' + index + '/' + total
       padding: 0;
     }
 
-    .a__video {
-      display: block;
+    .a__card {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
 
       width: auto;
       max-width: 50vw;
       height: auto;
       max-height: 50vh;
+      min-width: 280px;
+      min-height: 180px;
+      aspect-ratio: 16 / 10;
+
+      padding: 1.25rem 1.5rem;
+      box-sizing: border-box;
+      border: 1px solid rgba(255, 255, 255, 0.08);
 
       @include mq(phone) {
         max-width: 80vw;
         max-height: 80vh;
+        min-width: 200px;
+        min-height: 130px;
       }
+    }
+
+    /* Subtle dot-grid background texture */
+    .a__card__grid {
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px);
+      background-size: 24px 24px;
+      pointer-events: none;
+    }
+
+    .a__card__index {
+      font: 700 11px / 1 font-family(fraktion);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      opacity: 0.7;
+      position: relative;
+      z-index: 1;
+    }
+
+    .a__card__title {
+      font: 700 clamp(1.25rem, 3.5vw, 2.5rem) / 1.1 font-family(editorial);
+      text-transform: uppercase;
+      letter-spacing: -0.02em;
+      position: relative;
+      z-index: 1;
+    }
+
+    .a__card__cta {
+      font: 700 11px / 1 font-family(fraktion);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      position: relative;
+      z-index: 1;
+    }
+
+    .a__video {
+      display: none !important;
     }
 
     .a__caption {

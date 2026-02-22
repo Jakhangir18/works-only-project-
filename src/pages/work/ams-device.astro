@@ -1,0 +1,15 @@
+---
+import ProjectLayout from '../../components/ProjectLayout.astro'
+---
+
+<ProjectLayout
+  title="AMS Device Platform"
+  number="03"
+  accentColor="#60a5fa"
+  heroColor="#0d1520"
+  intro="AMS is a tablet-based device management and field operations platform — a unified software layer that connects ruggedized hardware, real-time data collection, and back-office workflows into a single integrated system."
+  problem="Field teams operating specialized AMS hardware lacked cohesive software. Each device ran isolated firmware with no shared data layer, no centralized logging, and no path to remote management. Supervisors had to manually consolidate reports from multiple sources. The result was operational blind spots, delayed issue response, and significant administrative overhead."
+  approach="I designed the platform architecture around a hub-and-spoke model: each physical device runs a lightweight local agent that syncs to a central cloud service over LTE. The tablet interface was purpose-built for field conditions — large tap targets, offline-first data entry, and automatic sync on reconnection. The back-office dashboard gives supervisors live device status, alert feeds, and downloadable reports."
+  solution="The platform shipped with a React Native tablet application, a Node.js sync service, and a web-based supervisor dashboard. Device provisioning was reduced to a QR scan. Critical alerts surface in under 30 seconds from event detection. The system handles offline queuing natively, ensuring no data loss even in low-connectivity field conditions."
+  outcome="AMS deployed the platform across 12 field sites within the first rollout phase. Device-related incident response time dropped by 55%. Manual reporting was eliminated for 8 of the 12 sites. Supervisors reported a significant reduction in time spent on status calls, freeing the team to focus on actual field operations rather than coordination overhead."
+/>

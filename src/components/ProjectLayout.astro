@@ -1,0 +1,420 @@
+---
+// ProjectLayout.astro
+// Shared layout for all project detail pages
+
+interface Props {
+  title: string
+  number: string
+  intro: string
+  accentColor: string
+  heroColor: string
+  problem: string
+  approach: string
+  solution: string
+  outcome: string
+}
+
+const { title, number, intro, accentColor, heroColor, problem, approach, solution, outcome } = Astro.props
+---
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title} — Portfolio</title>
+    <meta name="description" content={intro} />
+    <meta name="robots" content="noindex, nofollow" />
+    <style is:global>
+      @import url('/fonts/editorial-new.css');
+      @import url('/fonts/fraktion-mono.css');
+    </style>
+  </head>
+
+  <body>
+
+    <!-- Navigation -->
+    <nav class="proj-nav">
+      <a href="/#work" class="proj-nav__back">
+        <span class="proj-nav__back-arrow">←</span>
+        <span class="proj-nav__back-label">Back to works</span>
+      </a>
+      <span class="proj-nav__num">{number}</span>
+    </nav>
+
+    <!-- Hero -->
+    <header class="proj-hero" style={`--hero-color: ${heroColor};`}>
+      <div class="proj-hero__image-wrap">
+        <div class="proj-hero__placeholder" style={`background: ${heroColor};`}>
+          <img
+            src={`/works/project-hero-placeholder.jpg`}
+            alt={title}
+            class="proj-hero__img"
+            onerror="this.style.display='none'"
+          />
+          <span class="proj-hero__placeholder-num">{number}</span>
+        </div>
+      </div>
+      <div class="proj-hero__title-wrap">
+        <p class="proj-hero__kicker">Project {number}</p>
+        <h1 class="proj-hero__title">{title}</h1>
+      </div>
+    </header>
+
+    <!-- Intro -->
+    <section class="proj-intro proj-animate">
+      <div class="proj-intro__inner">
+        <p class="proj-intro__text">{intro}</p>
+      </div>
+    </section>
+
+    <!-- Divider -->
+    <div class="proj-divider"></div>
+
+    <!-- Storytelling sections -->
+    <main class="proj-content">
+
+      <article class="proj-story-section proj-animate">
+        <div class="proj-story-section__label">
+          <span class="proj-story-section__tag" style={`color: ${accentColor};`}>01</span>
+          <span class="proj-story-section__heading">Problem</span>
+        </div>
+        <div class="proj-story-section__body">
+          <p>{problem}</p>
+        </div>
+      </article>
+
+      <div class="proj-divider"></div>
+
+      <article class="proj-story-section proj-animate">
+        <div class="proj-story-section__label">
+          <span class="proj-story-section__tag" style={`color: ${accentColor};`}>02</span>
+          <span class="proj-story-section__heading">Approach</span>
+        </div>
+        <div class="proj-story-section__body">
+          <p>{approach}</p>
+        </div>
+      </article>
+
+      <div class="proj-divider"></div>
+
+      <article class="proj-story-section proj-animate">
+        <div class="proj-story-section__label">
+          <span class="proj-story-section__tag" style={`color: ${accentColor};`}>03</span>
+          <span class="proj-story-section__heading">Solution</span>
+        </div>
+        <div class="proj-story-section__body">
+          <p>{solution}</p>
+        </div>
+      </article>
+
+      <div class="proj-divider"></div>
+
+      <article class="proj-story-section proj-animate">
+        <div class="proj-story-section__label">
+          <span class="proj-story-section__tag" style={`color: ${accentColor};`}>04</span>
+          <span class="proj-story-section__heading">Outcome</span>
+        </div>
+        <div class="proj-story-section__body">
+          <p>{outcome}</p>
+        </div>
+      </article>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="proj-footer">
+      <a href="/#work" class="proj-footer__back">
+        <span>← Back to Works</span>
+      </a>
+      <a href="mailto:tynshimj@oregonstate.edu" class="proj-footer__contact">
+        Let's work together →
+      </a>
+    </footer>
+
+  </body>
+</html>
+
+<style>
+  /* Reset & Base */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    background: #0a0a0a;
+    color: #fff;
+    -webkit-font-smoothing: antialiased;
+    scroll-behavior: smooth;
+  }
+
+  /* Variables from CSS files */
+  :root {
+    --font-family-editorial: 'EditorialNew', 'Georgia', serif;
+    --font-family-fraktion: 'FraktionMono', 'Courier New', monospace;
+  }
+
+  /* Nav */
+  .proj-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.5rem clamp(1.5rem, 5vw, 5rem);
+    background: rgba(10, 10, 10, 0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .proj-nav__back {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    text-decoration: none;
+    color: rgba(255,255,255,0.6);
+    font-family: var(--font-family-fraktion), monospace;
+    font-size: 0.8rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    transition: color 0.25s;
+  }
+
+  .proj-nav__back:hover { color: #fff; }
+
+  .proj-nav__back-arrow {
+    font-size: 1rem;
+    transition: transform 0.25s;
+  }
+
+  .proj-nav__back:hover .proj-nav__back-arrow {
+    transform: translateX(-4px);
+  }
+
+  .proj-nav__num {
+    font-family: var(--font-family-fraktion), monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.2em;
+    color: rgba(255,255,255,0.25);
+    text-transform: uppercase;
+  }
+
+  /* Hero */
+  .proj-hero {
+    padding-top: 5rem;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .proj-hero__image-wrap {
+    flex: 1;
+    position: relative;
+    min-height: 60vh;
+    overflow: hidden;
+  }
+
+  .proj-hero__placeholder {
+    width: 100%;
+    height: 100%;
+    min-height: 60vh;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .proj-hero__img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .proj-hero__placeholder-num {
+    font-family: var(--font-family-editorial), serif;
+    font-size: clamp(8rem, 25vw, 22rem);
+    font-weight: 700;
+    color: rgba(255,255,255,0.07);
+    line-height: 1;
+    user-select: none;
+    position: relative;
+    z-index: 1;
+  }
+
+  .proj-hero__title-wrap {
+    padding: clamp(2rem, 5vh, 4rem) clamp(1.5rem, 6vw, 6rem);
+    background: #0a0a0a;
+    position: relative;
+    z-index: 2;
+  }
+
+  .proj-hero__kicker {
+    font-family: var(--font-family-fraktion), monospace;
+    font-size: clamp(0.7rem, 1vw, 0.85rem);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.35);
+    margin-bottom: 1rem;
+  }
+
+  .proj-hero__title {
+    font-family: var(--font-family-editorial), serif;
+    font-size: clamp(2.5rem, 8vw, 7rem);
+    font-weight: 700;
+    line-height: 1;
+    text-transform: uppercase;
+    letter-spacing: -0.02em;
+    color: #fff;
+  }
+
+  /* Intro */
+  .proj-intro {
+    padding: clamp(3rem, 8vh, 7rem) clamp(1.5rem, 6vw, 6rem);
+    max-width: 1200px;
+  }
+
+  .proj-intro__text {
+    font-family: var(--font-family-editorial), serif;
+    font-size: clamp(1.25rem, 2.5vw, 2rem);
+    line-height: 1.55;
+    color: rgba(255,255,255,0.8);
+    max-width: 62ch;
+  }
+
+  /* Divider */
+  .proj-divider {
+    height: 1px;
+    background: rgba(255,255,255,0.07);
+    margin: 0 clamp(1.5rem, 6vw, 6rem);
+  }
+
+  /* Story sections */
+  .proj-content {
+    padding: 0 0 clamp(4rem, 10vh, 10rem);
+  }
+
+  .proj-story-section {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: clamp(2rem, 4vw, 4rem);
+    padding: clamp(3rem, 7vh, 6rem) clamp(1.5rem, 6vw, 6rem);
+    align-items: start;
+  }
+
+  @media (max-width: 768px) {
+    .proj-story-section {
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+  }
+
+  .proj-story-section__label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    position: sticky;
+    top: 6rem;
+  }
+
+  .proj-story-section__tag {
+    font-family: var(--font-family-fraktion), monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  .proj-story-section__heading {
+    font-family: var(--font-family-editorial), serif;
+    font-size: clamp(1.5rem, 3vw, 2.5rem);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: -0.01em;
+    color: #fff;
+    line-height: 1.1;
+  }
+
+  .proj-story-section__body {
+    font-family: var(--font-family-fraktion), monospace;
+    font-size: clamp(0.9rem, 1.3vw, 1.1rem);
+    line-height: 1.8;
+    color: rgba(255,255,255,0.6);
+    max-width: 65ch;
+  }
+
+  .proj-story-section__body p + p {
+    margin-top: 1.25em;
+  }
+
+  /* Footer */
+  .proj-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: clamp(2rem, 5vh, 4rem) clamp(1.5rem, 6vw, 6rem);
+    border-top: 1px solid rgba(255,255,255,0.07);
+    flex-wrap: wrap;
+    gap: 1.5rem;
+  }
+
+  .proj-footer__back,
+  .proj-footer__contact {
+    font-family: var(--font-family-editorial), serif;
+    font-size: clamp(1rem, 1.5vw, 1.25rem);
+    color: rgba(255,255,255,0.5);
+    text-decoration: none;
+    transition: color 0.25s;
+    letter-spacing: 0.02em;
+  }
+
+  .proj-footer__back:hover,
+  .proj-footer__contact:hover { color: #fff; }
+
+  /* Scroll animations */
+  .proj-animate {
+    opacity: 0;
+    transform: translateY(2.5rem);
+    transition: opacity 0.75s ease, transform 0.75s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  .proj-animate.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Parallax hero image */
+  .proj-hero__placeholder {
+    will-change: transform;
+  }
+</style>
+
+<script>
+  // Scroll-driven entrance animations
+  const animEls = document.querySelectorAll('.proj-animate')
+  const obs = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible')
+          obs.unobserve(entry.target)
+        }
+      })
+    },
+    { threshold: 0.1, rootMargin: '0px 0px -60px 0px' }
+  )
+  animEls.forEach((el) => obs.observe(el))
+
+  // Subtle parallax on hero image
+  const heroPlaceholder = document.querySelector('.proj-hero__placeholder') as HTMLElement
+  if (heroPlaceholder) {
+    window.addEventListener('scroll', () => {
+      const scrollY = window.scrollY
+      heroPlaceholder.style.transform = `translateY(${scrollY * 0.25}px)`
+    }, { passive: true })
+  }
+</script>

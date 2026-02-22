@@ -1,0 +1,318 @@
+---
+// WorksSection.astro
+// Portfolio works section with 5 project cards
+
+const projects = [
+  {
+    id: 'gochain',
+    number: '01',
+    title: 'GoChain',
+    description: 'Environmental Web3 impact platform.',
+    slug: '/work/gochain',
+    accent: '#1a3a2a',
+    accentText: '#4ade80',
+  },
+  {
+    id: 'private-clinic',
+    number: '02',
+    title: 'Private Clinic Setup',
+    description: 'End-to-end healthcare infrastructure project in Kazakhstan.',
+    slug: '/work/private-clinic',
+    accent: '#1e1e2e',
+    accentText: '#a78bfa',
+  },
+  {
+    id: 'ams-device',
+    number: '03',
+    title: 'AMS Device Platform',
+    description: 'Tablet-based system and software integration.',
+    slug: '/work/ams-device',
+    accent: '#1a1a2a',
+    accentText: '#60a5fa',
+  },
+  {
+    id: 'engineering-rocket',
+    number: '04',
+    title: 'Engineering Rocket Project',
+    description: 'Applied aerospace and systems research.',
+    slug: '/work/engineering-rocket',
+    accent: '#2a1a1a',
+    accentText: '#fb923c',
+  },
+  {
+    id: 'portfolio-rocket',
+    number: '05',
+    title: 'Portfolio Rocket Experience',
+    description: 'Cinematic scroll-driven portfolio system.',
+    slug: '/work/portfolio-rocket',
+    accent: '#1a1a1a',
+    accentText: '#f9fafb',
+  },
+]
+---
+
+<section id="works" class="works-section">
+  <div class="works-section__header">
+    <span class="works-section__label">Selected Work</span>
+    <h2 class="works-section__title">Projects</h2>
+  </div>
+
+  <div class="works-section__list">
+    {projects.map((project, i) => (
+      <a href={project.slug} class="project-card" data-index={i}>
+        <div class="project-card__image-wrap">
+          <div
+            class="project-card__placeholder"
+            style={`background: ${project.accent};`}
+          >
+            <img
+              src={`/works/${project.id}-preview.jpg`}
+              alt={project.title}
+              class="project-card__img"
+              onerror="this.style.display='none'"
+            />
+            <span class="project-card__placeholder-label" style={`color: ${project.accentText};`}>
+              {project.number}
+            </span>
+          </div>
+          <div class="project-card__overlay"></div>
+        </div>
+
+        <div class="project-card__info">
+          <div class="project-card__meta">
+            <span class="project-card__number">{project.number}</span>
+            <span class="project-card__arrow">→</span>
+          </div>
+          <h3 class="project-card__title">{project.title}</h3>
+          <p class="project-card__desc">{project.description}</p>
+        </div>
+      </a>
+    ))}
+  </div>
+</section>
+
+<style lang="scss">
+  @use '../styles/helpers/fonts' as *;
+
+  .works-section {
+    background: #000;
+    padding: clamp(5rem, 10vh, 10rem) clamp(1.5rem, 6vw, 6rem);
+    position: relative;
+    z-index: 20;
+
+    &::before {
+      content: '';
+      display: block;
+      height: 1px;
+      background: rgba(255, 255, 255, 0.12);
+      margin-bottom: clamp(3rem, 6vh, 6rem);
+    }
+  }
+
+  .works-section__header {
+    display: flex;
+    align-items: baseline;
+    gap: 2rem;
+    margin-bottom: clamp(3rem, 6vh, 6rem);
+  }
+
+  .works-section__label {
+    font-family: font-family(fraktion);
+    font-size: clamp(0.75rem, 1vw, 0.875rem);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.4);
+  }
+
+  .works-section__title {
+    font-family: font-family(editorial);
+    font-size: clamp(3rem, 7vw, 6rem);
+    font-weight: 700;
+    color: #fff;
+    margin: 0;
+    line-height: 1;
+    text-transform: uppercase;
+    letter-spacing: -0.02em;
+  }
+
+  // --- List layout ---
+  .works-section__list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  // --- Card ---
+  .project-card {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    text-decoration: none;
+    color: inherit;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding: clamp(1.5rem, 3vh, 3rem) 0;
+    transition: background 0.4s ease;
+    cursor: pointer;
+
+    &:last-child {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    &:hover {
+      .project-card__image-wrap {
+        transform: scale(1.02);
+      }
+
+      .project-card__overlay {
+        opacity: 0.3;
+      }
+
+      .project-card__arrow {
+        transform: translateX(6px);
+        color: #fff;
+      }
+
+      .project-card__title {
+        color: #fff;
+      }
+    }
+
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+  }
+
+  // --- Image side ---
+  .project-card__image-wrap {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border-radius: 0.5rem;
+    transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    transform-origin: center center;
+  }
+
+  .project-card__placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  .project-card__img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .project-card__placeholder-label {
+    font-family: font-family(editorial);
+    font-size: clamp(4rem, 10vw, 8rem);
+    font-weight: 700;
+    opacity: 0.25;
+    line-height: 1;
+    user-select: none;
+    position: relative;
+    z-index: 1;
+  }
+
+  .project-card__overlay {
+    position: absolute;
+    inset: 0;
+    background: #fff;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    pointer-events: none;
+  }
+
+  // --- Info side ---
+  .project-card__info {
+    padding: 0 clamp(2rem, 4vw, 4rem);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 1.25rem;
+
+    @media (max-width: 768px) {
+      padding: 0;
+    }
+  }
+
+  .project-card__meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .project-card__number {
+    font-family: font-family(fraktion);
+    font-size: clamp(0.75rem, 1vw, 0.875rem);
+    letter-spacing: 0.2em;
+    color: rgba(255, 255, 255, 0.35);
+    text-transform: uppercase;
+  }
+
+  .project-card__arrow {
+    font-size: 1.5rem;
+    color: rgba(255, 255, 255, 0.35);
+    transition: transform 0.3s ease, color 0.3s ease;
+    line-height: 1;
+  }
+
+  .project-card__title {
+    font-family: font-family(editorial);
+    font-size: clamp(1.75rem, 3.5vw, 3rem);
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.85);
+    margin: 0;
+    line-height: 1.1;
+    text-transform: uppercase;
+    letter-spacing: -0.01em;
+    transition: color 0.3s ease;
+  }
+
+  .project-card__desc {
+    font-family: font-family(fraktion);
+    font-size: clamp(0.875rem, 1.2vw, 1.1rem);
+    color: rgba(255, 255, 255, 0.45);
+    margin: 0;
+    line-height: 1.6;
+    max-width: 36ch;
+  }
+</style>
+
+<script>
+  // Subtle card entrance animations on scroll
+  const cards = document.querySelectorAll('.project-card')
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const card = entry.target as HTMLElement
+          const index = Number(card.dataset.index)
+          setTimeout(() => {
+            card.style.opacity = '1'
+            card.style.transform = 'translateY(0)'
+          }, index * 80)
+          observer.unobserve(card)
+        }
+      })
+    },
+    { threshold: 0.1 }
+  )
+
+  cards.forEach((card) => {
+    const el = card as HTMLElement
+    el.style.opacity = '0'
+    el.style.transform = 'translateY(2rem)'
+    el.style.transition = 'opacity 0.6s ease, transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+    observer.observe(el)
+  })
+</script>
