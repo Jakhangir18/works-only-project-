@@ -286,10 +286,19 @@ while (i < projects.length) {
       this.loadIsStarted = false
 
       // Init
-      if (document.readyState === 'complete') {
-        Ticker.nextTick(this.init, this)
+      const doInit = () => {
+        console.log('SWork initializing, measuring letters...');
+        if (document.readyState === 'complete') {
+          Ticker.nextTick(this.init, this)
+        } else {
+          Emitter.once('siteLoaded', this.init, this)
+        }
+      }
+
+      if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(doInit).catch(doInit)
       } else {
-        Emitter.once('siteLoaded', this.init, this)
+        setTimeout(doInit, 500)
       }
     }
 
@@ -306,6 +315,12 @@ while (i < projects.length) {
       this.setTimeline()
 
       this.bindEvents()
+
+      ScrollTrigger.refresh()
+      this.tick()
+
+      document.documentElement.classList.add('is-works-ready')
+      Emitter.emit('worksReady')
     }
 
     /**
@@ -318,6 +333,40 @@ while (i < projects.length) {
       this.el.addEventListener('intersect', this.onIntersect.bind(this), {
         passive: true,
       })
+
+      this.syncIntersectState()
+
+      if (!this.loadIsStarted && !this.isPaused) {
+        this.loadNextVideo()
+        this.loadIsStarted = true
+      }
+    }
+
+    /**
+     * Sync intersect state when listener starts after observer already fired
+     */
+    syncIntersectState() {
+      const rect = this.el.getBoundingClientRect()
+      const isIntersecting = rect.bottom > 0 && rect.top < window.innerHeight
+
+      this.setPausedState(!isIntersecting)
+    }
+
+    /**
+     * Toggle paused state
+     */
+    setPausedState(isPaused) {
+      if (this.isPaused === isPaused) {
+        return
+      }
+
+      this.isPaused = isPaused
+
+      if (this.isPaused) {
+        Emitter.off('tick', this.tick, this)
+      } else {
+        Emitter.on('tick', this.tick, this)
+      }
     }
 
     /**
@@ -339,13 +388,7 @@ while (i < projects.length) {
      * Intersect handler
      */
     onIntersect(e) {
-      this.isPaused = !e.detail.isIntersecting
-
-      if (this.isPaused) {
-        Emitter.off('tick', this.tick, this)
-      } else {
-        Emitter.on('tick', this.tick, this)
-      }
+      this.setPausedState(!e.detail.isIntersecting)
 
       if (!this.loadIsStarted) {
         this.loadNextVideo()
@@ -1091,7 +1134,7 @@ while (i < projects.length) {
       &__inner {
         @include flex(column, center, center);
 
-        margin: 0.075em 0 -0.125em;
+        margin: 0;
       }
     }
 
