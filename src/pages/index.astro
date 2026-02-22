@@ -1,4 +1,5 @@
 ---
+import HeroHome from '../components/HeroHome.astro'
 import HeroSequence from '../components/HeroSequence.astro'
 import SWork from '../components/SWork.astro'
 import '../styles/global.scss'
@@ -68,10 +69,21 @@ import '../styles/global.scss'
 
   <body>
     <div class="site-loader js-site-loader" aria-hidden="true">
-      <div class="site-loader__label">LOADING</div>
+      <div class="site-loader__inner">
+        <div class="site-loader__logo">
+          <span class="site-loader__logo__letter site-loader__logo__letter--j">J</span>
+          <span class="site-loader__logo__dot">.</span>
+          <span class="site-loader__logo__letter site-loader__logo__letter--t">T</span>
+        </div>
+        <div class="site-loader__progress">
+          <div class="site-loader__progress__bar js-loader-progress"></div>
+        </div>
+        <div class="site-loader__text">Loading Experience</div>
+      </div>
     </div>
 
     <div class="site-wrapper js-site-wrapper" style="opacity: 0;">
+      <HeroHome />
       <HeroSequence />
 
       <div class="works-layer">
@@ -113,6 +125,8 @@ import '../styles/global.scss'
 
       isScrolling: boolean = false
 
+      loaderProgress: number = 0
+
       /**
        * Constructor
        */
@@ -141,6 +155,7 @@ import '../styles/global.scss'
         }
         document.documentElement.classList.add(`is-${browser}`)
 
+        this.animateLoader()
         this.bindEvents()
       }
 
@@ -157,6 +172,33 @@ import '../styles/global.scss'
         }
 
         this.tryStartIntro()
+      }
+
+      /**
+       * Animate loader progress bar
+       */
+      animateLoader() {
+        const progressBar = document.querySelector('.js-loader-progress') as HTMLElement
+        if (!progressBar) return
+
+        const duration = 4000 // 4 seconds for fonts to load properly
+        const startTime = Date.now()
+
+        const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3)
+
+        const animate = () => {
+          const elapsed = Date.now() - startTime
+          const rawProgress = Math.min(elapsed / duration, 1)
+          const easedProgress = easeOutCubic(rawProgress) * 100
+
+          progressBar.style.width = `${easedProgress}%`
+
+          if (rawProgress < 1) {
+            requestAnimationFrame(animate)
+          }
+        }
+
+        animate()
       }
 
       /**
