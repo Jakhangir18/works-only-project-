@@ -1,4 +1,5 @@
 ---
+import HeroSequence from '../components/HeroSequence.astro'
 import SWork from '../components/SWork.astro'
 import '../styles/global.scss'
 ---
@@ -66,8 +67,16 @@ import '../styles/global.scss'
   </head>
 
   <body>
+    <div class="site-loader js-site-loader" aria-hidden="true">
+      <div class="site-loader__label">LOADING</div>
+    </div>
+
     <div class="site-wrapper js-site-wrapper" style="opacity: 0;">
-      <SWork />
+      <HeroSequence />
+
+      <div class="works-layer">
+        <SWork />
+      </div>
     </div><!-- .site-wrapper -->
   </body>
 
@@ -92,6 +101,10 @@ import '../styles/global.scss'
       timeouts: any = {
         resizeThrottle: null,
       }
+
+      hasSiteLoaded: boolean = false
+      hasWorksReady: boolean = false
+      introStarted: boolean = false
 
       windowWidth: number
       windowHeight: number
@@ -138,7 +151,12 @@ import '../styles/global.scss'
         Ticker.init()
 
         this.onResize()
-        Ticker.nextTick(this.intro, this)
+
+        if (document.documentElement.classList.contains('is-works-ready')) {
+          this.hasWorksReady = true
+        }
+
+        this.tryStartIntro()
       }
 
       /**
@@ -151,6 +169,8 @@ import '../styles/global.scss'
         })
 
         Emitter.on('updateViewport', this.onResize, this, true)
+        Emitter.on('siteLoaded', this.onSiteLoaded, this, true)
+        Emitter.on('worksReady', this.onWorksReady, this, true)
 
         const observer = new IntersectionObserver(
           (entries) => {
@@ -196,7 +216,7 @@ import '../styles/global.scss'
         if (document.readyState === 'complete') {
           this.siteLoaded()
         } else {
-          window.addEventListener('load', this.siteLoaded, { once: true })
+          window.addEventListener('load', this.siteLoaded.bind(this), { once: true })
         }
 
         this.onScroll()
@@ -206,9 +226,39 @@ import '../styles/global.scss'
        * Set loaded class
        */
       siteLoaded() {
-        document.documentElement.classList.add('is-loaded')
+        // Small delay to ensure custom fonts are fully applied before JS calculates dimensions
+        setTimeout(() => {
+          document.documentElement.classList.add('is-loaded')
+          Emitter.emit('siteLoaded')
+        }, 150)
+      }
 
-        Emitter.emit('siteLoaded')
+      /**
+       * On site loaded
+       */
+      onSiteLoaded() {
+        this.hasSiteLoaded = true
+        this.tryStartIntro()
+      }
+
+      /**
+       * On works ready
+       */
+      onWorksReady() {
+        this.hasWorksReady = true
+        this.tryStartIntro()
+      }
+
+      /**
+       * Start intro when all async parts are ready
+       */
+      tryStartIntro() {
+        if (this.introStarted || !this.hasSiteLoaded || !this.hasWorksReady) {
+          return
+        }
+
+        this.introStarted = true
+        Ticker.nextTick(this.intro, this)
       }
 
       /**
@@ -281,6 +331,17 @@ import '../styles/global.scss'
        */
       intro() {
         const wrapper: HTMLElement = document.querySelector('.js-site-wrapper')
+        const loader: HTMLElement = document.querySelector('.js-site-loader')
+
+        if (loader) {
+          gsap.to(loader, {
+            opacity: 0,
+            duration: 0.25,
+            onComplete: () => {
+              loader.remove()
+            },
+          })
+        }
 
         gsap.to(wrapper, {
           opacity: 1,
@@ -295,4 +356,12 @@ import '../styles/global.scss'
     const site = new Site()
     site.init()
   </script>
+
+  <style lang="scss">
+    .works-layer {
+      position: relative;
+      z-index: 40;
+      background: var(--color-primary);
+    }
+  </style>
 </html>
