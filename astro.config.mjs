@@ -6,7 +6,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 export default defineConfig({
-  site: 'https://localhost:4321',
+  site: process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://localhost:4321',
 
   scopedStyleStrategy: 'class',
 
