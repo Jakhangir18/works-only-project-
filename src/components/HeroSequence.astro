@@ -39,8 +39,8 @@ const {
 
     constructor(root: HTMLElement) {
       this.root = root
-      this.canvas = root.querySelector('.hero-sequence__canvas')
-      this.ctx = this.canvas.getContext('2d')
+      this.canvas = root.querySelector('.hero-sequence__canvas')!
+      this.ctx = this.canvas.getContext('2d')!
 
       this.totalFrames = Number(root.dataset.totalFrames || 120)
       this.startFrame = Number(root.dataset.startFrame || 1)
@@ -60,7 +60,7 @@ const {
 
     init() {
       this.resizeCanvas()
-      this.preload(this.startFrame).then((img) => this.drawCover(img)).catch(() => {})
+      this.preload(this.startFrame)?.then((img) => this.drawCover(img)).catch(() => {})
       this.preloadBatch(this.startFrame, Math.min(this.startFrame + 24, this.endFrame()))
 
       window.addEventListener('resize', this.onResize, { passive: true })
@@ -120,7 +120,7 @@ const {
 
     preloadBatch(from: number, to: number) {
       for (let frame = from; frame <= to; frame++) {
-        this.preload(frame).catch(() => {})
+        this.preload(frame)?.catch(() => {})
       }
     }
 
@@ -182,14 +182,17 @@ const {
       const frame = this.frameByProgress(progress)
 
       if (frame === this.currentFrame && this.frameCache.has(frame)) {
-        this.drawCover(this.frameCache.get(frame))
+        const cachedFrame = this.frameCache.get(frame)
+        if (cachedFrame) {
+          this.drawCover(cachedFrame)
+        }
         return
       }
 
       this.currentFrame = frame
 
       this.preload(frame)
-        .then((img) => {
+        ?.then((img) => {
           if (this.currentFrame === frame) {
             this.drawCover(img)
           }
