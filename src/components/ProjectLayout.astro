@@ -35,10 +35,6 @@ const { title, number, intro, accentColor, heroColor, problem, approach, solutio
 
     <!-- Navigation -->
     <nav class="proj-nav">
-      <a href="/#work" class="proj-nav__back">
-        <span class="proj-nav__back-arrow">←</span>
-        <span class="proj-nav__back-label">Back to works</span>
-      </a>
       <span class="proj-nav__num">{number}</span>
     </nav>
 
@@ -124,7 +120,7 @@ const { title, number, intro, accentColor, heroColor, problem, approach, solutio
 
     <!-- Footer -->
     <footer class="proj-footer">
-      <a href="/#work" class="proj-footer__back">
+      <a href="/" class="proj-footer__back" id="js-back-to-works">
         <span>← Back to Works</span>
       </a>
       <a href="mailto:tynshimj@oregonstate.edu" class="proj-footer__contact">
@@ -394,6 +390,16 @@ const { title, number, intro, accentColor, heroColor, problem, approach, solutio
 </style>
 
 <script>
+  // Back to Works — set flag so homepage skips loader and scrolls to #work
+  const backBtn = document.getElementById('js-back-to-works')
+  if (backBtn) {
+    backBtn.addEventListener('click', (e) => {
+      e.preventDefault()
+      sessionStorage.setItem('returnToWorks', '1')
+      window.location.href = '/'
+    })
+  }
+
   // Scroll-driven entrance animations
   const animEls = document.querySelectorAll('.proj-animate')
   const obs = new IntersectionObserver(

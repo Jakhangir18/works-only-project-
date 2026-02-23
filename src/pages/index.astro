@@ -122,6 +122,7 @@ import '../styles/global.scss'
       hasSiteLoaded: boolean = false
       hasWorksReady: boolean = false
       introStarted: boolean = false
+      isReturning: boolean = false
 
       windowWidth: number
       windowHeight: number
@@ -160,7 +161,13 @@ import '../styles/global.scss'
         }
         document.documentElement.classList.add(`is-${browser}`)
 
-        this.animateLoader()
+        // Check if returning from a project page
+        if (sessionStorage.getItem('returnScrollY') !== null || sessionStorage.getItem('returnToWorks') !== null) {
+          this.isReturning = true
+        } else {
+          this.animateLoader()
+        }
+
         this.bindEvents()
       }
 
@@ -267,6 +274,13 @@ import '../styles/global.scss'
         }
 
         this.onScroll()
+
+        // Save scroll position when navigating to a project page
+        document.querySelectorAll('a[href^="/work/"]').forEach((link) => {
+          link.addEventListener('click', () => {
+            sessionStorage.setItem('returnScrollY', String(window.scrollY))
+          })
+        })
       }
 
       /**
@@ -379,6 +393,27 @@ import '../styles/global.scss'
       intro() {
         const wrapper: HTMLElement = document.querySelector('.js-site-wrapper')
         const loader: HTMLElement = document.querySelector('.js-site-loader')
+
+        // If returning from a project page — skip loader, restore scroll
+        const returnScrollY = sessionStorage.getItem('returnScrollY')
+        const returnToWorks = sessionStorage.getItem('returnToWorks')
+        if (returnScrollY !== null || returnToWorks !== null) {
+          sessionStorage.removeItem('returnScrollY')
+          sessionStorage.removeItem('returnToWorks')
+          if (loader) loader.remove()
+          wrapper.style.opacity = '1'
+          document.documentElement.classList.remove('is-scroll-blocked')
+          if (returnScrollY !== null) {
+            window.scrollTo({ top: parseInt(returnScrollY, 10), behavior: 'instant' })
+          } else {
+            // Scroll to the works section
+            const worksEl = document.getElementById('work')
+            if (worksEl) {
+              window.scrollTo({ top: worksEl.offsetTop, behavior: 'instant' })
+            }
+          }
+          return
+        }
 
         if (loader) {
           gsap.to(loader, {
