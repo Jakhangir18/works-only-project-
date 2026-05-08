@@ -1,0 +1,1211 @@
+---
+// AMS — Automated Pre-Shift Workforce Monitoring System
+---
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AMS Tablet — Workforce Monitoring System</title>
+    <meta name="description" content="AMS is an industrial complex for automated pre-shift inspection and workforce verification at checkpoints." />
+    <meta name="robots" content="noindex, nofollow" />
+    <style is:global>
+      @import url('/fonts/editorial-new.css');
+      @import url('/fonts/fraktion-mono.css');
+    </style>
+  </head>
+
+  <body>
+
+    <!-- ─── NAV ──────────────────────────────────────────────── -->
+    <nav class="nav">
+      <a href="/" class="nav__back" id="js-back">
+        <span class="nav__arrow">←</span>
+        <span>Back to Works</span>
+      </a>
+      <span class="nav__label">AMS / Workforce Monitoring</span>
+    </nav>
+
+    <!-- ─── S1 · HERO ─────────────────────────────────────────── -->
+    <header class="hero ams-animate">
+      <div class="hero__image">
+        <div class="hero__img-placeholder">
+          <img
+            src="/projects/ams/images/hero-tablet.jpg"
+            alt="AMS Tablet Device"
+            class="hero__img"
+            onerror="this.style.display='none'"
+          />
+          <div class="hero__img-fallback">
+            <svg class="hero__img-fallback-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero__content">
+        <p class="overline">Project — Industrial SaaS</p>
+        <h1 class="hero__title">AMS<br />Tablet</h1>
+        <p class="hero__subtitle">Automated Pre-Shift Workforce Monitoring System</p>
+        <p class="hero__desc">
+          AMS is an industrial комплекс for automated pre-shift inspection
+          and workforce verification at checkpoints.
+        </p>
+        <div class="hero__meta">
+          <div class="hero__meta-item">
+            <span class="hero__meta-label">Industry</span>
+            <span class="hero__meta-value">Industrial / Gov</span>
+          </div>
+          <div class="hero__meta-item">
+            <span class="hero__meta-label">Platform</span>
+            <span class="hero__meta-value">Android Tablet + Web Dashboard</span>
+          </div>
+          <div class="hero__meta-item">
+            <span class="hero__meta-label">Status</span>
+            <span class="hero__meta-value hero__meta-value--live">Live · 10+ Deployments</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- ─── S2 · PROBLEM ──────────────────────────────────────── -->
+    <section class="section problem ams-animate">
+      <div class="section__header">
+        <span class="tag">01</span>
+        <h2 class="section__title">Problem</h2>
+      </div>
+      <div class="problem__grid">
+        <div class="problem__block">
+          <span class="problem__num">01</span>
+          <p class="problem__text">Manual inspections are unreliable</p>
+        </div>
+        <div class="problem__block">
+          <span class="problem__num">02</span>
+          <p class="problem__text">Drunk / unhealthy workers on site</p>
+        </div>
+        <div class="problem__block">
+          <span class="problem__num">03</span>
+          <p class="problem__text">Time fraud &amp; falsified check-ins</p>
+        </div>
+        <div class="problem__block">
+          <span class="problem__num">04</span>
+          <p class="problem__text">Outdated inspection methods</p>
+        </div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ─── S3 · HOW IT WORKS ─────────────────────────────────── -->
+    <section class="section how ams-animate">
+      <div class="section__header">
+        <span class="tag">02</span>
+        <h2 class="section__title">How It Works</h2>
+      </div>
+
+      <div class="how__steps">
+        <div class="how__step">
+          <div class="how__step-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/><circle cx="12" cy="8" r="1.5" fill="currentColor" stroke="none"/></svg>
+          </div>
+          <span class="how__step-num">01</span>
+          <h3 class="how__step-title">Face Recognition</h3>
+          <p class="how__step-desc">AWS Rekognition — real-time identity verification</p>
+        </div>
+        <div class="how__step">
+          <div class="how__step-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/><circle cx="12" cy="12" r="3"/></svg>
+          </div>
+          <span class="how__step-num">02</span>
+          <h3 class="how__step-title">Temperature Check</h3>
+          <p class="how__step-desc">Infrared sensor integration — automated fever detection</p>
+        </div>
+        <div class="how__step">
+          <div class="how__step-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c1.1 0 2-.9 2-2H10c0 1.1.9 2 2 2zm6-6V11c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+          </div>
+          <span class="how__step-num">03</span>
+          <h3 class="how__step-title">Breath Alcohol Detection</h3>
+          <p class="how__step-desc">Hardware breathalyzer module — BAC threshold enforcement</p>
+        </div>
+        <div class="how__step">
+          <div class="how__step-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          </div>
+          <span class="how__step-num">04</span>
+          <h3 class="how__step-title">Pulse &amp; Oxygen Monitoring</h3>
+          <p class="how__step-desc">SpO₂ sensor — heart rate and blood oxygen screening</p>
+        </div>
+      </div>
+
+      <div class="how__flow">
+        <span class="how__flow-label">System Flow</span>
+        <div class="how__flow-steps">
+          <span class="how__flow-node">Employee</span>
+          <span class="how__flow-arrow">→</span>
+          <span class="how__flow-node how__flow-node--accent">AMS Tablet</span>
+          <span class="how__flow-arrow">→</span>
+          <span class="how__flow-node">Verification</span>
+          <span class="how__flow-arrow">→</span>
+          <span class="how__flow-node">Dashboard</span>
+          <span class="how__flow-arrow">→</span>
+          <span class="how__flow-node">Analytics</span>
+        </div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ─── S4 · ADMIN DASHBOARD ──────────────────────────────── -->
+    <section class="section dashboard ams-animate">
+      <div class="section__header">
+        <span class="tag">03</span>
+        <h2 class="section__title">Admin Dashboard</h2>
+      </div>
+
+      <div class="dashboard__inner">
+        <div class="dashboard__image">
+          <div class="img-placeholder">
+            <img
+              src="/projects/ams/images/dashboard-mobile.jpg"
+              alt="AMS Admin Dashboard"
+              class="img-placeholder__img"
+              onerror="this.style.display='none'"
+            />
+            <div class="img-placeholder__fallback">
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.15"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
+            </div>
+          </div>
+        </div>
+
+        <div class="dashboard__features">
+          <ul class="feature-list">
+            <li class="feature-list__item">
+              <span class="feature-list__dot"></span>
+              <div>
+                <h4 class="feature-list__title">CRUD Employee Management</h4>
+                <p class="feature-list__desc">Add, edit, deactivate and archive employee records with role-based access controls.</p>
+              </div>
+            </li>
+            <li class="feature-list__item">
+              <span class="feature-list__dot"></span>
+              <div>
+                <h4 class="feature-list__title">Attendance Tracking</h4>
+                <p class="feature-list__desc">Automated time-stamped shift logs with pass/fail status per inspection.</p>
+              </div>
+            </li>
+            <li class="feature-list__item">
+              <span class="feature-list__dot"></span>
+              <div>
+                <h4 class="feature-list__title">Health Status Logs</h4>
+                <p class="feature-list__desc">Per-employee health history: temperature, BAC, SpO₂ across all shifts.</p>
+              </div>
+            </li>
+            <li class="feature-list__item">
+              <span class="feature-list__dot"></span>
+              <div>
+                <h4 class="feature-list__title">Push Notifications</h4>
+                <p class="feature-list__desc">Instant alerts for late workers, failed inspections, and critical health flags.</p>
+              </div>
+            </li>
+            <li class="feature-list__item">
+              <span class="feature-list__dot"></span>
+              <div>
+                <h4 class="feature-list__title">ERP / 1C Integration</h4>
+                <p class="feature-list__desc">Native sync with 1C:Enterprise and compatible ERP systems for payroll and HR data flow.</p>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ─── S5 · TRACTION ─────────────────────────────────────── -->
+    <section class="section traction ams-animate">
+      <div class="section__header">
+        <span class="tag">04</span>
+        <h2 class="section__title">Traction</h2>
+      </div>
+
+      <div class="traction__stats">
+        <div class="traction__stat">
+          <span class="traction__stat-num">10+</span>
+          <span class="traction__stat-label">Active Deployments</span>
+        </div>
+        <div class="traction__stat">
+          <span class="traction__stat-num">Gov</span>
+          <span class="traction__stat-label">Government &amp; Industrial Clients</span>
+        </div>
+      </div>
+
+      <div class="gallery-scroll" aria-label="Deployment locations gallery">
+        <div class="gallery-scroll__track">
+          <!-- Real images load from /projects/ams/images/ -->
+          <div class="gallery-slide">
+            <div class="gallery-slide__img-wrap">
+              <img src="/projects/ams/images/deploy-akimat.jpg" alt="Regional Government Office" onerror="this.parentElement.classList.add('no-image')" />
+            </div>
+            <span class="gallery-slide__caption">Regional Government Office (Akimat)</span>
+          </div>
+          <div class="gallery-slide">
+            <div class="gallery-slide__img-wrap">
+              <img src="/projects/ams/images/deploy-police.jpg" alt="Police Department" onerror="this.parentElement.classList.add('no-image')" />
+            </div>
+            <span class="gallery-slide__caption">Police Department</span>
+          </div>
+          <div class="gallery-slide">
+            <div class="gallery-slide__img-wrap">
+              <img src="/projects/ams/images/deploy-manufacturing.jpg" alt="Manufacturing Plants" onerror="this.parentElement.classList.add('no-image')" />
+            </div>
+            <span class="gallery-slide__caption">Manufacturing Plants</span>
+          </div>
+          <div class="gallery-slide">
+            <div class="gallery-slide__img-wrap">
+              <img src="/projects/ams/images/deploy-construction.jpg" alt="Construction Sites" onerror="this.parentElement.classList.add('no-image')" />
+            </div>
+            <span class="gallery-slide__caption">Construction Sites</span>
+          </div>
+          <div class="gallery-slide">
+            <div class="gallery-slide__img-wrap">
+              <img src="/projects/ams/images/deploy-industrial.jpg" alt="Industrial Service Companies" onerror="this.parentElement.classList.add('no-image')" />
+            </div>
+            <span class="gallery-slide__caption">Industrial Service Companies</span>
+          </div>
+        </div>
+      </div>
+      <p class="gallery-hint">← scroll →</p>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ─── S6 · MARKET ───────────────────────────────────────── -->
+    <section class="section market ams-animate">
+      <div class="section__header">
+        <span class="tag">05</span>
+        <h2 class="section__title">Market</h2>
+      </div>
+
+      <p class="market__context">
+        Kazakhstan industrial & ERP market — workforce compliance software segment.
+      </p>
+
+      <div class="market__grid">
+        <div class="market__block">
+          <span class="market__acronym">TAM</span>
+          <span class="market__desc">Total Addressable Market</span>
+          <span class="market__value">~$420M</span>
+          <p class="market__note">All KZ enterprises subject to pre-shift health screening regulations</p>
+        </div>
+        <div class="market__block">
+          <span class="market__acronym">SAM</span>
+          <span class="market__desc">Serviceable Addressable Market</span>
+          <span class="market__value">~$85M</span>
+          <p class="market__note">Industrial, gov, construction &amp; transport sectors with 50+ employees</p>
+        </div>
+        <div class="market__block">
+          <span class="market__acronym">SOM</span>
+          <span class="market__desc">Serviceable Obtainable Market</span>
+          <span class="market__value">~$12M</span>
+          <p class="market__note">Reachable within 3 years via direct sales &amp; ERP partner channels</p>
+        </div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ─── S7 · LICENSING ────────────────────────────────────── -->
+    <section class="section licensing ams-animate">
+      <div class="section__header">
+        <span class="tag">06</span>
+        <h2 class="section__title">Licensing &amp; Certification</h2>
+      </div>
+
+      <div class="licensing__grid">
+        <div class="licensing__doc">
+          <div class="img-placeholder img-placeholder--doc">
+            <img
+              src="/projects/ams/images/patent.jpg"
+              alt="Patent Document"
+              class="img-placeholder__img"
+              onerror="this.style.display='none'"
+            />
+            <div class="img-placeholder__fallback">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.12"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            </div>
+          </div>
+          <span class="licensing__doc-label">Patent</span>
+        </div>
+        <div class="licensing__doc">
+          <div class="img-placeholder img-placeholder--doc">
+            <img
+              src="/projects/ams/images/certification.jpg"
+              alt="Certification Document"
+              class="img-placeholder__img"
+              onerror="this.style.display='none'"
+            />
+            <div class="img-placeholder__fallback">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.12"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            </div>
+          </div>
+          <span class="licensing__doc-label">Certification</span>
+        </div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ─── S8 · MY ROLE ──────────────────────────────────────── -->
+    <section class="section role ams-animate">
+      <div class="section__header">
+        <span class="tag">07</span>
+        <h2 class="section__title">My Role in AMS</h2>
+      </div>
+
+      <div class="role__inner">
+        <ul class="role__list">
+          <li class="role__item">
+            <span class="role__label">Position</span>
+            <span class="role__value">Software Engineer</span>
+          </li>
+          <li class="role__item">
+            <span class="role__label">Core Work</span>
+            <span class="role__value">Platform logic &amp; system improvement</span>
+          </li>
+          <li class="role__item">
+            <span class="role__label">Integration</span>
+            <span class="role__value">Hardware-software integration</span>
+          </li>
+          <li class="role__item">
+            <span class="role__label">Product</span>
+            <span class="role__value">Dashboard refinement</span>
+          </li>
+          <li class="role__item">
+            <span class="role__label">Ongoing</span>
+            <span class="role__value">Ongoing product development</span>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ─── FOOTER ────────────────────────────────────────────── -->
+    <footer class="footer">
+      <a href="/" class="footer__back" id="js-back-footer">
+        <span class="footer__back-arrow">←</span>
+        Back to Works
+      </a>
+      <a href="mailto:tynshimj@oregonstate.edu" class="footer__contact">
+        Let's work together →
+      </a>
+    </footer>
+
+  </body>
+</html>
+
+<style>
+  /* ─── RESET & BASE ─────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0e0e0e;
+    --surface: #141414;
+    --border: rgba(255, 255, 255, 0.07);
+    --border-strong: rgba(255, 255, 255, 0.12);
+    --text: #ffffff;
+    --text-muted: rgba(255, 255, 255, 0.45);
+    --text-dim: rgba(255, 255, 255, 0.25);
+    --accent: #3b82f6;
+    --accent-dim: rgba(59, 130, 246, 0.15);
+    --accent-glow: rgba(59, 130, 246, 0.08);
+    --font-editorial: 'EditorialNew', 'Georgia', serif;
+    --font-mono: 'FraktionMono', 'Courier New', monospace;
+    --pad-x: clamp(1.5rem, 6vw, 6rem);
+    --pad-section: clamp(4rem, 9vh, 8rem);
+  }
+
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    scroll-behavior: smooth;
+    overflow-x: hidden;
+  }
+
+  img { display: block; max-width: 100%; }
+  a { text-decoration: none; }
+
+  /* ─── NAV ──────────────────────────────────────────────────── */
+  .nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem var(--pad-x);
+    background: rgba(14, 14, 14, 0.88);
+    backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .nav__back {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    transition: color 0.22s;
+  }
+  .nav__back:hover { color: var(--text); }
+  .nav__back:hover .nav__arrow { transform: translateX(-4px); }
+
+  .nav__arrow {
+    display: inline-block;
+    transition: transform 0.22s;
+  }
+
+  .nav__label {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  /* ─── SECTION COMMON ───────────────────────────────────────── */
+  .section {
+    padding: var(--pad-section) var(--pad-x);
+  }
+
+  .section__header {
+    display: flex;
+    align-items: baseline;
+    gap: 1.25rem;
+    margin-bottom: clamp(2.5rem, 6vh, 5rem);
+  }
+
+  .tag {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  .section__title {
+    font-family: var(--font-editorial);
+    font-size: clamp(1.75rem, 4vw, 3.25rem);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    line-height: 1;
+  }
+
+  .overline {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 1.25rem;
+  }
+
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 0 var(--pad-x);
+  }
+
+  /* ─── HERO ─────────────────────────────────────────────────── */
+  .hero {
+    min-height: 100vh;
+    padding-top: clamp(5rem, 12vh, 8rem);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(2rem, 5vw, 5rem);
+    align-items: center;
+    padding-left: var(--pad-x);
+    padding-right: var(--pad-x);
+    padding-bottom: clamp(3rem, 8vh, 6rem);
+  }
+
+  @media (max-width: 900px) {
+    .hero {
+      grid-template-columns: 1fr;
+      min-height: auto;
+      padding-top: 6rem;
+    }
+  }
+
+  .hero__image {
+    position: relative;
+  }
+
+  .hero__img-placeholder {
+    position: relative;
+    aspect-ratio: 3 / 4;
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    overflow: hidden;
+    border-radius: 2px;
+  }
+
+  .hero__img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .hero__img-fallback {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+  }
+
+  .hero__img-fallback-icon {
+    color: var(--text-dim);
+    opacity: 0.2;
+  }
+
+  .hero__content {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .hero__title {
+    font-family: var(--font-editorial);
+    font-size: clamp(4rem, 10vw, 9rem);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: -0.03em;
+    line-height: 0.92;
+    color: var(--text);
+    margin-bottom: 1.5rem;
+  }
+
+  .hero__subtitle {
+    font-family: var(--font-mono);
+    font-size: clamp(0.8rem, 1.3vw, 1rem);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 1.75rem;
+    line-height: 1.5;
+    max-width: 38ch;
+  }
+
+  .hero__desc {
+    font-family: var(--font-editorial);
+    font-size: clamp(1rem, 1.6vw, 1.25rem);
+    line-height: 1.65;
+    color: var(--text-muted);
+    max-width: 44ch;
+    margin-bottom: 2.5rem;
+  }
+
+  .hero__meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    border-top: 1px solid var(--border);
+    padding-top: 1.75rem;
+  }
+
+  .hero__meta-item {
+    display: flex;
+    gap: 1.5rem;
+    align-items: baseline;
+  }
+
+  .hero__meta-label {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    min-width: 6rem;
+  }
+
+  .hero__meta-value {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    letter-spacing: 0.04em;
+  }
+
+  .hero__meta-value--live {
+    color: var(--accent);
+  }
+
+  /* ─── PROBLEM ──────────────────────────────────────────────── */
+  .problem__grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1px;
+    background: var(--border);
+  }
+
+  @media (max-width: 640px) {
+    .problem__grid { grid-template-columns: 1fr; }
+  }
+
+  .problem__block {
+    background: var(--bg);
+    padding: clamp(2rem, 4vw, 3rem);
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    transition: background 0.22s;
+  }
+
+  .problem__block:hover {
+    background: var(--surface);
+  }
+
+  .problem__num {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    color: var(--accent);
+  }
+
+  .problem__text {
+    font-family: var(--font-editorial);
+    font-size: clamp(1.25rem, 2.5vw, 2rem);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: -0.01em;
+    color: var(--text);
+    line-height: 1.2;
+    max-width: 22ch;
+  }
+
+  /* ─── HOW IT WORKS ─────────────────────────────────────────── */
+  .how__steps {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border);
+    margin-bottom: clamp(2.5rem, 5vh, 4rem);
+  }
+
+  @media (max-width: 900px) {
+    .how__steps { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  @media (max-width: 480px) {
+    .how__steps { grid-template-columns: 1fr; }
+  }
+
+  .how__step {
+    background: var(--bg);
+    padding: clamp(1.75rem, 3.5vw, 2.5rem);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    transition: background 0.22s;
+  }
+
+  .how__step:hover {
+    background: var(--surface);
+  }
+
+  .how__step-icon {
+    color: var(--accent);
+    opacity: 0.9;
+  }
+
+  .how__step-num {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.2em;
+    color: var(--text-dim);
+  }
+
+  .how__step-title {
+    font-family: var(--font-editorial);
+    font-size: clamp(1rem, 1.6vw, 1.35rem);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: -0.01em;
+    color: var(--text);
+    line-height: 1.2;
+  }
+
+  .how__step-desc {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    line-height: 1.65;
+    color: var(--text-muted);
+    letter-spacing: 0.02em;
+  }
+
+  .how__flow {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: clamp(1.5rem, 3vw, 2.25rem);
+    border: 1px solid var(--border);
+    background: var(--accent-glow);
+  }
+
+  .how__flow-label {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  .how__flow-steps {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .how__flow-node {
+    font-family: var(--font-mono);
+    font-size: clamp(0.75rem, 1.2vw, 0.9rem);
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    padding: 0.35rem 0.75rem;
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+  }
+
+  .how__flow-node--accent {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: var(--accent-dim);
+  }
+
+  .how__flow-arrow {
+    font-family: var(--font-mono);
+    color: var(--text-dim);
+    font-size: 0.85rem;
+  }
+
+  /* ─── DASHBOARD ────────────────────────────────────────────── */
+  .dashboard__inner {
+    display: grid;
+    grid-template-columns: 1fr 1.4fr;
+    gap: clamp(2.5rem, 6vw, 6rem);
+    align-items: start;
+  }
+
+  @media (max-width: 900px) {
+    .dashboard__inner { grid-template-columns: 1fr; }
+  }
+
+  .img-placeholder {
+    position: relative;
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    overflow: hidden;
+    border-radius: 2px;
+    aspect-ratio: 9 / 16;
+  }
+
+  .img-placeholder__img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .img-placeholder__fallback {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+  }
+
+
+
+  .img-placeholder--doc {
+    aspect-ratio: 3 / 4;
+  }
+
+  .feature-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .feature-list__item {
+    display: flex;
+    gap: 1.25rem;
+    padding: clamp(1.25rem, 2.5vh, 1.75rem) 0;
+    border-bottom: 1px solid var(--border);
+    align-items: flex-start;
+  }
+
+  .feature-list__item:first-child {
+    border-top: 1px solid var(--border);
+  }
+
+  .feature-list__dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    flex-shrink: 0;
+    margin-top: 0.4rem;
+  }
+
+  .feature-list__title {
+    font-family: var(--font-editorial);
+    font-size: clamp(0.95rem, 1.4vw, 1.15rem);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: -0.01em;
+    color: var(--text);
+    margin-bottom: 0.4rem;
+  }
+
+  .feature-list__desc {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    line-height: 1.7;
+    color: var(--text-muted);
+    letter-spacing: 0.02em;
+  }
+
+  /* ─── TRACTION ─────────────────────────────────────────────── */
+  .traction__stats {
+    display: flex;
+    gap: clamp(2rem, 8vw, 8rem);
+    margin-bottom: clamp(2.5rem, 5vh, 4rem);
+    padding-bottom: clamp(2rem, 4vh, 3rem);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .traction__stat {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .traction__stat-num {
+    font-family: var(--font-editorial);
+    font-size: clamp(3rem, 9vw, 7rem);
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    color: var(--text);
+  }
+
+  .traction__stat-label {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  /* Gallery horizontal scroll */
+  .gallery-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-strong) transparent;
+    padding-bottom: 1rem;
+  }
+
+  .gallery-scroll::-webkit-scrollbar { height: 2px; }
+  .gallery-scroll::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 2px; }
+
+  .gallery-scroll__track {
+    display: flex;
+    gap: clamp(1rem, 2vw, 1.5rem);
+    width: max-content;
+  }
+
+  .gallery-slide {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    flex-shrink: 0;
+  }
+
+  .gallery-slide__img-wrap {
+    position: relative;
+    width: clamp(280px, 32vw, 400px);
+    height: 260px;
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    overflow: hidden;
+  }
+
+  .gallery-slide__img-wrap.no-image {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .gallery-slide__img-wrap.no-image::after {
+    content: '';
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--border-strong);
+    border-radius: 2px;
+    opacity: 0.3;
+  }
+
+  .gallery-slide__img-wrap img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s ease;
+  }
+
+  .gallery-slide__img-wrap:hover img {
+    transform: scale(1.03);
+  }
+
+  .gallery-slide__caption {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .gallery-hint {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    text-align: center;
+    margin-top: 1.25rem;
+  }
+
+  /* ─── MARKET ───────────────────────────────────────────────── */
+  .market__context {
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin-bottom: clamp(2rem, 4vh, 3rem);
+  }
+
+  .market__grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--border);
+  }
+
+  @media (max-width: 640px) {
+    .market__grid { grid-template-columns: 1fr; }
+  }
+
+  .market__block {
+    background: var(--bg);
+    padding: clamp(1.75rem, 3.5vw, 2.5rem);
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    transition: background 0.22s;
+  }
+
+  .market__block:hover { background: var(--surface); }
+
+  .market__acronym {
+    font-family: var(--font-editorial);
+    font-size: clamp(2rem, 5vw, 4rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  .market__desc {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  .market__value {
+    font-family: var(--font-mono);
+    font-size: clamp(1rem, 2vw, 1.5rem);
+    letter-spacing: 0.04em;
+    color: var(--text);
+    margin-top: 0.75rem;
+  }
+
+  .market__note {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    line-height: 1.7;
+    color: var(--text-muted);
+    letter-spacing: 0.02em;
+  }
+
+  /* ─── LICENSING ────────────────────────────────────────────── */
+  .licensing__grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: clamp(1.5rem, 3vw, 2.5rem);
+    max-width: 640px;
+  }
+
+  @media (max-width: 480px) {
+    .licensing__grid { grid-template-columns: 1fr; }
+  }
+
+  .licensing__doc {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .licensing__doc-label {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    text-align: center;
+  }
+
+  /* ─── ROLE ─────────────────────────────────────────────────── */
+  .role__inner {
+    max-width: 680px;
+  }
+
+  .role__list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .role__item {
+    display: grid;
+    grid-template-columns: 8rem 1fr;
+    gap: 1.5rem;
+    align-items: baseline;
+    padding: clamp(1rem, 2.5vh, 1.5rem) 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .role__item:first-child {
+    border-top: 1px solid var(--border);
+  }
+
+  .role__label {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  .role__value {
+    font-family: var(--font-editorial);
+    font-size: clamp(1rem, 1.5vw, 1.25rem);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: -0.01em;
+    color: var(--text);
+  }
+
+  /* ─── FOOTER ───────────────────────────────────────────────── */
+  .footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    padding: clamp(2rem, 5vh, 3.5rem) var(--pad-x);
+    border-top: 1px solid var(--border);
+  }
+
+  .footer__back,
+  .footer__contact {
+    font-family: var(--font-editorial);
+    font-size: clamp(0.95rem, 1.5vw, 1.15rem);
+    color: var(--text-muted);
+    transition: color 0.22s;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    letter-spacing: 0.02em;
+  }
+
+  .footer__back:hover,
+  .footer__contact:hover { color: var(--text); }
+
+  .footer__back:hover .footer__back-arrow {
+    transform: translateX(-4px);
+  }
+
+  .footer__back-arrow {
+    display: inline-block;
+    transition: transform 0.22s;
+  }
+
+  /* ─── SCROLL ANIMATIONS ────────────────────────────────────── */
+  .ams-animate {
+    opacity: 0;
+    transform: translateY(2rem);
+    transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  .ams-animate.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+</style>
+
+<script>
+  // Back to Works — set flag so homepage scrolls to #work
+  function setupBackButtons() {
+    const backs = document.querySelectorAll('#js-back, #js-back-footer')
+    backs.forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault()
+        sessionStorage.setItem('returnToWorks', '1')
+        window.location.href = '/'
+      })
+    })
+  }
+  setupBackButtons()
+
+  // Scroll-driven entrance animations
+  const animEls = document.querySelectorAll('.ams-animate')
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible')
+          observer.unobserve(entry.target)
+        }
+      })
+    },
+    { threshold: 0.08, rootMargin: '0px 0px -50px 0px' }
+  )
+  animEls.forEach((el) => observer.observe(el))
+</script>
