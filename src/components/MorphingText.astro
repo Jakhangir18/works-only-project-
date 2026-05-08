@@ -34,23 +34,27 @@ interface Props {
   const morphTime = 1.5
   const cooldownTime = 0.5
 
+  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
+  const MAX_BLUR = isSafari ? 8 : 20
+
   class MorphingTextAnimation {
     container: HTMLElement
     text1: HTMLSpanElement
     text2: HTMLSpanElement
     texts: string[]
-    
+
     textIndex: number = 0
     morph: number = 0
     cooldown: number = cooldownTime
     time: Date = new Date()
     animationId: number = 0
+    frameCount: number = 0
 
     constructor(container: HTMLElement) {
       this.container = container
       this.text1 = container.querySelector('[data-text1]')!
       this.text2 = container.querySelector('[data-text2]')!
-      
+
       const textsAttr = container.dataset.texts
       this.texts = textsAttr ? JSON.parse(textsAttr) : ['Hello', 'World']
 
@@ -58,12 +62,14 @@ interface Props {
     }
 
     setStyles(fraction: number) {
-      this.text2.style.filter = `blur(${Math.min(8 / fraction - 8, 100)}px)`
+      const blur2 = Math.min(8 / fraction - 8, MAX_BLUR)
+      const blur1 = Math.min(8 / (1 - fraction) - 8, MAX_BLUR)
+
+      this.text2.style.filter = blur2 > 0.1 ? `blur(${blur2}px)` : 'none'
       this.text2.style.opacity = `${Math.pow(fraction, 0.4) * 100}%`
 
-      const invertedFraction = 1 - fraction
-      this.text1.style.filter = `blur(${Math.min(8 / invertedFraction - 8, 100)}px)`
-      this.text1.style.opacity = `${Math.pow(invertedFraction, 0.4) * 100}%`
+      this.text1.style.filter = blur1 > 0.1 ? `blur(${blur1}px)` : 'none'
+      this.text1.style.opacity = `${Math.pow(1 - fraction, 0.4) * 100}%`
 
       this.text1.textContent = this.texts[this.textIndex % this.texts.length]
       this.text2.textContent = this.texts[(this.textIndex + 1) % this.texts.length]
@@ -89,7 +95,7 @@ interface Props {
 
     doCooldown() {
       this.morph = 0
-      
+
       this.text2.style.filter = 'none'
       this.text2.style.opacity = '100%'
       this.text1.style.filter = 'none'
@@ -98,6 +104,10 @@ interface Props {
 
     animate = () => {
       this.animationId = requestAnimationFrame(this.animate)
+      this.frameCount++
+
+      // Throttle to ~30fps on Safari to reduce GPU pressure from blur filters
+      if (isSafari && this.frameCount % 2 !== 0) return
 
       const newTime = new Date()
       const dt = (newTime.getTime() - this.time.getTime()) / 1000
@@ -140,7 +150,7 @@ interface Props {
 
   .morphing-text {
     position: relative;
-    
+
     width: 100%;
     max-width: 1200px;
     height: 4rem;
@@ -152,7 +162,14 @@ interface Props {
     line-height: 1;
     text-align: center;
 
+    -webkit-filter: url(#threshold) blur(0.6px);
     filter: url(#threshold) blur(0.6px);
+
+    // Safari: SVG filter via url() combined with blur causes severe GPU lag
+    :global(.is-safari) & {
+      -webkit-filter: none;
+      filter: none;
+    }
 
     @media (min-width: 768px) {
       height: 6rem;
