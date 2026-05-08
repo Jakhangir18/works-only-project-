@@ -4,8 +4,18 @@
 
 const projects = [
   {
-    id: 'gochain',
+    id: 'ams-device',
     number: '01',
+    title: 'AMS Tablet',
+    description: 'Automated pre-shift workforce monitoring system.',
+    slug: '/projects/ams',
+    accent: '#1a1a2a',
+    accentText: '#3b82f6',
+    coverImage: '/projects/ams/images/cover.jpg',
+  },
+  {
+    id: 'gochain',
+    number: '02',
     title: 'GoChain',
     description: 'Environmental Web3 impact platform.',
     slug: '/work/gochain',
@@ -14,21 +24,12 @@ const projects = [
   },
   {
     id: 'private-clinic',
-    number: '02',
+    number: '03',
     title: 'Private Clinic Setup',
     description: 'End-to-end healthcare infrastructure project in Kazakhstan.',
     slug: '/work/private-clinic',
     accent: '#1e1e2e',
     accentText: '#a78bfa',
-  },
-  {
-    id: 'ams-device',
-    number: '03',
-    title: 'AMS Device Platform',
-    description: 'Tablet-based system and software integration.',
-    slug: '/work/ams-device',
-    accent: '#1a1a2a',
-    accentText: '#60a5fa',
   },
   {
     id: 'engineering-rocket',
@@ -66,7 +67,7 @@ const projects = [
             style={`background: ${project.accent};`}
           >
             <img
-              src={`/works/${project.id}-preview.jpg`}
+              src={project.coverImage || `/works/${project.id}-preview.jpg`}
               alt={project.title}
               class="project-card__img"
               onerror="this.style.display='none'"
