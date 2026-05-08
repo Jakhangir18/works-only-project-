@@ -1,5 +1,5 @@
 ---
-const { caption, cssClass, index, site, src, total } = Astro.props
+const { caption, cssClass, index, site, src, total, coverImage } = Astro.props
 
 // A random string with the syntax '[a-z][0-9]{3}-index-total'
 const key = Math.random().toString(36).slice(2, 6) + '-' + index + '/' + total
@@ -7,11 +7,19 @@ const key = Math.random().toString(36).slice(2, 6) + '-' + index + '/' + total
 // Internal links (project pages) open in same tab; external open in new tab
 const isInternal = site.startsWith('/')
 
+// Cover images per project — change these paths to swap the card preview image
+// Images are loaded from public/ folder. Set to '' or remove to use the default styled card.
+const coverImageMap: Record<string, string> = {
+  '/projects/ams': '/projects/ams/images/cover.jpg',
+}
+const cardCover = coverImage || coverImageMap[site] || ''
+
 // Accent colors per project
 const colorMap: Record<string, { bg: string; accent: string }> = {
   '/work/gochain':            { bg: '#071a0f', accent: '#4ade80' },
   '/work/private-clinic':    { bg: '#0e0a18', accent: '#a78bfa' },
   '/work/ams-device':        { bg: '#080f1a', accent: '#60a5fa' },
+  '/projects/ams':             { bg: '#080f1a', accent: '#3b82f6' },
   '/work/engineering-rocket':{ bg: '#180a06', accent: '#fb923c' },
   '/work/portfolio-rocket':  { bg: '#0d0d0d', accent: '#f5f5f5' },
 }
@@ -35,6 +43,14 @@ const palette = colorMap[site] ?? { bg: '#111', accent: '#fff' }
     <a href={site} target={isInternal ? '_self' : '_blank'} rel={isInternal ? undefined : 'noopener noreferrer'}>
       <!-- Styled project card -->
       <div class="a__card" style={`background:${palette.bg};`}>
+        {cardCover && (
+          <img
+            src={cardCover}
+            alt={caption}
+            class="a__card__cover"
+            onerror="this.style.display='none'"
+          />
+        )}
         <div class="a__card__index" style={`color:${palette.accent};`}>{index}</div>
         <div class="a__card__title" style={`color:#fff;`}>{caption}</div>
         <div class="a__card__cta" style={`color:${palette.accent};`}>View project →</div>
@@ -182,6 +198,23 @@ const palette = colorMap[site] ?? { bg: '#111', accent: '#fff' }
         min-width: 200px;
         min-height: 130px;
       }
+    }
+
+    /* Cover image that fills the card */
+    .a__card__cover {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 0;
+      opacity: 0.85;
+      transition: opacity 0.3s ease, transform 0.5s ease;
+    }
+
+    .a__card:hover .a__card__cover {
+      opacity: 1;
+      transform: scale(1.03);
     }
 
     /* Subtle dot-grid background texture */
