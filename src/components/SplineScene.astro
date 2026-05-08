@@ -8,23 +8,70 @@ interface Props {
 const { embedUrl, className = '' } = Astro.props
 ---
 
-<div class={`spline-scene ${className}`}>
+<div class={`spline-scene ${className}`} data-spline-scene>
+  <div class="spline-scene__placeholder" data-spline-placeholder>
+    <div class="spline-scene__spinner"></div>
+  </div>
   <iframe
-    src={embedUrl}
+    data-src={embedUrl}
     frameborder="0"
     width="100%"
     height="100%"
     allowfullscreen
-    loading="lazy"
+    allow="autoplay"
     title="Spline 3D Scene"
   ></iframe>
 </div>
+
+<script>
+  const containers = document.querySelectorAll<HTMLElement>('[data-spline-scene]')
+
+  containers.forEach((container) => {
+    const iframe = container.querySelector('iframe') as HTMLIFrameElement
+    const placeholder = container.querySelector('[data-spline-placeholder]') as HTMLElement
+    if (!iframe || !iframe.dataset.src) return
+
+    const loadIframe = () => {
+      iframe.src = iframe.dataset.src!
+
+      iframe.addEventListener(
+        'load',
+        () => {
+          if (placeholder) {
+            placeholder.style.opacity = '0'
+            setTimeout(() => placeholder.remove(), 400)
+          }
+        },
+        { once: true }
+      )
+    }
+
+    // Use IntersectionObserver instead of loading="lazy" for reliable cross-browser support
+    if ('IntersectionObserver' in window) {
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              loadIframe()
+              observer.disconnect()
+            }
+          })
+        },
+        { rootMargin: '400px' }
+      )
+      observer.observe(container)
+    } else {
+      loadIframe()
+    }
+  })
+</script>
 
 <style>
   .spline-scene {
     width: 100%;
     height: 100%;
     position: relative;
+    background: #000;
   }
 
   .spline-scene iframe {
@@ -32,5 +79,30 @@ const { embedUrl, className = '' } = Astro.props
     height: 100%;
     border: none;
     display: block;
+  }
+
+  .spline-scene__placeholder {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #000;
+    transition: opacity 0.4s ease;
+    pointer-events: none;
+  }
+
+  .spline-scene__spinner {
+    width: 32px;
+    height: 32px;
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    border-top-color: rgba(255, 255, 255, 0.6);
+    border-radius: 50%;
+    animation: spline-spin 0.8s linear infinite;
+  }
+
+  @keyframes spline-spin {
+    to { transform: rotate(360deg); }
   }
 </style>
