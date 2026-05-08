@@ -362,6 +362,9 @@ import '../styles/global.scss'
         window.safeWidth = newWidth
         window.safeHeight = newHeight
 
+        // Stable viewport height variable — iOS Safari changes innerHeight as toolbar shows/hides
+        document.documentElement.style.setProperty('--real-vh', `${newHeight * 0.01}px`)
+
         window.maxScrollTop = document.body.scrollHeight - window.safeHeight
 
         this.setScrollProgress()
