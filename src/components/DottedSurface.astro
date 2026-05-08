@@ -7,6 +7,8 @@ const { className = '' } = Astro.props
 <script>
   import * as THREE from 'three'
 
+  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
+
   class DottedSurfaceAnimation {
     container: HTMLElement
     scene!: THREE.Scene
@@ -17,7 +19,8 @@ const { className = '' } = Astro.props
     material!: THREE.PointsMaterial
     animationId: number
     count: number
-    
+    frameCount: number
+
     readonly SEPARATION = 150
     readonly AMOUNTX = 40
     readonly AMOUNTY = 60
@@ -26,6 +29,7 @@ const { className = '' } = Astro.props
       this.container = container
       this.count = 0
       this.animationId = 0
+      this.frameCount = 0
 
       this.initScene()
       this.createParticles()
@@ -34,10 +38,7 @@ const { className = '' } = Astro.props
     }
 
     initScene() {
-      console.log('DottedSurface: Creating scene...')
       this.scene = new THREE.Scene()
-      // Fog disabled for better wave visibility
-      // this.scene.fog = new THREE.Fog(0x160000, 2000, 10000)
 
       this.camera = new THREE.PerspectiveCamera(
         60,
@@ -49,14 +50,15 @@ const { className = '' } = Astro.props
 
       this.renderer = new THREE.WebGLRenderer({
         alpha: true,
-        antialias: true,
+        antialias: !isSafari, // Antialias triggers extra GPU passes in Safari
+        powerPreference: isSafari ? 'default' : 'high-performance',
       })
-      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+      // Cap pixel ratio at 1 on Safari to halve GPU fill-rate
+      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, isSafari ? 1 : 2))
       this.renderer.setSize(window.innerWidth, window.innerHeight)
       this.renderer.setClearColor(0x000000, 0)
 
       this.container.appendChild(this.renderer.domElement)
-      console.log('DottedSurface: Canvas appended to container')
     }
 
     createParticles() {
@@ -95,11 +97,14 @@ const { className = '' } = Astro.props
 
       this.points = new THREE.Points(this.geometry, this.material)
       this.scene.add(this.points)
-      console.log(`DottedSurface: ${this.AMOUNTX * this.AMOUNTY} particles created`)
     }
 
     animate = () => {
       this.animationId = requestAnimationFrame(this.animate)
+      this.frameCount++
+
+      // Throttle to ~30fps on Safari to reduce GPU pressure
+      if (isSafari && this.frameCount % 2 !== 0) return
 
       const positionAttribute = this.geometry.attributes.position
       const positions = positionAttribute.array as Float32Array
@@ -158,11 +163,9 @@ const { className = '' } = Astro.props
   const mount = () => {
     const container = document.querySelector('[data-dotted-surface]') as HTMLElement
     if (!container) {
-      console.warn('DottedSurface container not found')
       return
     }
 
-    console.log('DottedSurface initializing...')
     const animation = new DottedSurfaceAnimation(container)
 
     return () => {
