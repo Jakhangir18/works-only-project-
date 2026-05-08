@@ -13,16 +13,16 @@ const info = {
     site: 'https://codepen.io/your-username',
   },
   Dummy1: {
+    title: 'AMS Tablet',
+    site: '/projects/ams',
+  },
+  Dummy2: {
     title: 'GoChain',
     site: '/work/gochain',
   },
-  Dummy2: {
+  Dummy3: {
     title: 'Private Clinic Setup',
     site: '/work/private-clinic',
-  },
-  Dummy3: {
-    title: 'AMS Device Platform',
-    site: '/work/ams-device',
   },
   Dummy4: {
     title: 'Engineering Rocket',
@@ -33,16 +33,16 @@ const info = {
     site: '/work/portfolio-rocket',
   },
   Dummy6: {
+    title: 'AMS Tablet',
+    site: '/projects/ams',
+  },
+  Dummy7: {
     title: 'GoChain',
     site: '/work/gochain',
   },
-  Dummy7: {
+  Dummy8: {
     title: 'Private Clinic Setup',
     site: '/work/private-clinic',
-  },
-  Dummy8: {
-    title: 'AMS Device Platform',
-    site: '/work/ams-device',
   },
   Dummy9: {
     title: 'Engineering Rocket',
@@ -161,9 +161,14 @@ while (i < projects.length) {
     <div class="s__mask-outer">
       <div class="s__mask js-mask">
         <svg class="s__mask__svg js-mask-svg">
+          <defs>
+            <clipPath id="s-lines-clip">
+              <path class="js-lines-clip-shape" clip-rule="evenodd" d=""></path>
+            </clipPath>
+          </defs>
           <path class="s__mask__path-inner js-mask-path-inner" d=""></path>
           <path class="s__mask__path-outer js-mask-path-outer" d=""></path>
-          <path class="s__mask__path-lines js-mask-path-lines" d=""></path>
+          <path class="s__mask__path-lines js-mask-path-lines" d="" clip-path="url(#s-lines-clip)"></path>
         </svg>
       </div><!-- .s__mask -->
     </div><!-- .s__mask-outer -->
@@ -180,6 +185,8 @@ while (i < projects.length) {
   import { SlowMo } from 'gsap/EasePack'
   import { ScrollTrigger } from 'gsap/ScrollTrigger'
   gsap.registerPlugin(ScrollTrigger, SlowMo)
+
+  const isSafariBrowser = /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
 
   class Section {
     el: HTMLElement
@@ -287,7 +294,6 @@ while (i < projects.length) {
 
       // Init
       const doInit = () => {
-        console.log('SWork initializing, measuring letters...');
         if (document.readyState === 'complete') {
           Ticker.nextTick(this.init, this)
         } else {
@@ -296,7 +302,15 @@ while (i < projects.length) {
       }
 
       if (document.fonts && document.fonts.ready) {
-        document.fonts.ready.then(doInit).catch(doInit)
+        document.fonts.ready.then(() => {
+          // Safari resolves fonts.ready before the browser re-lays out with custom fonts.
+          // Adding a frame + delay ensures getBoundingClientRect() measures the real font.
+          if (isSafariBrowser) {
+            requestAnimationFrame(() => setTimeout(doInit, 150))
+          } else {
+            doInit()
+          }
+        }).catch(doInit)
       } else {
         setTimeout(doInit, 500)
       }
@@ -318,6 +332,12 @@ while (i < projects.length) {
 
       ScrollTrigger.refresh()
       this.tick()
+
+      // Safari: layout can shift after first ScrollTrigger.refresh() due to font/viewport settling.
+      // A second refresh after a short delay ensures scroll positions are calculated correctly.
+      if (isSafariBrowser) {
+        setTimeout(() => ScrollTrigger.refresh(), 400)
+      }
 
       document.documentElement.classList.add('is-works-ready')
       Emitter.emit('worksReady')
@@ -525,7 +545,11 @@ while (i < projects.length) {
       })
 
       mask.pathLines.setAttribute('d', dLines)
-      mask.pathLines.style.clipPath = `path(evenodd, '${linesClip}')`
+      // Use SVG <clipPath> element instead of CSS clip-path:path() — Safari doesn't support clip-path:path() in CSS
+      const linesClipShape = this.el.querySelector('.js-lines-clip-shape')
+      if (linesClipShape) {
+        linesClipShape.setAttribute('d', linesClip)
+      }
     }
 
     /**
@@ -1012,6 +1036,8 @@ while (i < projects.length) {
       width: 100%;
       height: 100lvh;
 
+      margin-top: -100lvh;
+
       overflow: hidden;
       pointer-events: none;
     }
@@ -1065,21 +1091,19 @@ while (i < projects.length) {
       position: relative;
 
       height: var(--height);
-
-      clip-path: inset(0 -1rem);
     }
 
     .s__inner {
       @include flex(column, center, center);
 
-      position: fixed;
+      position: sticky;
       top: 0;
       left: 0;
 
       width: 100%;
-      height: 100%;
+      height: 100vh;
 
-      background: color(secondary);
+      background: #000000;
       transform: translate3d(0, calc(var(--scroll-progress) * -15%), 0);
 
       color: color(primary);
