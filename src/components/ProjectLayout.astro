@@ -3,21 +3,31 @@
 // Shared layout for all project detail pages
 
 interface Props {
-  title: string
-  number: string
-  intro: string
-  accentColor: string
-  heroColor: string
-  problem: string
-  approach: string
-  solution: string
-  outcome: string
+  title: string;
+  number: string;
+  intro: string;
+  accentColor: string;
+  heroColor: string;
+  problem: string;
+  approach: string;
+  solution: string;
+  outcome: string;
 }
 
-const { title, number, intro, accentColor, heroColor, problem, approach, solution, outcome } = Astro.props
+const {
+  title,
+  number,
+  intro,
+  accentColor,
+  heroColor,
+  problem,
+  approach,
+  solution,
+  outcome,
+} = Astro.props;
 ---
 
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -26,13 +36,12 @@ const { title, number, intro, accentColor, heroColor, problem, approach, solutio
     <meta name="description" content={intro} />
     <meta name="robots" content="noindex, nofollow" />
     <style is:global>
-      @import url('/fonts/editorial-new.css');
-      @import url('/fonts/fraktion-mono.css');
+      @import url("/fonts/editorial-new.css");
+      @import url("/fonts/fraktion-mono.css");
     </style>
   </head>
 
   <body>
-
     <!-- Navigation -->
     <nav class="proj-nav">
       <span class="proj-nav__num">{number}</span>
@@ -69,10 +78,11 @@ const { title, number, intro, accentColor, heroColor, problem, approach, solutio
 
     <!-- Storytelling sections -->
     <main class="proj-content">
-
       <article class="proj-story-section proj-animate">
         <div class="proj-story-section__label">
-          <span class="proj-story-section__tag" style={`color: ${accentColor};`}>01</span>
+          <span class="proj-story-section__tag" style={`color: ${accentColor};`}
+            >01</span
+          >
           <span class="proj-story-section__heading">Problem</span>
         </div>
         <div class="proj-story-section__body">
@@ -84,7 +94,9 @@ const { title, number, intro, accentColor, heroColor, problem, approach, solutio
 
       <article class="proj-story-section proj-animate">
         <div class="proj-story-section__label">
-          <span class="proj-story-section__tag" style={`color: ${accentColor};`}>02</span>
+          <span class="proj-story-section__tag" style={`color: ${accentColor};`}
+            >02</span
+          >
           <span class="proj-story-section__heading">Approach</span>
         </div>
         <div class="proj-story-section__body">
@@ -96,7 +108,9 @@ const { title, number, intro, accentColor, heroColor, problem, approach, solutio
 
       <article class="proj-story-section proj-animate">
         <div class="proj-story-section__label">
-          <span class="proj-story-section__tag" style={`color: ${accentColor};`}>03</span>
+          <span class="proj-story-section__tag" style={`color: ${accentColor};`}
+            >03</span
+          >
           <span class="proj-story-section__heading">Solution</span>
         </div>
         <div class="proj-story-section__body">
@@ -108,14 +122,15 @@ const { title, number, intro, accentColor, heroColor, problem, approach, solutio
 
       <article class="proj-story-section proj-animate">
         <div class="proj-story-section__label">
-          <span class="proj-story-section__tag" style={`color: ${accentColor};`}>04</span>
+          <span class="proj-story-section__tag" style={`color: ${accentColor};`}
+            >04</span
+          >
           <span class="proj-story-section__heading">Outcome</span>
         </div>
         <div class="proj-story-section__body">
           <p>{outcome}</p>
         </div>
       </article>
-
     </main>
 
     <!-- Footer -->
@@ -127,15 +142,21 @@ const { title, number, intro, accentColor, heroColor, problem, approach, solutio
         Let's work together →
       </a>
     </footer>
-
   </body>
 </html>
 
 <style>
   /* Reset & Base */
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
 
-  html, body {
+  html,
+  body {
     background: #0a0a0a;
     color: #fff;
     -webkit-font-smoothing: antialiased;
@@ -144,8 +165,8 @@ const { title, number, intro, accentColor, heroColor, problem, approach, solutio
 
   /* Variables from CSS files */
   :root {
-    --font-family-editorial: 'EditorialNew', 'Georgia', serif;
-    --font-family-fraktion: 'FraktionMono', 'Courier New', monospace;
+    --font-family-editorial: "EditorialNew", "Georgia", serif;
+    --font-family-fraktion: "FraktionMono", "Courier New", monospace;
   }
 
   /* Nav */
@@ -161,7 +182,7 @@ const { title, number, intro, accentColor, heroColor, problem, approach, solutio
     padding: 1.5rem clamp(1.5rem, 5vw, 5rem);
     background: rgba(10, 10, 10, 0.85);
     backdrop-filter: blur(12px);
-    border-bottom: 1px solid rgba(255,255,255,0.06);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   }
 
   .proj-nav__back {
@@ -169,7 +190,7 @@ const { title, number, intro, accentColor, heroColor, problem, approach, solutio
     align-items: center;
     gap: 0.75rem;
     text-decoration: none;
-    color: rgba(255,255,255,0.6);
+    color: rgba(255, 255, 255, 0.6);
     font-family: var(--font-family-fraktion), monospace;
     font-size: 0.8rem;
     letter-spacing: 0.15em;
@@ -177,7 +198,9 @@ const { title, number, intro, accentColor, heroColor, problem, approach, solutio
     transition: color 0.25s;
   }
 
-  .proj-nav__back:hover { color: #fff; }
+  .proj-nav__back:hover {
+    color: #fff;
+  }
 
   .proj-nav__back-arrow {
     font-size: 1rem;
@@ -192,7 +215,7 @@ const { title, number, intro, accentColor, heroColor, problem, approach, solutio
     font-family: var(--font-family-fraktion), monospace;
     font-size: 0.75rem;
     letter-spacing: 0.2em;
-    color: rgba(255,255,255,0.25);
+    color: rgba(255, 255, 255, 0.25);
     text-transform: uppercase;
   }
 
@@ -236,7 +259,7 @@ const { title, number, intro, accentColor, heroColor, problem, approach, solutio
     font-family: var(--font-family-editorial), serif;
     font-size: clamp(8rem, 25vw, 22rem);
     font-weight: 700;
-    color: rgba(255,255,255,0.07);
+    color: rgba(255, 255, 255, 0.07);
     line-height: 1;
     user-select: none;
     position: relative;
@@ -255,7 +278,7 @@ const { title, number, intro, accentColor, heroColor, problem, approach, solutio
     font-size: clamp(0.7rem, 1vw, 0.85rem);
     letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: rgba(255,255,255,0.35);
+    color: rgba(255, 255, 255, 0.35);
     margin-bottom: 1rem;
   }
 
@@ -279,14 +302,14 @@ const { title, number, intro, accentColor, heroColor, problem, approach, solutio
     font-family: var(--font-family-editorial), serif;
     font-size: clamp(1.25rem, 2.5vw, 2rem);
     line-height: 1.55;
-    color: rgba(255,255,255,0.8);
+    color: rgba(255, 255, 255, 0.8);
     max-width: 62ch;
   }
 
   /* Divider */
   .proj-divider {
     height: 1px;
-    background: rgba(255,255,255,0.07);
+    background: rgba(255, 255, 255, 0.07);
     margin: 0 clamp(1.5rem, 6vw, 6rem);
   }
 
@@ -339,7 +362,7 @@ const { title, number, intro, accentColor, heroColor, problem, approach, solutio
     font-family: var(--font-family-fraktion), monospace;
     font-size: clamp(0.9rem, 1.3vw, 1.1rem);
     line-height: 1.8;
-    color: rgba(255,255,255,0.6);
+    color: rgba(255, 255, 255, 0.6);
     max-width: 65ch;
   }
 
@@ -353,7 +376,7 @@ const { title, number, intro, accentColor, heroColor, problem, approach, solutio
     align-items: center;
     justify-content: space-between;
     padding: clamp(2rem, 5vh, 4rem) clamp(1.5rem, 6vw, 6rem);
-    border-top: 1px solid rgba(255,255,255,0.07);
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
     flex-wrap: wrap;
     gap: 1.5rem;
   }
@@ -362,20 +385,24 @@ const { title, number, intro, accentColor, heroColor, problem, approach, solutio
   .proj-footer__contact {
     font-family: var(--font-family-editorial), serif;
     font-size: clamp(1rem, 1.5vw, 1.25rem);
-    color: rgba(255,255,255,0.5);
+    color: rgba(255, 255, 255, 0.5);
     text-decoration: none;
     transition: color 0.25s;
     letter-spacing: 0.02em;
   }
 
   .proj-footer__back:hover,
-  .proj-footer__contact:hover { color: #fff; }
+  .proj-footer__contact:hover {
+    color: #fff;
+  }
 
   /* Scroll animations */
   .proj-animate {
     opacity: 0;
     transform: translateY(2.5rem);
-    transition: opacity 0.75s ease, transform 0.75s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    transition:
+      opacity 0.75s ease,
+      transform 0.75s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   }
 
   .proj-animate.is-visible {
@@ -390,37 +417,43 @@ const { title, number, intro, accentColor, heroColor, problem, approach, solutio
 </style>
 
 <script>
-  // Back to Works — set flag so homepage skips loader and scrolls to #work
-  const backBtn = document.getElementById('js-back-to-works')
+  // Back to Works: flag the homepage so it can skip the loader and restore scroll.
+  const backBtn = document.getElementById("js-back-to-works");
   if (backBtn) {
-    backBtn.addEventListener('click', (e) => {
-      e.preventDefault()
-      sessionStorage.setItem('returnToWorks', '1')
-      window.location.href = '/'
-    })
+    backBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      sessionStorage.setItem("returnToWorks", "1");
+      window.location.href = "/";
+    });
   }
 
-  // Scroll-driven entrance animations
-  const animEls = document.querySelectorAll('.proj-animate')
+  // Reveal each story section once it enters the viewport.
+  const animEls = document.querySelectorAll(".proj-animate");
   const obs = new IntersectionObserver(
     (entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
-          entry.target.classList.add('is-visible')
-          obs.unobserve(entry.target)
+          entry.target.classList.add("is-visible");
+          obs.unobserve(entry.target);
         }
-      })
+      });
     },
-    { threshold: 0.1, rootMargin: '0px 0px -60px 0px' }
-  )
-  animEls.forEach((el) => obs.observe(el))
+    { threshold: 0.1, rootMargin: "0px 0px -60px 0px" },
+  );
+  animEls.forEach((el) => obs.observe(el));
 
-  // Subtle parallax on hero image
-  const heroPlaceholder = document.querySelector('.proj-hero__placeholder') as HTMLElement
+  // Parallax the hero image slightly to add depth without changing layout.
+  const heroPlaceholder = document.querySelector(
+    ".proj-hero__placeholder",
+  ) as HTMLElement;
   if (heroPlaceholder) {
-    window.addEventListener('scroll', () => {
-      const scrollY = window.scrollY
-      heroPlaceholder.style.transform = `translateY(${scrollY * 0.25}px)`
-    }, { passive: true })
+    window.addEventListener(
+      "scroll",
+      () => {
+        const scrollY = window.scrollY;
+        heroPlaceholder.style.transform = `translateY(${scrollY * 0.25}px)`;
+      },
+      { passive: true },
+    );
   }
 </script>
