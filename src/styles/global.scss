@@ -3,19 +3,19 @@
  */
 
 /* CSS variables */
-@use 'variables-css/colors';
-@use 'variables-css/fonts';
+@use "variables-css/colors";
+@use "variables-css/fonts";
 
 /* Global classes */
-@use 'site/base';
-@use 'site/text';
+@use "site/base";
+@use "site/text";
 
 /* Utility classes */
-@use 'utilities/visibility';
+@use "utilities/visibility";
 
 /* Import */
-@import '../../node_modules/modern-normalize/modern-normalize.css';
+@import "../../node_modules/modern-normalize/modern-normalize.css";
 
-@import '/fonts/bigger-display.css';
-@import '/fonts/editorial-new.css';
-@import '/fonts/fraktion-mono.css';
+@import "/fonts/bigger-display.css";
+@import "/fonts/editorial-new.css";
+@import "/fonts/fraktion-mono.css";
