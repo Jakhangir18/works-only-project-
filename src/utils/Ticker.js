@@ -1,50 +1,50 @@
-import Emitter from './Emitter'
+import Emitter from "./Emitter";
 
-import { gsap } from 'gsap/gsap-core'
+import { gsap } from "gsap/gsap-core";
 
 class Ticker {
   /**
-   * Constructor
+  * Constructor: collect one-shot callbacks and keep the last delta.
    */
-  constructor () {
-    this.callbacks = []
+  constructor() {
+    this.callbacks = [];
 
-    this.delta = 0
+    this.delta = 0;
   }
 
   /**
-   * Init
+  * Init the shared GSAP ticker.
    */
-  init () {
-    gsap.ticker.add(this.tick.bind(this))
+  init() {
+    gsap.ticker.add(this.tick.bind(this));
   }
 
   /**
-   * Tick
+  * Tick the queued callbacks and emit the shared tick event.
    */
   tick(time, delta) {
-    const self = this
+    const self = this;
 
-    this.delta = delta
+    this.delta = delta;
 
     this.callbacks.forEach((object, index) => {
-      object.callback.apply(object.context)
+      object.callback.apply(object.context);
 
-      delete self.callbacks[index]
-    })
+      delete self.callbacks[index];
+    });
 
-    Emitter.emit('tick', time * 1000)
+    Emitter.emit("tick", time * 1000);
   }
 
   /**
-   * Next tick
+  * Schedule a callback for the next animation frame.
    */
-  nextTick (callback, context) {
+  nextTick(callback, context) {
     this.callbacks.push({
       callback,
-      context
-    })
+      context,
+    });
   }
 }
 
-export default new Ticker()
+export default new Ticker();
