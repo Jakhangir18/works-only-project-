@@ -22,13 +22,15 @@ html {
 
   background-color: color(secondary);
   scrollbar-width: none;
+  overflow-x: hidden;
 
   color: color(secondary);
 
-  &.is-scroll-blocked {
+  &.is-scroll-blocked,
+  &.is-nav-open {
     &,
     body {
-      height: 100lvh;
+      height: 100vh;
       overflow: hidden;
     }
   }
@@ -37,7 +39,6 @@ html {
 body {
   background-color: #000000;
   overflow-x: hidden;
-  overflow-y: visible;
 
   font-family: inherit;
 }
@@ -120,21 +121,23 @@ body {
 }
 
 @keyframes letterFloat {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0);
   }
-  
+
   50% {
     transform: translateY(-10px);
   }
 }
 
 @keyframes dotPulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0.3;
     transform: scale(1);
   }
-  
+
   50% {
     opacity: 1;
     transform: scale(1.2);
@@ -142,10 +145,11 @@ body {
 }
 
 @keyframes textFade {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0.3;
   }
-  
+
   50% {
     opacity: 0.7;
   }
