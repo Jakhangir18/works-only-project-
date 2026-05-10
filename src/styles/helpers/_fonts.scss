@@ -16,6 +16,7 @@
 @mixin t($key: base) {
   margin: 0;
 
-  font: var(--font-weight-#{$key}) var(--font-size-#{$key}) / var(--font-height-#{$key}) var(--font-family-#{$key});
+  font: var(--font-weight-#{$key}) var(--font-size-#{$key}) /
+    var(--font-height-#{$key}) var(--font-family-#{$key});
   letter-spacing: var(--font-spacing-#{$key});
 }
