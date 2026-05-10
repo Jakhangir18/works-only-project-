@@ -4,52 +4,52 @@
 
 const projects = [
   {
-    id: 'ams-device',
-    number: '01',
-    title: 'AMS Tablet',
-    description: 'Automated pre-shift workforce monitoring system.',
-    slug: '/projects/ams',
-    accent: '#1a1a2a',
-    accentText: '#3b82f6',
-    coverImage: '/projects/ams/images/cover.jpg',
+    id: "ams-device",
+    number: "01",
+    title: "AMS Tablet",
+    description: "Automated pre-shift workforce monitoring system.",
+    slug: "/projects/ams",
+    accent: "#1a1a2a",
+    accentText: "#3b82f6",
+    coverImage: "/projects/ams/images/cover.jpg",
   },
   {
-    id: 'gochain',
-    number: '02',
-    title: 'GoChain',
-    description: 'Environmental Web3 impact platform.',
-    slug: '/work/gochain',
-    accent: '#1a3a2a',
-    accentText: '#4ade80',
+    id: "gochain",
+    number: "02",
+    title: "GoChain",
+    description: "Environmental Web3 impact platform.",
+    slug: "/work/gochain",
+    accent: "#1a3a2a",
+    accentText: "#4ade80",
   },
   {
-    id: 'private-clinic',
-    number: '03',
-    title: 'Private Clinic Setup',
-    description: 'End-to-end healthcare infrastructure project in Kazakhstan.',
-    slug: '/work/private-clinic',
-    accent: '#1e1e2e',
-    accentText: '#a78bfa',
+    id: "private-clinic",
+    number: "03",
+    title: "Private Clinic Setup",
+    description: "End-to-end healthcare infrastructure project in Kazakhstan.",
+    slug: "/work/private-clinic",
+    accent: "#1e1e2e",
+    accentText: "#a78bfa",
   },
   {
-    id: 'engineering-rocket',
-    number: '04',
-    title: 'Engineering Rocket Project',
-    description: 'Applied aerospace and systems research.',
-    slug: '/work/engineering-rocket',
-    accent: '#2a1a1a',
-    accentText: '#fb923c',
+    id: "engineering-rocket",
+    number: "04",
+    title: "Engineering Rocket Project",
+    description: "Applied aerospace and systems research.",
+    slug: "/work/engineering-rocket",
+    accent: "#2a1a1a",
+    accentText: "#fb923c",
   },
   {
-    id: 'portfolio-rocket',
-    number: '05',
-    title: 'Portfolio Rocket Experience',
-    description: 'Cinematic scroll-driven portfolio system.',
-    slug: '/work/portfolio-rocket',
-    accent: '#1a1a1a',
-    accentText: '#f9fafb',
+    id: "portfolio-rocket",
+    number: "05",
+    title: "Portfolio Rocket Experience",
+    description: "Cinematic scroll-driven portfolio system.",
+    slug: "/work/portfolio-rocket",
+    accent: "#1a1a1a",
+    accentText: "#f9fafb",
   },
-]
+];
 ---
 
 <section id="works" class="works-section">
@@ -59,41 +59,46 @@ const projects = [
   </div>
 
   <div class="works-section__list">
-    {projects.map((project, i) => (
-      <a href={project.slug} class="project-card" data-index={i}>
-        <div class="project-card__image-wrap">
-          <div
-            class="project-card__placeholder"
-            style={`background: ${project.accent};`}
-          >
-            <img
-              src={project.coverImage || `/works/${project.id}-preview.jpg`}
-              alt={project.title}
-              class="project-card__img"
-              onerror="this.style.display='none'"
-            />
-            <span class="project-card__placeholder-label" style={`color: ${project.accentText};`}>
-              {project.number}
-            </span>
+    {
+      projects.map((project, i) => (
+        <a href={project.slug} class="project-card" data-index={i}>
+          <div class="project-card__image-wrap">
+            <div
+              class="project-card__placeholder"
+              style={`background: ${project.accent};`}
+            >
+              <img
+                src={project.coverImage || `/works/${project.id}-preview.jpg`}
+                alt={project.title}
+                class="project-card__img"
+                onerror="this.style.display='none'"
+              />
+              <span
+                class="project-card__placeholder-label"
+                style={`color: ${project.accentText};`}
+              >
+                {project.number}
+              </span>
+            </div>
+            <div class="project-card__overlay" />
           </div>
-          <div class="project-card__overlay"></div>
-        </div>
 
-        <div class="project-card__info">
-          <div class="project-card__meta">
-            <span class="project-card__number">{project.number}</span>
-            <span class="project-card__arrow">→</span>
+          <div class="project-card__info">
+            <div class="project-card__meta">
+              <span class="project-card__number">{project.number}</span>
+              <span class="project-card__arrow">→</span>
+            </div>
+            <h3 class="project-card__title">{project.title}</h3>
+            <p class="project-card__desc">{project.description}</p>
           </div>
-          <h3 class="project-card__title">{project.title}</h3>
-          <p class="project-card__desc">{project.description}</p>
-        </div>
-      </a>
-    ))}
+        </a>
+      ))
+    }
   </div>
 </section>
 
 <style lang="scss">
-  @use '../styles/helpers/fonts' as *;
+  @use "../styles/helpers/fonts" as *;
 
   .works-section {
     background: #000;
@@ -102,7 +107,7 @@ const projects = [
     z-index: 20;
 
     &::before {
-      content: '';
+      content: "";
       display: block;
       height: 1px;
       background: rgba(255, 255, 255, 0.12);
@@ -262,7 +267,9 @@ const projects = [
   .project-card__arrow {
     font-size: 1.5rem;
     color: rgba(255, 255, 255, 0.35);
-    transition: transform 0.3s ease, color 0.3s ease;
+    transition:
+      transform 0.3s ease,
+      color 0.3s ease;
     line-height: 1;
   }
 
@@ -289,31 +296,32 @@ const projects = [
 </style>
 
 <script>
-  // Subtle card entrance animations on scroll
-  const cards = document.querySelectorAll('.project-card')
+  // Subtle card entrance animations on scroll.
+  const cards = document.querySelectorAll(".project-card");
 
   const observer = new IntersectionObserver(
     (entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
-          const card = entry.target as HTMLElement
-          const index = Number(card.dataset.index)
+          const card = entry.target as HTMLElement;
+          const index = Number(card.dataset.index);
           setTimeout(() => {
-            card.style.opacity = '1'
-            card.style.transform = 'translateY(0)'
-          }, index * 80)
-          observer.unobserve(card)
+            card.style.opacity = "1";
+            card.style.transform = "translateY(0)";
+          }, index * 80);
+          observer.unobserve(card);
         }
-      })
+      });
     },
-    { threshold: 0.1 }
-  )
+    { threshold: 0.1 },
+  );
 
   cards.forEach((card) => {
-    const el = card as HTMLElement
-    el.style.opacity = '0'
-    el.style.transform = 'translateY(2rem)'
-    el.style.transition = 'opacity 0.6s ease, transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
-    observer.observe(el)
-  })
+    const el = card as HTMLElement;
+    el.style.opacity = "0";
+    el.style.transform = "translateY(2rem)";
+    el.style.transition =
+      "opacity 0.6s ease, transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)";
+    observer.observe(el);
+  });
 </script>
