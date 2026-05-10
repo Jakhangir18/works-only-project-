@@ -44,8 +44,16 @@
         const workIsVisible =
           workRect.bottom > 0 && workRect.top < window.innerHeight;
 
-        // Keep the rocket parked while the work tunnel is on screen.
+        // Keep the rocket parked and hidden while the work tunnel is on screen.
         if (workIsVisible) {
+          // Hide the rocket by removing is-active class.
+          const rocketBg = document.querySelector(
+            ".js-rocket-bg",
+          ) as HTMLElement | null;
+          if (rocketBg) {
+            rocketBg.classList.remove("is-active");
+          }
+
           if (typeof window.updateRocketFrame === "function") {
             window.updateRocketFrame(0);
           }
