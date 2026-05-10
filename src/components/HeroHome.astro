@@ -1,20 +1,20 @@
 ---
-import Navigation from './Navigation.astro'
-import DottedSurface from './DottedSurface.astro'
-import MorphingText from './MorphingText.astro'
+import Navigation from "./Navigation.astro";
+import DottedSurface from "./DottedSurface.astro";
+import MorphingText from "./MorphingText.astro";
 
 const titles = [
-  'Full-Stack Developer',
-  'Creative Designer',
-  'Digital Creator',
-  'Tech Innovator',
-]
+  "Full-Stack Developer",
+  "Creative Designer",
+  "Digital Creator",
+  "Tech Innovator",
+];
 ---
 
 <section class="hero-home" id="home">
   <Navigation />
   <DottedSurface />
-  
+
   <div class="hero-home__content">
     <div class="hero-home__inner">
       <div class="hero-home__greeting">
@@ -43,22 +43,22 @@ const titles = [
   <div class="hero-home__invitation">
     <p>Want to see how I think?</p>
   </div>
-
 </section>
 
 <style lang="scss">
-  @use '../styles/helpers/fonts' as *;
-  @use '../styles/helpers/colors' as *;
-  @use '../styles/helpers/responsive' as *;
+  @use "../styles/helpers/fonts" as *;
+  @use "../styles/helpers/colors" as *;
+  @use "../styles/helpers/responsive" as *;
 
   .hero-home {
     position: relative;
-    
+
     display: flex;
     align-items: center;
     justify-content: center;
 
-    min-height: 101vh;
+    min-height: 100vh;
+    min-height: 100svh;
     overflow: hidden;
 
     background: #000000;
@@ -71,13 +71,16 @@ const titles = [
     width: 100%;
     max-width: 1400px;
     padding: 2rem;
-    padding-top: 4rem;
-    margin-top: -8rem;
+    padding-top: 8rem;
 
     @include mq(tablet) {
       padding: 4rem;
-      padding-top: 5rem;
-      margin-top: -10rem;
+      padding-top: 10rem;
+    }
+
+    @include mq(phone) {
+      padding: 1.5rem;
+      padding-top: 7rem;
     }
   }
 
@@ -106,7 +109,7 @@ const titles = [
 
   .hero-home__greeting {
     margin-bottom: 1rem;
-    
+
     p {
       margin: 0;
       color: color(primary);
@@ -148,10 +151,14 @@ const titles = [
 
   .hero-home__scroll {
     position: absolute;
-    bottom: 3rem;
+    bottom: clamp(1.5rem, 4vh, 3rem);
     left: 50%;
     z-index: 10;
     transform: translateX(-50%);
+
+    @include mq(phone) {
+      display: none;
+    }
   }
 
   .hero-home__invitation {
@@ -159,6 +166,10 @@ const titles = [
     top: clamp(6rem, 8vh, 8rem);
     right: clamp(2rem, 6vw, 6rem);
     z-index: 10;
+
+    @include mq(phone) {
+      display: none;
+    }
 
     p {
       margin: 0;
@@ -203,7 +214,8 @@ const titles = [
   }
 
   @keyframes mouseFloat {
-    0%, 100% {
+    0%,
+    100% {
       opacity: 0.4;
     }
     50% {

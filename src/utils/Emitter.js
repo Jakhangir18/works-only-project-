@@ -1,9 +1,9 @@
 class Emitter {
   /**
-   * Constructor
+  * Constructor: store event buckets keyed by event name.
    */
-  constructor () {
-    this.events = []
+  constructor() {
+    this.events = [];
   }
 
   /**
@@ -15,25 +15,25 @@ class Emitter {
    */
   on(name, callback, context, once = false) {
     if (!this.events[name]) {
-      this.events[name] = []
+      this.events[name] = [];
     }
 
-    let exists = false
+    let exists = false;
     this.events[name].forEach((object) => {
       if (object.cb === callback && object.context === context) {
-        exists = true
-        return
+        exists = true;
+        return;
       }
-    })
+    });
     if (exists) {
-      return
+      return;
     }
 
     this.events[name].push({
       cb: callback,
       context: context,
-      once: once
-    })
+      once: once,
+    });
   }
 
   /**
@@ -42,45 +42,45 @@ class Emitter {
    * @param {Function} callback Handler function
    * @param {Object} context Context
    */
-  once (name, callback, context) {
-    this.on(name, callback, context, true)
+  once(name, callback, context) {
+    this.on(name, callback, context, true);
   }
 
   /**
-   * Emit event
+  * Emit event to all registered listeners.
    * @param {String} name Event Name
    */
-  emit (name) {
-    const self = this
-    const data = [].slice.call(arguments, 1)
+  emit(name) {
+    const self = this;
+    const data = [].slice.call(arguments, 1);
 
     if (this.events[name]) {
       this.events[name].forEach((object, index) => {
-        object.cb.apply(object.context, data)
+        object.cb.apply(object.context, data);
 
         if (object.once) {
-          delete self.events[name][index]
+          delete self.events[name][index];
         }
-      })
+      });
     }
   }
 
   /**
-   * Detact handler from event
+  * Detach handler from event.
    * @param {String} name Event name
    * @param {Function} callback Handler function
    */
-  off (name, callback, context) {
-    const self = this
+  off(name, callback, context) {
+    const self = this;
 
     if (this.events[name]) {
       this.events[name].forEach((object, index) => {
         if (object.cb === callback && object.context === context) {
-          delete self.events[name][index]
+          delete self.events[name][index];
         }
-      })
+      });
     }
   }
 }
 
-export default new Emitter()
+export default new Emitter();

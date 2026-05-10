@@ -3,13 +3,13 @@
  */
 
 /* SCSS variables */
-@forward 'variables-scss/breakpoints';
-@forward 'variables-scss/colors';
-@forward 'variables-scss/fonts';
+@forward "variables-scss/breakpoints";
+@forward "variables-scss/colors";
+@forward "variables-scss/fonts";
 
 /* Helpers */
-@forward 'helpers/responsive';
-@forward 'helpers/colors';
-@forward 'helpers/easing';
-@forward 'helpers/fonts';
-@forward 'helpers/grid';
+@forward "helpers/responsive";
+@forward "helpers/colors";
+@forward "helpers/easing";
+@forward "helpers/fonts";
+@forward "helpers/grid";

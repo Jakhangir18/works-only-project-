@@ -1,21 +1,23 @@
 ---
-// RocketStorySection.astro
-// Tall spacer section that drives the scroll progress for rocket + text overlays.
-// Height: 800vh to allow for cinematic, slow animations.
-// No visible content; just provides scroll range.
+// Tall spacer section that drives the rocket and text overlays.
+// The section is intentionally empty and only exists to provide scroll range.
 ---
 
 <section class="rocket-story js-rocket-story" aria-label="Rocket story">
-  <!-- Spacer: 800vh tall, drives scroll progress -->
+  <!-- Spacer used only to create scroll range for the story animation. -->
 </section>
 
 <style lang="scss">
   .rocket-story {
     position: relative;
-    height: 900vh;
+    height: 400vh;
     background: transparent;
     z-index: 0;
     pointer-events: none;
+
+    @media (max-width: 576px) {
+      height: 300vh;
+    }
   }
 </style>
 
@@ -23,51 +25,90 @@
   /**
    * RocketStorySection scroll handler.
    * Calculates progress (0..1) and updates rocket frame + text slides.
+   * RAF-throttled so it runs at most once per frame on mobile.
    */
   (function initRocketStory() {
-    const section = document.querySelector('.js-rocket-story') as HTMLElement
-    if (!section) return
+    const section = document.querySelector(".js-rocket-story") as HTMLElement;
+    if (!section) return;
+
+    let rafPending = false;
 
     function update() {
+      rafPending = false;
+
+      const workSection = document.querySelector(
+        ".s-work",
+      ) as HTMLElement | null;
+      if (workSection) {
+        const workRect = workSection.getBoundingClientRect();
+        const workIsVisible =
+          workRect.bottom > 0 && workRect.top < window.innerHeight;
+
+        // Keep the rocket parked while the work tunnel is on screen.
+        if (workIsVisible) {
+          if (typeof window.updateRocketFrame === "function") {
+            window.updateRocketFrame(0);
+          }
+
+          if (typeof window.updateRocketMotion === "function") {
+            window.updateRocketMotion(0);
+          }
+
+          if (typeof window.updateTextSlides === "function") {
+            window.updateTextSlides(0);
+          }
+
+          return;
+        }
+      }
+
       // Calculate scroll progress relative to this section
-      const rect = section.getBoundingClientRect()
-      const sectionStart = rect.top
-      const sectionHeight = section.offsetHeight
-      const windowHeight = window.innerHeight
+      const rect = section.getBoundingClientRect();
+      const sectionStart = rect.top;
+      const sectionHeight = section.offsetHeight;
+      const windowHeight = window.innerHeight;
 
       // Progress: 0 when section top is at window bottom, 1 when section bottom exits window top
-      let rawProgress = (windowHeight - sectionStart) / (sectionHeight + windowHeight)
-      rawProgress = Math.max(0, Math.min(1, rawProgress))
-      
-      // Add delay at the start - first 12% is hold time
-      const DELAY = 0.12
-      let progress = 0
+      let rawProgress =
+        (windowHeight - sectionStart) / (sectionHeight + windowHeight);
+      rawProgress = Math.max(0, Math.min(1, rawProgress));
+
+      // Hold the first part of the section so the rocket does not jump on entry.
+      const DELAY = 0.08;
+      let progress = 0;
       if (rawProgress < DELAY) {
-        progress = 0
+        progress = 0;
       } else {
-        progress = (rawProgress - DELAY) / (1 - DELAY)
+        progress = (rawProgress - DELAY) / (1 - DELAY);
       }
 
       // Update rocket frame
-      if (typeof window.updateRocketFrame === 'function') {
-        window.updateRocketFrame(progress)
+      if (typeof window.updateRocketFrame === "function") {
+        window.updateRocketFrame(progress);
       }
 
       // Update rocket rotation + position via GSAP timeline
-      if (typeof window.updateRocketMotion === 'function') {
-        window.updateRocketMotion(progress)
+      if (typeof window.updateRocketMotion === "function") {
+        window.updateRocketMotion(progress);
       }
 
       // Update text slides
-      if (typeof window.updateTextSlides === 'function') {
-        window.updateTextSlides(progress)
+      if (typeof window.updateTextSlides === "function") {
+        window.updateTextSlides(progress);
       }
     }
 
-    window.addEventListener('scroll', update, { passive: true })
-    window.addEventListener('resize', update, { passive: true })
+    function scheduleUpdate() {
+      if (!rafPending) {
+        rafPending = true;
+        requestAnimationFrame(update);
+      }
+    }
+
+    window.addEventListener("scroll", scheduleUpdate, { passive: true });
+    window.addEventListener("resize", scheduleUpdate, { passive: true });
 
     // Initial call
-    requestAnimationFrame(update)
-  })()
+    requestAnimationFrame(update);
+  })();
 </script>

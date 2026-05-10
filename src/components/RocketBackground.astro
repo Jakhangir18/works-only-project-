@@ -4,14 +4,18 @@
 // Positioned behind all content, responds to scroll progress of RocketStorySection.
 ---
 
+<!-- Fixed canvas layer behind the rocket story. -->
 <div class="rocket-bg js-rocket-bg">
   <div class="rocket-bg__container js-rocket-container">
-    <canvas class="rocket-bg__canvas js-rocket-canvas" width="1400" height="1400"></canvas>
+    <canvas
+      class="rocket-bg__canvas js-rocket-canvas"
+      width="1400"
+      height="1400"></canvas>
   </div>
 </div>
 
 <style lang="scss">
-  /* ── Fixed background layer, only visible during rocket section ── */
+  /* Fixed background layer, only visible during the rocket section. */
   .rocket-bg {
     position: fixed;
     inset: 0;
@@ -23,7 +27,7 @@
     overflow: hidden;
     opacity: 0;
     transition: opacity 0.3s ease;
-    
+
     &.is-active {
       opacity: 1;
     }
@@ -45,6 +49,11 @@
     max-height: 80vh;
     width: auto;
     height: auto;
+
+    @media (max-width: 576px) {
+      max-width: 92vw;
+      max-height: 65vh;
+    }
   }
 </style>
 
@@ -55,55 +64,59 @@
    * Activates background only during rocket section scroll.
    */
   (function initRocketBg() {
-    const canvas = document.querySelector('.js-rocket-canvas') as HTMLCanvasElement
-    const bg = document.querySelector('.js-rocket-bg') as HTMLElement
-    if (!canvas || !bg) return
+    const canvas = document.querySelector(
+      ".js-rocket-canvas",
+    ) as HTMLCanvasElement;
+    const bg = document.querySelector(".js-rocket-bg") as HTMLElement;
+    if (!canvas || !bg) return;
 
-    const ctx = canvas.getContext('2d')!
-    const TOTAL = 240
-    const PATH = '/1/ezgif-frame-'
-    const EXT = '.jpg'
+    const ctx = canvas.getContext("2d")!;
+    const TOTAL = 240;
+    const PATH = "/1/ezgif-frame-";
+    const EXT = ".jpg";
 
-    const images: HTMLImageElement[] = new Array(TOTAL).fill(null)
-    let lastFrameIdx = -1
+    const images: HTMLImageElement[] = new Array(TOTAL).fill(null);
+    let lastFrameIdx = -1;
 
-    /* ── Draw frame centered on canvas ── */
+    /* Draw each frame centered on the canvas. */
     function drawFrame(img: HTMLImageElement) {
-      if (!img?.complete || !img.naturalWidth) return
-      const W = canvas.width, H = canvas.height
-      const scale = Math.min(W / img.naturalWidth, H / img.naturalHeight)
-      const dw = img.naturalWidth * scale, dh = img.naturalHeight * scale
-      ctx.clearRect(0, 0, W, H)
-      ctx.drawImage(img, (W - dw) * 0.5, (H - dh) * 0.5, dw, dh)
+      if (!img?.complete || !img.naturalWidth) return;
+      const W = canvas.width,
+        H = canvas.height;
+      const scale = Math.min(W / img.naturalWidth, H / img.naturalHeight);
+      const dw = img.naturalWidth * scale,
+        dh = img.naturalHeight * scale;
+      ctx.clearRect(0, 0, W, H);
+      ctx.drawImage(img, (W - dw) * 0.5, (H - dh) * 0.5, dw, dh);
     }
 
-    /* ── Update frame based on progress 0..1 ── */
-    window.updateRocketFrame = function(progress: number) {
-      const frameIdx = Math.min(TOTAL - 1, Math.round(progress * (TOTAL - 1)))
+    /* Update the displayed frame from scroll progress. */
+    window.updateRocketFrame = function (progress: number) {
+      const frameIdx = Math.min(TOTAL - 1, Math.round(progress * (TOTAL - 1)));
       if (frameIdx !== lastFrameIdx) {
-        lastFrameIdx = frameIdx
-        const img = images[frameIdx]
-        if (img?.complete && img.naturalWidth) drawFrame(img)
+        lastFrameIdx = frameIdx;
+        const img = images[frameIdx];
+        if (img?.complete && img.naturalWidth) drawFrame(img);
       }
-      
+
       // Toggle background visibility based on progress
       // Keep visible once started (don't fade out at end)
       if (progress > 0) {
-        bg.classList.add('is-active')
+        bg.classList.add("is-active");
       } else {
-        bg.classList.remove('is-active')
+        bg.classList.remove("is-active");
       }
-    }
+    };
 
-    /* ── Preload all frames ── */
+    /* Preload all frames so scroll playback stays responsive. */
     for (let i = 0; i < TOTAL; i++) {
-      const img = new Image()
-      img.decoding = 'async'
-      img.src = `${PATH}${String(i + 1).padStart(3, '0')}${EXT}`
-      images[i] = img
+      const img = new Image();
+      img.decoding = "async";
+      img.src = `${PATH}${String(i + 1).padStart(3, "0")}${EXT}`;
+      images[i] = img;
     }
 
     // Initial frame
-    setTimeout(() => window.updateRocketFrame?.(0), 50)
-  })()
+    setTimeout(() => window.updateRocketFrame?.(0), 50);
+  })();
 </script>

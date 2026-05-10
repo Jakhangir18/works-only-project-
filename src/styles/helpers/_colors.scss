@@ -1,7 +1,7 @@
 /**
  * Colors helpers
  */
-@use 'sass:map';
+@use "sass:map";
 @use "../variables-scss/colors" as *;
 
 /* Get a color value */
@@ -13,7 +13,7 @@
 
     @return rgba($color, $alpha);
   } @else {
-    @if $key == 'gradient' {
+    @if $key == "gradient" {
       @return map.get($theme-colors, $key);
     }
 

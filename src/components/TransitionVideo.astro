@@ -5,9 +5,9 @@
 // - TextSlidesOverlay: fixed text overlay layer
 // - RocketStorySection: scroll spacer that drives progress
 
-import RocketBackground from './RocketBackground.astro'
-import TextSlidesOverlay from './TextSlidesOverlay.astro'
-import RocketStorySection from './RocketStorySection.astro'
+import RocketBackground from "./RocketBackground.astro";
+import TextSlidesOverlay from "./TextSlidesOverlay.astro";
+import RocketStorySection from "./RocketStorySection.astro";
 ---
 
 <!-- Rocket background (fixed, behind all content, shown only during rocket section) -->
@@ -20,10 +20,20 @@ import RocketStorySection from './RocketStorySection.astro'
 <RocketStorySection />
 
 <script>
-  import { initRocketMotionController } from '../utils/rocketFrameAnimator'
-  
-  // Initialize rocket motion controller when DOM is ready
+  import { initRocketMotionController } from "../utils/rocketFrameAnimator";
+
   requestAnimationFrame(() => {
-    initRocketMotionController()
-  })
+    initRocketMotionController();
+  });
+
+  // Re-init on resize (debounced) — a single listener here instead of inside the function
+  let resizeTimer: ReturnType<typeof setTimeout>;
+  window.addEventListener(
+    "resize",
+    () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => initRocketMotionController(), 200);
+    },
+    { passive: true },
+  );
 </script>

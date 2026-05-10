@@ -5,10 +5,10 @@
 
 declare global {
   interface Window {
-    updateRocketFrame?: (progress: number) => void
-    updateRocketMotion?: (progress: number) => void
-    updateTextSlides?: (progress: number) => void
+    updateRocketFrame?: (progress: number) => void;
+    updateRocketMotion?: (progress: number) => void;
+    updateTextSlides?: (progress: number) => void;
   }
 }
 
-export {}
+export {};

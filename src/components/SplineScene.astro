@@ -1,11 +1,11 @@
 ---
 // SplineScene.astro - Embeds a Spline 3D scene via iframe
 interface Props {
-  embedUrl: string
-  className?: string
+  embedUrl: string;
+  className?: string;
 }
 
-const { embedUrl, className = '' } = Astro.props
+const { embedUrl, className = "" } = Astro.props;
 ---
 
 <div class={`spline-scene ${className}`} data-spline-scene>
@@ -19,51 +19,54 @@ const { embedUrl, className = '' } = Astro.props
     height="100%"
     allowfullscreen
     allow="autoplay"
-    title="Spline 3D Scene"
-  ></iframe>
+    title="Spline 3D Scene"></iframe>
 </div>
 
 <script>
-  const containers = document.querySelectorAll<HTMLElement>('[data-spline-scene]')
+  const containers = document.querySelectorAll<HTMLElement>(
+    "[data-spline-scene]",
+  );
 
   containers.forEach((container) => {
-    const iframe = container.querySelector('iframe') as HTMLIFrameElement
-    const placeholder = container.querySelector('[data-spline-placeholder]') as HTMLElement
-    if (!iframe || !iframe.dataset.src) return
+    const iframe = container.querySelector("iframe") as HTMLIFrameElement;
+    const placeholder = container.querySelector(
+      "[data-spline-placeholder]",
+    ) as HTMLElement;
+    if (!iframe || !iframe.dataset.src) return;
 
     const loadIframe = () => {
-      iframe.src = iframe.dataset.src!
+      iframe.src = iframe.dataset.src!;
 
       iframe.addEventListener(
-        'load',
+        "load",
         () => {
           if (placeholder) {
-            placeholder.style.opacity = '0'
-            setTimeout(() => placeholder.remove(), 400)
+            placeholder.style.opacity = "0";
+            setTimeout(() => placeholder.remove(), 400);
           }
         },
-        { once: true }
-      )
-    }
+        { once: true },
+      );
+    };
 
     // Use IntersectionObserver instead of loading="lazy" for reliable cross-browser support
-    if ('IntersectionObserver' in window) {
+    if ("IntersectionObserver" in window) {
       const observer = new IntersectionObserver(
         (entries) => {
           entries.forEach((entry) => {
             if (entry.isIntersecting) {
-              loadIframe()
-              observer.disconnect()
+              loadIframe();
+              observer.disconnect();
             }
-          })
+          });
         },
-        { rootMargin: '400px' }
-      )
-      observer.observe(container)
+        { rootMargin: "400px" },
+      );
+      observer.observe(container);
     } else {
-      loadIframe()
+      loadIframe();
     }
-  })
+  });
 </script>
 
 <style>
@@ -103,6 +106,8 @@ const { embedUrl, className = '' } = Astro.props
   }
 
   @keyframes spline-spin {
-    to { transform: rotate(360deg); }
+    to {
+      transform: rotate(360deg);
+    }
   }
 </style>

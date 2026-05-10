@@ -1,130 +1,148 @@
 ---
-import AWork from './AWork.astro'
-import dummyVideo from '/src/assets/works/Dummy.mp4'
+import AWork from "./AWork.astro";
+import dummyVideo from "/src/assets/works/Dummy.mp4";
 
-const videos = await Astro.glob<{ default: any }>('/src/assets/works/*.mp4')
+const videos = await Astro.glob<{ default: any }>("/src/assets/works/*.mp4");
 
-// Yeah, this should probably be in a CMS or content file.
-// But it’s my site, and editing it in code is faster than setting up yet another headless something.
-// Sometimes "quick and dirty" wins. Don’t @ me.
-const info = {
+type WorkItem = {
+  caption: string;
+  site: string;
+  src: string;
+};
+
+type ProjectInfo = {
+  title: string;
+  site: string;
+};
+
+// Keep the portfolio data in code for now.
+// It is still easier to maintain than introducing a CMS for one section.
+const info: Record<string, ProjectInfo> = {
   Pen: {
-    title: 'CodePen',
-    site: 'https://codepen.io/your-username',
+    title: "CodePen",
+    site: "https://codepen.io/your-username",
   },
   Dummy1: {
-    title: 'AMS Tablet',
-    site: '/projects/ams',
+    title: "AMS Tablet",
+    site: "/projects/ams",
   },
   Dummy2: {
-    title: 'GoChain',
-    site: '/work/gochain',
+    title: "GoChain",
+    site: "/work/gochain",
   },
   Dummy3: {
-    title: 'Private Clinic Setup',
-    site: '/work/private-clinic',
+    title: "Private Clinic Setup",
+    site: "/work/private-clinic",
   },
   Dummy4: {
-    title: 'Engineering Rocket',
-    site: '/work/engineering-rocket',
+    title: "Engineering Rocket",
+    site: "/work/engineering-rocket",
   },
   Dummy5: {
-    title: 'Portfolio Rocket',
-    site: '/work/portfolio-rocket',
+    title: "Portfolio Rocket",
+    site: "/work/portfolio-rocket",
   },
   Dummy6: {
-    title: 'AMS Tablet',
-    site: '/projects/ams',
+    title: "AMS Tablet",
+    site: "/projects/ams",
   },
   Dummy7: {
-    title: 'GoChain',
-    site: '/work/gochain',
+    title: "GoChain",
+    site: "/work/gochain",
   },
   Dummy8: {
-    title: 'Private Clinic Setup',
-    site: '/work/private-clinic',
+    title: "Private Clinic Setup",
+    site: "/work/private-clinic",
   },
   Dummy9: {
-    title: 'Engineering Rocket',
-    site: '/work/engineering-rocket',
+    title: "Engineering Rocket",
+    site: "/work/engineering-rocket",
   },
   Dummy10: {
-    title: 'Portfolio Rocket',
-    site: '/work/portfolio-rocket',
+    title: "Portfolio Rocket",
+    site: "/work/portfolio-rocket",
   },
-}
+};
 
-let projects = []
-let pens = []
+let projects: WorkItem[] = [];
+let pens: WorkItem[] = [];
 
-// I removed the video loops to keep the repo lightweight.
-// But this is where I normally fetch and assign the videos for each project in the portfolio.
+// Map each imported video to a portfolio entry and split it into the two
+// buckets used by the layout: regular works and pen-style inserts.
 videos.forEach((video, index) => {
-  const src = video.default
+  const src = video.default;
 
-  const key = src.split('-')[0].split('/').pop()
-  const project = info[key]
-  if (!project) return
-  const caption = project.title
-  const site = project.site
+  const key = src.split("-")[0].split("/").pop();
+  const project = info[key];
+  if (!project) return;
+  const caption = project.title;
+  const site = project.site;
 
-  if (key === 'Pen') {
+  if (key === "Pen") {
     pens.push({
       caption,
       site,
       src,
-    })
+    });
   } else {
     projects.push({
       caption,
       site,
       src,
-    })
+    });
   }
-})
+});
 
-// Create dummy projects with 3 videos each
+// Repeat the placeholder projects so the scroll tunnel has enough density.
 for (let i = 1; i <= 14; i++) {
-  const key = `Dummy${i}`
-  const project = info[key]
-  if (!project) continue
+  const key = `Dummy${i}`;
+  const project = info[key];
+  if (!project) continue;
 
   for (let j = 0; j < 4; j++) {
     projects.push({
       caption: `${project.title} - Video ${j + 1}`,
       site: project.site,
-      src: dummyVideo
-    })
+      src: dummyVideo,
+    });
   }
 }
 
-function shuffle(array) {
-  let currentIndex = array.length
+function shuffle(array: WorkItem[]) {
+  let currentIndex = array.length;
 
   while (currentIndex != 0) {
-    let randomIndex = Math.floor(Math.random() * currentIndex)
-    currentIndex--
-    ;[array[currentIndex], array[randomIndex]] = [
+    let randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex--;
+    [array[currentIndex], array[randomIndex]] = [
       array[randomIndex],
       array[currentIndex],
-    ]
+    ];
   }
 }
 
-shuffle(projects)
+shuffle(projects);
 
 // Add pens in between projects regularly
-let works = []
-let chunkSize = Math.floor(projects.length / pens.length)
-let i = 0
-let j = 0
-while (i < projects.length) {
-  works.push(projects[i])
-  if (j < pens.length && (i + 1) % chunkSize === 0) {
-    works.push(pens[j])
-    j++
+let works: WorkItem[] = [];
+
+if (pens.length > 0) {
+  const chunkSize = Math.max(1, Math.floor(projects.length / pens.length));
+  let i = 0;
+  let j = 0;
+
+  while (i < projects.length) {
+    works.push(projects[i]);
+
+    if (j < pens.length && (i + 1) % chunkSize === 0) {
+      works.push(pens[j]);
+      j++;
+    }
+
+    i++;
   }
-  i++
+} else {
+  works = [...projects];
 }
 ---
 
@@ -148,105 +166,115 @@ while (i < projects.length) {
               caption={work.caption}
               site={work.site}
               src={work.src}
-              index={String(index).padStart(4, '0')}
-              total={String(works.length).padStart(2, '0')}
+              index={String(index).padStart(4, "0")}
+              total={String(works.length).padStart(2, "0")}
             />
           ))
         }
       </div><!-- .s__scene -->
 
       <canvas class="s__canvas js-canvas"></canvas>
+      <div class="s__mask-outer">
+        <div class="s__mask js-mask">
+          <svg class="s__mask__svg js-mask-svg">
+            <defs>
+              <clipPath id="s-lines-clip">
+                <path class="js-lines-clip-shape" clip-rule="evenodd" d=""
+                ></path>
+              </clipPath>
+            </defs>
+            <path class="s__mask__path-inner js-mask-path-inner" d=""></path>
+            <path class="s__mask__path-outer js-mask-path-outer" d=""></path>
+            <path
+              class="s__mask__path-lines js-mask-path-lines"
+              d=""
+              clip-path="url(#s-lines-clip)"></path>
+          </svg>
+        </div><!-- .s__mask -->
+      </div><!-- .s__mask-outer -->
     </div><!-- .s__inner -->
-
-    <div class="s__mask-outer">
-      <div class="s__mask js-mask">
-        <svg class="s__mask__svg js-mask-svg">
-          <defs>
-            <clipPath id="s-lines-clip">
-              <path class="js-lines-clip-shape" clip-rule="evenodd" d=""></path>
-            </clipPath>
-          </defs>
-          <path class="s__mask__path-inner js-mask-path-inner" d=""></path>
-          <path class="s__mask__path-outer js-mask-path-outer" d=""></path>
-          <path class="s__mask__path-lines js-mask-path-lines" d="" clip-path="url(#s-lines-clip)"></path>
-        </svg>
-      </div><!-- .s__mask -->
-    </div><!-- .s__mask-outer -->
 
     <div class="s__ruler js-ruler"></div>
   </div><!-- .s__outer -->
 </section>
 
 <script>
-  import Emitter from '../utils/Emitter'
-  import Ticker from '../utils/Ticker'
+  import Emitter from "../utils/Emitter";
+  import Ticker from "../utils/Ticker";
 
-  import { gsap } from 'gsap'
-  import { SlowMo } from 'gsap/EasePack'
-  import { ScrollTrigger } from 'gsap/ScrollTrigger'
-  gsap.registerPlugin(ScrollTrigger, SlowMo)
+  import { gsap } from "gsap";
+  import { SlowMo } from "gsap/EasePack";
+  import { ScrollTrigger } from "gsap/ScrollTrigger";
+  gsap.registerPlugin(ScrollTrigger, SlowMo);
 
-  const isSafariBrowser = /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
+  const isSafariBrowser = /^((?!chrome|android).)*safari/i.test(
+    navigator.userAgent,
+  );
 
   class Section {
-    el: HTMLElement
-    container: HTMLElement
-    ruler: HTMLElement
-    scene: HTMLElement
-    canvas: HTMLCanvasElement
-    ctx: CanvasRenderingContext2D
-    title: HTMLElement
-    videos: NodeListOf<HTMLVideoElement>
+    el: HTMLElement;
+    container: HTMLElement;
+    ruler: HTMLElement;
+    scene: HTMLElement;
+    canvas: HTMLCanvasElement;
+    ctx: CanvasRenderingContext2D;
+    title: HTMLElement;
+    videos: NodeListOf<HTMLVideoElement>;
 
     mask: {
-      width: number
-      height: number
-      maxScale: number
-      lines: any[]
-      el: HTMLElement
-      svg: HTMLElement
-      pathOuter: HTMLElement
-      pathInner: HTMLElement
-      pathLines: HTMLElement
-    }
+      width: number;
+      height: number;
+      maxScale: number;
+      lines: any[];
+      el: HTMLElement;
+      svg: HTMLElement;
+      pathOuter: HTMLElement;
+      pathInner: HTMLElement;
+      pathLines: HTMLElement;
+    };
 
     bounding: {
-      left: number
-      top: number
-      width: number
-      height: number
-    }
-    letters: any[]
-    works: any[]
-    points: any[]
+      left: number;
+      top: number;
+      width: number;
+      height: number;
+    };
+    letters: any[];
+    works: any[];
+    points: any[];
 
-    tl: gsap.core.Timeline
-    animationProgress: number
-    pointsProgress: number
+    tl: gsap.core.Timeline;
+    pinTrigger: ScrollTrigger;
+    animationProgress: number;
+    pointsProgress: number;
     last: {
-      animationProgress: number
-      pointsProgress: number
-    }
-    scrollProgress: number
-    smoothScrollProgress: number
-    state: 0
-    speed: number
-    isPaused: boolean
-    loadIsStarted: boolean
+      animationProgress: number;
+      pointsProgress: number;
+    };
+    scrollProgress: number;
+    smoothScrollProgress: number;
+    state: 0;
+    speed: number;
+    isPaused: boolean;
+    loadIsStarted: boolean;
 
     /**
      * Constructor
      */
     constructor() {
+      if (isSafariBrowser) {
+        document.documentElement.classList.add("is-safari");
+      }
+
       // Elements
-      this.el = document.querySelector('.s-work')
-      this.container = this.el.querySelector('.js-container')
-      this.ruler = this.el.querySelector('.js-ruler')
-      this.scene = this.container.querySelector('.js-scene')
-      this.canvas = this.container.querySelector('.js-canvas')
-      this.ctx = this.canvas.getContext('2d')
-      this.title = this.container.querySelector('.js-title')
-      this.videos = this.container.querySelectorAll('video')
+      this.el = document.querySelector(".s-work");
+      this.container = this.el.querySelector(".js-container");
+      this.ruler = this.el.querySelector(".js-ruler");
+      this.scene = this.container.querySelector(".js-scene");
+      this.canvas = this.container.querySelector(".js-canvas");
+      this.ctx = this.canvas.getContext("2d");
+      this.title = this.container.querySelector(".js-title");
+      this.videos = this.container.querySelectorAll("video");
 
       // Properties
       this.mask = {
@@ -254,65 +282,67 @@ while (i < projects.length) {
         height: 0,
         maxScale: 1,
         lines: [],
-        el: this.el.querySelector('.js-mask'),
-        svg: this.el.querySelector('.js-mask-svg'),
-        pathOuter: this.el.querySelector('.js-mask-path-outer'),
-        pathInner: this.el.querySelector('.js-mask-path-inner'),
-        pathLines: this.el.querySelector('.js-mask-path-lines'),
-      }
+        el: this.el.querySelector(".js-mask"),
+        svg: this.el.querySelector(".js-mask-svg"),
+        pathOuter: this.el.querySelector(".js-mask-path-outer"),
+        pathInner: this.el.querySelector(".js-mask-path-inner"),
+        pathLines: this.el.querySelector(".js-mask-path-lines"),
+      };
 
-      this.letters = []
-      this.title.querySelectorAll('.js-letter').forEach((_letter) => {
+      this.letters = [];
+      this.title.querySelectorAll(".js-letter").forEach((_letter) => {
         const letter = {
           el: _letter,
           ghosts: [],
-        }
+        };
 
-        this.letters.push(letter)
-      })
+        this.letters.push(letter);
+      });
 
-      this.works = []
-      this.container.querySelectorAll('.js-work').forEach((_work) => {
+      this.works = [];
+      this.container.querySelectorAll(".js-work").forEach((_work) => {
         const work = {
           el: _work,
-        }
+        };
 
-        this.works.push(work)
-      })
+        this.works.push(work);
+      });
 
-      this.points = []
+      this.points = [];
 
-      this.scrollProgress = 0
-      this.smoothScrollProgress = 0
+      this.scrollProgress = 0;
+      this.smoothScrollProgress = 0;
       this.last = {
         animationProgress: 0,
         pointsProgress: 0,
-      }
+      };
 
-      this.isPaused = true
-      this.loadIsStarted = false
+      this.isPaused = true;
+      this.loadIsStarted = false;
 
-      // Init
+      // Defer the heavy DOM work until fonts and the base page are ready.
       const doInit = () => {
-        if (document.readyState === 'complete') {
-          Ticker.nextTick(this.init, this)
+        if (document.readyState === "complete") {
+          Ticker.nextTick(this.init, this);
         } else {
-          Emitter.once('siteLoaded', this.init, this)
+          Emitter.once("siteLoaded", this.init, this);
         }
-      }
+      };
 
       if (document.fonts && document.fonts.ready) {
-        document.fonts.ready.then(() => {
-          // Safari resolves fonts.ready before the browser re-lays out with custom fonts.
-          // Adding a frame + delay ensures getBoundingClientRect() measures the real font.
-          if (isSafariBrowser) {
-            requestAnimationFrame(() => setTimeout(doInit, 150))
-          } else {
-            doInit()
-          }
-        }).catch(doInit)
+        document.fonts.ready
+          .then(() => {
+            // Safari resolves fonts.ready before the browser re-lays out with custom fonts.
+            // Adding a frame + delay ensures getBoundingClientRect() measures the real font.
+            if (isSafariBrowser) {
+              requestAnimationFrame(() => setTimeout(doInit, 150));
+            } else {
+              doInit();
+            }
+          })
+          .catch(doInit);
       } else {
-        setTimeout(doInit, 500)
+        setTimeout(doInit, 500);
       }
     }
 
@@ -320,45 +350,46 @@ while (i < projects.length) {
      * Init
      */
     init() {
-      this.setCtxStyle()
-      this.setSize()
-      this.setMask()
-      this.setPoints()
-      this.setLetters()
-      this.setWorks()
-      this.setTimeline()
+      this.setCtxStyle();
+      this.setSize();
+      this.setMask();
+      this.el.classList.add("is-mask-ready");
+      this.setPoints();
+      this.setLetters();
+      this.setWorks();
+      this.setTimeline();
 
-      this.bindEvents()
+      this.bindEvents();
 
-      ScrollTrigger.refresh()
-      this.tick()
+      ScrollTrigger.refresh();
+      this.tick();
 
-      // Safari: layout can shift after first ScrollTrigger.refresh() due to font/viewport settling.
-      // A second refresh after a short delay ensures scroll positions are calculated correctly.
+      // Safari can settle layout a frame late, so refresh once more after the
+      // first measurement pass.
       if (isSafariBrowser) {
-        setTimeout(() => ScrollTrigger.refresh(), 400)
+        setTimeout(() => ScrollTrigger.refresh(), 400);
       }
 
-      document.documentElement.classList.add('is-works-ready')
-      Emitter.emit('worksReady')
+      document.documentElement.classList.add("is-works-ready");
+      Emitter.emit("worksReady");
     }
 
     /**
      * Bind events
      */
     bindEvents() {
-      Emitter.on('contrastchange', this.setCtxStyle, this)
-      Emitter.on('resize', this.onResize, this)
+      Emitter.on("contrastchange", this.setCtxStyle, this);
+      Emitter.on("resize", this.onResize, this);
 
-      this.el.addEventListener('intersect', this.onIntersect.bind(this), {
+      this.el.addEventListener("intersect", this.onIntersect.bind(this), {
         passive: true,
-      })
+      });
 
-      this.syncIntersectState()
+      this.syncIntersectState();
 
       if (!this.loadIsStarted && !this.isPaused) {
-        this.loadNextVideo()
-        this.loadIsStarted = true
+        this.loadNextVideo();
+        this.loadIsStarted = true;
       }
     }
 
@@ -366,10 +397,10 @@ while (i < projects.length) {
      * Sync intersect state when listener starts after observer already fired
      */
     syncIntersectState() {
-      const rect = this.el.getBoundingClientRect()
-      const isIntersecting = rect.bottom > 0 && rect.top < window.innerHeight
+      const rect = this.el.getBoundingClientRect();
+      const isIntersecting = rect.bottom > 0 && rect.top < window.innerHeight;
 
-      this.setPausedState(!isIntersecting)
+      this.setPausedState(!isIntersecting);
     }
 
     /**
@@ -377,30 +408,32 @@ while (i < projects.length) {
      */
     setPausedState(isPaused) {
       if (this.isPaused === isPaused) {
-        return
+        return;
       }
 
-      this.isPaused = isPaused
+      this.isPaused = isPaused;
 
       if (this.isPaused) {
-        Emitter.off('tick', this.tick, this)
+        Emitter.off("tick", this.tick, this);
       } else {
-        Emitter.on('tick', this.tick, this)
+        Emitter.on("tick", this.tick, this);
       }
     }
 
     /**
      * Resize handler
      */
-    onResize(widthChanged) {
-      if (widthChanged) {
-        this.setCtxStyle()
-        this.setSize()
-        this.setMask()
-        this.setPoints()
-        this.setLetters()
-        this.setWorks()
-        this.setTimeline()
+    onResize(widthChanged: boolean, heightChanged: boolean) {
+      if (widthChanged || heightChanged) {
+        this.setCtxStyle();
+        this.setSize();
+        this.setMask();
+        this.setPoints();
+        this.setLetters();
+        this.setWorks();
+        this.setTimeline();
+
+        ScrollTrigger.refresh();
       }
     }
 
@@ -408,11 +441,11 @@ while (i < projects.length) {
      * Intersect handler
      */
     onIntersect(e) {
-      this.setPausedState(!e.detail.isIntersecting)
+      this.setPausedState(!e.detail.isIntersecting);
 
       if (!this.loadIsStarted) {
-        this.loadNextVideo()
-        this.loadIsStarted = true
+        this.loadNextVideo();
+        this.loadIsStarted = true;
       }
     }
 
@@ -421,134 +454,144 @@ while (i < projects.length) {
      */
     setCtxStyle() {
       const color = getComputedStyle(this.el).getPropertyValue(
-        '--color-primary'
-      )
+        "--color-primary",
+      );
 
       Ticker.nextTick(() => {
-        this.ctx.strokeStyle = color
-      })
+        this.ctx.strokeStyle = color;
+      });
     }
 
     /**
      * Set size
      */
     setSize() {
-      this.el.style.setProperty('--height', this.works.length * 50 + 'lvh')
+      // Use px instead of vh/lvh to avoid iOS address-bar resize jitter.
+      const unitHeight = window.safeHeight || window.innerHeight;
+      this.el.style.setProperty(
+        "--height",
+        (this.works.length * 50 * unitHeight) / 100 + "px",
+      );
 
-      const bounding = this.container.getBoundingClientRect()
+      const bounding = this.container.getBoundingClientRect();
 
       this.bounding = {
         left: bounding.left,
         top: bounding.top,
         width: window.safeWidth,
         height: window.safeHeight,
-      }
+      };
 
-      this.canvas.width = this.bounding.width
-      this.canvas.height = this.bounding.height
+      this.canvas.width = this.bounding.width;
+      this.canvas.height = this.bounding.height;
 
-      this.speed = Math.hypot(this.bounding.width, this.bounding.height) * 4
+      this.speed = Math.hypot(this.bounding.width, this.bounding.height) * 4;
     }
 
     /**
      * Set mask
      */
     setMask() {
-      const { mask } = this
+      const { mask } = this;
 
-      const width = mask.el.clientWidth
-      const height = mask.el.clientHeight
+      // The mask is fixed, so its geometry follows the viewport directly.
+      const width = window.safeWidth || window.innerWidth;
+      const height = window.safeHeight || window.innerHeight;
 
-      mask.width = width
-      mask.height = height
+      mask.width = width;
+      mask.height = height;
 
-      mask.svg.style.width = mask.width + 'px'
-      mask.svg.style.height = mask.height + 'px'
+      mask.svg.style.width = width + "px";
+      mask.svg.style.height = height + "px";
 
-      const elBounding = this.el.getBoundingClientRect()
-      const rulerBounding = this.ruler.getBoundingClientRect()
-      const rulerWidth = rulerBounding.width
-      const rulerHeight = rulerBounding.height
-      const offsetX = rulerBounding.left - elBounding.left
-      const offsetY = rulerBounding.top - elBounding.top
+      // Rebuild the tunnel opening from the CSS rules instead of DOM reads.
+      // That keeps the mask stable while the ruler itself scrolls out of view.
+      const isMobile = width < 576;
+      const isTablet = width < 987;
+      const rulerWidthPct = isMobile ? 0.5 : isTablet ? 0.3333 : 0.16667;
+      const rulerMaxPx = 19.625 * 16; // 19.625rem in px (assuming 16px base)
+      const rulerWidth = Math.min(width * rulerWidthPct, rulerMaxPx);
+      const rulerHeight = height * 0.8; // height: 80vh
+      const offsetX = (width - rulerWidth) / 2; // centered
+      const offsetY = height * 0.1; // top: 10vh
 
-      // Shape
-      const dOuter = `M -1 0 L ${width + 2} 0 L ${width + 2} ${height} L -1 ${height} Z`
+      // Base outer silhouette of the mask.
+      const dOuter = `M -2 -2 L ${width + 2} -2 L ${width + 2} ${height + 2} L -2 ${height + 2} Z`;
 
-      // Mask outer
+      // Outer rounded opening.
       const corners = {
         tl: { x: offsetX, y: offsetY },
         tr: { x: offsetX + rulerWidth, y: offsetY },
         br: { x: offsetX + rulerWidth, y: offsetY + rulerHeight },
         bl: { x: offsetX, y: offsetY + rulerHeight },
-      }
+      };
 
-      let size = (corners.tr.x - corners.tl.x) / 2
+      let size = (corners.tr.x - corners.tl.x) / 2;
 
-      mask.maxScale = window.safeWidth / size
+      mask.maxScale = width / size;
 
-      let dInner = `M ${corners.tl.x} ${corners.tl.y + size} A ${size} ${size} 0 0 1 ${corners.tr.x} ${corners.tr.y + size} L ${corners.br.x} ${corners.br.y - size} A ${size} ${size} 0 0 1 ${corners.bl.x} ${corners.bl.y - size} Z`
-      const linesClip = `${dOuter} ${dInner}`
+      let dInner = `M ${corners.tl.x} ${corners.tl.y + size} A ${size} ${size} 0 0 1 ${corners.tr.x} ${corners.tr.y + size} L ${corners.br.x} ${corners.br.y - size} A ${size} ${size} 0 0 1 ${corners.bl.x} ${corners.bl.y - size} Z`;
+      const linesClip = `${dOuter} ${dInner}`;
 
-      mask.pathOuter.setAttribute('d', `${dOuter} ${dInner}`)
+      mask.pathOuter.setAttribute("d", `${dOuter} ${dInner}`);
 
-      // Mask inner
-      const thickness = window.safeWidth > 767 ? 16 : 8
-      corners.tl.x += thickness
-      corners.tl.y += thickness
+      // Inner opening that becomes the visible hole.
+      const thickness = width > 767 ? 16 : 8;
+      corners.tl.x += thickness;
+      corners.tl.y += thickness;
 
-      corners.tr.x -= thickness
-      corners.tr.y += thickness
+      corners.tr.x -= thickness;
+      corners.tr.y += thickness;
 
-      corners.br.x -= thickness
-      corners.br.y -= thickness
+      corners.br.x -= thickness;
+      corners.br.y -= thickness;
 
-      corners.bl.x += thickness
-      corners.bl.y -= thickness
+      corners.bl.x += thickness;
+      corners.bl.y -= thickness;
 
-      size = (corners.tr.x - corners.tl.x) / 2
+      size = (corners.tr.x - corners.tl.x) / 2;
 
-      dInner = `M ${corners.tl.x} ${corners.tl.y + size} A ${size} ${size} 0 0 1 ${corners.tr.x} ${corners.tr.y + size} L ${corners.br.x} ${corners.br.y - size} A ${size} ${size} 0 0 1 ${corners.bl.x} ${corners.bl.y - size} Z`
+      dInner = `M ${corners.tl.x} ${corners.tl.y + size} A ${size} ${size} 0 0 1 ${corners.tr.x} ${corners.tr.y + size} L ${corners.br.x} ${corners.br.y - size} A ${size} ${size} 0 0 1 ${corners.bl.x} ${corners.bl.y - size} Z`;
 
-      mask.pathInner.setAttribute('d', `${dOuter} ${dInner}`)
+      mask.pathInner.setAttribute("d", `${dOuter} ${dInner}`);
 
-      // Lines
-      mask.lines = []
+      // Background grid lines visible through the opening.
+      mask.lines = [];
 
-      const vLines = window.safeWidth > 767 ? 12 : 8
-      const gapX = width / vLines
-      const gapY = height * 0.1
-      const hLines = Math.ceil(height / gapY)
+      const vLines = width > 767 ? 12 : 8;
+      const gapX = width / vLines;
+      const gapY = height * 0.1;
+      const hLines = Math.ceil(height / gapY);
 
       for (let i = 1; i < vLines; i++) {
-        const x = gapX * i
+        const x = gapX * i;
 
         mask.lines.push({
           p1: { x, y: 0 },
           p2: { x, y: height },
-        })
+        });
       }
 
       for (let i = 0; i < hLines; i++) {
-        const y = gapY * i
+        const y = gapY * i;
 
         mask.lines.push({
           p1: { x: 0, y },
           p2: { x: width, y },
-        })
+        });
       }
 
-      let dLines = ''
+      let dLines = "";
 
       mask.lines.forEach((line) => {
-        dLines += `M ${line.p1.x} ${line.p1.y} L ${line.p2.x} ${line.p2.y} `
-      })
+        dLines += `M ${line.p1.x} ${line.p1.y} L ${line.p2.x} ${line.p2.y} `;
+      });
 
-      mask.pathLines.setAttribute('d', dLines)
-      // Use SVG <clipPath> element instead of CSS clip-path:path() — Safari doesn't support clip-path:path() in CSS
-      const linesClipShape = this.el.querySelector('.js-lines-clip-shape')
+      mask.pathLines.setAttribute("d", dLines);
+      // Use SVG clipPath for Safari compatibility.
+      const linesClipShape = this.el.querySelector(".js-lines-clip-shape");
       if (linesClipShape) {
-        linesClipShape.setAttribute('d', linesClip)
+        linesClipShape.setAttribute("d", linesClip);
       }
     }
 
@@ -556,39 +599,39 @@ while (i < projects.length) {
      * Set letters
      */
     setLetters() {
-      const { letters, scene } = this
+      const { letters, scene } = this;
 
       letters.forEach((letter, j) => {
         letter.ghosts.forEach((ghost) => {
-          ghost.el.remove()
-        })
-        letter.ghosts = []
+          ghost.el.remove();
+        });
+        letter.ghosts = [];
 
-        // Get letter position and size
-        const bounding = letter.el.getBoundingClientRect()
+        // Measure the visible title glyph before cloning it into the tunnel.
+        const bounding = letter.el.getBoundingClientRect();
 
-        letter.width = bounding.width
-        letter.height = bounding.height
-        letter.top = bounding.top - this.bounding.top
-        letter.left = bounding.left
+        letter.width = bounding.width;
+        letter.height = bounding.height;
+        letter.top = bounding.top - this.bounding.top;
+        letter.left = bounding.left;
 
-        letter.freq = 1 + Math.random()
+        letter.freq = 1 + Math.random();
 
-        const multiplier = window.safeWidth > 767 ? 0.75 : 0.5
+        const multiplier = window.safeWidth > 767 ? 0.75 : 0.5;
 
-        // Create ghost letters
+        // Clone the glyph into repeated ghost letters across the scene.
         letter.total =
-          Math.round((this.bounding.width / letter.width) * multiplier) + 2
+          Math.round((this.bounding.width / letter.width) * multiplier) + 2;
 
         for (let i = 0; i < letter.total; i++) {
-          const el = document.createElement('span')
-          el.classList.add('s__scene__letter')
-          el.classList.add('js-letter')
+          const el = document.createElement("span");
+          el.classList.add("s__scene__letter");
+          el.classList.add("js-letter");
 
-          el.innerText = letter.el.innerText
-          el.dataset.letter = letter.el.innerText
+          el.innerText = letter.el.innerText;
+          el.dataset.letter = letter.el.innerText;
 
-          scene.appendChild(el)
+          scene.appendChild(el);
 
           const ghost = {
             el,
@@ -600,69 +643,88 @@ while (i < projects.length) {
             ap: Math.abs(i / letter.total - 0.5) * 2,
             mx: 0,
             my: 0,
-          }
+          };
 
-          el.style.top = ghost.y + 'px'
-          el.style.left = ghost.x + 'px'
+          el.style.top = ghost.y + "px";
+          el.style.left = ghost.x + "px";
 
-          el.style.zIndex = String(j !== 1 && j !== 2 && (j + letters.length + i) % 5 === 0 ? 3 : 1)
+          el.style.zIndex = String(
+            j !== 1 && j !== 2 && (j + letters.length + i) % 5 === 0 ? 3 : 1,
+          );
 
-          el.style.setProperty('--ix', String(ghost.i))
+          el.style.setProperty("--ix", String(ghost.i));
           el.style.setProperty(
-            '--iy',
-            String(((j + 1) / (letters.length + 1) - 0.5) * 2)
-          )
+            "--iy",
+            String(((j + 1) / (letters.length + 1) - 0.5) * 2),
+          );
 
-          el.style.setProperty('--ap', String(ghost.ap))
-          el.style.setProperty('--p', String(ghost.p))
+          el.style.setProperty("--ap", String(ghost.ap));
+          el.style.setProperty("--p", String(ghost.p));
 
-          letter.ghosts.push(ghost)
+          letter.ghosts.push(ghost);
         }
-      })
+      });
     }
 
     /**
      * Set works
      */
     setWorks() {
-      const { works } = this
+      const { works } = this;
 
       works.forEach((work, i) => {
-        const el = work.el
+        const el = work.el;
 
-        el.style.setProperty('--size', String(0.5 + Math.random() * 0.5))
+        el.style.setProperty("--size", String(0.5 + Math.random() * 0.5));
         el.style.setProperty(
-          '--y',
-          String((0.5 + Math.random() * 0.5) * (i % 2 ? -1 : 1))
-        )
-      })
+          "--y",
+          String((0.5 + Math.random() * 0.5) * (i % 2 ? -1 : 1)),
+        );
+      });
     }
 
     /**
      * Set timeline
      */
     setTimeline() {
-      const { el, container, works, scene, mask } = this
+      const { el, container, works, scene, mask } = this;
 
-      const worksEl = works.map((work) => work.el)
+      const worksEl = works.map((work) => work.el);
 
-      let { tl } = this
+      let { tl, pinTrigger } = this;
 
       if (tl) {
-        tl.kill()
+        tl.kill();
       }
+      if (pinTrigger) {
+        pinTrigger.kill();
+      }
+
+      const maskOuter = mask.el.parentElement as HTMLElement;
+
+      this.pinTrigger = ScrollTrigger.create({
+        trigger: el,
+        start: "top top",
+        end: "bottom bottom",
+        pin: container,
+        pinSpacing: false,
+        anticipatePin: 1,
+      });
 
       tl = gsap.timeline({
         scrollTrigger: {
           trigger: el,
-          start: 'top 25%',
-          end: 'bottom 75%',
+          start: "top bottom",
+          end: "bottom top",
           scrub: 1,
         },
         onUpdate: () => {
-          scene.style.setProperty('--state', String(this.state))
+          scene.style.setProperty("--state", String(this.state));
         },
-      })
+      });
+
+      maskOuter.style.opacity = "1";
+      maskOuter.style.transform = "translate3d(0, 0, 0)";
 
       tl.fromTo(
         mask.el,
@@ -672,10 +734,10 @@ while (i < projects.length) {
         {
           scale: mask.maxScale,
           duration: 0.75,
-          ease: 'power4.in',
+          ease: "power4.in",
         },
-        0
-      )
+        0,
+      );
 
       tl.fromTo(
         scene,
@@ -685,23 +747,23 @@ while (i < projects.length) {
         {
           scale: 1,
           duration: 0.75,
-          ease: 'power3.in',
+          ease: "power3.in",
         },
-        0
-      )
+        0,
+      );
 
       tl.fromTo(
         container,
         {
-          clipPath: 'inset(0 1rem)',
+          clipPath: "inset(0 1rem)",
         },
         {
-          clipPath: 'inset(0 0rem)',
+          clipPath: "inset(0 0rem)",
           duration: 0.75,
-          ease: 'power3.in',
+          ease: "power3.in",
         },
-        0
-      )
+        0,
+      );
 
       tl.fromTo(
         this,
@@ -711,10 +773,10 @@ while (i < projects.length) {
         {
           pointsProgress: 1,
           duration: 1,
-          ease: 'power4.inOut',
+          ease: "power4.inOut",
         },
-        0
-      )
+        0,
+      );
 
       tl.fromTo(
         this,
@@ -724,10 +786,10 @@ while (i < projects.length) {
         {
           state: 1,
           duration: 0.75,
-          ease: 'power4.in',
+          ease: "power4.in",
         },
-        0
-      )
+        0,
+      );
 
       tl.fromTo(
         worksEl,
@@ -740,11 +802,11 @@ while (i < projects.length) {
           attr: {
             progress: -1,
           },
-          ease: 'slow(0.15, 0.6)',
+          ease: "slow(0.15, 0.6)",
           stagger: 0.25,
         },
-        0.75
-      )
+        0.75,
+      );
 
       tl.fromTo(
         this,
@@ -754,10 +816,10 @@ while (i < projects.length) {
         {
           animationProgress: 10000,
           duration: tl.totalDuration(),
-          ease: 'power1.out',
+          ease: "power1.out",
         },
-        0.75
-      )
+        0.75,
+      );
 
       tl.fromTo(
         this,
@@ -767,11 +829,11 @@ while (i < projects.length) {
         {
           state: 0,
           duration: 0.75,
-          ease: 'power4.inOut',
+          ease: "power4.inOut",
           immediateRender: false,
         },
-        '-=1'
-      )
+        "-=1",
+      );
 
       tl.fromTo(
         mask.el,
@@ -781,11 +843,11 @@ while (i < projects.length) {
         {
           scale: 1,
           duration: 0.75,
-          ease: 'power4.inOut',
+          ease: "power4.inOut",
           immediateRender: false,
         },
-        '-=1'
-      )
+        "-=1",
+      );
 
       tl.fromTo(
         scene,
@@ -795,25 +857,25 @@ while (i < projects.length) {
         {
           scale: 0.75,
           duration: 0.75,
-          ease: 'power3.inOut',
+          ease: "power3.inOut",
           immediateRender: false,
         },
-        '-=1'
-      )
+        "-=1",
+      );
 
       tl.fromTo(
         container,
         {
-          clipPath: 'inset(0 0rem)',
+          clipPath: "inset(0 0rem)",
         },
         {
-          clipPath: 'inset(0 1rem)',
+          clipPath: "inset(0 1rem)",
           duration: 0.75,
-          ease: 'power3.inOut',
+          ease: "power3.inOut",
           immediateRender: false,
         },
-        '-=1'
-      )
+        "-=1",
+      );
 
       tl.fromTo(
         this,
@@ -823,10 +885,13 @@ while (i < projects.length) {
         {
           pointsProgress: 0,
           duration: 1,
-          ease: 'power4.inOut',
+          ease: "power4.inOut",
         },
-        '-=1'
-      )
+        "-=1",
+      );
+
+      // Store the timeline so resize can replace it cleanly.
+      this.tl = tl;
     }
 
     /**
@@ -834,23 +899,23 @@ while (i < projects.length) {
      */
     loadNextVideo() {
       const video = Array.from(this.videos).find(
-        (video) => !video.classList.contains('is-loaded')
-      )
+        (video) => !video.classList.contains("is-loaded"),
+      );
 
       if (video) {
         if (video.readyState >= 3) {
-          this.videoLoaded(video)
+          this.videoLoaded(video);
         } else {
           video.addEventListener(
-            'canplaythrough',
+            "canplaythrough",
             () => {
-              this.videoLoaded(video)
+              this.videoLoaded(video);
             },
-            { once: true }
-          )
+            { once: true },
+          );
 
-          video.setAttribute('src', video.getAttribute('data-src'))
-          video.load()
+          video.setAttribute("src", video.getAttribute("data-src"));
+          video.load();
         }
       }
     }
@@ -859,56 +924,56 @@ while (i < projects.length) {
      * Video loaded
      */
     videoLoaded(video) {
-      video.classList.add('is-loaded')
-      this.loadNextVideo()
+      video.classList.add("is-loaded");
+      this.loadNextVideo();
     }
 
     /**
      * Move letters
      */
     moveLetters() {
-      const { speed, letters, animationProgress } = this
+      const { speed, letters, animationProgress } = this;
 
       letters.forEach((letter, i) => {
-        const letterSpeed = speed * letter.freq
+        const letterSpeed = speed * letter.freq;
         letter.ghosts.forEach((ghost, index) => {
           let progress =
             (((animationProgress % letterSpeed) / letterSpeed +
               index / letter.total) %
               1) /
               0.7 -
-            0.15
+            0.15;
 
-          ghost.el.style.setProperty('--progress', String(progress))
-        })
-      })
+          ghost.el.style.setProperty("--progress", String(progress));
+        });
+      });
     }
 
     /**
      * Set points
      */
     setPoints() {
-      const { bounding } = this
+      const { bounding } = this;
 
-      this.points = []
+      this.points = [];
 
-      const gap = 24
-      const cols = Math.ceil((bounding.width * 1.2) / gap)
-      const rows = Math.ceil((bounding.height * 1.2) / gap)
+      const gap = 24;
+      const cols = Math.ceil((bounding.width * 1.2) / gap);
+      const rows = Math.ceil((bounding.height * 1.2) / gap);
 
-      const offsetX = (bounding.width - cols * gap) * 0.5
-      const offsetY = (bounding.height - rows * gap) * 0.5
+      const offsetX = (bounding.width - cols * gap) * 0.5;
+      const offsetY = (bounding.height - rows * gap) * 0.5;
 
-      const hWidth = bounding.width * 0.5
-      const hHeight = bounding.height * 0.5
+      const hWidth = bounding.width * 0.5;
+      const hHeight = bounding.height * 0.5;
 
       for (let i = 0; i < cols; i++) {
         for (let j = 0; j < rows; j++) {
-          const x = i * gap + offsetX
-          const y = j * gap + offsetY
+          const x = i * gap + offsetX;
+          const y = j * gap + offsetY;
 
-          const dx = hWidth - x
-          const dy = hHeight - y
+          const dx = hWidth - x;
+          const dy = hHeight - y;
 
           this.points.push({
             x,
@@ -917,7 +982,7 @@ while (i < projects.length) {
             dy,
             m: Math.random(),
             flowX: 0,
-          })
+          });
         }
       }
     }
@@ -926,12 +991,12 @@ while (i < projects.length) {
      * Move points
      */
     movePoints() {
-      const { points, animationProgress } = this
+      const { points, animationProgress } = this;
 
       points.forEach((p) => {
         // Flow
-        p.flowX = (animationProgress * -0.05) % 24
-      })
+        p.flowX = (animationProgress * -0.05) % 24;
+      });
     }
 
     /**
@@ -939,32 +1004,32 @@ while (i < projects.length) {
      */
     drawPoints() {
       const { bounding, ctx, points, animationProgress, pointsProgress, last } =
-        this
+        this;
 
-      const rAnimationProgress = Math.round(animationProgress * 100) / 100
-      const rPointsProgress = Math.round(pointsProgress * 100) / 100
+      const rAnimationProgress = Math.round(animationProgress * 100) / 100;
+      const rPointsProgress = Math.round(pointsProgress * 100) / 100;
 
       if (
         rPointsProgress === last.pointsProgress &&
         rAnimationProgress === last.animationProgress
       )
-        return
+        return;
 
-      ctx.clearRect(0, 0, bounding.width, bounding.height)
+      ctx.clearRect(0, 0, bounding.width, bounding.height);
 
-      ctx.beginPath()
+      ctx.beginPath();
 
       points.forEach((point) => {
-        const x = point.x + point.dx * (1 - pointsProgress) * 0.2 + point.flowX
-        const y = point.y + point.dy * (1 - pointsProgress) * 0.2
+        const x = point.x + point.dx * (1 - pointsProgress) * 0.2 + point.flowX;
+        const y = point.y + point.dy * (1 - pointsProgress) * 0.2;
 
-        ctx.rect(x, y, 0.5, 0.5)
-      })
+        ctx.rect(x, y, 0.5, 0.5);
+      });
 
-      ctx.stroke()
+      ctx.stroke();
 
-      last.pointsProgress = rPointsProgress
-      last.animationProgress = rAnimationProgress
+      last.pointsProgress = rPointsProgress;
+      last.animationProgress = rAnimationProgress;
     }
 
     /**
@@ -974,38 +1039,38 @@ while (i < projects.length) {
       // Calculate scroll progress
       this.scrollProgress =
         Math.max(
-          Math.min(1, ScrollTrigger.positionInViewport(this.el, 'top')),
-          0
+          Math.min(1, ScrollTrigger.positionInViewport(this.el, "top")),
+          0,
         ) *
           -1 +
         (1 -
           Math.max(
-            Math.min(1, ScrollTrigger.positionInViewport(this.el, 'bottom')),
-            0
-          ))
+            Math.min(1, ScrollTrigger.positionInViewport(this.el, "bottom")),
+            0,
+          ));
       this.smoothScrollProgress +=
-        (this.scrollProgress - this.smoothScrollProgress) * 0.1
+        (this.scrollProgress - this.smoothScrollProgress) * 0.1;
 
       this.el.style.setProperty(
-        '--scroll-progress',
-        String(this.scrollProgress)
-      )
+        "--scroll-progress",
+        String(this.scrollProgress),
+      );
 
       // Movement
-      this.movePoints()
-      this.moveLetters()
+      this.movePoints();
+      this.moveLetters();
 
       // Draw
-      this.drawPoints()
+      this.drawPoints();
     }
   }
 
-  new Section()
+  new Section();
 </script>
 
 <style lang="scss">
   .s-work {
-    --height: 100lvh;
+    --height: 100vh;
 
     position: relative;
     z-index: 2;
@@ -1013,6 +1078,13 @@ while (i < projects.length) {
     height: var(--height);
 
     background: #000000;
+
+    opacity: 0;
+    transition: opacity 0.3s ease;
+
+    &.is-mask-ready {
+      opacity: 1;
+    }
 
     &:before {
       position: absolute;
@@ -1025,21 +1097,19 @@ while (i < projects.length) {
 
       background: color(secondary);
 
-      content: '';
+      content: "";
     }
 
     .s__mask-outer {
-      position: sticky;
-      top: 0;
-      left: 0;
+      position: absolute;
+      inset: 0;
+      z-index: 100;
 
       width: 100%;
-      height: 100lvh;
+      height: 100%;
 
-      margin-top: -100lvh;
-
-      overflow: hidden;
       pointer-events: none;
+      will-change: opacity, transform;
     }
 
     .s__mask {
@@ -1049,8 +1119,6 @@ while (i < projects.length) {
 
       width: 100%;
       height: 100%;
-
-      will-change: scale, transform;
 
       &__svg {
         position: absolute;
@@ -1096,34 +1164,27 @@ while (i < projects.length) {
     .s__inner {
       @include flex(column, center, center);
 
-      position: sticky;
+      position: relative;
       top: 0;
       left: 0;
 
       width: 100%;
       height: 100vh;
+      height: 100lvh;
 
       background: #000000;
-      transform: translate3d(0, calc(var(--scroll-progress) * -15%), 0);
-
       color: color(primary);
-
-      will-change: clip-path, transform;
-
-      @include mq(phone) {
-        transform: none;
-      }
     }
 
     .s__ruler {
       --width: min(16.6667%, 19.625rem);
 
       position: absolute;
-      top: 10lvh;
+      top: 10vh;
       left: calc(50% - var(--width) / 2);
 
       width: var(--width);
-      height: 80lvh;
+      height: 80vh;
 
       // background: #0f03;
       pointer-events: none;
@@ -1139,7 +1200,8 @@ while (i < projects.length) {
 
     .s__title,
     .s__scene {
-      font: 700 min(18.75rem, 25lvh) / 1 font-family(bigger);
+      font: 700 min(18.75rem, 25vh) / 1 font-family(bigger);
+      font-size: min(18.75rem, 25lvh);
       text-align: center;
       text-transform: uppercase;
     }
@@ -1207,10 +1269,8 @@ while (i < projects.length) {
 
           color: color(shadow);
 
-          opacity: min(calc( var(--state) * 2 ), 1);
-          transform: scale(
-              1.05, 1.02
-            )
+          opacity: min(calc(var(--state) * 2), 1);
+          transform: scale(1.05, 1.02)
             translate3d(
               calc(var(--head) * 0.1rem * var(--state) * var(--state)),
               0,

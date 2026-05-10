@@ -1,33 +1,32 @@
 ---
-const { caption, cssClass, index, site, src, total, coverImage } = Astro.props
+const { caption, cssClass, index, site, src, total, coverImage } = Astro.props;
 
-// A random string with the syntax '[a-z][0-9]{3}-index-total'
-const key = Math.random().toString(36).slice(2, 6) + '-' + index + '/' + total
+// Short per-card identifier used in the visible caption.
+const key = Math.random().toString(36).slice(2, 6) + "-" + index + "/" + total;
 
-// Internal links (project pages) open in same tab; external open in new tab
-const isInternal = site.startsWith('/')
+// Internal project links stay in the same tab; external links open a new tab.
+const isInternal = site.startsWith("/");
 
-// Cover images per project — change these paths to swap the card preview image
-// Images are loaded from public/ folder. Set to '' or remove to use the default styled card.
+// Optional cover image per project card.
 const coverImageMap: Record<string, string> = {
-  '/projects/ams': '/projects/ams/images/cover.jpg',
-}
-const cardCover = coverImage || coverImageMap[site] || ''
+  "/projects/ams": "/projects/ams/images/cover.jpg",
+};
+const cardCover = coverImage || coverImageMap[site] || "";
 
-// Accent colors per project
+// Project-specific palette so each card keeps its own visual identity.
 const colorMap: Record<string, { bg: string; accent: string }> = {
-  '/work/gochain':            { bg: '#071a0f', accent: '#4ade80' },
-  '/work/private-clinic':    { bg: '#0e0a18', accent: '#a78bfa' },
-  '/work/ams-device':        { bg: '#080f1a', accent: '#60a5fa' },
-  '/projects/ams':             { bg: '#080f1a', accent: '#3b82f6' },
-  '/work/engineering-rocket':{ bg: '#180a06', accent: '#fb923c' },
-  '/work/portfolio-rocket':  { bg: '#0d0d0d', accent: '#f5f5f5' },
-}
-const palette = colorMap[site] ?? { bg: '#111', accent: '#fff' }
+  "/work/gochain": { bg: "#071a0f", accent: "#4ade80" },
+  "/work/private-clinic": { bg: "#0e0a18", accent: "#a78bfa" },
+  "/work/ams-device": { bg: "#080f1a", accent: "#60a5fa" },
+  "/projects/ams": { bg: "#080f1a", accent: "#3b82f6" },
+  "/work/engineering-rocket": { bg: "#180a06", accent: "#fb923c" },
+  "/work/portfolio-rocket": { bg: "#0d0d0d", accent: "#f5f5f5" },
+};
+const palette = colorMap[site] ?? { bg: "#111", accent: "#fff" };
 ---
 
 <a-work class={cssClass}>
-  <!-- Hidden video kept for SWork.js compatibility -->
+  <!-- Hidden video kept for the scroll-driven work timeline. -->
   <video
     data-src={src}
     class="a__video js-video"
@@ -36,24 +35,33 @@ const palette = colorMap[site] ?? { bg: '#111', accent: '#fff' }
     playsinline
     width="1082"
     height="636"
-    style="display:none"
-  ></video>
+    style="display:none"></video>
 
   <div class="a__inner">
-    <a href={site} target={isInternal ? '_self' : '_blank'} rel={isInternal ? undefined : 'noopener noreferrer'}>
-      <!-- Styled project card -->
+    <a
+      href={site}
+      target={isInternal ? "_self" : "_blank"}
+      rel={isInternal ? undefined : "noopener noreferrer"}
+    >
+      <!-- Static card surface rendered above the hidden video. -->
       <div class="a__card" style={`background:${palette.bg};`}>
-        {cardCover && (
-          <img
-            src={cardCover}
-            alt={caption}
-            class="a__card__cover"
-            onerror="this.style.display='none'"
-          />
-        )}
-        <div class="a__card__index" style={`color:${palette.accent};`}>{index}</div>
+        {
+          cardCover && (
+            <img
+              src={cardCover}
+              alt={caption}
+              class="a__card__cover"
+              onerror="this.style.display='none'"
+            />
+          )
+        }
+        <div class="a__card__index" style={`color:${palette.accent};`}>
+          {index}
+        </div>
         <div class="a__card__title" style={`color:#fff;`}>{caption}</div>
-        <div class="a__card__cta" style={`color:${palette.accent};`}>View project →</div>
+        <div class="a__card__cta" style={`color:${palette.accent};`}>
+          View project →
+        </div>
         <div class="a__card__grid"></div>
       </div>
 
@@ -67,44 +75,66 @@ const palette = colorMap[site] ?? { bg: '#111', accent: '#fff' }
 
 <script>
   class AWork extends HTMLElement {
-    static observedAttributes = ['progress']
+    static observedAttributes = ["progress"];
 
-    link: HTMLAnchorElement
-    video: HTMLVideoElement
+    link: HTMLAnchorElement | null = null;
+    video: HTMLVideoElement | null = null;
 
-    isPlaying: boolean
+    isPlaying = false;
 
     /**
      * Init
      */
     connectedCallback() {
-      // Elements
-      this.video = this.querySelector('.js-video')
-      this.link = this.querySelector('a')
+      // Cache the DOM nodes once the custom element is connected.
+      this.video = this.querySelector(".js-video") as HTMLVideoElement | null;
+      this.link = this.querySelector("a") as HTMLAnchorElement | null;
 
-      // Properties
-      this.isPlaying = false
+      if (!this.link) {
+        return;
+      }
 
-      // Events
-      this.link.addEventListener('click', this.onClick.bind(this))
+      // Sync visibility state from the current progress attribute.
+      this.syncProgressState();
+
+      // Keep the card from hijacking in-page anchor navigation.
+      this.link.addEventListener("click", this.onClick.bind(this));
     }
 
     /**
      * Attribute changed
      */
-    attributeChangedCallback(name, oldValue, newValue) {
-      if (name === 'progress') {
-        this.style.setProperty('--progress', newValue)
-
-        if (newValue === '1' || newValue === '-1') {
-          if (this.isPlaying) {
-            this.outView()
-          }
-        } else {
-          if (!this.isPlaying) {
-            this.inView()
-          }
+    attributeChangedCallback(
+      name: string,
+      oldValue: string | null,
+      newValue: string | null,
+    ) {
+      if (name === "progress") {
+        if (newValue === null) {
+          return;
         }
+
+        this.style.setProperty("--progress", newValue);
+        this.syncProgressState(newValue);
+      }
+    }
+
+    syncProgressState(progress: string | null = this.getAttribute("progress")) {
+      if (progress === null) {
+        return;
+      }
+
+      // End states mean the card should stop animating and leave view.
+      if (progress === "1" || progress === "-1") {
+        if (this.isPlaying) {
+          this.outView();
+        }
+
+        return;
+      }
+
+      if (!this.isPlaying) {
+        this.inView();
       }
     }
 
@@ -112,35 +142,56 @@ const palette = colorMap[site] ?? { bg: '#111', accent: '#fff' }
      * Gets in view
      */
     inView() {
-      if (this.video) this.video.play()
-      this.isPlaying = true
-      this.classList.add('is-inview')
+      if (this.video) {
+        this.video.play().catch(() => {});
+      }
+      this.isPlaying = true;
+      this.classList.add("is-inview");
     }
 
     /**
      * Gets out view
      */
     outView() {
-      if (this.video) this.video.pause()
-      this.isPlaying = false
-      this.classList.remove('is-inview')
+      if (this.video) {
+        this.video.pause();
+      }
+      this.isPlaying = false;
+      this.classList.remove("is-inview");
     }
 
     /**
      * On click
      */
     onClick(event: MouseEvent) {
-      if (this.link.href.includes('#')) {
-        event.preventDefault()
-        return false
+      if (!this.link) {
+        return;
+      }
+
+      if (this.link.href.includes("#")) {
+        event.preventDefault();
+        return false;
       }
     }
   }
 
-  customElements.define('a-work', AWork)
+  customElements.define("a-work", AWork);
 </script>
 
 <style lang="scss">
+  :global(html.is-safari) a-work {
+    content-visibility: visible;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  :global(html.is-safari) a-work.is-inview {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+
   a-work {
     position: relative;
     top: 0;
@@ -209,7 +260,9 @@ const palette = colorMap[site] ?? { bg: '#111', accent: '#fff' }
       object-fit: cover;
       z-index: 0;
       opacity: 0.85;
-      transition: opacity 0.3s ease, transform 0.5s ease;
+      transition:
+        opacity 0.3s ease,
+        transform 0.5s ease;
     }
 
     .a__card:hover .a__card__cover {
@@ -221,7 +274,11 @@ const palette = colorMap[site] ?? { bg: '#111', accent: '#fff' }
     .a__card__grid {
       position: absolute;
       inset: 0;
-      background-image: radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px);
+      background-image: radial-gradient(
+        circle,
+        rgba(255, 255, 255, 0.06) 1px,
+        transparent 1px
+      );
       background-size: 24px 24px;
       pointer-events: none;
     }

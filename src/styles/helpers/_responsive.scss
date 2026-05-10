@@ -6,7 +6,7 @@
 
 /* Media queries */
 @mixin mq($breakpoint) {
-  @if $breakpoint == 'default' {
+  @if $breakpoint == "default" {
     @content;
   } @else {
     $query: map.get($theme-breakpoints, $breakpoint);

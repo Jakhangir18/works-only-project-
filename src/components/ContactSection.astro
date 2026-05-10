@@ -1,14 +1,14 @@
 ---
 // ContactSection.astro
 // Final contact section with "Let's Work Together" and Spline 3D robot
-import SplineScene from './SplineScene.astro'
+import SplineScene from "./SplineScene.astro";
 ---
 
 <section class="contact-section">
   <!-- Left: Contact Information -->
   <div class="contact-section__left">
     <h1 class="contact-section__title">Let's work together</h1>
-    
+
     <div class="contact-section__cta">
       <p class="contact-section__label">Connect with me</p>
       <a href="mailto:tynshimj@oregonstate.edu" class="contact-section__email">
@@ -19,7 +19,7 @@ import SplineScene from './SplineScene.astro'
 
   <!-- Right: Spline 3D Robot -->
   <div class="contact-section__right">
-    <SplineScene 
+    <SplineScene
       embedUrl="https://my.spline.design/WVgnc5UCrLR3tVLe/"
       className="spline-container"
     />
@@ -27,8 +27,8 @@ import SplineScene from './SplineScene.astro'
 </section>
 
 <style lang="scss">
-  @use '../styles/helpers/fonts' as *;
-  @use '../styles/helpers/responsive' as *;
+  @use "../styles/helpers/fonts" as *;
+  @use "../styles/helpers/responsive" as *;
 
   .contact-section {
     position: relative;
@@ -44,28 +44,26 @@ import SplineScene from './SplineScene.astro'
 
     @media (max-width: 1024px) {
       grid-template-columns: 1fr;
-      grid-template-rows: auto 60vh;
+      grid-template-rows: auto 55vh;
       gap: 0;
       padding: 0;
     }
 
-    @media (max-width: 640px) {
-      grid-template-columns: 1fr;
-      grid-template-rows: auto 50vh;
-      gap: 0;
-      padding: 0;
+    @media (max-width: 576px) {
+      grid-template-rows: auto 45vh;
     }
   }
 
   .contact-section__left {
-    padding: clamp(3rem, 8vh, 8rem) clamp(2rem, 6vw, 6rem) clamp(3rem, 8vh, 8rem) clamp(2rem, 6vw, 6rem);
+    padding: clamp(3rem, 8vh, 8rem) clamp(2rem, 6vw, 6rem)
+      clamp(3rem, 8vh, 8rem) clamp(2rem, 6vw, 6rem);
     display: flex;
     flex-direction: column;
     justify-content: center;
     gap: clamp(3rem, 6vh, 8rem);
 
     @media (max-width: 1024px) {
-      padding: 0 clamp(2rem, 6vw, 6rem);
+      padding: clamp(3rem, 6vh, 5rem) clamp(1.5rem, 5vw, 4rem);
       text-align: center;
     }
   }
@@ -106,13 +104,15 @@ import SplineScene from './SplineScene.astro'
 
   .contact-section__email {
     font-family: font-family(editorial);
-    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-size: clamp(1.25rem, 4vw, 3.5rem);
     font-weight: 700;
     color: #fff;
     text-decoration: none;
     transition: opacity 0.3s ease;
-    display: inline-block;
-    width: fit-content;
+    display: block;
+    width: 100%;
+    word-break: break-word;
+    overflow-wrap: anywhere;
 
     &:hover {
       opacity: 0.8;
@@ -120,6 +120,11 @@ import SplineScene from './SplineScene.astro'
 
     @media (max-width: 1024px) {
       text-align: center;
+      font-size: clamp(1.1rem, 5vw, 3rem);
+    }
+
+    @media (max-width: 576px) {
+      font-size: clamp(1rem, 5.5vw, 1.5rem);
     }
   }
 
@@ -143,5 +148,4 @@ import SplineScene from './SplineScene.astro'
     border: none;
     display: block;
   }
-
 </style>

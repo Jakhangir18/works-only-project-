@@ -1,10 +1,10 @@
 ---
-import HeroHome from '../components/HeroHome.astro'
-import TransitionVideo from '../components/TransitionVideo.astro'
-import WhyWorkWithMe from '../components/WhyWorkWithMe.astro'
-import SWork from '../components/SWork.astro'
-import ContactSection from '../components/ContactSection.astro'
-import '../styles/global.scss'
+import HeroHome from "../components/HeroHome.astro";
+import TransitionVideo from "../components/TransitionVideo.astro";
+import WhyWorkWithMe from "../components/WhyWorkWithMe.astro";
+import SWork from "../components/SWork.astro";
+import ContactSection from "../components/ContactSection.astro";
+import "../styles/global.scss";
 ---
 
 <html lang="en" class="is-scroll-blocked theme-contrasted">
@@ -15,8 +15,9 @@ import '../styles/global.scss'
 
     <meta
       name="description"
-      content="Interactive works portfolio section with smooth animations." />
-    <meta name="viewport" content="width=device-width" />
+      content="Interactive works portfolio section with smooth animations."
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="generator" content={Astro.generator} />
 
     <meta name="robots" content="noindex, nofollow" />
@@ -70,12 +71,17 @@ import '../styles/global.scss'
   </head>
 
   <body>
+    <!-- Initial loader keeps the page hidden until the viewport state is ready. -->
     <div class="site-loader js-site-loader" aria-hidden="true">
       <div class="site-loader__inner">
         <div class="site-loader__logo">
-          <span class="site-loader__logo__letter site-loader__logo__letter--j">J</span>
+          <span class="site-loader__logo__letter site-loader__logo__letter--j"
+            >J</span
+          >
           <span class="site-loader__logo__dot">.</span>
-          <span class="site-loader__logo__letter site-loader__logo__letter--t">T</span>
+          <span class="site-loader__logo__letter site-loader__logo__letter--t"
+            >T</span
+          >
         </div>
         <div class="site-loader__progress">
           <div class="site-loader__progress__bar js-loader-progress"></div>
@@ -98,216 +104,223 @@ import '../styles/global.scss'
   </body>
 
   <script>
-    import Emitter from '../utils/Emitter'
-    import Ticker from '../utils/Ticker'
+    import Emitter from "../utils/Emitter";
+    import Ticker from "../utils/Ticker";
 
-    import { gsap } from 'gsap'
-    import { ScrollTrigger } from 'gsap/ScrollTrigger'
-    gsap.registerPlugin(ScrollTrigger)
+    import { gsap } from "gsap";
+    import { ScrollTrigger } from "gsap/ScrollTrigger";
+    gsap.registerPlugin(ScrollTrigger);
 
     declare global {
       interface Window {
-        safeWidth: number
-        safeHeight: number
-        maxScrollTop: number
-        scrollProgress: number
+        safeWidth: number;
+        safeHeight: number;
+        maxScrollTop: number;
+        scrollProgress: number;
       }
     }
 
     class Site {
       timeouts: any = {
         resizeThrottle: null,
-      }
+      };
 
-      hasSiteLoaded: boolean = false
-      hasWorksReady: boolean = false
-      introStarted: boolean = false
-      isReturning: boolean = false
+      hasSiteLoaded: boolean = false;
+      hasWorksReady: boolean = false;
+      introStarted: boolean = false;
+      isReturning: boolean = false;
 
-      windowWidth: number
-      windowHeight: number
-      clientWidth: number
-      clientHeight: number
+      windowWidth: number;
+      windowHeight: number;
+      clientWidth: number;
+      clientHeight: number;
 
-      isScrolling: boolean = false
+      isScrolling: boolean = false;
 
-      loaderProgress: number = 0
+      loaderProgress: number = 0;
 
       /**
        * Constructor
        */
       constructor() {
-        // OS class
-        let os = 'unknown'
-        if (navigator.userAgent.indexOf('Win') !== -1) {
-          os = 'windows'
-        } else if (navigator.userAgent.indexOf('Android') !== -1) {
-          os = 'android'
-        } else if (navigator.userAgent.indexOf('Mac') !== -1) {
-          os = 'mac'
-        } else if (navigator.userAgent.indexOf('Linux') !== -1) {
-          os = 'linux'
+        // Add OS/browser classes so components can branch on platform quirks.
+        let os = "unknown";
+        if (navigator.userAgent.indexOf("Win") !== -1) {
+          os = "windows";
+        } else if (navigator.userAgent.indexOf("Android") !== -1) {
+          os = "android";
+        } else if (navigator.userAgent.indexOf("Mac") !== -1) {
+          os = "mac";
+        } else if (navigator.userAgent.indexOf("Linux") !== -1) {
+          os = "linux";
         }
-        document.documentElement.classList.add(`is-${os}`)
+        document.documentElement.classList.add(`is-${os}`);
 
         // Browser class
-        let browser = 'unknown'
-        if (navigator.userAgent.indexOf('Firefox') !== -1) {
-          browser = 'firefox'
-        } else if (navigator.userAgent.indexOf('Chrome') !== -1) {
-          browser = 'chrome'
-        } else if (navigator.userAgent.indexOf('Safari') !== -1) {
-          browser = 'safari'
+        let browser = "unknown";
+        if (navigator.userAgent.indexOf("Firefox") !== -1) {
+          browser = "firefox";
+        } else if (navigator.userAgent.indexOf("Chrome") !== -1) {
+          browser = "chrome";
+        } else if (navigator.userAgent.indexOf("Safari") !== -1) {
+          browser = "safari";
         }
-        document.documentElement.classList.add(`is-${browser}`)
+        document.documentElement.classList.add(`is-${browser}`);
 
-        // Check if returning from a project page
-        if (sessionStorage.getItem('returnScrollY') !== null || sessionStorage.getItem('returnToWorks') !== null) {
-          this.isReturning = true
+        // Returning from a project page skips the loader and restores scroll.
+        if (
+          sessionStorage.getItem("returnScrollY") !== null ||
+          sessionStorage.getItem("returnToWorks") !== null
+        ) {
+          this.isReturning = true;
         } else {
-          this.animateLoader()
+          this.animateLoader();
         }
 
-        this.bindEvents()
+        this.bindEvents();
       }
 
       /**
        * Initialization
        */
       init() {
-        Ticker.init()
+        Ticker.init();
 
-        this.onResize()
+        this.onResize();
 
-        if (document.documentElement.classList.contains('is-works-ready')) {
-          this.hasWorksReady = true
+        if (document.documentElement.classList.contains("is-works-ready")) {
+          this.hasWorksReady = true;
         }
 
-        this.tryStartIntro()
+        this.tryStartIntro();
       }
 
       /**
        * Animate loader progress bar
        */
       animateLoader() {
-        const progressBar = document.querySelector('.js-loader-progress') as HTMLElement
-        if (!progressBar) return
+        const progressBar = document.querySelector(
+          ".js-loader-progress",
+        ) as HTMLElement;
+        if (!progressBar) return;
 
-        const duration = 4000 // 4 seconds for fonts to load properly
-        const startTime = Date.now()
+        const duration = 4000; // 4 seconds for fonts to load properly
+        const startTime = Date.now();
 
-        const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3)
+        const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
 
         const animate = () => {
-          const elapsed = Date.now() - startTime
-          const rawProgress = Math.min(elapsed / duration, 1)
-          const easedProgress = easeOutCubic(rawProgress) * 100
+          const elapsed = Date.now() - startTime;
+          const rawProgress = Math.min(elapsed / duration, 1);
+          const easedProgress = easeOutCubic(rawProgress) * 100;
 
-          progressBar.style.width = `${easedProgress}%`
+          progressBar.style.width = `${easedProgress}%`;
 
           if (rawProgress < 1) {
-            requestAnimationFrame(animate)
+            requestAnimationFrame(animate);
           }
-        }
+        };
 
-        animate()
+        animate();
       }
 
       /**
        * Bind events
        */
       bindEvents() {
-        window.addEventListener('resize', this.resizeThrottle.bind(this))
-        window.addEventListener('scroll', this.onScroll.bind(this), {
+        window.addEventListener("resize", this.resizeThrottle.bind(this));
+        window.addEventListener("scroll", this.onScroll.bind(this), {
           passive: true,
-        })
+        });
 
-        Emitter.on('updateViewport', this.onResize, this, true)
-        Emitter.on('siteLoaded', this.onSiteLoaded, this, true)
-        Emitter.on('worksReady', this.onWorksReady, this, true)
+        Emitter.on("updateViewport", this.onResize, this, true);
+        Emitter.on("siteLoaded", this.onSiteLoaded, this, true);
+        Emitter.on("worksReady", this.onWorksReady, this, true);
 
         const observer = new IntersectionObserver(
           (entries) => {
             entries.forEach((entry) => {
               entry.target.dispatchEvent(
-                new CustomEvent('intersect', {
+                new CustomEvent("intersect", {
                   detail: { isIntersecting: entry.isIntersecting },
-                })
-              )
+                }),
+              );
 
               if (entry.isIntersecting) {
-                entry.target.classList.add('is-in-view')
+                entry.target.classList.add("is-in-view");
                 entry.target.classList.remove(
-                  'is-out-of-view',
-                  'is-out-of-view-top',
-                  'is-out-of-view-bottom'
-                )
+                  "is-out-of-view",
+                  "is-out-of-view-top",
+                  "is-out-of-view-bottom",
+                );
               } else {
-                entry.target.classList.remove('is-in-view')
-                entry.target.classList.add('is-out-of-view')
+                entry.target.classList.remove("is-in-view");
+                entry.target.classList.add("is-out-of-view");
 
                 entry.target.classList.toggle(
-                  'is-out-of-view-top',
-                  entry.boundingClientRect.top < 0
-                )
+                  "is-out-of-view-top",
+                  entry.boundingClientRect.top < 0,
+                );
                 entry.target.classList.toggle(
-                  'is-out-of-view-bottom',
-                  entry.boundingClientRect.top > 0
-                )
+                  "is-out-of-view-bottom",
+                  entry.boundingClientRect.top > 0,
+                );
               }
-            })
+            });
           },
           {
             threshold: 0,
-          }
-        )
+          },
+        );
 
-        document.querySelectorAll('[data-intersect]').forEach((el) => {
-          observer.observe(el)
-        })
+        document.querySelectorAll("[data-intersect]").forEach((el) => {
+          observer.observe(el);
+        });
 
-        // Site loaded event
-        if (document.readyState === 'complete') {
-          this.siteLoaded()
+        // Wait until the window load event so images and fonts are settled.
+        if (document.readyState === "complete") {
+          this.siteLoaded();
         } else {
-          window.addEventListener('load', this.siteLoaded.bind(this), { once: true })
+          window.addEventListener("load", this.siteLoaded.bind(this), {
+            once: true,
+          });
         }
 
-        this.onScroll()
+        this.onScroll();
 
-        // Save scroll position when navigating to a project page
+        // Save scroll position before jumping to a project page.
         document.querySelectorAll('a[href^="/work/"]').forEach((link) => {
-          link.addEventListener('click', () => {
-            sessionStorage.setItem('returnScrollY', String(window.scrollY))
-          })
-        })
+          link.addEventListener("click", () => {
+            sessionStorage.setItem("returnScrollY", String(window.scrollY));
+          });
+        });
       }
 
       /**
        * Set loaded class
        */
       siteLoaded() {
-        // Small delay to ensure custom fonts are fully applied before JS calculates dimensions
+        // Small delay so custom fonts are applied before measurements happen.
         setTimeout(() => {
-          document.documentElement.classList.add('is-loaded')
-          Emitter.emit('siteLoaded')
-        }, 150)
+          document.documentElement.classList.add("is-loaded");
+          Emitter.emit("siteLoaded");
+        }, 150);
       }
 
       /**
        * On site loaded
        */
       onSiteLoaded() {
-        this.hasSiteLoaded = true
-        this.tryStartIntro()
+        this.hasSiteLoaded = true;
+        this.tryStartIntro();
       }
 
       /**
        * On works ready
        */
       onWorksReady() {
-        this.hasWorksReady = true
-        this.tryStartIntro()
+        this.hasWorksReady = true;
+        this.tryStartIntro();
       }
 
       /**
@@ -315,107 +328,114 @@ import '../styles/global.scss'
        */
       tryStartIntro() {
         if (this.introStarted || !this.hasSiteLoaded || !this.hasWorksReady) {
-          return
+          return;
         }
 
-        this.introStarted = true
-        Ticker.nextTick(this.intro, this)
+        this.introStarted = true;
+        Ticker.nextTick(this.intro, this);
       }
 
       /**
        * Resize throttle
        */
       resizeThrottle() {
-        clearTimeout(this.timeouts.resizeThrottle)
+        clearTimeout(this.timeouts.resizeThrottle);
 
         this.timeouts.resizeThrottle = setTimeout(() => {
-          Ticker.nextTick(this.onResize, this)
-        }, 200)
+          Ticker.nextTick(this.onResize, this);
+        }, 200);
       }
 
       /**
        * Resize handler
        */
       onResize() {
-        const newWidth = window.innerWidth
-        let widthChanged = false
+        const newWidth = window.innerWidth;
+        let widthChanged = false;
         if (this.windowWidth !== newWidth) {
           if (this.windowWidth !== undefined) {
-            widthChanged = true
+            widthChanged = true;
           }
 
-          this.windowWidth = newWidth
-          this.clientWidth = document.body.clientWidth
+          this.windowWidth = newWidth;
+          this.clientWidth = document.body.clientWidth;
         }
 
-        const newHeight = window.innerHeight
-        let heightChanged = false
+        const newHeight = window.innerHeight;
+        let heightChanged = false;
         if (this.windowHeight !== newHeight) {
           if (this.windowHeight !== undefined) {
-            heightChanged = true
+            heightChanged = true;
           }
 
-          this.windowHeight = newHeight
-          this.clientHeight = document.body.clientHeight
+          this.windowHeight = newHeight;
+          this.clientHeight = document.body.clientHeight;
         }
 
-        window.safeWidth = newWidth
-        window.safeHeight = newHeight
+        window.safeWidth = newWidth;
+        window.safeHeight = newHeight;
 
-        // Stable viewport height variable — iOS Safari changes innerHeight as toolbar shows/hides
-        document.documentElement.style.setProperty('--real-vh', `${newHeight * 0.01}px`)
+        // Keep a stable viewport height variable because iOS Safari changes
+        // innerHeight as the browser toolbar shows and hides.
+        document.documentElement.style.setProperty(
+          "--real-vh",
+          `${newHeight * 0.01}px`,
+        );
 
-        window.maxScrollTop = document.body.scrollHeight - window.safeHeight
+        window.maxScrollTop = document.body.scrollHeight - window.safeHeight;
 
-        this.setScrollProgress()
+        this.setScrollProgress();
 
-        Emitter.emit('resize', widthChanged, heightChanged)
+        Emitter.emit("resize", widthChanged, heightChanged);
       }
 
       /**
        * Scroll handler
        */
       onScroll() {
-        this.setScrollProgress()
+        this.setScrollProgress();
 
         Ticker.nextTick(() => {
-          Emitter.emit('scroll', window.scrollY)
-        })
+          Emitter.emit("scroll", window.scrollY);
+        });
       }
 
       /**
        * Set scroll progress
        */
       setScrollProgress() {
-        window.scrollProgress = window.scrollY / window.maxScrollTop
+        window.scrollProgress = window.scrollY / window.maxScrollTop;
       }
 
       /**
        * Intro
        */
       intro() {
-        const wrapper: HTMLElement = document.querySelector('.js-site-wrapper')
-        const loader: HTMLElement = document.querySelector('.js-site-loader')
+        const wrapper: HTMLElement = document.querySelector(".js-site-wrapper");
+        const loader: HTMLElement = document.querySelector(".js-site-loader");
 
-        // If returning from a project page — skip loader, restore scroll
-        const returnScrollY = sessionStorage.getItem('returnScrollY')
-        const returnToWorks = sessionStorage.getItem('returnToWorks')
+        // If returning from a project page, skip the loader and restore scroll.
+        const returnScrollY = sessionStorage.getItem("returnScrollY");
+        const returnToWorks = sessionStorage.getItem("returnToWorks");
         if (returnScrollY !== null || returnToWorks !== null) {
-          sessionStorage.removeItem('returnScrollY')
-          sessionStorage.removeItem('returnToWorks')
-          if (loader) loader.remove()
-          wrapper.style.opacity = '1'
-          document.documentElement.classList.remove('is-scroll-blocked')
+          sessionStorage.removeItem("returnScrollY");
+          sessionStorage.removeItem("returnToWorks");
+          if (loader) loader.remove();
+          wrapper.style.opacity = "1";
+          document.documentElement.classList.remove("is-scroll-blocked");
           if (returnScrollY !== null) {
-            window.scrollTo({ top: parseInt(returnScrollY, 10), behavior: 'instant' })
+            window.scrollTo({
+              top: parseInt(returnScrollY, 10),
+              behavior: "instant",
+            });
           } else {
             // Scroll to the works section
-            const worksEl = document.getElementById('work')
+            const worksEl = document.getElementById("work");
             if (worksEl) {
-              window.scrollTo({ top: worksEl.offsetTop, behavior: 'instant' })
+              window.scrollTo({ top: worksEl.offsetTop, behavior: "instant" });
             }
           }
-          return
+          return;
         }
 
         if (loader) {
@@ -423,23 +443,23 @@ import '../styles/global.scss'
             opacity: 0,
             duration: 0.25,
             onComplete: () => {
-              loader.remove()
+              loader.remove();
             },
-          })
+          });
         }
 
         gsap.to(wrapper, {
           opacity: 1,
           duration: 0.3,
           onComplete: () => {
-            document.documentElement.classList.remove('is-scroll-blocked')
+            document.documentElement.classList.remove("is-scroll-blocked");
           },
-        })
+        });
       }
     }
 
-    const site = new Site()
-    site.init()
+    const site = new Site();
+    site.init();
   </script>
 
   <style lang="scss">
