@@ -4,68 +4,91 @@
 // Positioned above rocket, responds to scroll progress of RocketStorySection.
 ---
 
+<!-- Fixed text overlay that mirrors the rocket story beats. -->
 <div class="text-overlay js-text-overlay">
   <div class="text-overlay__slides">
-
-    <!-- Slide 1: Who? — слева, анимация слева -->
-    <div class="text-overlay__slide js-slide slide-1" data-slide="1" data-from="0.0" data-to="0.25">
+    <!-- Slide 1: intro / left side. -->
+    <div
+      class="text-overlay__slide js-slide slide-1"
+      data-slide="1"
+      data-from="0.0"
+      data-to="0.25"
+    >
       <span class="text-overlay__kicker">01 — WHO?</span>
       <h2 class="text-overlay__head">
-        A developer who thinks<br/>
+        A developer who thinks<br />
         <em>like an engineer.</em>
       </h2>
       <p class="text-overlay__body">
-        I approach problems systemically, build solutions structurally, and believe that good code reflects clear thinking.
+        I approach problems systemically, build solutions structurally, and
+        believe that good code reflects clear thinking.
       </p>
     </div>
 
-    <!-- Slide 2: What? — справа, анимация справа -->
-    <div class="text-overlay__slide js-slide slide-2" data-slide="2" data-from="0.25" data-to="0.50">
+    <!-- Slide 2: second beat / right side. -->
+    <div
+      class="text-overlay__slide js-slide slide-2"
+      data-slide="2"
+      data-from="0.25"
+      data-to="0.50"
+    >
       <span class="text-overlay__kicker">02 — WHAT?</span>
       <h2 class="text-overlay__head">
-        Thoughtful, interactive<br/>
+        Thoughtful, interactive<br />
         <em>digital experiences.</em>
       </h2>
       <p class="text-overlay__body">
-        Every interaction feels intentional. Every transition carries meaning. Every detail serves a purpose.
+        Every interaction feels intentional. Every transition carries meaning.
+        Every detail serves a purpose.
       </p>
     </div>
 
-    <!-- Slide 3: How? — справа, остается там же -->
-    <div class="text-overlay__slide js-slide slide-3" data-slide="3" data-from="0.50" data-to="0.75">
+    <!-- Slide 3: same side, smoother transition. -->
+    <div
+      class="text-overlay__slide js-slide slide-3"
+      data-slide="3"
+      data-from="0.50"
+      data-to="0.75"
+    >
       <span class="text-overlay__kicker">03 — HOW?</span>
       <h2 class="text-overlay__head">
-        Think in systems.<br/>
+        Think in systems.<br />
         <em>Code with clarity.</em>
       </h2>
       <p class="text-overlay__body">
-        I start with structure before syntax. Turn complexity into clarity. Transform chaos into order, and logic into movement.
+        I start with structure before syntax. Turn complexity into clarity.
+        Transform chaos into order, and logic into movement.
       </p>
     </div>
 
-    <!-- Slide 4: Why? — разделено: сверху слева и снизу справа -->
-    <div class="text-overlay__slide js-slide slide-4" data-slide="4" data-from="0.75" data-to="1.0">
+    <!-- Slide 4: split layout for the final beat. -->
+    <div
+      class="text-overlay__slide js-slide slide-4"
+      data-slide="4"
+      data-from="0.75"
+      data-to="1.0"
+    >
       <div class="slide-4__top">
         <span class="text-overlay__kicker">04 — WHY?</span>
       </div>
       <div class="slide-4__bottom">
         <h2 class="text-overlay__head">
-          Because boring<br/>
+          Because boring<br />
           <em>is not an option.</em>
         </h2>
         <p class="text-overlay__body">
-          Every project should create a sense of motion and progress. Static is forgotten. Movement is remembered.
+          Every project should create a sense of motion and progress. Static is
+          forgotten. Movement is remembered.
         </p>
       </div>
     </div>
-
   </div>
 </div>
 
 <style lang="scss">
-  @use '../styles/helpers/fonts' as *;
+  @use "../styles/helpers/fonts" as *;
 
-  /* ── Fixed overlay layer, only visible during rocket section ── */
+  /* Fixed overlay layer, only visible during the rocket section. */
   .text-overlay {
     position: fixed;
     inset: 0;
@@ -75,7 +98,7 @@
     z-index: 10;
     opacity: 0;
     transition: opacity 0.3s ease;
-    
+
     &.is-active {
       opacity: 1;
     }
@@ -87,7 +110,7 @@
     height: 100%;
   }
 
-  /* ── Individual slides with different positioning ── */
+  /* Position each slide differently so the story feels directional. */
   .text-overlay__slide {
     position: absolute;
     opacity: 0;
@@ -181,10 +204,12 @@
   }
 
   @media (max-width: 768px) {
-    .slide-1, .slide-2, .slide-3 {
-      left: 2rem;
-      right: 2rem;
-      max-width: calc(100vw - 4rem);
+    .slide-1,
+    .slide-2,
+    .slide-3 {
+      left: 1.5rem;
+      right: 1.5rem;
+      max-width: calc(100vw - 3rem);
       text-align: left;
       align-items: flex-start;
     }
@@ -199,6 +224,32 @@
       align-items: flex-start;
     }
   }
+
+  @media (max-width: 576px) {
+    .text-overlay__head {
+      font-size: clamp(1.75rem, 8vw, 2.6rem);
+    }
+
+    .text-overlay__body {
+      font-size: 0.875rem;
+    }
+
+    .text-overlay__kicker {
+      font-size: 0.75rem;
+    }
+
+    /* On mobile, move text to the bottom so it doesn't overlap the centered rocket */
+    .slide-1,
+    .slide-2,
+    .slide-3 {
+      top: auto;
+      bottom: clamp(4rem, 10vh, 7rem);
+    }
+
+    .slide-4 {
+      padding: 1.5rem;
+    }
+  }
 </style>
 
 <script>
@@ -210,70 +261,77 @@
    * Слайд 4: разделенный макет
    */
   (function initTextOverlay() {
-    const slides = Array.from(document.querySelectorAll('.js-slide')) as HTMLElement[]
-    const overlay = document.querySelector('.js-text-overlay') as HTMLElement
+    const slides = Array.from(
+      document.querySelectorAll(".js-slide"),
+    ) as HTMLElement[];
+    const overlay = document.querySelector(".js-text-overlay") as HTMLElement;
 
-    const FADE = 0.04 // fade duration as fraction (reduced for longer hold time)
+    const FADE = 0.04;
 
-    /* ── Calculate opacity for a slide at given progress ── */
+    // Cache the mobile breakpoint and refresh it on resize only.
+    let isMobileLayout = window.innerWidth < 576;
+    window.addEventListener(
+      "resize",
+      () => {
+        isMobileLayout = window.innerWidth < 576;
+      },
+      { passive: true },
+    );
+
+    /* Calculate opacity for a slide at a given progress value. */
     function slideOpacity(from: number, to: number, progress: number): number {
-      if (progress <= from) return 0
-      if (progress < from + FADE) return (progress - from) / FADE
-      if (progress < to - FADE) return 1
-      if (progress < to) return 1 - (progress - (to - FADE)) / FADE
-      return 0
+      if (progress <= from) return 0;
+      if (progress < from + FADE) return (progress - from) / FADE;
+      if (progress < to - FADE) return 1;
+      if (progress < to) return 1 - (progress - (to - FADE)) / FADE;
+      return 0;
     }
 
-    /* ── Update all slides with directional animations ── */
-    window.updateTextSlides = function(progress: number) {
+    /* Update all slides with directional motion. */
+    window.updateTextSlides = function (progress: number) {
       slides.forEach((slide, index) => {
-        const from = parseFloat(slide.dataset.from!)
-        const to = parseFloat(slide.dataset.to!)
-        const op = slideOpacity(from, to, progress)
-        
-        slide.style.opacity = String(op)
-        
-        // Directional animations based on slide number
-        const slideNum = parseInt(slide.dataset.slide!)
-        let translateX = 0
-        let translateY = 0
-        
+        const from = parseFloat(slide.dataset.from!);
+        const to = parseFloat(slide.dataset.to!);
+        const op = slideOpacity(from, to, progress);
+
+        slide.style.opacity = String(op);
+
+        // Use the slide number to pick the matching movement pattern.
+        const slideNum = parseInt(slide.dataset.slide!);
+        let translateX = 0;
+        let translateY = 0;
+
         if (slideNum === 1) {
-          // Slide 1: приходит слева, вертикально центрирован
-          translateX = (1 - op) * -60
-          translateY = -50 // процент для центрирования
+          translateX = (1 - op) * -60;
+          // On mobile, slides are bottom-positioned — no -50% centering needed
+          translateY = isMobileLayout ? (1 - op) * 20 : -50;
         } else if (slideNum === 2) {
-          // Slide 2: приходит справа, вертикально центрирован
-          translateX = (1 - op) * 60
-          translateY = -50 // процент для центрирования
+          translateX = (1 - op) * 60;
+          translateY = isMobileLayout ? (1 - op) * 20 : -50;
         } else if (slideNum === 3) {
-          // Slide 3: плавная смена на месте (справа), вертикально центрирован
-          translateX = 0
-          translateY = -50 + (1 - op) * 2 // центр + небольшой сдвиг
+          translateX = 0;
+          translateY = isMobileLayout ? (1 - op) * 20 : -50 + (1 - op) * 2;
         } else if (slideNum === 4) {
-          // Slide 4: элементы приходят сверху/снизу
-          translateX = 0
-          translateY = (1 - op) * 30
+          translateX = 0;
+          translateY = (1 - op) * 30;
         }
-        
-        // Применяем transform с процентами для слайдов 1-3
-        if (slideNum <= 3) {
-          slide.style.transform = `translate(${translateX}px, calc(${translateY}% + ${(1 - op) * 10}px))`
+
+        if (slideNum <= 3 && !isMobileLayout) {
+          slide.style.transform = `translate(${translateX}px, calc(${translateY}% + ${(1 - op) * 10}px))`;
         } else {
-          slide.style.transform = `translate(${translateX}px, ${translateY}px)`
+          slide.style.transform = `translate(${translateX}px, ${translateY}px)`;
         }
-      })
-      
-      // Toggle overlay visibility based on progress
-      // Keep visible once started (don't fade out at end)
+      });
+
+      // Keep the overlay visible once the story has started.
       if (progress > 0) {
-        overlay.classList.add('is-active')
+        overlay.classList.add("is-active");
       } else {
-        overlay.classList.remove('is-active')
+        overlay.classList.remove("is-active");
       }
-    }
+    };
 
     // Initial update
-    window.updateTextSlides?.(0)
-  })()
+    window.updateTextSlides?.(0);
+  })();
 </script>
