@@ -1,11 +1,12 @@
 ---
 const menuItems = [
-  { label: 'WORK', href: '#work' },
-  { label: 'SERVICES', href: '#services', hasDropdown: true },
-  { label: 'INDUSTRIES', href: '#industries', hasDropdown: true },
-  { label: 'ABOUT', href: '#about' },
-  { label: 'CONTACT', href: '#contact' },
-]
+  // Top-level navigation targets for the homepage sections.
+  { label: "WORK", href: "#work" },
+  { label: "SERVICES", href: "#services", hasDropdown: true },
+  { label: "INDUSTRIES", href: "#industries", hasDropdown: true },
+  { label: "ABOUT", href: "#about" },
+  { label: "CONTACT", href: "#contact" },
+];
 ---
 
 <nav class="navigation">
@@ -15,22 +16,76 @@ const menuItems = [
     </a>
 
     <ul class="navigation__menu">
-      {menuItems.map((item) => (
-        <li class="navigation__item">
-          <a href={item.href} class="navigation__link">
-            {item.label}
-            {item.hasDropdown && <span class="navigation__arrow">▼</span>}
-          </a>
-        </li>
-      ))}
+      {
+        menuItems.map((item) => (
+          <li class="navigation__item">
+            <a href={item.href} class="navigation__link">
+              {item.label}
+              {item.hasDropdown && <span class="navigation__arrow">▼</span>}
+            </a>
+          </li>
+        ))
+      }
     </ul>
+
+    <button
+      class="navigation__burger js-burger"
+      aria-label="Open menu"
+      aria-expanded="false"
+    >
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
   </div>
 </nav>
 
+<!-- Mobile overlay -->
+<div class="nav-overlay js-nav-overlay" aria-hidden="true">
+  <ul class="nav-overlay__menu">
+    {
+      menuItems.map((item) => (
+        <li class="nav-overlay__item">
+          <a href={item.href} class="nav-overlay__link js-nav-link">
+            {item.label}
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+</div>
+
+<script>
+  // Keep the mobile overlay in sync with the burger button state.
+  const burger = document.querySelector(".js-burger") as HTMLButtonElement;
+  const overlay = document.querySelector(".js-nav-overlay") as HTMLElement;
+  const links = document.querySelectorAll(".js-nav-link");
+
+  function openMenu() {
+    overlay.classList.add("is-open");
+    burger.classList.add("is-active");
+    burger.setAttribute("aria-expanded", "true");
+    document.documentElement.classList.add("is-nav-open");
+  }
+
+  function closeMenu() {
+    overlay.classList.remove("is-open");
+    burger.classList.remove("is-active");
+    burger.setAttribute("aria-expanded", "false");
+    document.documentElement.classList.remove("is-nav-open");
+  }
+
+  burger?.addEventListener("click", () => {
+    overlay.classList.contains("is-open") ? closeMenu() : openMenu();
+  });
+
+  links.forEach((link) => link.addEventListener("click", closeMenu));
+</script>
+
 <style lang="scss">
-  @use '../styles/helpers/fonts' as *;
-  @use '../styles/helpers/colors' as *;
-  @use '../styles/helpers/responsive' as *;
+  @use "../styles/helpers/fonts" as *;
+  @use "../styles/helpers/colors" as *;
+  @use "../styles/helpers/responsive" as *;
 
   .navigation {
     position: absolute;
@@ -50,20 +105,29 @@ const menuItems = [
 
     max-width: 1600px;
     margin: 0 auto;
-    padding: 2rem 2rem;
+    padding: 1.5rem 1.5rem;
 
-    @include mq(tablet) {
-      padding: 2.5rem 4rem;
+    @include mq(tablet-sm) {
+      padding: 1.5rem 1.5rem;
+    }
+
+    @media (min-width: 768px) {
+      padding: 2rem 3rem;
+    }
+
+    @media (min-width: 1200px) {
+      padding: 2rem 4rem;
     }
   }
 
   .navigation__logo {
     position: relative;
-    
+
     color: color(primary);
     font: 600 1.5rem / 1 font-family(fraktion);
     letter-spacing: 0.05em;
     text-decoration: none;
+    z-index: 1001;
 
     transition: opacity 0.3s ease;
 
@@ -77,14 +141,14 @@ const menuItems = [
   }
 
   .navigation__menu {
-    display: none;
+    display: flex;
     gap: 3rem;
     margin: 0;
     padding: 0;
     list-style: none;
 
-    @include mq(tablet) {
-      display: flex;
+    @include mq(tablet-sm) {
+      display: none;
     }
   }
 
@@ -106,7 +170,7 @@ const menuItems = [
     transition: opacity 0.3s ease;
 
     &::after {
-      content: '';
+      content: "";
       position: absolute;
       bottom: -0.5rem;
       left: 0;
@@ -138,5 +202,94 @@ const menuItems = [
 
   .navigation__link:hover .navigation__arrow {
     transform: translateY(2px);
+  }
+
+  /* ── Hamburger button (mobile only) ── */
+  .navigation__burger {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    width: 36px;
+    height: 36px;
+    padding: 4px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    z-index: 1001;
+
+    span {
+      display: block;
+      width: 100%;
+      height: 1.5px;
+      background: color(primary);
+      transform-origin: center;
+      transition:
+        transform 0.3s ease,
+        opacity 0.3s ease;
+    }
+
+    &.is-active {
+      span:nth-child(1) {
+        transform: translateY(6.5px) rotate(45deg);
+      }
+      span:nth-child(2) {
+        opacity: 0;
+        transform: scaleX(0);
+      }
+      span:nth-child(3) {
+        transform: translateY(-6.5px) rotate(-45deg);
+      }
+    }
+
+    @include mq(tablet-sm) {
+      display: flex;
+    }
+  }
+
+  /* ── Mobile overlay menu ── */
+  .nav-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 999;
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow-y: auto;
+
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+
+    &.is-open {
+      opacity: 1;
+      pointer-events: all;
+    }
+  }
+
+  .nav-overlay__menu {
+    list-style: none;
+    margin: 0;
+    padding: clamp(4rem, 8vh, 6rem) 2rem;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(1.5rem, 4vh, 2.5rem);
+  }
+
+  .nav-overlay__link {
+    font: 400 clamp(1.75rem, 8vw, 3.5rem) / 1 font-family(editorial);
+    color: color(primary);
+    text-decoration: none;
+    letter-spacing: -0.01em;
+    opacity: 0.9;
+    transition: opacity 0.2s ease;
+
+    &:hover,
+    &:active {
+      opacity: 0.5;
+    }
   }
 </style>
