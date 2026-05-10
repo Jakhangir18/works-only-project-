@@ -1,20 +1,25 @@
 ---
-const {
-  texts = ['Hello', 'World'],
-  className = '',
-} = Astro.props
+const { texts = ["Hello", "World"], className = "" } = Astro.props;
 
 interface Props {
-  texts: string[]
-  className?: string
+  texts: string[];
+  className?: string;
 }
 ---
 
-<div class:list={['morphing-text', className]} data-morphing-text data-texts={JSON.stringify(texts)}>
+<div
+  class:list={["morphing-text", className]}
+  data-morphing-text
+  data-texts={JSON.stringify(texts)}
+>
   <span class="morphing-text__text1" data-text1></span>
   <span class="morphing-text__text2" data-text2></span>
-  
-  <svg id="morphing-filters" class="morphing-text__filters" preserveAspectRatio="xMidYMid slice">
+
+  <svg
+    id="morphing-filters"
+    class="morphing-text__filters"
+    preserveAspectRatio="xMidYMid slice"
+  >
     <defs>
       <filter id="threshold">
         <feColorMatrix
@@ -24,129 +29,134 @@ interface Props {
                   0 1 0 0 0
                   0 0 1 0 0
                   0 0 0 255 -140"
-        />
+        ></feColorMatrix>
       </filter>
     </defs>
   </svg>
 </div>
 
 <script>
-  const morphTime = 1.5
-  const cooldownTime = 0.5
+  const morphTime = 1.5;
+  const cooldownTime = 0.5;
 
-  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
-  const MAX_BLUR = isSafari ? 8 : 20
+  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  const MAX_BLUR = isSafari ? 8 : 20;
 
   class MorphingTextAnimation {
-    container: HTMLElement
-    text1: HTMLSpanElement
-    text2: HTMLSpanElement
-    texts: string[]
+    container: HTMLElement;
+    text1: HTMLSpanElement;
+    text2: HTMLSpanElement;
+    texts: string[];
 
-    textIndex: number = 0
-    morph: number = 0
-    cooldown: number = cooldownTime
-    time: Date = new Date()
-    animationId: number = 0
-    frameCount: number = 0
+    textIndex: number = 0;
+    morph: number = 0;
+    cooldown: number = cooldownTime;
+    time: Date = new Date();
+    animationId: number = 0;
+    frameCount: number = 0;
 
     constructor(container: HTMLElement) {
-      this.container = container
-      this.text1 = container.querySelector('[data-text1]')!
-      this.text2 = container.querySelector('[data-text2]')!
+      this.container = container;
+      this.text1 = container.querySelector("[data-text1]")!;
+      this.text2 = container.querySelector("[data-text2]")!;
 
-      const textsAttr = container.dataset.texts
-      this.texts = textsAttr ? JSON.parse(textsAttr) : ['Hello', 'World']
+      const textsAttr = container.dataset.texts;
+      this.texts = textsAttr ? JSON.parse(textsAttr) : ["Hello", "World"];
 
-      this.animate()
+      this.animate();
     }
 
     setStyles(fraction: number) {
-      const blur2 = Math.min(8 / fraction - 8, MAX_BLUR)
-      const blur1 = Math.min(8 / (1 - fraction) - 8, MAX_BLUR)
+      // Blur values grow as one word fades into the next.
+      const blur2 = Math.min(8 / fraction - 8, MAX_BLUR);
+      const blur1 = Math.min(8 / (1 - fraction) - 8, MAX_BLUR);
 
-      this.text2.style.filter = blur2 > 0.1 ? `blur(${blur2}px)` : 'none'
-      this.text2.style.opacity = `${Math.pow(fraction, 0.4) * 100}%`
+      this.text2.style.filter = blur2 > 0.1 ? `blur(${blur2}px)` : "none";
+      this.text2.style.opacity = `${Math.pow(fraction, 0.4) * 100}%`;
 
-      this.text1.style.filter = blur1 > 0.1 ? `blur(${blur1}px)` : 'none'
-      this.text1.style.opacity = `${Math.pow(1 - fraction, 0.4) * 100}%`
+      this.text1.style.filter = blur1 > 0.1 ? `blur(${blur1}px)` : "none";
+      this.text1.style.opacity = `${Math.pow(1 - fraction, 0.4) * 100}%`;
 
-      this.text1.textContent = this.texts[this.textIndex % this.texts.length]
-      this.text2.textContent = this.texts[(this.textIndex + 1) % this.texts.length]
+      this.text1.textContent = this.texts[this.textIndex % this.texts.length];
+      this.text2.textContent =
+        this.texts[(this.textIndex + 1) % this.texts.length];
     }
 
     doMorph() {
-      this.morph -= this.cooldown
-      this.cooldown = 0
+      this.morph -= this.cooldown;
+      this.cooldown = 0;
 
-      let fraction = this.morph / morphTime
+      let fraction = this.morph / morphTime;
 
       if (fraction > 1) {
-        this.cooldown = cooldownTime
-        fraction = 1
+        this.cooldown = cooldownTime;
+        fraction = 1;
       }
 
-      this.setStyles(fraction)
+      this.setStyles(fraction);
 
       if (fraction === 1) {
-        this.textIndex++
+        this.textIndex++;
       }
     }
 
     doCooldown() {
-      this.morph = 0
+      this.morph = 0;
 
-      this.text2.style.filter = 'none'
-      this.text2.style.opacity = '100%'
-      this.text1.style.filter = 'none'
-      this.text1.style.opacity = '0%'
+      this.text2.style.filter = "none";
+      this.text2.style.opacity = "100%";
+      this.text1.style.filter = "none";
+      this.text1.style.opacity = "0%";
     }
 
     animate = () => {
-      this.animationId = requestAnimationFrame(this.animate)
-      this.frameCount++
+      this.animationId = requestAnimationFrame(this.animate);
+      this.frameCount++;
 
-      // Throttle to ~30fps on Safari to reduce GPU pressure from blur filters
-      if (isSafari && this.frameCount % 2 !== 0) return
+      // Safari struggles with SVG filter + blur combinations, so it gets
+      // every second frame instead of forcing 60fps.
+      if (isSafari && this.frameCount % 2 !== 0) return;
 
-      const newTime = new Date()
-      const dt = (newTime.getTime() - this.time.getTime()) / 1000
-      this.time = newTime
+      const newTime = new Date();
+      const dt = (newTime.getTime() - this.time.getTime()) / 1000;
+      this.time = newTime;
 
-      this.cooldown -= dt
+      this.cooldown -= dt;
 
       if (this.cooldown <= 0) {
-        this.doMorph()
+        this.doMorph();
       } else {
-        this.doCooldown()
+        this.doCooldown();
       }
-    }
+    };
 
     destroy() {
-      cancelAnimationFrame(this.animationId)
+      cancelAnimationFrame(this.animationId);
     }
   }
 
   const mount = () => {
-    const container = document.querySelector('[data-morphing-text]') as HTMLElement
-    if (!container) return
+    const container = document.querySelector(
+      "[data-morphing-text]",
+    ) as HTMLElement;
+    if (!container) return;
 
-    const animation = new MorphingTextAnimation(container)
+    const animation = new MorphingTextAnimation(container);
 
     return () => {
-      animation.destroy()
-    }
-  }
+      animation.destroy();
+    };
+  };
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', mount, { once: true })
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", mount, { once: true });
   } else {
-    mount()
+    mount();
   }
 </script>
 
 <style lang="scss">
-  @use '../styles/helpers/fonts' as *;
+  @use "../styles/helpers/fonts" as *;
 
   .morphing-text {
     position: relative;
@@ -180,7 +190,7 @@ interface Props {
   .morphing-text__text2 {
     position: absolute;
     inset: 0;
-    
+
     display: inline-block;
     width: 100%;
     margin: auto;
