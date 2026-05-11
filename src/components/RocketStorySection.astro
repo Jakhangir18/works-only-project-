@@ -41,11 +41,21 @@
       ) as HTMLElement | null;
       if (workSection) {
         const workRect = workSection.getBoundingClientRect();
+        // Hide rocket when work section is visible, approaching, or we've scrolled past it.
         const workIsVisible =
-          workRect.bottom > 0 && workRect.top < window.innerHeight;
+          workRect.top < window.innerHeight * 1.5 && workRect.bottom > -window.innerHeight;
+        const isPastWork = workRect.bottom < 0;
 
-        // Keep the rocket parked while the work tunnel is on screen.
-        if (workIsVisible) {
+        // Keep the rocket hidden while the work section is on screen, near, or already above viewport.
+        if (workIsVisible || isPastWork) {
+          // Hide the rocket by removing is-active class.
+          const rocketBg = document.querySelector(
+            ".js-rocket-bg",
+          ) as HTMLElement | null;
+          if (rocketBg) {
+            rocketBg.classList.remove("is-active");
+          }
+
           if (typeof window.updateRocketFrame === "function") {
             window.updateRocketFrame(0);
           }

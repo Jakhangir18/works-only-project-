@@ -16,14 +16,6 @@ import SplineScene from "./SplineScene.astro";
       </a>
     </div>
   </div>
-
-  <!-- Right: Spline 3D Robot -->
-  <div class="contact-section__right">
-    <SplineScene
-      embedUrl="https://my.spline.design/WVgnc5UCrLR3tVLe/"
-      className="spline-container"
-    />
-  </div>
 </section>
 
 <style lang="scss">
@@ -37,20 +29,20 @@ import SplineScene from "./SplineScene.astro";
     min-height: 100vh;
     z-index: 20;
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
     grid-template-rows: 100vh;
     align-items: stretch;
     gap: 0;
 
     @media (max-width: 1024px) {
       grid-template-columns: 1fr;
-      grid-template-rows: auto 55vh;
+      grid-template-rows: auto;
       gap: 0;
       padding: 0;
     }
 
     @media (max-width: 576px) {
-      grid-template-rows: auto 45vh;
+      grid-template-rows: auto;
     }
   }
 
@@ -129,23 +121,15 @@ import SplineScene from "./SplineScene.astro";
   }
 
   .contact-section__right {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    background: #000;
+    display: none;
   }
 
   .spline-container {
-    width: 100%;
-    height: 100%;
+    display: none;
   }
 
   :global(.spline-container .spline-scene),
   :global(.spline-container iframe) {
-    width: 100% !important;
-    height: 100% !important;
-    border: none;
-    display: block;
+    display: none;
   }
 </style>
