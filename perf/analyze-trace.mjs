@@ -23,15 +23,26 @@ if (!file) {
 const raw = JSON.parse(readFileSync(file, "utf8"));
 const events = Array.isArray(raw) ? raw : raw.traceEvents;
 
-// ---- find renderer main thread (the one with the most RunTask events)
-const runTaskCount = new Map();
+// ---- find the renderer main thread: prefer CrRendererMain metadata (the
+// busiest-by-RunTask heuristic can pick a worker/compositor thread), and
+// among CrRendererMain threads take the one doing actual style work.
+const mainCandidates = new Set();
 for (const e of events) {
-  if (e.name === "RunTask" && e.ph === "X") {
-    const key = `${e.pid}:${e.tid}`;
-    runTaskCount.set(key, (runTaskCount.get(key) || 0) + 1);
-  }
+  if (e.name === "thread_name" && e.args?.name === "CrRendererMain")
+    mainCandidates.add(`${e.pid}:${e.tid}`);
 }
-const mainKey = [...runTaskCount.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
+const runTaskCount = new Map();
+const styleCount = new Map();
+for (const e of events) {
+  const key = `${e.pid}:${e.tid}`;
+  if (e.name === "RunTask" && e.ph === "X")
+    runTaskCount.set(key, (runTaskCount.get(key) || 0) + 1);
+  if (e.name === "UpdateLayoutTree")
+    styleCount.set(key, (styleCount.get(key) || 0) + 1);
+}
+const rank = (k) => (styleCount.get(k) || 0) * 1e9 + (runTaskCount.get(k) || 0);
+const pool = mainCandidates.size ? [...mainCandidates] : [...runTaskCount.keys()];
+const mainKey = pool.sort((a, b) => rank(b) - rank(a))[0];
 if (!mainKey) {
   console.error("no RunTask events found — wrong categories?");
   process.exit(1);
