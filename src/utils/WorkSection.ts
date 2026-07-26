@@ -408,7 +408,12 @@ class Section {
     const { el, container, works, scene, mask } = this;
     const worksEl = works.map((w: any) => w.el);
 
-    if (this.tl) this.tl.kill();
+    // tl.kill() does not kill the timeline's ScrollTrigger — without the
+    // explicit kill every resize leaked a trigger and its listeners.
+    if (this.tl) {
+      this.tl.scrollTrigger?.kill();
+      this.tl.kill();
+    }
     if (this.pinTrigger) this.pinTrigger.kill();
 
     const maskOuter = mask.el.parentElement as HTMLElement;

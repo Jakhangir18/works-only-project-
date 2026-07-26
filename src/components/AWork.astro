@@ -73,7 +73,10 @@ const palette = colorMap[site] ?? { bg: "#111", accent: "#fff" };
         this.syncProgressState(progress);
       }
 
-      this.link.addEventListener("click", this.onClick.bind(this));
+      // Stable handler identity: connectedCallback re-fires every time the
+      // ScrollTrigger pin re-parents the container (each resize), and a
+      // fresh bind() stacked a duplicate listener per reconnection.
+      this.link.addEventListener("click", this.onClick);
     }
 
     attributeChangedCallback(
@@ -95,11 +98,11 @@ const palette = colorMap[site] ?? { bg: "#111", accent: "#fff" };
       }
     }
 
-    onClick(event: MouseEvent) {
+    onClick = (event: MouseEvent) => {
       if (this.link?.href.includes("#")) {
         event.preventDefault();
       }
-    }
+    };
   }
 
   customElements.define("a-work", AWork);
