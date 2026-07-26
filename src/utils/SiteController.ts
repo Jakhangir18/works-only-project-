@@ -248,7 +248,12 @@ class Site {
         window.scrollTo({ top: parseInt(returnScrollY, 10), behavior: "instant" });
       } else {
         const worksEl = document.getElementById("work");
-        if (worksEl) window.scrollTo({ top: worksEl.offsetTop, behavior: "instant" });
+        if (worksEl) {
+          // offsetTop is relative to the offsetParent, and .works-layer is
+          // positioned — it returned 0 and dropped the visitor at the top.
+          const top = worksEl.getBoundingClientRect().top + window.scrollY;
+          window.scrollTo({ top, behavior: "instant" });
+        }
       }
       return;
     }
