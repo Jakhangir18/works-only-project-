@@ -160,9 +160,10 @@ The measurement harness lives in `perf/` (`harness.mjs`, `regression.mjs`,
 
 ## Known state / gotchas
 
-- `dist/` is **no longer tracked** (untracked via `git rm -r --cached dist`; the
-  `dist` rule in `.gitignore` now actually takes effect). Builds no longer dirty
-  `git status`. Do not re-add it.
+- `dist/` and `.astro/` are **no longer tracked** (untracked via
+  `git rm -r --cached`; their `.gitignore` rules never applied while the files were
+  already in the index). Builds no longer dirty `git status`. Do not re-add them —
+  if `git status` shows build output again, something re-added it.
 - `public/1/` holds 240 JPGs (~8.6 MB, 1918×766) eagerly preloaded at page load.
   Profiling showed this is **not** a source of frame jank, but it drives renderer
   RSS to ~243 MB, which risks tab eviction on mid-range phones. Tracked as separate
