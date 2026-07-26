@@ -48,6 +48,8 @@ class Section {
   last: {
     animationProgress: number;
     pointsProgress: number;
+    state: number;
+    scrollProgress: number | null;
   };
   scrollProgress: number;
   smoothScrollProgress: number;
@@ -93,7 +95,12 @@ class Section {
     this.points = [];
     this.scrollProgress = 0;
     this.smoothScrollProgress = 0;
-    this.last = { animationProgress: 0, pointsProgress: 0 };
+    this.last = {
+      animationProgress: 0,
+      pointsProgress: 0,
+      state: 0,
+      scrollProgress: null,
+    };
     this.isPaused = true;
 
     // Defer the heavy DOM work until fonts and the base page are ready.
@@ -222,6 +229,11 @@ class Section {
     this.canvas.width = this.bounding.width;
     this.canvas.height = this.bounding.height;
     this.speed = Math.hypot(this.bounding.width, this.bounding.height) * 4;
+
+    // Phone keeps the canvas static (iOS jitter); drop any stale inline
+    // transform when resizing across the breakpoint.
+    if (this.bounding.width < 576) this.canvas.style.transform = "";
+    this.last.scrollProgress = null;
   }
 
   setMask() {
@@ -344,6 +356,7 @@ class Section {
           ap: Math.abs(i / letter.total - 0.5) * 2,
           mx: 0,
           my: 0,
+          lastProgress: null as number | null,
         };
 
         el.style.top = ghost.y + "px";
@@ -392,15 +405,15 @@ class Section {
       anticipatePin: 1,
     });
 
+    // --state is mirrored onto the ghost letters in moveLetters(); writing
+    // it here on the scene container would invalidate the whole subtree
+    // (all cards included) on every scrub update.
     const tl = gsap.timeline({
       scrollTrigger: {
         trigger: el,
         start: "top bottom",
         end: "bottom top",
         scrub: 1,
-      },
-      onUpdate: () => {
-        scene.style.setProperty("--state", String(this.state));
       },
     });
 
@@ -429,6 +442,13 @@ class Section {
   moveLetters() {
     const { speed, letters, animationProgress } = this;
 
+    const state = Math.round(this.state * 1000) / 1000;
+    const stateChanged = state !== this.last.state;
+
+    // With the tunnel closed every letter transform collapses to identity
+    // and the shadows are invisible, so there is nothing to write.
+    if (!stateChanged && state === 0) return;
+
     letters.forEach((letter: any) => {
       const letterSpeed = speed * letter.freq;
       letter.ghosts.forEach((ghost: any, index: number) => {
@@ -438,10 +458,21 @@ class Section {
             1) /
             0.7 -
           0.15;
+        const rounded = Math.round(progress * 10000) / 10000;
 
-        ghost.el.style.setProperty("--progress", String(progress));
+        // Leaf-level writes: --state lives on each letter, not the scene,
+        // so a change never invalidates the cards' subtree.
+        if (stateChanged) {
+          ghost.el.style.setProperty("--state", String(state));
+        }
+        if (rounded !== ghost.lastProgress) {
+          ghost.lastProgress = rounded;
+          ghost.el.style.setProperty("--progress", String(rounded));
+        }
       });
     });
+
+    this.last.state = state;
   }
 
   setPoints() {
@@ -524,10 +555,19 @@ class Section {
     this.smoothScrollProgress +=
       (this.scrollProgress - this.smoothScrollProgress) * 0.1;
 
-    this.el.style.setProperty(
-      "--scroll-progress",
-      String(this.scrollProgress),
-    );
+    // Write the two consumers directly instead of publishing an inherited
+    // custom property on the section root — that invalidated the entire
+    // ~1600-node subtree every frame.
+    const sp = Math.round(this.scrollProgress * 10000) / 10000;
+    if (sp !== this.last.scrollProgress) {
+      this.last.scrollProgress = sp;
+      (this.mask.pathInner as HTMLElement).style.transform =
+        `translate3d(0, ${sp * 48}px, 0)`;
+      if (this.bounding.width >= 576) {
+        this.canvas.style.transform =
+          `translate3d(0, ${sp * -0.05 * this.bounding.height}px, 0)`;
+      }
+    }
 
     this.movePoints();
     this.moveLetters();

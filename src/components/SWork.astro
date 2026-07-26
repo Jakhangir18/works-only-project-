@@ -132,8 +132,7 @@ const works = buildWorksList();
         fill-rule: evenodd;
         stroke: none;
 
-        transform: translate3d(0, calc(var(--scroll-progress) * 48px), 0);
-
+        /* transform is written inline from WorkSection.tick() */
         will-change: transform;
       }
 
@@ -318,11 +317,8 @@ const works = buildWorksList();
       width: 100%;
       height: 100%;
 
-      transform: translate3d(0, calc(var(--scroll-progress) * -5%), 0);
-
-      @include mq(phone) {
-        transform: none;
-      }
+      /* transform is written inline from WorkSection.tick(); phone stays
+         static there (iOS jitter) */
     }
   }
 </style>
