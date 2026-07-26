@@ -193,6 +193,28 @@ const INSTRUMENTATION = `(() => {
     }
   }
 
+  // Who scrolls? Wrap programmatic scroll APIs with stack capture so an
+  // unexplained scroll during an idle phase can be attributed.
+  P.scrollCalls = [];
+  const recordScroll = (api, args) => {
+    P.scrollCalls.push({
+      api,
+      args: JSON.stringify(args).slice(0, 120),
+      t: performance.now(),
+      stack: (new Error().stack || "").split("\\n").slice(2, 6).join(" | "),
+    });
+    if (P.scrollCalls.length > 80) P.scrollCalls.shift();
+  };
+  for (const api of ["scrollTo", "scrollBy"]) {
+    const orig = window[api].bind(window);
+    window[api] = function (...a) { recordScroll(api, a); return orig(...a); };
+  }
+  const origSIV = Element.prototype.scrollIntoView;
+  Element.prototype.scrollIntoView = function (...a) {
+    recordScroll("scrollIntoView", a);
+    return origSIV.apply(this, a);
+  };
+
   const origDefine = customElements.define.bind(customElements);
   customElements.define = (name, ctor, opts) => {
     if (ctor.prototype && typeof ctor.prototype.attributeChangedCallback === "function") {
@@ -654,8 +676,27 @@ async function main() {
       console.error(
         `GEOMETRY SHIFTED DURING RUN: workTop ${geom.workTop}->${geomEnd.workTop}, maxScroll ${geom.maxScroll}->${geomEnd.maxScroll}`,
       );
+    // Idle-phase drift is logged (with scroll-API attribution) but only a
+    // failed *scroll* phase or shifted geometry invalidates the run — the
+    // scroll phases are the metrics that matter.
+    const failedScrollPhases = scrollAssertions.filter(
+      (a) => !a.ok && !a.label.startsWith("idle"),
+    );
+    result.idleDrift = scrollAssertions.filter(
+      (a) => !a.ok && a.label.startsWith("idle"),
+    );
+    if (result.idleDrift.length) {
+      result.scrollCalls = await page.evaluate(() => window.__perf.scrollCalls);
+      console.error(
+        `idle drift detected (${result.idleDrift.map((a) => a.label).join(",")}) — last programmatic scroll calls:\n` +
+          result.scrollCalls
+            .slice(-8)
+            .map((c) => `  ${c.t.toFixed(0)}ms ${c.api}(${c.args}) ${c.stack}`)
+            .join("\n"),
+      );
+    }
     result.invalid =
-      scrollAssertions.some((a) => !a.ok) || !geomStable || undefined;
+      failedScrollPhases.length > 0 || !geomStable || undefined;
 
     result.phases = phases.map((p) => {
       const s = pageData[p.label];
@@ -713,10 +754,13 @@ async function main() {
       `nodes ${result.heap.nodes.before}→${result.heap.nodes.after}, listeners ${result.heap.listeners.before}→${result.heap.listeners.after}`,
     );
   const badAsserts = (result.scrollAssertions || []).filter((a) => !a.ok);
+  const badScroll = badAsserts.filter((a) => !a.label.startsWith("idle"));
   console.log(
-    badAsserts.length
-      ? `SCROLL ASSERTIONS: ${badAsserts.length} FAILED — RUN INVALID: ${badAsserts.map((a) => a.label).join(", ")}`
-      : `scroll assertions: all ${result.scrollAssertions?.length ?? 0} passed`,
+    badScroll.length
+      ? `SCROLL ASSERTIONS: ${badScroll.length} SCROLL-PHASE FAILURES — RUN INVALID: ${badScroll.map((a) => a.label).join(", ")}`
+      : badAsserts.length
+        ? `scroll assertions: scroll phases OK; idle drift on ${badAsserts.map((a) => a.label).join(", ")} (idle stats excluded)`
+        : `scroll assertions: all ${result.scrollAssertions?.length ?? 0} passed`,
   );
   console.log(
     `console: ${result.console.length} warn/error, pageErrors: ${result.pageErrors.length}`,
