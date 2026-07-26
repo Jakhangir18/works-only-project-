@@ -27,60 +27,65 @@
    * Calculates progress (0..1) and updates rocket frame + text slides.
    * RAF-throttled so it runs at most once per frame on mobile.
    */
+  import Emitter from "../utils/Emitter";
+
   (function initRocketStory() {
     const section = document.querySelector(".js-rocket-story") as HTMLElement;
     if (!section) return;
 
+    // Cache elements and absolute geometry once; per-frame rect reads and
+    // querySelector calls here ran page-wide on every scroll frame.
+    const workSection = document.querySelector(".s-work") as HTMLElement | null;
+    const rocketBg = document.querySelector(".js-rocket-bg") as HTMLElement | null;
+
+    let sectionTop = 0;
+    let sectionHeight = 1;
+    let workTop = Infinity;
+    let workBottom = Infinity;
+
+    function measure() {
+      const rect = section.getBoundingClientRect();
+      sectionTop = rect.top + window.scrollY;
+      sectionHeight = section.offsetHeight;
+      if (workSection) {
+        const workRect = workSection.getBoundingClientRect();
+        workTop = workRect.top + window.scrollY;
+        workBottom = workRect.bottom + window.scrollY;
+      }
+    }
+    measure();
+
     let rafPending = false;
+    let hiddenApplied = false;
 
     function update() {
       rafPending = false;
 
-      const workSection = document.querySelector(
-        ".s-work",
-      ) as HTMLElement | null;
-      if (workSection) {
-        const workRect = workSection.getBoundingClientRect();
-        // Hide rocket when work section is visible, approaching, or we've scrolled past it.
-        const workIsVisible =
-          workRect.top < window.innerHeight * 1.5 && workRect.bottom > -window.innerHeight;
-        const isPastWork = workRect.bottom < 0;
-
-        // Keep the rocket hidden while the work section is on screen, near, or already above viewport.
-        if (workIsVisible || isPastWork) {
-          // Hide the rocket by removing is-active class.
-          const rocketBg = document.querySelector(
-            ".js-rocket-bg",
-          ) as HTMLElement | null;
-          if (rocketBg) {
-            rocketBg.classList.remove("is-active");
-          }
-
-          if (typeof window.updateRocketFrame === "function") {
-            window.updateRocketFrame(0);
-          }
-
-          if (typeof window.updateRocketMotion === "function") {
-            window.updateRocketMotion(0);
-          }
-
-          if (typeof window.updateTextSlides === "function") {
-            window.updateTextSlides(0);
-          }
-
-          return;
-        }
-      }
-
-      // Calculate scroll progress relative to this section
-      const rect = section.getBoundingClientRect();
-      const sectionStart = rect.top;
-      const sectionHeight = section.offsetHeight;
+      const scrollY = window.scrollY;
       const windowHeight = window.innerHeight;
+
+      // Hide rocket while the work section is visible, approaching, or
+      // already scrolled past — and apply that state only once.
+      const workIsVisible =
+        workTop - scrollY < windowHeight * 1.5 &&
+        workBottom - scrollY > -windowHeight;
+      const isPastWork = workBottom - scrollY < 0;
+
+      if (workIsVisible || isPastWork) {
+        if (!hiddenApplied) {
+          hiddenApplied = true;
+          rocketBg?.classList.remove("is-active");
+          window.updateRocketFrame?.(0);
+          window.updateRocketMotion?.(0);
+          window.updateTextSlides?.(0);
+        }
+        return;
+      }
+      hiddenApplied = false;
 
       // Progress: 0 when section top is at window bottom, 1 when section bottom exits window top
       let rawProgress =
-        (windowHeight - sectionStart) / (sectionHeight + windowHeight);
+        (windowHeight - (sectionTop - scrollY)) / (sectionHeight + windowHeight);
       rawProgress = Math.max(0, Math.min(1, rawProgress));
 
       // Hold the first part of the section so the rocket does not jump on entry.
@@ -116,7 +121,36 @@
     }
 
     window.addEventListener("scroll", scheduleUpdate, { passive: true });
-    window.addEventListener("resize", scheduleUpdate, { passive: true });
+    window.addEventListener(
+      "resize",
+      () => {
+        measure();
+        scheduleUpdate();
+      },
+      { passive: true },
+    );
+
+    // Layout can settle after fonts/init — re-measure once everything is
+    // loaded so the cached positions match the final document.
+    window.addEventListener(
+      "load",
+      () => {
+        measure();
+        scheduleUpdate();
+      },
+      { once: true },
+    );
+
+    // The work section sets its --height after fonts settle, which moves
+    // everything below it — re-measure when its init completes.
+    Emitter.on(
+      "worksReady",
+      () => {
+        measure();
+        scheduleUpdate();
+      },
+      null,
+    );
 
     // Initial call
     requestAnimationFrame(update);

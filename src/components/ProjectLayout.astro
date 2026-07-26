@@ -12,6 +12,8 @@ interface Props {
   approach: string;
   solution: string;
   outcome: string;
+  /** Optional hero image. Omitted pages show the colored placeholder. */
+  heroImage?: string;
 }
 
 const {
@@ -24,6 +26,7 @@ const {
   approach,
   solution,
   outcome,
+  heroImage,
 } = Astro.props;
 ---
 
@@ -35,6 +38,7 @@ const {
     <title>{title} — Portfolio</title>
     <meta name="description" content={intro} />
     <meta name="robots" content="noindex, nofollow" />
+    <link rel="icon" type="image/svg+xml" href="/icons/favicon.svg" />
     <style is:global>
       @import url("/fonts/editorial-new.css");
       @import url("/fonts/fraktion-mono.css");
@@ -51,12 +55,16 @@ const {
     <header class="proj-hero" style={`--hero-color: ${heroColor};`}>
       <div class="proj-hero__image-wrap">
         <div class="proj-hero__placeholder" style={`background: ${heroColor};`}>
-          <img
-            src={`/works/project-hero-placeholder.jpg`}
-            alt={title}
-            class="proj-hero__img"
-            onerror="this.style.display='none'"
-          />
+          {
+            heroImage && (
+              <img
+                src={heroImage}
+                alt={title}
+                class="proj-hero__img"
+                onerror="this.style.display='none'"
+              />
+            )
+          }
           <span class="proj-hero__placeholder-num">{number}</span>
         </div>
       </div>

@@ -1,19 +1,15 @@
 ---
-const { caption, cssClass, index, site, src, total, coverImage } = Astro.props;
+const { caption, cssClass, index, site, total, coverImage } = Astro.props;
 
-// Short per-card identifier used in the visible caption.
 const key = Math.random().toString(36).slice(2, 6) + "-" + index + "/" + total;
 
-// Internal project links stay in the same tab; external links open a new tab.
 const isInternal = site.startsWith("/");
 
-// Optional cover image per project card.
 const coverImageMap: Record<string, string> = {
   "/projects/ams": "/projects/ams/images/cover.jpg",
 };
 const cardCover = coverImage || coverImageMap[site] || "";
 
-// Project-specific palette so each card keeps its own visual identity.
 const colorMap: Record<string, { bg: string; accent: string }> = {
   "/work/gochain": { bg: "#071a0f", accent: "#4ade80" },
   "/work/private-clinic": { bg: "#0e0a18", accent: "#a78bfa" },
@@ -26,24 +22,12 @@ const palette = colorMap[site] ?? { bg: "#111", accent: "#fff" };
 ---
 
 <a-work class={cssClass}>
-  <!-- Hidden video kept for the scroll-driven work timeline. -->
-  <video
-    data-src={src}
-    class="a__video js-video"
-    loop
-    muted
-    playsinline
-    width="1082"
-    height="636"
-    style="display:none"></video>
-
   <div class="a__inner">
     <a
       href={site}
       target={isInternal ? "_self" : "_blank"}
       rel={isInternal ? undefined : "noopener noreferrer"}
     >
-      <!-- Static card surface rendered above the hidden video. -->
       <div class="a__card" style={`background:${palette.bg};`}>
         {
           cardCover && (
@@ -70,7 +54,7 @@ const palette = colorMap[site] ?? { bg: "#111", accent: "#fff" };
         <div class="a__caption__key">#{key}</div>
       </div>
     </a>
-  </div><!-- .a__inner -->
+  </div>
 </a-work>
 
 <script>
@@ -78,101 +62,47 @@ const palette = colorMap[site] ?? { bg: "#111", accent: "#fff" };
     static observedAttributes = ["progress"];
 
     link: HTMLAnchorElement | null = null;
-    video: HTMLVideoElement | null = null;
 
-    isPlaying = false;
-
-    /**
-     * Init
-     */
     connectedCallback() {
-      // Cache the DOM nodes once the custom element is connected.
-      this.video = this.querySelector(".js-video") as HTMLVideoElement | null;
       this.link = this.querySelector("a") as HTMLAnchorElement | null;
 
-      if (!this.link) {
-        return;
+      if (!this.link) return;
+
+      const progress = this.getAttribute("progress");
+      if (progress !== null) {
+        this.syncProgressState(progress);
       }
 
-      // Sync visibility state from the current progress attribute.
-      this.syncProgressState();
-
-      // Keep the card from hijacking in-page anchor navigation.
-      this.link.addEventListener("click", this.onClick.bind(this));
+      // Stable handler identity: connectedCallback re-fires every time the
+      // ScrollTrigger pin re-parents the container (each resize), and a
+      // fresh bind() stacked a duplicate listener per reconnection.
+      this.link.addEventListener("click", this.onClick);
     }
 
-    /**
-     * Attribute changed
-     */
     attributeChangedCallback(
       name: string,
-      oldValue: string | null,
+      _oldValue: string | null,
       newValue: string | null,
     ) {
-      if (name === "progress") {
-        if (newValue === null) {
-          return;
-        }
-
+      if (name === "progress" && newValue !== null) {
         this.style.setProperty("--progress", newValue);
         this.syncProgressState(newValue);
       }
     }
 
-    syncProgressState(progress: string | null = this.getAttribute("progress")) {
-      if (progress === null) {
-        return;
-      }
-
-      // End states mean the card should stop animating and leave view.
+    syncProgressState(progress: string) {
       if (progress === "1" || progress === "-1") {
-        if (this.isPlaying) {
-          this.outView();
-        }
-
-        return;
-      }
-
-      if (!this.isPlaying) {
-        this.inView();
+        this.classList.remove("is-inview");
+      } else {
+        this.classList.add("is-inview");
       }
     }
 
-    /**
-     * Gets in view
-     */
-    inView() {
-      if (this.video) {
-        this.video.play().catch(() => {});
-      }
-      this.isPlaying = true;
-      this.classList.add("is-inview");
-    }
-
-    /**
-     * Gets out view
-     */
-    outView() {
-      if (this.video) {
-        this.video.pause();
-      }
-      this.isPlaying = false;
-      this.classList.remove("is-inview");
-    }
-
-    /**
-     * On click
-     */
-    onClick(event: MouseEvent) {
-      if (!this.link) {
-        return;
-      }
-
-      if (this.link.href.includes("#")) {
+    onClick = (event: MouseEvent) => {
+      if (this.link?.href.includes("#")) {
         event.preventDefault();
-        return false;
       }
-    }
+    };
   }
 
   customElements.define("a-work", AWork);
@@ -215,7 +145,6 @@ const palette = colorMap[site] ?? { bg: "#111", accent: "#fff" };
 
     a {
       display: block;
-
       text-decoration: none;
     }
 
@@ -252,7 +181,6 @@ const palette = colorMap[site] ?? { bg: "#111", accent: "#fff" };
       }
     }
 
-    /* Cover image that fills the card */
     .a__card__cover {
       position: absolute;
       inset: 0;
@@ -271,7 +199,6 @@ const palette = colorMap[site] ?? { bg: "#111", accent: "#fff" };
       transform: scale(1.03);
     }
 
-    /* Subtle dot-grid background texture */
     .a__card__grid {
       position: absolute;
       inset: 0;
@@ -307,10 +234,6 @@ const palette = colorMap[site] ?? { bg: "#111", accent: "#fff" };
       text-transform: uppercase;
       position: relative;
       z-index: 1;
-    }
-
-    .a__video {
-      display: none !important;
     }
 
     .a__caption {

@@ -20,6 +20,7 @@ const { className = "" } = Astro.props;
     animationId: number;
     count: number;
     frameCount: number;
+    paused = false;
 
     readonly SEPARATION = 150;
     readonly AMOUNTX = 40;
@@ -68,9 +69,6 @@ const { className = "" } = Astro.props;
       const positions: number[] = [];
       const colors: number[] = [];
 
-      const isDark =
-        document.documentElement.classList.contains("theme-contrasted");
-
       for (let ix = 0; ix < this.AMOUNTX; ix++) {
         for (let iy = 0; iy < this.AMOUNTY; iy++) {
           const x = ix * this.SEPARATION - (this.AMOUNTX * this.SEPARATION) / 2;
@@ -106,7 +104,20 @@ const { className = "" } = Astro.props;
       this.scene.add(this.points);
     }
 
+    pause() {
+      if (this.paused) return;
+      this.paused = true;
+      cancelAnimationFrame(this.animationId);
+    }
+
+    resume() {
+      if (!this.paused) return;
+      this.paused = false;
+      this.animate();
+    }
+
     animate = () => {
+      if (this.paused) return;
       this.animationId = requestAnimationFrame(this.animate);
       this.frameCount++;
 
@@ -176,6 +187,34 @@ const { className = "" } = Astro.props;
     }
 
     const animation = new DottedSurfaceAnimation(container);
+
+    // Render only while the hero is on screen and the tab is visible.
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting && !document.hidden) animation.resume();
+        else animation.pause();
+      });
+    });
+    observer.observe(container);
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) {
+        animation.pause();
+      } else {
+        const rect = container.getBoundingClientRect();
+        if (rect.bottom > 0 && rect.top < window.innerHeight)
+          animation.resume();
+      }
+    });
+
+    window.addEventListener(
+      "pagehide",
+      () => {
+        observer.disconnect();
+        animation.destroy();
+      },
+      { once: true },
+    );
 
     return () => {
       animation.destroy();

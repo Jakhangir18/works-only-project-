@@ -54,6 +54,7 @@ interface Props {
     time: Date = new Date();
     animationId: number = 0;
     frameCount: number = 0;
+    paused: boolean = false;
 
     constructor(container: HTMLElement) {
       this.container = container;
@@ -109,7 +110,22 @@ interface Props {
       this.text1.style.opacity = "0%";
     }
 
+    pause() {
+      if (this.paused) return;
+      this.paused = true;
+      cancelAnimationFrame(this.animationId);
+    }
+
+    resume() {
+      if (!this.paused) return;
+      this.paused = false;
+      // Reset the clock so the first frame back doesn't get a huge dt.
+      this.time = new Date();
+      this.animate();
+    }
+
     animate = () => {
+      if (this.paused) return;
       this.animationId = requestAnimationFrame(this.animate);
       this.frameCount++;
 
@@ -142,6 +158,34 @@ interface Props {
     if (!container) return;
 
     const animation = new MorphingTextAnimation(container);
+
+    // The morph only needs to run while the hero is actually visible.
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting && !document.hidden) animation.resume();
+        else animation.pause();
+      });
+    });
+    observer.observe(container);
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) {
+        animation.pause();
+      } else {
+        const rect = container.getBoundingClientRect();
+        if (rect.bottom > 0 && rect.top < window.innerHeight)
+          animation.resume();
+      }
+    });
+
+    window.addEventListener(
+      "pagehide",
+      () => {
+        observer.disconnect();
+        animation.destroy();
+      },
+      { once: true },
+    );
 
     return () => {
       animation.destroy();
