@@ -143,12 +143,15 @@ class Site {
 
     this.onScroll();
 
-    // Save scroll position before jumping to a project page.
-    document.querySelectorAll('a[href^="/work/"]').forEach((link) => {
-      link.addEventListener("click", () => {
-        sessionStorage.setItem("returnScrollY", String(window.scrollY));
+    // Save scroll position before jumping to a project page. Covers both
+    // route shapes: /work/* and /projects/* (the AMS card uses the latter).
+    document
+      .querySelectorAll('a[href^="/work/"], a[href^="/projects/"]')
+      .forEach((link) => {
+        link.addEventListener("click", () => {
+          sessionStorage.setItem("returnScrollY", String(window.scrollY));
+        });
       });
-    });
   }
 
   siteLoaded() {
