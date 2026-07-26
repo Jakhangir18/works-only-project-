@@ -92,6 +92,78 @@ None of these is assumed true — each gets measured in Phase 4.
 - `Emitter.off` leaves holes via `delete`; harmless but sloppy (not dead code, noted for honesty).
 - `dist/` committed to git (build artifact, not code).
 
+## Phase 2 — Baseline (2026-07-25, production build via `astro preview`, system Chrome headed)
+
+Harness: `perf/harness.mjs`. Raw JSON: `perf-results/*.json` (gitignored, kept on disk).
+**Display calibration:** idle median frame = 13.3 ms → this machine drives a ~75 Hz panel. "Clean" = 13.3–14.3 ms. Budgets below are still judged against the skill's 60 fps table.
+Scroll driver: synthetic wheel, 40 px per ~12 ms step (~2.6 k px/s), pointer parked off-content. INP: n/a (scroll/wheel is not INP-eligible).
+
+### Desktop 1440×900@2x, no throttle
+
+| Phase | med | p95 | worst | >50 ms frames | long tasks (total ms) |
+|---|---|---|---|---|---|
+| idle-top | 13.3 | 14.2 | 14.4 | 0 | 0 |
+| work-open-1 | 13.3 | 14.3 | 67 | 2 | 1 (57) |
+| work-close-1 | 13.4 | 14.3 | 40 | 0 | 0 |
+| work-open-2 | 13.4 | **26.8** | **174** | 9 | 8 (769) |
+| work-close-2 | 13.4 | **27.4** | **227** | 5 | 5 (654) |
+| work-open-3 | 13.4 | **26.7** | **187** | 8 | 6 (512) |
+| work-close-3 | 13.4 | **27.2** | **134** | 8 | 5 (367) |
+| idle-work-mid (parked) | 13.3 | 14.0 | 14.3 | 0 | 0 |
+| rocket-down | 13.4 | 14.3 | 67 | 1 | 0 |
+| rocket-up | 13.4 | 14.3 | 40 | 0 | 0 |
+
+Heap: 4.8 → 5.4 MB after 3 open/close cycles (Δ+0.6 MB, per-cycle 5.1 / 5.3 / 5.4 — small steady climb, ~0.2 MB/cycle). Nodes 1586→1584, listeners 185→185 (flat). Console: 0 errors/warnings.
+
+### Diagnostic: MorphingText + DottedSurface disabled (runtime injection, no code change)
+
+| Phase | med | p95 | worst | >50 ms | long tasks |
+|---|---|---|---|---|---|
+| work-open/close 1–3 (range) | 13.3–13.4 | **14.2–14.3** | 53–95 | 1–2 | 0–2 (≤134 ms) |
+| rocket both directions | 13.4 | 14.2–14.3 | 40 | 0 | 0 |
+
+**Effect: p95 27 ms → 14.3 ms; long tasks 5–8/phase → 0–2; steady scroll jank essentially gone.** The two ever-running hero loops are the dominant steady cost. Residual single 50–95 ms spikes remain → separate cause.
+
+### Desktop, CPU ×4
+
+| Phase | med | p95 | worst | >50 ms | long tasks |
+|---|---|---|---|---|---|
+| work-open-1 | **25.8** | **39.6** | 200 | 9 | 4 (452) |
+| work-close-1 | **26.5** | **40.5** | **334** | **18** | 5 (572) |
+| work-open/close 2–3 | 14–26.4 | 27.6–41.1 | 226–333 | 6–19 | 3–8 (≤771) |
+| idle-work-mid (parked) | 13.4 | 15.2 | 39 | 0 | 0 |
+| rocket-down / up | 13.4 | 25.9 / 15.2 | 53 / 41 | 1 / 0 | 0 |
+
+This is the user-reported experience reproduced: sustained half-rate scrolling with 200–334 ms hangs. Note idle-parked is still clean even at ×4 — the damage is all in the scroll-driven path.
+
+### Mobile 390×844@3x (host-speed CPU — viewport test only)
+
+Work phases: med 13.3–13.4, p95 15.1–26.3 worst 28–68, ≤2 long tasks. Rocket clean.
+
+### Mobile 390×844@3x + CPU ×4 (mid-range-phone proxy, extra run)
+
+Work phases: p95 up to 26.6, worst 106–265 ms, 1–3 frames >50 ms per phase, long tasks ≤2 (≤334 ms). Rocket clean.
+
+### The four requested extra measurements
+
+1. **Preload of `public/1/` (240 JPGs, 8.2 MB):** completes ~370–580 ms after navigation (local server). Long tasks during preload: 1 (86 ms) unthrottled, 4 (342 ms) at CPU ×4. **Renderer-process RSS peaks at 243 MB** during preload, settling to ~222 MB; JS heap only ~4.5 MB (decoded frames live off-heap in the image cache).
+2. **Forced reflows while scrolling Work:** instrumented reads-after-write ≈ **1.0 per frame on average (max 5)** — one forced layout virtually every frame, steadily. CDP cross-check: LayoutCount ≈ 0.8–0.9/frame, RecalcStyleCount ≈ 2–3/frame, total layout-API reads ≈ 2.3/frame.
+3. **`attributeChangedCallback` on `a-work` cards:** average ≈ **1.1 fires/frame, max 3–5/frame** during open/close (staggering spreads the 20 cards out; this is not a callback storm).
+4. **Hero-loops-off diagnostic:** see table above — the dominant factor at desktop. Reverted by design (runtime injection only; repo code untouched).
+
+### Budget scorecard (60 fps budgets from the skill)
+
+| Budget | Desktop | Desktop no-hero-loops | CPU ×4 | Mobile | Mobile ×4 |
+|---|---|---|---|---|---|
+| median ≤ 16.7 ms | ✅ 13.4 | ✅ 13.4 | ❌ 26.5 | ✅ 13.4 | ✅ 13.4 |
+| p95 ≤ 25 ms | ❌ 27.4 | ✅ 14.3 | ❌ 41.1 | ✅ 15.3 | ❌ 26.6 |
+| worst ≤ 50 ms | ❌ 227 | ❌ 95 | ❌ 334 | ❌ 68 | ❌ 265 |
+| long tasks = 0 | ❌ 8/phase | ⚠️ ≤2 | ❌ 8 | ⚠️ ≤2 | ⚠️ ≤2 |
+| heap flat after 3 cycles | ⚠️ +0.6 MB | ⚠️ +0.6 MB | ⚠️ +0.6 MB | ⚠️ +0.6 MB | ⚠️ +0.6 MB |
+| console clean | ✅ | ✅ | ✅ | ✅ | ✅ |
+
+Unexplained-but-noted: cycle 1 on desktop baseline was much cleaner than cycles 2–3 (p95 14.3 vs 26.8) — reproducible pattern, cause TBD in hypothesis phase.
+
 ## Open questions for the user
 
 1. Working tree is dirty on `main` (your uncommitted changes). Plan: create branch `perf/work-stutter` from the current state and make a first commit of the *existing* working state as the baseline snapshot, so every perf change after it is one clean commit. OK?
