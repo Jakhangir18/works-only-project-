@@ -230,46 +230,29 @@ const works = buildWorksList();
       will-change: transform;
 
       :global(.s__scene__letter) {
-        --head: calc((var(--progress) - 0.5) * -2);
-        --ahead: calc(var(--head) * var(--head));
-
         position: absolute;
         top: 0;
         left: 0;
 
         display: block;
 
-        transform: rotateY(calc(var(--head) * -10deg * var(--state)))
-          translate3d(
-            calc(var(--head) * 50vw * var(--state)),
-            calc(var(--iy) * 50% * var(--ahead) * var(--state)),
-            0
-          );
-
         pointer-events: none;
         will-change: transform;
+      }
 
-        &:before {
-          position: absolute;
-          top: 0;
-          left: 0;
-          z-index: -1;
+      /* Real child instead of ::before — transform/opacity are written
+         inline from WorkSection.moveLetters(), which takes the cheap
+         recalc path instead of re-resolving var()/calc() chains. */
+      :global(.s__scene__letter__shadow) {
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: -1;
 
-          color: color(shadow);
+        color: color(shadow);
+        opacity: 0;
 
-          opacity: min(calc(var(--state) * 2), 1);
-          transform: scale(1.05, 1.02)
-            translate3d(
-              calc(var(--head) * 0.1rem * var(--state) * var(--state)),
-              0,
-              0
-            );
-          transform-origin: calc(50% - var(--head) * 50%) -50%;
-
-          will-change: opacity, transform;
-
-          content: attr(data-letter);
-        }
+        will-change: opacity, transform;
       }
 
       :global(.s__scene__work) {

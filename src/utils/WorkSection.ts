@@ -342,6 +342,7 @@ class Section {
       letter.top = bounding.top - this.bounding.top;
       letter.left = bounding.left;
       letter.freq = 1 + Math.random();
+      letter.iy = ((j + 1) / (letters.length + 1) - 0.5) * 2;
 
       const multiplier = (window as any).safeWidth > 767 ? 0.75 : 0.5;
       letter.total =
@@ -352,10 +353,18 @@ class Section {
         el.classList.add("s__scene__letter", "js-letter");
         el.innerText = letter.el.innerText;
         el.dataset.letter = letter.el.innerText;
+
+        const shadow = document.createElement("span");
+        shadow.classList.add("s__scene__letter__shadow");
+        shadow.setAttribute("aria-hidden", "true");
+        shadow.innerText = letter.el.innerText;
+        el.appendChild(shadow);
+
         scene.appendChild(el);
 
         const ghost = {
           el,
+          shadow,
           x: letter.left,
           y: letter.top,
           z: Math.random() * 100,
@@ -468,15 +477,23 @@ class Section {
           0.15;
         const rounded = Math.round(progress * 10000) / 10000;
 
-        // Leaf-level writes: --state lives on each letter, not the scene,
-        // so a change never invalidates the cards' subtree.
-        if (stateChanged) {
-          ghost.el.style.setProperty("--state", String(state));
-        }
-        if (rounded !== ghost.lastProgress) {
-          ghost.lastProgress = rounded;
-          ghost.el.style.setProperty("--progress", String(rounded));
-        }
+        if (!stateChanged && rounded === ghost.lastProgress) return;
+        ghost.lastProgress = rounded;
+
+        // Precomputed inline transform/opacity take Blink's cheap recalc
+        // path; the old var()/calc() chains re-resolved on the element and
+        // its pseudo cost 2-4ms per ghost per frame.
+        const head = (rounded - 0.5) * -2;
+        const ahead = head * head;
+
+        ghost.el.style.transform =
+          `rotateY(${head * -10 * state}deg) ` +
+          `translate3d(${head * 50 * state}vw, ${letter.iy * 50 * ahead * state}%, 0)`;
+
+        ghost.shadow.style.opacity = String(Math.min(state * 2, 1));
+        ghost.shadow.style.transform =
+          `scale(1.05, 1.02) translate3d(${head * 0.1 * state * state}rem, 0, 0)`;
+        ghost.shadow.style.transformOrigin = `${50 - head * 50}% -50%`;
       });
     });
 
