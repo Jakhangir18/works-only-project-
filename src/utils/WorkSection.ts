@@ -381,13 +381,6 @@ class Section {
         el.style.zIndex = String(
           j !== 1 && j !== 2 && (j + letters.length + i) % 5 === 0 ? 3 : 1,
         );
-        el.style.setProperty("--ix", String(ghost.i));
-        el.style.setProperty(
-          "--iy",
-          String(((j + 1) / (letters.length + 1) - 0.5) * 2),
-        );
-        el.style.setProperty("--ap", String(ghost.ap));
-        el.style.setProperty("--p", String(ghost.p));
 
         letter.ghosts.push(ghost);
       }

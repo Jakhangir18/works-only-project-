@@ -69,9 +69,6 @@ const { className = "" } = Astro.props;
       const positions: number[] = [];
       const colors: number[] = [];
 
-      const isDark =
-        document.documentElement.classList.contains("theme-contrasted");
-
       for (let ix = 0; ix < this.AMOUNTX; ix++) {
         for (let iy = 0; iy < this.AMOUNTY; iy++) {
           const x = ix * this.SEPARATION - (this.AMOUNTX * this.SEPARATION) / 2;
