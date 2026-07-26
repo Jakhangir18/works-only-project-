@@ -99,12 +99,23 @@ for (const m of marks) {
 const phaseOf = (ts) => phaseWindows.find((w) => ts >= w.start && ts <= w.end)?.label || "-";
 
 // ---- long tasks
-const t0 = Math.min(...events.filter((e) => e.ts > 0).map((e) => e.ts));
+let t0 = Infinity;
+for (const e of events) if (e.ts > 0 && e.ts < t0) t0 = e.ts;
 const longTasks = events
   .filter((e) => e.name === "RunTask" && e.ph === "X" && onMain(e) && e.dur >= THRESH_MS * 1000)
   .sort((a, b) => a.ts - b.ts);
 
 const children = events.filter((e) => e.ph === "X" && onMain(e) && e.name !== "RunTask");
+
+// Invalidation-tracking instants (why style recalc/layout was needed)
+const invalidations = events.filter(
+  (e) =>
+    onMain(e) &&
+    (e.name === "StyleRecalcInvalidationTracking" ||
+      e.name === "StyleInvalidatorInvalidationTracking" ||
+      e.name === "ScheduleStyleInvalidationTracking" ||
+      e.name === "LayoutInvalidationTracking"),
+);
 
 const rows = [];
 for (const task of longTasks) {
@@ -172,3 +183,23 @@ console.log("");
 console.log(
   `dominated-by: script ${dom("script")}, gc ${dom("gc")}, layout ${dom("layout")}, style ${dom("style")}, paint ${dom("paint")}, decode ${dom("decode")}, other ${dom("other")}`,
 );
+
+// ---- what invalidated style/layout inside the long tasks
+const invAgg = new Map();
+for (const task of longTasks) {
+  const tEnd = task.ts + task.dur;
+  for (const inv of invalidations) {
+    if (inv.ts < task.ts || inv.ts > tEnd) continue;
+    const d = inv.args?.data || {};
+    const key = `${inv.name.replace("InvalidationTracking", "")} | ${d.reason || "?"} | ${d.nodeName || d.selectorPart || d.extraData || "?"}`;
+    invAgg.set(key, (invAgg.get(key) || 0) + 1);
+  }
+}
+if (invAgg.size) {
+  console.log("");
+  console.log("top invalidation sources inside long tasks (kind | reason | node/selector : count):");
+  for (const [k, v] of [...invAgg.entries()].sort((a, b) => b[1] - a[1]).slice(0, 15))
+    console.log(`  ${String(v).padStart(6)}  ${k}`);
+} else {
+  console.log("(no invalidation-tracking events in trace — category missing?)");
+}

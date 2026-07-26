@@ -164,6 +164,37 @@ Work phases: p95 up to 26.6, worst 106–265 ms, 1–3 frames >50 ms per phase, 
 
 Unexplained-but-noted: cycle 1 on desktop baseline was much cleaner than cycles 2–3 (p95 14.3 vs 26.8) — reproducible pattern, cause TBD in hypothesis phase.
 
+## H0 — Frame classification diagnostic (no code changed)
+
+Method: Chrome trace (devtools.timeline + v8.gc + invalidationTracking) over 3 open/close cycles, merged-interval attribution per >50 ms main-thread task (`perf/analyze-trace.mjs`); plus a sampling heap profiler across the cycles. Runs assertion-valid. Note: the harness's own scroll-region assertion caught a real invalid run first — a late viewport settle re-triggered the app's debounced rebuild and moved scroll mid-"idle"; a layout-stability gate now guards every run.
+
+### Classification of long tasks (two traced runs)
+
+| Occupant | Tasks | Evidence |
+|---|---|---|
+| **Style recalc (UpdateLayoutTree 44–89 ms)** | 5–6 per 3 cycles | Invalidation tracking: **108 of 114 invalidations inside long tasks are "Inline CSS style declaration was mutated" on `SPAN.s__scene__letter.js-letter`** — the per-frame `--progress` writes in `WorkSection.moveLetters()` on ~36 ghost letters, each carrying chained `calc(var(...))` transforms plus a `::before` pseudo that re-resolves the same chains. |
+| **GC** | 3–6 per 3 cycles | In-frame chunks are `V8.GC_MC_INCREMENTAL_EMBEDDER_TRACING` (60–105 ms) — incremental mark-compact tracing the **DOM-wrapper graph**, not JS allocation volume. One natural 90 ms MajorGC observed mid-cycle. **Caveat honestly:** the 349–551 ms MajorGC monsters sat between phases and were the harness's own forced `window.gc()` — measurement artifact, excluded. |
+| Layout (50 ms) | 1, first open only | `Layout:50ms` — one-time reveal cost (content-visibility / is-inview flip). |
+| Paint / image decode / script-self | **0 dominated tasks** | Decode: 0 events, 0 ms on main thread in both traces. |
+
+### Allocation profile (user's "what allocates per frame" question)
+
+Total sampled JS allocation across all 3 cycles is **small** — top sites: `MorphingText.animate` 41 KB (per-frame `new Date()` + strings; dies with H1), GSAP core ~48 KB, `ScrollTrigger.update` 16 KB, **`updateRocketFrame` 16 KB — confirming the rocket handler allocates during *Work* scrolling** (runs page-wide on every scroll event; H4 target). The ~5,000-point canvas redraw allocates **nothing visible** to the JS heap profiler (native path memory) — that suspect is cleared as an allocator, GC-wise.
+
+**Verdict on the user's GC theory:** partially confirmed, with a twist. Real GC pauses do land inside scroll frames, but the driver is embedder (DOM-wrapper) tracing cost, not raw JS churn — and the biggest "GC" spikes in the first trace were harness-forced. The three oddities resolve as: (1) heap climb ≈ half harness artifact (0.1 MB/cycle, now harvested out; clean per-cycle heap is flat [5.0, 5.1, 5.1] — **no app leak**), (2) residual 50–95 ms spikes = ghost-letter style storms + incremental-GC chunks, (3) cycle-1-cleaner = GC debt and style invalidation pressure build after the first pass; consistent with both.
+
+### Consequence for the hypothesis list
+
+- H2 concretized: **eliminate the ghost-letter style-invalidation storm** (skip unchanged writes / quantize progress; if insufficient, replace per-ghost CSS-var + calc chains with a directly computed transform).
+- H1 unchanged and doubly supported (MorphingText is also the top JS allocator).
+- H3/H4 unchanged (forced reflow ≈ 1/frame; rocket handler active during Work scroll, confirmed by its allocations).
+- Dropped per user + data: rocket JPG decode (0 decode events), card-callback storm (~1.1 fires/frame).
+
+## Deferred follow-ups (separate branch, not part of this work)
+
+- **243 MB renderer RSS after the 240-frame preload** — no stutter link shown by the data, but risks tab eviction on real mid-range phones. Candidate fixes: halve frame count, cap decode dimensions, lazy-decode around current scroll position, or replace with scrubbed video.
+- Preload cost itself (8.2 MB network + 1–4 long tasks during load at 4× CPU).
+
 ## Open questions for the user
 
 1. Working tree is dirty on `main` (your uncommitted changes). Plan: create branch `perf/work-stutter` from the current state and make a first commit of the *existing* working state as the baseline snapshot, so every perf change after it is one clean commit. OK?

@@ -50,12 +50,14 @@ const CPU_RATE = Number(args.cpu || 1);
 const MOBILE = Boolean(args.mobile);
 const DISABLE_HERO_LOOPS = Boolean(args["disable-hero-loops"]);
 const TRACE = Boolean(args.trace);
+const HEAP_PROFILE = Boolean(args["heap-profile"]);
 const TOTAL_FRAMES = 240; // rocket JPG sequence length
 
 const TRACE_CATEGORIES = [
   "devtools.timeline",
   "disabled-by-default-devtools.timeline",
   "disabled-by-default-devtools.timeline.frame",
+  "disabled-by-default-devtools.timeline.invalidationTracking",
   "toplevel",
   "v8.execute",
   "disabled-by-default-v8.gc",
@@ -408,7 +410,34 @@ async function main() {
     );
     await sleep(500);
 
-    const geom = await page.evaluate(() => {
+    // Stability gate: a late viewport settle can fire the app's debounced
+    // resize path (setTimeline + ScrollTrigger.refresh), which changes the
+    // document height and can move scroll on its own. Wait until both
+    // scrollHeight and scrollY have been quiet for 2s before trusting any
+    // geometry.
+    await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
+    await page.waitForFunction(
+      () => {
+        const now = {
+          h: document.body.scrollHeight,
+          y: window.scrollY,
+          t: Date.now(),
+        };
+        if (!window.__stab) window.__stab = { ...now, since: now.t };
+        const st = window.__stab;
+        if (st.h !== now.h || Math.abs(st.y - now.y) > 2) {
+          st.h = now.h;
+          st.y = now.y;
+          st.since = now.t;
+          if (now.y > 2) window.scrollTo({ top: 0, behavior: "instant" });
+          return false;
+        }
+        return now.t - st.since > 2000;
+      },
+      { timeout: 45000, polling: 300 },
+    );
+
+    const geomFn = () => {
       const abs = (el) => el.getBoundingClientRect().top + window.scrollY;
       const w = document.querySelector(".s-work");
       const r = document.querySelector(".js-rocket-story");
@@ -421,7 +450,8 @@ async function main() {
         maxScroll: document.body.scrollHeight - window.innerHeight,
         dpr: window.devicePixelRatio,
       };
-    });
+    };
+    const geom = await page.evaluate(geomFn);
     result.geometry = geom;
 
     // Park the pointer near the left edge so hover states on cards don't
@@ -529,6 +559,10 @@ async function main() {
         .startTracing(page, { path: tracePath, categories: TRACE_CATEGORIES });
       result.tracePath = path.relative(REPO, tracePath);
     }
+    if (HEAP_PROFILE) {
+      await cdp.send("HeapProfiler.enable");
+      await cdp.send("HeapProfiler.startSampling", { samplingInterval: 16384 });
+    }
 
     for (let i = 1; i <= 3; i++) {
       await runPhase(`work-open-${i}`, () => wheelBy(workDist), {
@@ -552,6 +586,22 @@ async function main() {
     }
 
     if (TRACE) await context.browser().stopTracing();
+    if (HEAP_PROFILE) {
+      const { profile } = await cdp.send("HeapProfiler.stopSampling");
+      const flat = new Map();
+      (function walk(n) {
+        if (n.selfSize) {
+          const cf = n.callFrame;
+          const key = `${cf.functionName || "(anon)"} @ ${(cf.url || "").split("/").pop() || "?"}:${cf.lineNumber}`;
+          flat.set(key, (flat.get(key) || 0) + n.selfSize);
+        }
+        (n.children || []).forEach(walk);
+      })(profile.head);
+      result.heapAllocTop = [...flat.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 25)
+        .map(([site, bytes]) => ({ site, kb: +(bytes / 1024).toFixed(0) }));
+    }
 
     // Parked mid-Work: measures the per-frame cost of the section's own
     // tick + competing loops with zero scroll input.
@@ -593,7 +643,19 @@ async function main() {
     const pageData = collected;
     pageData.__events = await page.evaluate(() => window.__perf.events);
     result.scrollAssertions = scrollAssertions;
-    result.invalid = scrollAssertions.some((a) => !a.ok) || undefined;
+    // Geometry must not have shifted during the run, or every phase target
+    // was wrong.
+    const geomEnd = await page.evaluate(geomFn);
+    result.geometryEnd = geomEnd;
+    const geomStable =
+      Math.abs(geomEnd.workTop - geom.workTop) <= 8 &&
+      Math.abs(geomEnd.maxScroll - geom.maxScroll) <= 8;
+    if (!geomStable)
+      console.error(
+        `GEOMETRY SHIFTED DURING RUN: workTop ${geom.workTop}->${geomEnd.workTop}, maxScroll ${geom.maxScroll}->${geomEnd.maxScroll}`,
+      );
+    result.invalid =
+      scrollAssertions.some((a) => !a.ok) || !geomStable || undefined;
 
     result.phases = phases.map((p) => {
       const s = pageData[p.label];
@@ -659,6 +721,11 @@ async function main() {
   console.log(
     `console: ${result.console.length} warn/error, pageErrors: ${result.pageErrors.length}`,
   );
+  if (result.heapAllocTop) {
+    console.log("top allocation sites (sampling profile, cycles 1-3):");
+    for (const a of result.heapAllocTop.slice(0, 14))
+      console.log(`  ${String(a.kb).padStart(7)} KB  ${a.site}`);
+  }
   console.log(`saved: ${path.relative(REPO, file)}`);
 
   function clearIntervalSafe() {
