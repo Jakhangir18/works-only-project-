@@ -37,6 +37,8 @@ class Section {
     width: number;
     height: number;
   };
+  elAbsTop: number;
+  elHeight: number;
   letters: any[];
   works: any[];
   points: any[];
@@ -225,6 +227,12 @@ class Section {
       width: (window as any).safeWidth,
       height: (window as any).safeHeight,
     };
+
+    // Cache the section's absolute position so tick() can derive scroll
+    // progress from window.scrollY alone, without per-frame rect reads.
+    const elRect = this.el.getBoundingClientRect();
+    this.elAbsTop = elRect.top + window.scrollY;
+    this.elHeight = elRect.height;
 
     this.canvas.width = this.bounding.width;
     this.canvas.height = this.bounding.height;
@@ -540,17 +548,15 @@ class Section {
   }
 
   tick() {
+    // Same math as ScrollTrigger.positionInViewport(el, "top"/"bottom"),
+    // but from cached geometry — the rect reads landed right after GSAP's
+    // scrub writes and forced a reflow every frame.
+    const vh = this.bounding.height;
+    const topInVp = (this.elAbsTop - window.scrollY) / vh;
+    const bottomInVp = (this.elAbsTop + this.elHeight - window.scrollY) / vh;
     this.scrollProgress =
-      Math.max(
-        Math.min(1, ScrollTrigger.positionInViewport(this.el, "top")),
-        0,
-      ) *
-        -1 +
-      (1 -
-        Math.max(
-          Math.min(1, ScrollTrigger.positionInViewport(this.el, "bottom")),
-          0,
-        ));
+      Math.max(Math.min(1, topInVp), 0) * -1 +
+      (1 - Math.max(Math.min(1, bottomInVp), 0));
 
     this.smoothScrollProgress +=
       (this.scrollProgress - this.smoothScrollProgress) * 0.1;
