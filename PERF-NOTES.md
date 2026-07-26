@@ -227,12 +227,21 @@ Total sampled JS allocation across all 3 cycles is **small** — top sites: `Mor
 
 Nothing — 6 of 6 measured changes improved their target metric. (H1 was kept on desktop evidence; its ×4 effect was within noise, stated in the commit.)
 
-## Pre-existing issues found, NOT fixed (owner's call)
+## Pre-existing issues — now resolved
 
-- **404 `/works/project-hero-placeholder.jpg`** on all five `/work/*` pages (console error per page; identical on baseline). Fix = add the image or drop the reference in ProjectLayout.
-- `SplineScene.astro` file is now fully unreferenced (its import was dead) — kept because the git history shows the Spline robot was deliberately removed and might return.
+- ~~404 `/works/project-hero-placeholder.jpg`~~ — fixed in `0feffec`; the image now renders only when a `heroImage` prop is supplied.
+- ~~`/favicon.ico` 404 on project pages~~ — second, independent cause of console errors, found while verifying the above. Fixed in `448f90f`. The miss is cached per origin per session, so it appeared on a different page each run.
+- ~~`SplineScene.astro` unreferenced~~ — deleted in `f6d3aa8`.
+- ~~`dist/` tracked despite being gitignored~~ — untracked in `125b02e`.
+- ~~Scroll position not restored from `/projects/*`~~ — fixed in `8eb440f`.
+
+## Pre-existing issues — still open (owner's call)
+
+- **`intro()` scrolls to the wrong place on the `returnToWorks` path.** It uses `worksEl.offsetTop`, which returns **0** because `.works-layer` is `position: relative` and therefore the `offsetParent`; the section's true absolute top is **5991 px**. So the AMS "Back to Works" button lands at the top of the page instead of the Work section. This is the same `offsetTop` trap that produced an invalid harness run (see CLAUDE.md invariant 3). One-line fix: `worksEl.getBoundingClientRect().top + window.scrollY`. Not applied — out of the requested scope.
+- **`.astro/` is tracked despite being gitignored** — six files (`content-assets.mjs`, `content-modules.mjs`, `content.d.ts`, `data-store.json`, `settings.json`, `types.d.ts`). Identical defect to the `dist/` one just fixed, so builds still dirty `git status`. Fix would be `git rm -r --cached .astro` in its own commit.
+- **Stale `returnScrollY`.** If a visitor opens a project page and then leaves by any route other than returning home, `returnScrollY` persists for the session, so a later visit to `/` skips the loader and jumps to a stale position. Pre-existing behaviour for `/work/*`; the `/projects/*` fix extends it to those cards. Fix would be to clear the key on `pagehide` or timestamp it.
+- Dead `.spline-container` CSS remains in `ContactSection.astro` after the component deletion.
 - `public/nasa-nns.html` — orphan page, but publicly addressable; may be linked externally.
-- `dist/` is tracked in git despite being gitignored (grandfathered files).
 - Harness runs occasionally see a slow (~330 px/s) autonomous scroll at page top during *idle* phases (never during measured scroll phases; scroll-API probe shows no JS caller — browser-level, intermittent). Assertions exclude affected idle stats automatically.
 
 ## Open questions for the user
