@@ -26,6 +26,13 @@ it is why the invariants below exist.
 | `npm run build` | Production build into `dist/`. Astro reports **7 pages**; `dist/` ends up with 8 `.html` files because `public/nasa-nns.html` is copied verbatim |
 | `npm run preview` | Serves the built `dist/` on **:4321** |
 | `npm run astro` | Astro CLI passthrough (e.g. `npm run astro -- --version`). With no arguments it prints CLI help |
+| `npm run perf:harness` | Frame timing, long tasks, forced reflows, heap/listener deltas. Add `-- --cpu=4`, `-- --mobile`, `-- --trace`, `-- --label=<name>` |
+| `npm run perf:regression` | Functional sweep: routes, open/close/reopen, resize teardown, keyboard focus, reduced motion, first-load LCP/TBT |
+| `npm run perf:analyze` | Classifies a captured trace into gc/layout/style/paint/decode/script. Usage: `-- <trace.json> [thresholdMs]` |
+
+The three `perf:*` scripts measure a **running production preview on :4322**, so start
+one first: `npm run build && npm run preview -- --port 4322`. Traces are ~300 MB —
+delete them when done. Results land in `perf-results/` (gitignored).
 
 Verified behaviours — do not re-test these, they are confirmed:
 

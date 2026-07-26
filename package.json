@@ -7,7 +7,10 @@
     "start": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "perf:harness": "node perf/harness.mjs",
+    "perf:regression": "node perf/regression.mjs",
+    "perf:analyze": "node --max-old-space-size=12288 perf/analyze-trace.mjs"
   },
   "dependencies": {
     "astro": "^5.7.13",
