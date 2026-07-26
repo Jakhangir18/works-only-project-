@@ -5,3 +5,7 @@ dist
 .env
 .env.*
 perf-results/
+
+# Claude Code: keep .claude/skills tracked so it survives a clone;
+# ignore only machine-local settings.
+.claude/settings.local.json
