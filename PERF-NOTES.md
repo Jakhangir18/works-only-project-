@@ -195,6 +195,46 @@ Total sampled JS allocation across all 3 cycles is **small** — top sites: `Mor
 - **243 MB renderer RSS after the 240-frame preload** — no stutter link shown by the data, but risks tab eviction on real mid-range phones. Candidate fixes: halve frame count, cap decode dimensions, lazy-decode around current scroll position, or replace with scrubbed video.
 - Preload cost itself (8.2 MB network + 1–4 long tasks during load at 4× CPU).
 
+## Final numbers (Phase 5, all fixes applied — runs assertion-valid, GC'd heap checks)
+
+| Metric (Work open/close 3×) | Baseline (valid refs) | Final | Budget |
+|---|---|---|---|
+| median frame — desktop / ×4 | 13.4 / **25.7–26.2** ms | 13.4 / **13.3** ms | ≤16.7 ✅ |
+| p95 — desktop / ×4 | 14.2 / **40** ms | ≤14.2 / **14.3** ms | ≤25 ✅ |
+| worst frame — desktop / ×4 | 214 / **374** ms | 40–67 / **40** ms | ≤50 ⚠️ (one 50–80 ms frame on the *first* cycle in some runs; steady-state ≤40) |
+| frames >50 ms — desktop / ×4 | 12 / 40–57 | 0–1 / **0** | — |
+| long tasks — desktop / ×4 | ~4 / ~20 | **0 / 0** | =0 ✅ (mobile+×4: one 78 ms task on first close in one run) |
+| mobile 390×844 / +×4 | worst 68 / 265 ms | worst 27 / 81* ms | *single first-cycle frame |
+| rocket section (all configs) | worst ≤67 ms | worst ≤40 ms, 0 LT | ✅ |
+| heap after 3 cycles (GC'd) | +0.6 MB (half artifact) | **flat** (5.0→5.1, nodes/listeners identical) | ✅ |
+| listeners at load / after 3 resize pairs | 189 / +160 per resize | **89 / 89** | ✅ |
+| console errors on / | 0 | 0 | ✅ |
+| first load | LCP ~620 ms, TBT 0 | LCP ~600–628 ms, TBT 0–11 ms, JS 616 KB | no regression ✅ |
+
+## Kept changes (one commit each)
+
+| Commit | What | Metric moved |
+|---|---|---|
+| c7d9129 | H1: pause MorphingText + DottedSurface off-screen, wire destroy | desktop >50 ms frames 12→8, worst 214→173; LayoutCount/frame 0.85→0.10 |
+| 8f91cb2 | H2: leaf-scope per-frame CSS writes (no inherited-var mutation on section/scene) | ×4 close median 26→13.6 ms; p95 40→27.5; desktop >50 ms 8→2 |
+| 6960de7 | H3: scroll progress from cached geometry | forced reflows/frame 0.55→0.00 |
+| e8010dd | H4: rocket driver — cached elements/geometry, idempotent hidden state | layout reads/frame 0.3→0 (rocket 1.07→0); ×4 worst 521→307 |
+| a2b8717 | H5: JS-computed ghost transforms, real shadow child | ×4 worst 307→66 ms, LT ~17→3; desktop LT →0 |
+| 7840311 | Leak fix: kill tl.scrollTrigger; stable card onClick identity | listeners 189→89 at load; resize growth +160→0; ×4 then fully clean (0 LT) |
+| f6ebd2f | Dead code (tool-proven only) | n/a |
+
+## Tried and reverted
+
+Nothing — 6 of 6 measured changes improved their target metric. (H1 was kept on desktop evidence; its ×4 effect was within noise, stated in the commit.)
+
+## Pre-existing issues found, NOT fixed (owner's call)
+
+- **404 `/works/project-hero-placeholder.jpg`** on all five `/work/*` pages (console error per page; identical on baseline). Fix = add the image or drop the reference in ProjectLayout.
+- `SplineScene.astro` file is now fully unreferenced (its import was dead) — kept because the git history shows the Spline robot was deliberately removed and might return.
+- `public/nasa-nns.html` — orphan page, but publicly addressable; may be linked externally.
+- `dist/` is tracked in git despite being gitignored (grandfathered files).
+- Harness runs occasionally see a slow (~330 px/s) autonomous scroll at page top during *idle* phases (never during measured scroll phases; scroll-API probe shows no JS caller — browser-level, intermittent). Assertions exclude affected idle stats automatically.
+
 ## Open questions for the user
 
 1. Working tree is dirty on `main` (your uncommitted changes). Plan: create branch `perf/work-stutter` from the current state and make a first commit of the *existing* working state as the baseline snapshot, so every perf change after it is one clean commit. OK?
