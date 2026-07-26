@@ -49,7 +49,18 @@ const URL = args.url || "http://localhost:4322/";
 const CPU_RATE = Number(args.cpu || 1);
 const MOBILE = Boolean(args.mobile);
 const DISABLE_HERO_LOOPS = Boolean(args["disable-hero-loops"]);
+const TRACE = Boolean(args.trace);
 const TOTAL_FRAMES = 240; // rocket JPG sequence length
+
+const TRACE_CATEGORIES = [
+  "devtools.timeline",
+  "disabled-by-default-devtools.timeline",
+  "disabled-by-default-devtools.timeline.frame",
+  "toplevel",
+  "v8.execute",
+  "disabled-by-default-v8.gc",
+  "blink.user_timing",
+];
 
 const REPO = process.cwd();
 const RESULTS_DIR = path.join(REPO, "perf-results");
@@ -218,6 +229,7 @@ const INSTRUMENTATION = `(() => {
     P.recording = s;
     lastT = 0;
     lastTotals = { ...P.totals };
+    try { performance.mark("phase-start:" + label); } catch (e) {}
     if (!rafId) rafId = requestAnimationFrame(frame);
   };
   P.stop = () => {
@@ -225,6 +237,7 @@ const INSTRUMENTATION = `(() => {
     if (!s) return null;
     s.t1 = performance.now();
     s.counters1 = { ...P.totals };
+    try { performance.mark("phase-end:" + s.label); } catch (e) {}
     P.recording = null;
     return s.label;
   };
@@ -436,12 +449,32 @@ async function main() {
     };
 
     const phases = [];
-    const runPhase = async (label, fn) => {
+    const scrollAssertions = [];
+    const getScrollY = () => page.evaluate(() => window.scrollY);
+
+    // Every phase declares the scroll region it is supposed to cover; a
+    // mismatch marks the whole run invalid so a silent mis-measurement
+    // (e.g. the offsetTop-vs-positioned-ancestor bug) cannot recur.
+    const runPhase = async (label, fn, expect) => {
       const before = await cdpMetrics();
+      const actualFrom = await getScrollY();
       await page.evaluate((l) => window.__perf.start(l), label);
       await fn();
       await page.evaluate(() => window.__perf.stop());
+      const actualTo = await getScrollY();
       const after = await cdpMetrics();
+      if (expect) {
+        const dist = Math.abs(expect.to - expect.from);
+        const tol = dist === 0 ? 8 : Math.max(120, dist * 0.1);
+        const ok =
+          Math.abs(actualFrom - expect.from) <= tol &&
+          Math.abs(actualTo - expect.to) <= tol;
+        scrollAssertions.push({ label, ...expect, actualFrom, actualTo, ok });
+        if (!ok)
+          console.error(
+            `SCROLL ASSERTION FAILED [${label}]: expected ${expect.from}->${expect.to}, actual ${actualFrom}->${actualTo}`,
+          );
+      }
       phases.push({
         label,
         layoutCountDelta: after.LayoutCount - before.LayoutCount,
@@ -451,9 +484,31 @@ async function main() {
       });
     };
 
+    // Pull recorded frames out of the page and clear them there, so the
+    // harness's own session storage never shows up as page heap growth.
+    const collected = {};
+    const harvest = async () => {
+      const chunk = await page.evaluate(() => {
+        const out = {};
+        for (const [label, s] of Object.entries(window.__perf.sessions)) {
+          out[label] = {
+            frames: s.frames,
+            t0: s.t0,
+            t1: s.t1,
+            longtasks: window.__perf.longtasks.filter(
+              (t) => t.start >= s.t0 && t.start <= s.t1,
+            ),
+          };
+        }
+        window.__perf.sessions = {};
+        return out;
+      });
+      Object.assign(collected, chunk);
+    };
+
     // ---- Idle controls: display cadence at top, tick() cost parked in Work
     await jumpTo(0);
-    await runPhase("idle-top", () => sleep(2500));
+    await runPhase("idle-top", () => sleep(2500), { from: 0, to: 0 });
 
     // ---- Work section: open/close 3x
     const workStart = Math.max(0, geom.workTop - geom.vh);
@@ -461,23 +516,54 @@ async function main() {
     const workDist = workEnd - workStart;
 
     result.heapCyclesMb = [];
+    result.heapHarnessArtifactMb = [];
     await jumpTo(workStart);
+    await harvest();
     const heapBefore = await gcHeapMb();
     const domBefore = await cdpMetrics();
 
-    for (let i = 1; i <= 3; i++) {
-      await runPhase(`work-open-${i}`, () => wheelBy(workDist));
-      await jumpTo(workEnd);
-      await runPhase(`work-close-${i}`, () => wheelBy(-workDist));
-      await jumpTo(workStart);
-      result.heapCyclesMb.push(await gcHeapMb());
+    const tracePath = path.join(RESULTS_DIR, `${STAMP}-${LABEL}.trace.json`);
+    if (TRACE) {
+      await context
+        .browser()
+        .startTracing(page, { path: tracePath, categories: TRACE_CATEGORIES });
+      result.tracePath = path.relative(REPO, tracePath);
     }
+
+    for (let i = 1; i <= 3; i++) {
+      await runPhase(`work-open-${i}`, () => wheelBy(workDist), {
+        from: workStart,
+        to: workEnd,
+      });
+      await jumpTo(workEnd);
+      await runPhase(`work-close-${i}`, () => wheelBy(-workDist), {
+        from: workEnd,
+        to: workStart,
+      });
+      await jumpTo(workStart);
+      // Heap with the harness's recorded frames still in-page, then again
+      // after harvesting them out — the difference is measurement artifact,
+      // not app leak.
+      const heapRaw = await gcHeapMb();
+      await harvest();
+      const heapClean = await gcHeapMb();
+      result.heapCyclesMb.push(heapClean);
+      result.heapHarnessArtifactMb.push(+(heapRaw - heapClean).toFixed(2));
+    }
+
+    if (TRACE) await context.browser().stopTracing();
+
     // Parked mid-Work: measures the per-frame cost of the section's own
     // tick + competing loops with zero scroll input.
-    await jumpTo(workStart + Math.round(geom.workH / 2));
-    await runPhase("idle-work-mid", () => sleep(2500));
+    const workMid = workStart + Math.round(geom.workH / 2);
+    await jumpTo(workMid);
+    await runPhase("idle-work-mid", () => sleep(2500), {
+      from: workMid,
+      to: workMid,
+    });
     await jumpTo(workStart);
 
+    await harvest();
     const heapAfter = await gcHeapMb();
     const domAfter = await cdpMetrics();
     result.heap = {
@@ -485,6 +571,7 @@ async function main() {
       afterCyclesMb: heapAfter,
       growthMb: +(heapAfter - heapBefore).toFixed(1),
       perCycleMb: result.heapCyclesMb,
+      harnessArtifactPerCycleMb: result.heapHarnessArtifactMb,
       nodes: { before: domBefore.Nodes, after: domAfter.Nodes },
       listeners: { before: domBefore.JSEventListeners, after: domAfter.JSEventListeners },
     };
@@ -492,25 +579,21 @@ async function main() {
     // ---- Rocket sequence scroll
     await jumpTo(0);
     const rocketEnd = Math.min(geom.rocketTop + geom.rocketH, geom.maxScroll);
-    await runPhase("rocket-scroll-down", () => wheelBy(rocketEnd));
-    await runPhase("rocket-scroll-up", () => wheelBy(-rocketEnd));
+    await runPhase("rocket-scroll-down", () => wheelBy(rocketEnd), {
+      from: 0,
+      to: rocketEnd,
+    });
+    await runPhase("rocket-scroll-up", () => wheelBy(-rocketEnd), {
+      from: rocketEnd,
+      to: 0,
+    });
 
     // ---- Collect in-page data
-    const pageData = await page.evaluate(() => {
-      const out = {};
-      for (const [label, s] of Object.entries(window.__perf.sessions)) {
-        out[label] = {
-          frames: s.frames,
-          t0: s.t0,
-          t1: s.t1,
-          longtasks: window.__perf.longtasks.filter(
-            (t) => t.start >= s.t0 && t.start <= s.t1,
-          ),
-        };
-      }
-      out.__events = window.__perf.events;
-      return out;
-    });
+    await harvest();
+    const pageData = collected;
+    pageData.__events = await page.evaluate(() => window.__perf.events);
+    result.scrollAssertions = scrollAssertions;
+    result.invalid = scrollAssertions.some((a) => !a.ok) || undefined;
 
     result.phases = phases.map((p) => {
       const s = pageData[p.label];
@@ -564,8 +647,15 @@ async function main() {
   if (result.heap)
     console.log(
       `heap: before ${result.heap.beforeCyclesMb}MB → after 3 cycles ${result.heap.afterCyclesMb}MB (Δ${result.heap.growthMb}MB), per-cycle [${result.heap.perCycleMb.join(", ")}], ` +
+      `harness artifact/cycle [${result.heap.harnessArtifactPerCycleMb.join(", ")}], ` +
       `nodes ${result.heap.nodes.before}→${result.heap.nodes.after}, listeners ${result.heap.listeners.before}→${result.heap.listeners.after}`,
     );
+  const badAsserts = (result.scrollAssertions || []).filter((a) => !a.ok);
+  console.log(
+    badAsserts.length
+      ? `SCROLL ASSERTIONS: ${badAsserts.length} FAILED — RUN INVALID: ${badAsserts.map((a) => a.label).join(", ")}`
+      : `scroll assertions: all ${result.scrollAssertions?.length ?? 0} passed`,
+  );
   console.log(
     `console: ${result.console.length} warn/error, pageErrors: ${result.pageErrors.length}`,
   );
