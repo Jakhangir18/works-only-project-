@@ -1,392 +1,51 @@
 ---
-// WhyWorkWithMe.astro
-// Bento grid layout showcasing skills and values
+import BentoCard from "./BentoCard.astro";
+
+const cards = [
+  {
+    variant: "large" as const,
+    title: "jack of all trades",
+    text: "My background is in systems architecture, giving me a solid understanding of structure and flow. I know JavaScript, TypeScript, and modern frameworks inside out. Expert in animation libraries like GSAP, and comfortable building anything from scratch.",
+  },
+  {
+    variant: "medium" as const,
+    title: "detail-oriented craftsman",
+    text: "Every pixel matters. Every transition serves a purpose. I obsess over the small things that most people won't notice, but everyone will feel. Clean code, smooth animations, perfect timing.",
+  },
+  {
+    variant: "wide" as const,
+    title: "performance first",
+    text: "Beautiful means nothing if it's slow. I optimize ruthlessly—from bundle sizes to render performance, from lazy loading to frame rates. Every millisecond counts. Users don't care about your stack, they care about speed. I build experiences that load fast, feel instant, and never compromise on quality.",
+  },
+  {
+    variant: "small" as const,
+    title: "problem solver at heart",
+    text: "I love nothing more than a good challenge. Complex interactions, scroll-driven narratives, physics-based animations—bring it on. The harder the problem, the more satisfying the solution.",
+  },
+  {
+    variant: "small" as const,
+    title: "nice human being",
+    text: "I do my best to be a positive, kind, and accommodating person. Good work comes from good relationships. I believe in transparency, honesty, and treating people with respect.",
+  },
+];
 ---
 
 <section class="bento-section">
-  <!-- Visual separator -->
   <div class="bento-separator">
     <div class="bento-separator__line"></div>
   </div>
 
-  <!-- Section Title -->
   <div class="bento-header">
     <h2 class="bento-header__title">Why work with me?</h2>
   </div>
 
   <div class="bento-container">
-    <!-- Responsive Bento Grid -->
     <div class="bento-grid">
-      <!-- Card 1: jack of all trades -->
-      <div class="bento-card bento-card--large">
-        <svg
-          class="corner-plus corner-plus--tl"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          width="24"
-          height="24"
-          stroke-width="1"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M12 6v12m6-6H6"></path>
-        </svg>
-        <svg
-          class="corner-plus corner-plus--tr"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          width="24"
-          height="24"
-          stroke-width="1"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M12 6v12m6-6H6"></path>
-        </svg>
-        <svg
-          class="corner-plus corner-plus--bl"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          width="24"
-          height="24"
-          stroke-width="1"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M12 6v12m6-6H6"></path>
-        </svg>
-        <svg
-          class="corner-plus corner-plus--br"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          width="24"
-          height="24"
-          stroke-width="1"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M12 6v12m6-6H6"></path>
-        </svg>
-
-        <div class="bento-card__content">
-          <h3 class="bento-card__title">jack of all trades</h3>
-          <p class="bento-card__text">
-            My background is in systems architecture, giving me a solid
-            understanding of structure and flow. I know JavaScript, TypeScript,
-            and modern frameworks inside out. Expert in animation libraries like
-            GSAP, and comfortable building anything from scratch.
-          </p>
-        </div>
-      </div>
-
-      <!-- Card 2: detail-oriented craftsman -->
-      <div class="bento-card bento-card--medium">
-        <svg
-          class="corner-plus corner-plus--tl"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          width="24"
-          height="24"
-          stroke-width="1"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M12 6v12m6-6H6"></path>
-        </svg>
-        <svg
-          class="corner-plus corner-plus--tr"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          width="24"
-          height="24"
-          stroke-width="1"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M12 6v12m6-6H6"></path>
-        </svg>
-        <svg
-          class="corner-plus corner-plus--bl"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          width="24"
-          height="24"
-          stroke-width="1"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M12 6v12m6-6H6"></path>
-        </svg>
-        <svg
-          class="corner-plus corner-plus--br"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          width="24"
-          height="24"
-          stroke-width="1"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M12 6v12m6-6H6"></path>
-        </svg>
-
-        <div class="bento-card__content">
-          <h3 class="bento-card__title">detail-oriented craftsman</h3>
-          <p class="bento-card__text">
-            Every pixel matters. Every transition serves a purpose. I obsess
-            over the small things that most people won't notice, but everyone
-            will feel. Clean code, smooth animations, perfect timing.
-          </p>
-        </div>
-      </div>
-
-      <!-- Card 3: performance first -->
-      <div class="bento-card bento-card--wide">
-        <svg
-          class="corner-plus corner-plus--tl"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          width="24"
-          height="24"
-          stroke-width="1"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M12 6v12m6-6H6"></path>
-        </svg>
-        <svg
-          class="corner-plus corner-plus--tr"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          width="24"
-          height="24"
-          stroke-width="1"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M12 6v12m6-6H6"></path>
-        </svg>
-        <svg
-          class="corner-plus corner-plus--bl"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          width="24"
-          height="24"
-          stroke-width="1"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M12 6v12m6-6H6"></path>
-        </svg>
-        <svg
-          class="corner-plus corner-plus--br"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          width="24"
-          height="24"
-          stroke-width="1"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M12 6v12m6-6H6"></path>
-        </svg>
-
-        <div class="bento-card__content">
-          <h3 class="bento-card__title">performance first</h3>
-          <p class="bento-card__text">
-            Beautiful means nothing if it's slow. I optimize ruthlessly—from
-            bundle sizes to render performance, from lazy loading to frame
-            rates. Every millisecond counts. Users don't care about your stack,
-            they care about speed. I build experiences that load fast, feel
-            instant, and never compromise on quality.
-          </p>
-        </div>
-      </div>
-
-      <!-- Card 4: problem solver at heart -->
-      <div class="bento-card bento-card--small">
-        <svg
-          class="corner-plus corner-plus--tl"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          width="24"
-          height="24"
-          stroke-width="1"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M12 6v12m6-6H6"></path>
-        </svg>
-        <svg
-          class="corner-plus corner-plus--tr"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          width="24"
-          height="24"
-          stroke-width="1"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M12 6v12m6-6H6"></path>
-        </svg>
-        <svg
-          class="corner-plus corner-plus--bl"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          width="24"
-          height="24"
-          stroke-width="1"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M12 6v12m6-6H6"></path>
-        </svg>
-        <svg
-          class="corner-plus corner-plus--br"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          width="24"
-          height="24"
-          stroke-width="1"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M12 6v12m6-6H6"></path>
-        </svg>
-
-        <div class="bento-card__content">
-          <h3 class="bento-card__title">problem solver at heart</h3>
-          <p class="bento-card__text">
-            I love nothing more than a good challenge. Complex interactions,
-            scroll-driven narratives, physics-based animations—bring it on. The
-            harder the problem, the more satisfying the solution.
-          </p>
-        </div>
-      </div>
-
-      <!-- Card 5: nice human being -->
-      <div class="bento-card bento-card--small">
-        <svg
-          class="corner-plus corner-plus--tl"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          width="24"
-          height="24"
-          stroke-width="1"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M12 6v12m6-6H6"></path>
-        </svg>
-        <svg
-          class="corner-plus corner-plus--tr"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          width="24"
-          height="24"
-          stroke-width="1"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M12 6v12m6-6H6"></path>
-        </svg>
-        <svg
-          class="corner-plus corner-plus--bl"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          width="24"
-          height="24"
-          stroke-width="1"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M12 6v12m6-6H6"></path>
-        </svg>
-        <svg
-          class="corner-plus corner-plus--br"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          width="24"
-          height="24"
-          stroke-width="1"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M12 6v12m6-6H6"></path>
-        </svg>
-
-        <div class="bento-card__content">
-          <h3 class="bento-card__title">nice human being</h3>
-          <p class="bento-card__text">
-            I do my best to be a positive, kind, and accommodating person. Good
-            work comes from good relationships. I believe in transparency,
-            honesty, and treating people with respect.
-          </p>
-        </div>
-      </div>
+      {cards.map((card) => (
+        <BentoCard variant={card.variant} title={card.title} text={card.text} />
+      ))}
     </div>
 
-    <!-- Section Footer Heading -->
     <div class="bento-footer">
       <h2 class="bento-footer__title">
         Built for performance. Designed for flexibility.
@@ -454,7 +113,6 @@
     padding: 0 clamp(1.5rem, 4vw, 3rem) clamp(2rem, 4vh, 4rem);
   }
 
-  // Responsive Bento Grid
   .bento-grid {
     display: grid;
     grid-template-columns: repeat(6, 1fr);
@@ -471,7 +129,7 @@
     }
   }
 
-  .bento-card {
+  :global(.bento-card) {
     position: relative;
     border: 1px dashed rgba(255, 255, 255, 0.3);
     border-radius: 0.75rem;
@@ -489,103 +147,59 @@
       min-height: 160px;
       padding: 1.25rem;
     }
-
-    &:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-    }
-
-    // Grid placement for different card sizes
-    &--large {
-      grid-column: span 3;
-      grid-row: span 2;
-
-      @media (max-width: 1024px) {
-        grid-column: span 4;
-        grid-row: span 2;
-      }
-
-      @media (max-width: 640px) {
-        grid-column: span 1;
-        grid-row: span 1;
-      }
-    }
-
-    &--medium {
-      grid-column: span 2;
-      grid-row: span 2;
-
-      @media (max-width: 1024px) {
-        grid-column: span 4;
-        grid-row: span 1;
-      }
-
-      @media (max-width: 640px) {
-        grid-column: span 1;
-        grid-row: span 1;
-      }
-    }
-
-    &--wide {
-      grid-column: span 4;
-      grid-row: span 1;
-
-      @media (max-width: 1024px) {
-        grid-column: span 4;
-        grid-row: span 1;
-      }
-
-      @media (max-width: 640px) {
-        grid-column: span 1;
-        grid-row: span 1;
-      }
-    }
-
-    &--small {
-      grid-column: span 2;
-      grid-row: span 1;
-
-      @media (max-width: 1024px) {
-        grid-column: span 2;
-        grid-row: span 1;
-      }
-
-      @media (max-width: 640px) {
-        grid-column: span 1;
-        grid-row: span 1;
-      }
-    }
   }
 
-  // Corner Plus Icons
-  .corner-plus {
+  :global(.bento-card:hover) {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  }
+
+  :global(.bento-card--large) {
+    grid-column: span 3;
+    grid-row: span 2;
+
+    @media (max-width: 1024px) { grid-column: span 4; grid-row: span 2; }
+    @media (max-width: 640px)  { grid-column: span 1; grid-row: span 1; }
+  }
+
+  :global(.bento-card--medium) {
+    grid-column: span 2;
+    grid-row: span 2;
+
+    @media (max-width: 1024px) { grid-column: span 4; grid-row: span 1; }
+    @media (max-width: 640px)  { grid-column: span 1; grid-row: span 1; }
+  }
+
+  :global(.bento-card--wide) {
+    grid-column: span 4;
+    grid-row: span 1;
+
+    @media (max-width: 1024px) { grid-column: span 4; grid-row: span 1; }
+    @media (max-width: 640px)  { grid-column: span 1; grid-row: span 1; }
+  }
+
+  :global(.bento-card--small) {
+    grid-column: span 2;
+    grid-row: span 1;
+
+    @media (max-width: 1024px) { grid-column: span 2; grid-row: span 1; }
+    @media (max-width: 640px)  { grid-column: span 1; grid-row: span 1; }
+  }
+
+  :global(.corner-plus) {
     position: absolute;
     width: 24px;
     height: 24px;
     color: #fff;
-
-    &--tl {
-      top: -12px;
-      left: -12px;
-    }
-
-    &--tr {
-      top: -12px;
-      right: -12px;
-    }
-
-    &--bl {
-      bottom: -12px;
-      left: -12px;
-    }
-
-    &--br {
-      bottom: -12px;
-      right: -12px;
-    }
+    display: flex;
   }
 
-  .bento-card__content {
+  :global(.corner-plus--tl) { top: -12px; left: -12px; }
+  :global(.corner-plus--tr) { top: -12px; right: -12px; }
+  :global(.corner-plus--bl) { bottom: -12px; left: -12px; }
+  :global(.corner-plus--br) { bottom: -12px; right: -12px; }
+
+  :global(.bento-card__content) {
     position: relative;
     z-index: 1;
     display: flex;
@@ -593,7 +207,7 @@
     gap: 1rem;
   }
 
-  .bento-card__title {
+  :global(.bento-card__title) {
     font-family: font-family(editorial);
     font-size: clamp(1.5rem, 2.5vw, 2.25rem);
     font-weight: 400;
@@ -603,7 +217,7 @@
     text-transform: lowercase;
   }
 
-  .bento-card__text {
+  :global(.bento-card__text) {
     font-family: font-family(fraktion);
     font-size: clamp(0.875rem, 1vw, 1rem);
     line-height: 1.65;
@@ -611,7 +225,6 @@
     margin: 0;
   }
 
-  // Footer Section
   .bento-footer {
     max-width: 40rem;
     margin-left: auto;

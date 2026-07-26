@@ -1,10 +1,6 @@
 ---
 const menuItems = [
-  // Top-level navigation targets for the homepage sections.
   { label: "WORK", href: "#work" },
-  { label: "SERVICES", href: "#services", hasDropdown: true },
-  { label: "INDUSTRIES", href: "#industries", hasDropdown: true },
-  { label: "ABOUT", href: "#about" },
   { label: "CONTACT", href: "#contact" },
 ];
 ---
@@ -21,7 +17,6 @@ const menuItems = [
           <li class="navigation__item">
             <a href={item.href} class="navigation__link">
               {item.label}
-              {item.hasDropdown && <span class="navigation__arrow">▼</span>}
             </a>
           </li>
         ))
