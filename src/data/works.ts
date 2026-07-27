@@ -3,17 +3,45 @@ export type WorkItem = {
   site: string;
 };
 
-type ProjectInfo = {
+export type ProjectInfo = {
   title: string;
   site: string;
+  /** One line, shown on the far side of the dive transition. The project page
+   *  stays the source of truth — this is a teaser, never a copy of it. */
+  blurb: string;
 };
 
-const projects: ProjectInfo[] = [
-  { title: "AMS Tablet", site: "/projects/ams" },
-  { title: "GoChain", site: "/work/gochain" },
-  { title: "Private Clinic Setup", site: "/work/private-clinic" },
-  { title: "Engineering Rocket", site: "/work/engineering-rocket" },
-  { title: "Portfolio Rocket", site: "/work/portfolio-rocket" },
+export const projects: ProjectInfo[] = [
+  {
+    title: "AMS Tablet",
+    site: "/projects/ams",
+    blurb:
+      "Automated pre-shift inspection and workforce verification at industrial checkpoints.",
+  },
+  {
+    title: "GoChain",
+    site: "/work/gochain",
+    blurb:
+      "A Web3 platform that turns everyday environmental actions into verifiable on-chain impact.",
+  },
+  {
+    title: "Private Clinic Setup",
+    site: "/work/private-clinic",
+    blurb:
+      "Digital, operational and physical infrastructure for a new medical clinic, concept to launch.",
+  },
+  {
+    title: "Engineering Rocket",
+    site: "/work/engineering-rocket",
+    blurb:
+      "Applied aerospace research — propulsion, structural analysis and recovery from first principles.",
+  },
+  {
+    title: "Portfolio Rocket",
+    site: "/work/portfolio-rocket",
+    blurb:
+      "This site: 240 scroll-driven frames, GSAP, and a custom sequencing engine in Astro.",
+  },
 ];
 
 function shuffle<T>(array: T[]): T[] {

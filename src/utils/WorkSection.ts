@@ -597,5 +597,5 @@ class Section {
 }
 
 export function initWorkSection() {
-  new Section();
+  return new Section();
 }
