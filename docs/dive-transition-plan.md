@@ -1,6 +1,7 @@
 # Dive-into-image transition — Phase 0 inventory and plan
 
-Status: **planned, not started.** No transition code has been written. Recorded here
+Status: **Step 0 verified, no transition code written yet.** Measurements are in
+"Open items — resolved in Step 0" at the end of this file. Recorded here
 so it survives a context reset.
 
 Goal: clicking a project card on the Work section opens a "dive into the image"
@@ -144,19 +145,205 @@ Report before/after numbers; if a budget misses, say so at the top.
 
 ---
 
-## Open items — must be resolved in Step 0
+## Steps 1–2 as built
 
-1. **Rendered card rect — not yet measured.** Derived roughly 280 px from the CSS
-   (`min-width: 280px`, `aspect-ratio: 16/10`, scaled by a random `--size` of
-   0.5–1.0), but never measured in a browser. The scale factor from card to
-   full-screen dive depends on it. Measure; do not assume.
-2. **`is-scroll-blocked` behaviour — not yet read.** Unknown whether it sets
-   `overflow: hidden`, `position: fixed`, or something else, and therefore whether it
-   causes a scrollbar-width reflow. This decides the lock strategy and whether the
-   H3 geometry cache must be rebuilt on exit.
-3. **Decode state of `cover.jpg` — not yet confirmed.** It is rendered as the card's
-   `<img>`, so it is *probably* already decoded and the dive needs no new fetch, but
-   this was not verified. Confirm before relying on an instant start.
+`src/utils/DiveTransition.ts` + `src/styles/site/_dive.scss`, wired from
+`SWork.astro`. Steps 3–5 (teardown discipline, reduced motion, measurement) are
+not implemented.
+
+### The rig
+
+```
+.dive              fixed, overflow:hidden, perspective:640px  (matches .s__scene)
+  .dive__backdrop  opacity 0 -> 1
+  .dive__flip      2D FLIP: card rect -> viewport          [animated transform]
+    .dive__stage   perspective: 900px, origin 50% 50%
+      .dive__camera  sized to the card's layout box, preserve-3d
+                                                            [animated transform]
+        .dive__layer--far   image plane: photo, or colour panel + accent glow
+        .dive__layer--mid   dot grid
+        .dive__layer--near  title
+        .dive__layer--fore  index, cta, card frame
+  .dive__vignette  opacity 0 -> 1
+  .dive__teaser    title, one line, "View full project"
+```
+
+Layers are authored by **how much each should grow over the dive**, and depth
+plus a static compensation scale are solved from that:
+
+```
+growth      g = (P + d) / (P + d - Z)          P = 900, Z = 560
+depth       d = g*Z/(g - 1) - P
+compensation k = (P + d) / P
+```
+
+| layer | growth | depth | compensation |
+|---|---|---|---|
+| far — image plane | 1.15× | 3393 | 4.77 |
+| mid — dot grid | 1.6× | 593 | 1.66 |
+| near — title | 2.2× | 127 | 1.14 |
+| fore — index / cta / frame | 4.0× | −153 | 0.83 |
+
+`k` makes every layer exactly coincident at `z = 0`, so frame one of the dive is
+the card and nothing else. Nothing but the camera's Z and the FLIP wrapper is
+animated — the layers never move on their own, so the separation is real
+perspective parallax rather than four tweens imitating one.
+
+**The photo is deliberately the slowest layer.** Step 0 measured `cover.jpg` as
+already upscaled 1.55× at full bleed on DPR 2 and 2.2× on DPR 3, so
+magnification cannot carry the travel. Separation does, and the layers that rush
+(type, grid, frame) are the resolution-independent ones.
+
+### Entry
+
+One delegated `click` on `.js-scene`. Modified, non-primary and already
+defaulted-prevented clicks fall through to the real link. Geometry is read in a
+single batch before any write; the card's screen scale and rotation come from
+its own computed matrix (`m22`, and `atan2(-m13, m11)`) rather than from CSS,
+because the phone and tablet variants of `.s__scene__work` drop
+`scale(var(--size))` entirely. Scroll locks with `overflow: hidden` on `<html>`
+plus non-passive `wheel`/`touchmove` cancels; `is-scroll-blocked` is not reused.
+`sessionStorage.returnScrollY`, which SiteController sets on the same click, is
+cleared because nothing is navigating.
+
+### Deviations from the plan
+
+1. **Portrait viewports fit the composition to width instead of cover-filling
+   it.** Cover-filling 390×844 with a 16:10 composition scales the card 6.5×,
+   and at 0.46 source pixels per device pixel the photo goes to mush. Fitting
+   width lands it at 208 → 390 CSS px, which needs no upscale at all. The band
+   sits above the teaser and reads as a deliberate layout.
+2. **The far plane gained an accent glow and a viewport vignette.** The plan's
+   four layers all *leave* during the dive, which for the four image-less
+   projects meant arriving at a flat colour field — verified visually, it looked
+   like a fade to paint. The glow (accent colour, cards without a photo only)
+   and the vignette both fade up from zero, so frame one still matches the card,
+   and the dot grid now rests at 0.18 instead of 0 so texture is still drifting
+   at the far plane.
+3. **A close path is included** (Escape and a close button, reverse timeline).
+   The transition is unusable and unverifiable without one; the *lifecycle*
+   hardening it implies — interrupt paths, `ScrollTrigger.refresh()`, the
+   zero-listener-growth audit — is still Step 3.
+
+### Verified visually, not yet measured
+
+At 1440×900 @2× and 390×844 @3×: frame one matches the card, layers separate,
+scroll holds under a wheel and is restored on exit, the source card is hidden
+and restored, `will-change` is cleared on completion, modified clicks still
+navigate, and there are zero console errors. **No performance measurement has
+been taken** — that is Step 5.
+
+---
+
+## Open items — resolved in Step 0
+
+All three measured on the production build (`npm run preview -- --port 4322`) with
+system Chrome via `playwright-core`, at 1440×900 @2× and 390×844 @3×.
+
+### 1. Rendered card rect and device pixel ratio — measured
+
+The card box is **shrink-to-fit around its own title**, not a constant 280 px:
+
+| | desktop 1440×900 (DPR 2) | mobile 390×844 (DPR 3) |
+|---|---|---|
+| layout box, AMS card | 288 × 180 | 208 × 130 |
+| layout box, longest title | 420 × 262 | 208 × 130 |
+| on-screen (visual) box, AMS | 205.7×128.6 … 275.4×172.1 | 208 × 130 |
+| visual ÷ layout | 0.714 … 0.956 | 1.000 |
+
+- An off-screen card reports 288×180 whatever its title, because
+  `content-visibility: hidden` skips content layout. Only `.is-inview` cards report
+  their true box — measure those, or the number is an artifact.
+- On desktop the visual scale tracks `--size` almost exactly; the `perspective: 40rem`
+  (computed **640px**) contribution is negligible near `progress ≈ 0`, where
+  `translateZ` collapses to ~0.
+- On phone/tablet the `.s__scene__work` transform **omits `scale(var(--size))`**, so
+  visual == layout there.
+- Only 1–2 of the 20 cards are rendered at any scroll position (`stagger: 0.25`).
+
+**FLIP scale, card → full-bleed:** desktop **5.5×–7.4×**, mobile **6.8×** linear.
+
+**Resolution, corrected.** The Phase 0 note that `cover.jpg` (1950×1160) gives "≈7×
+headroom" is true against the *card*, not against the dive's end state. At full bleed
+with `object-fit: cover` the source supplies **0.64 source px per device px on desktop
+(1.55× upscale)** and **0.46 on mobile (2.2× upscale)** — and that is before the dive
+pushes past the full-bleed plane. Consequence for Step 1: sell the travel with **layer
+separation**, and do not park the camera at extreme magnification on the AMS photo.
+
+### 2. `is-scroll-blocked` — read and measured
+
+```scss
+html.is-scroll-blocked, html.is-nav-open { &, body { height: 100vh; overflow: hidden } }
+```
+
+Measured at `scrollY = 7791` with the Work container pinned:
+
+- Adding the class collapses `documentElement.scrollHeight` **15891 → 900** and
+  **resets `scrollY` to 0 in the same frame**. Removing it does **not** restore the
+  offset — scroll stays at 0 and the pin releases (container top 0.1 → 5991.1).
+  **The class is unusable for a mid-page overlay.**
+- The class itself is cheap: +1 layout, +2 style recalcs.
+- **Scrollbar width is 0 before and during** (`scrollbar-width: none` on `html`, plus
+  overlay scrollbars on macOS) — the `padding-right` compensation the plan proposed is
+  not needed.
+- **The H3 geometry cache is not invalidated.** `elAbsTop` (5991.1) and `elHeight`
+  (9000) are byte-identical before, during and after: `.s-work`'s height is a px value
+  written by `setSize()`, and `elAbsTop` is scroll-invariant. The plan's stated worry
+  was the wrong one; the real hazard is scroll destruction.
+
+Alternatives, same offset, same pin state:
+
+| strategy | scroll held | wheel blocked | restored | doc height | pin held | layout/style |
+|---|---|---|---|---|---|---|
+| existing `.is-scroll-blocked` | ✗ → 0 | ✓ | ✗ stays 0 | collapses | ✓ | 1 / 2 |
+| `overflow:hidden` on `<html>` only | ✓ 7791 | ✓ | ✓ 7791 | unchanged | ✓ | 1 / 1 |
+| `position:fixed` body + `top:-y` | ✗ → 0 | ✓ | ✓ 7791 | collapses | ✓ | 1 / 1 |
+| `preventDefault` on wheel/touchmove | ✓ 7791 | ✓ | ✓ 7791 | unchanged | ✓ | 0 / 0 |
+
+**Decision:** lock with `overflow: hidden` on `<html>` only, paired with non-passive
+`wheel`/`touchmove` `preventDefault` for iOS Safari, which historically ignores
+`overflow: hidden` on `html` for touch scrolling — *not verified here, no real iOS
+device in this harness.* Do not reuse `is-scroll-blocked`. Do not use the fixed-body
+lock: geometry read while it is active is wrong by the scroll offset (`elAbsTop` read
+back as −1799.9).
+
+### 3. Decode state of `cover.jpg` — confirmed decoded at click time
+
+One network request at page load (`responseEnd` 64–122 ms, 3.66 MB). A fresh
+`new Image()` with the same `src` issues **no second request**.
+
+| state | desktop | mobile |
+|---|---|---|
+| cold — Work never scrolled into view, card `content-visibility: hidden` | 20.5 ms | 30.3 ms |
+| cold, 4× CPU throttle | 18.8 ms | 17.5 ms |
+| **warm — card painted on screen (the only state a user can click from)** | **0.1 ms** | **0.2 ms** |
+| warm, detached fresh `Image()` | 0.1 ms | 0.1 ms |
+| warm, attached and laid out full-bleed | 0.1 ms | 0.2 ms |
+
+Cold decode produced **zero long tasks** at 4× throttle — it is decoder-thread latency,
+not a main-thread block.
+
+**Decision:** keep `await img.decode()` in the entry path. It is free (0.1–0.2 ms) in
+the normal case and bounds the cold case (keyboard or deep-link entry) at ~31 ms
+without a long task. Caveat: `decode()` resolving fast proves the decoded frame is
+cached, **not** that the compositor avoids a re-raster when the layer is scaled 6–7×.
+That cost lands in paint and is a Step 5 measurement.
+
+### Bonus: the overlay really must live on `document.body`
+
+Probed with a `position: fixed; inset: 0` element at `scrollY 0` (desktop, viewport
+1440×900):
+
+| parent | resulting rect |
+|---|---|
+| `document.body` | 0, 0, 1440 × 900 ✅ viewport |
+| `.js-container` (pinned) | 0, **5991.1**, 1440 × 900 |
+| `.s__scene` | 180, 6103.6, **1080 × 675** (scaled 0.75) |
+| `a-work` | 1452.8, 6441.3, **16.1 × 5.5** (projected through the perspective) |
+
+`.s__scene` carries `will-change: transform` + `perspective`, and `a-work` carries
+`will-change: transform` + `transform-style: preserve-3d`; each forms a containing
+block for `position: fixed` descendants. Confirmed identically at 390×844.
 
 ---
 

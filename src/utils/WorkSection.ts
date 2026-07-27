@@ -55,6 +55,7 @@ class Section {
   };
   scrollProgress: number;
   smoothScrollProgress: number;
+  strokeColor: string;
   state: 0;
   speed: number;
   isPaused: boolean;
@@ -207,6 +208,9 @@ class Section {
 
   setCtxStyle() {
     const color = getComputedStyle(this.el).getPropertyValue("--color-primary");
+    // Cached because setSize() has to be able to re-apply it synchronously,
+    // and the read is the expensive half.
+    this.strokeColor = color;
     Ticker.nextTick(() => {
       this.ctx.strokeStyle = color;
     });
@@ -236,6 +240,16 @@ class Section {
 
     this.canvas.width = this.bounding.width;
     this.canvas.height = this.bounding.height;
+
+    // Assigning canvas.width resets the whole 2D context to defaults, which
+    // puts strokeStyle back to black — and setCtxStyle() only re-applies it a
+    // tick later. Any draw landing in that gap is black-on-black, and
+    // drawPoints() early-exits once progress stops changing, so at a resting
+    // scroll position that black frame is never repainted. Restoring it here,
+    // synchronously and where it is destroyed, is what keeps the grid visible
+    // when the page opens straight into Work (returning from a project page).
+    if (this.strokeColor) this.ctx.strokeStyle = this.strokeColor;
+
     this.speed = Math.hypot(this.bounding.width, this.bounding.height) * 4;
 
     // Phone keeps the canvas static (iOS jitter); drop any stale inline
@@ -597,5 +611,5 @@ class Section {
 }
 
 export function initWorkSection() {
-  new Section();
+  return new Section();
 }
