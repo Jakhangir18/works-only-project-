@@ -1,4 +1,5 @@
 import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { projects } from "../data/works";
 
 /**
@@ -59,6 +60,15 @@ type PausableSection = {
   isPaused: boolean;
   setPausedState(isPaused: boolean): void;
 };
+
+/**
+ * 'closed' rejects new opens (blocks rapid repeat clicks — one dive at a
+ * time, no interleaved geometry reads on two cards). 'opening'/'open' both
+ * accept a close, which is what makes closing mid-flight an interrupt rather
+ * than a dead click. 'closing' rejects everything until its own onComplete
+ * lands on 'closed'.
+ */
+type DiveState = "closed" | "opening" | "open" | "closing";
 
 /**
  * Screen scale and Y rotation of a card, taken from its own computed matrix.
@@ -126,10 +136,17 @@ class DiveTransition {
   closeButton!: HTMLButtonElement;
 
   tl: gsap.core.Timeline | null = null;
-  isOpen = false;
+  state: DiveState = "closed";
   sourceCard: HTMLElement | null = null;
   sectionWasPaused = false;
   lockedScrollY = 0;
+
+  /* Set once per dive in fill(), read back by the resize handler so a live
+     viewport change can re-settle the end scale without re-reading the
+     (now hidden) card. */
+  cardBoxWidth = 0;
+  cardBoxHeight = 0;
+  resizedWhileOpen = false;
 
   init(section?: PausableSection) {
     this.scene = document.querySelector(".s-work .js-scene");
@@ -242,7 +259,10 @@ class DiveTransition {
     if (event.defaultPrevented) return;
     if (event.button !== 0) return;
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-    if (this.isOpen) return;
+    // Not just 'is one open' — 'opening' and 'closing' are rejected too, so a
+    // second click during the decode await or either animation can't start a
+    // concurrent dive on a different card.
+    if (this.state !== "closed") return;
 
     const target = event.target as HTMLElement | null;
     const link = target?.closest("a") as HTMLAnchorElement | null;
@@ -270,6 +290,22 @@ class DiveTransition {
   /** Non-passive so preventDefault actually cancels the scroll. */
   onLockedScroll = (event: Event) => {
     event.preventDefault();
+  };
+
+  /**
+   * A resize is the one thing that can happen mid-dive without any user
+   * action on the overlay itself. It never touches the timeline: the entry
+   * animation's own end value (flip's scale, set once in play()) is what
+   * would otherwise go stale, so this only re-settles it, instantly, once
+   * the entry has actually finished landing on the new viewport.
+   */
+  onWindowResize = () => {
+    this.resizedWhileOpen = true;
+    if (this.state === "open") {
+      gsap.set(this.flip, {
+        scale: this.endScale(this.cardBoxWidth, this.cardBoxHeight),
+      });
+    }
   };
 
   /* ----------------------------------------------------------------- read */
@@ -314,6 +350,9 @@ class DiveTransition {
   /* ---------------------------------------------------------------- write */
 
   async open(work: HTMLElement, card: HTMLElement, href: string) {
+    this.state = "opening";
+    this.resizedWhileOpen = false;
+
     const reading = this.readCard(work, card, href);
 
     // Lock before awaiting the decode so the card cannot scroll out from
@@ -322,6 +361,7 @@ class DiveTransition {
     // geometry cache — unlike .is-scroll-blocked, which sets height: 100vh
     // on html and body and destroys the scroll position outright.
     this.lockScroll();
+    window.addEventListener("resize", this.onWindowResize, { passive: true });
 
     // The hijacked click still bubbled through SiteController's per-link
     // handler, which parks scrollY in sessionStorage for the return trip.
@@ -353,11 +393,14 @@ class DiveTransition {
       this.section.setPausedState(true);
     }
 
-    this.isOpen = true;
     this.root.classList.add("is-open");
     this.root.setAttribute("aria-hidden", "false");
     document.addEventListener("keydown", this.onKeyDown);
 
+    // Stays 'opening' — not 'open' — until the entry timeline actually
+    // lands: that's what makes a close() during the flight itself a real
+    // interrupt (guarded below) rather than a state neither open() nor
+    // close() recognises.
     this.play(reading);
   }
 
@@ -398,6 +441,8 @@ class DiveTransition {
     // during one.
     this.camera.style.width = `${reading.boxWidth}px`;
     this.camera.style.height = `${reading.boxHeight}px`;
+    this.cardBoxWidth = reading.boxWidth;
+    this.cardBoxHeight = reading.boxHeight;
   }
 
   /**
@@ -449,6 +494,7 @@ class DiveTransition {
         layers.mid.style.willChange = "";
         flip.style.willChange = "";
         backdrop.style.willChange = "";
+        this.state = "open";
       },
     });
 
@@ -519,8 +565,12 @@ class DiveTransition {
   /* ----------------------------------------------------------------- exit */
 
   close() {
-    if (!this.isOpen) return;
-    this.isOpen = false;
+    // Rejects 'closed' (nothing to close) and 'closing' (already on the way
+    // out — a second Escape or a stray click on the now-fading close button
+    // must not restart the exit timeline mid-flight). Accepts 'opening' and
+    // 'open' alike, which is what makes closing mid-flight an interrupt.
+    if (this.state === "closed" || this.state === "closing") return;
+    this.state = "closing";
 
     if (this.tl) this.tl.kill();
 
@@ -544,6 +594,7 @@ class DiveTransition {
     layers.mid.style.willChange = "opacity";
 
     document.removeEventListener("keydown", this.onKeyDown);
+    window.removeEventListener("resize", this.onWindowResize);
 
     const tl = gsap.timeline({
       onComplete: () => {
@@ -562,6 +613,16 @@ class DiveTransition {
 
         this.unlockScroll();
         if (this.section) this.section.setPausedState(this.sectionWasPaused);
+
+        // A resize mid-dive already made WorkSection re-measure and refresh
+        // itself (it listens for the same window resize independently of
+        // the dive), but that ran with the source card still
+        // visibility:hidden and the overlay covering the viewport. Refresh
+        // once more now that both are gone, so ScrollTrigger's start/end
+        // math is against the page the visitor actually sees.
+        if (this.resizedWhileOpen) ScrollTrigger.refresh();
+
+        this.state = "closed";
       },
     });
 
