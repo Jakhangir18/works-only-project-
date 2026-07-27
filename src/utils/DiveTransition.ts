@@ -56,6 +56,23 @@ const compensationOf = (growth: number) =>
 const DURATION_IN = 1.15;
 const DURATION_OUT = 0.7;
 
+/* prefers-reduced-motion: no Z animation, no layer separation, opacity only.
+   Shorter than the full durations on purpose — a cross-fade dragged out to
+   the dive's own timing reads as slow, not as reduced. */
+const DURATION_REDUCED_IN = 0.4;
+const DURATION_REDUCED_OUT = 0.3;
+
+/**
+ * Read live, every time — never cached at build() or at the start of a dive.
+ * That is what lets a change to the setting mid-dive be honoured by the time
+ * the *next* phase runs: dive in with motion, then have the OS setting
+ * change, and the exit that follows already cross-fades instead of flying
+ * back to the card.
+ */
+function prefersReducedMotion() {
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
 type PausableSection = {
   isPaused: boolean;
   setPausedState(isPaused: boolean): void;
@@ -459,9 +476,59 @@ class DiveTransition {
   }
 
   play(reading: CardReading) {
+    if (this.tl) this.tl.kill();
+    this.tl = prefersReducedMotion()
+      ? this.playReduced(reading)
+      : this.playFull(reading);
+  }
+
+  /**
+   * The whole composition is set to its resting position instantly — full
+   * screen, camera.z at 0 so the layers' baked-in translateZ/scale pairs
+   * still cancel out to a flat, undivided image exactly as they do at rest
+   * in playFull() — and the only thing that runs is an opacity cross-fade.
+   */
+  playReduced(reading: CardReading) {
     const { flip, camera, backdrop, teaser, closeButton, layers, cover } = this;
 
-    if (this.tl) this.tl.kill();
+    flip.style.willChange = "opacity";
+    backdrop.style.willChange = "opacity";
+
+    gsap.set(flip, {
+      x: 0,
+      y: 0,
+      scale: this.endScale(reading.boxWidth, reading.boxHeight),
+      rotationY: 0,
+      opacity: 0,
+    });
+    gsap.set(camera, { xPercent: -50, yPercent: -50, z: 0 });
+    gsap.set([layers.far, layers.mid, layers.near, layers.fore], { opacity: 1 });
+    gsap.set(cover, { opacity: reading.coverSrc ? 1 : 0.85 });
+    gsap.set([this.glow, this.vignette], { opacity: 1 });
+    gsap.set(backdrop, { opacity: 0 });
+    gsap.set(teaser, { opacity: 0, y: 0 });
+    gsap.set(closeButton, { opacity: 0 });
+
+    const tl = gsap.timeline({
+      onComplete: () => {
+        flip.style.willChange = "";
+        backdrop.style.willChange = "";
+        this.state = "open";
+      },
+    });
+
+    tl.to([flip, backdrop], { opacity: 1, duration: DURATION_REDUCED_IN, ease: "power1.out" }, 0);
+    tl.to(
+      [teaser, closeButton],
+      { opacity: 1, duration: DURATION_REDUCED_IN * 0.7, ease: "power1.out" },
+      DURATION_REDUCED_IN * 0.4,
+    );
+
+    return tl;
+  }
+
+  playFull(reading: CardReading) {
+    const { flip, camera, backdrop, teaser, closeButton, layers, cover } = this;
 
     // will-change goes on only while the dive runs; the layers that stay at
     // constant opacity never get it.
@@ -559,7 +626,7 @@ class DiveTransition {
       DURATION_IN * 0.68,
     );
 
-    this.tl = tl;
+    return tl;
   }
 
   /* ----------------------------------------------------------------- exit */
@@ -574,6 +641,83 @@ class DiveTransition {
 
     if (this.tl) this.tl.kill();
 
+    document.removeEventListener("keydown", this.onKeyDown);
+    window.removeEventListener("resize", this.onWindowResize);
+
+    const onDone = this.buildOnClosed();
+
+    this.tl = prefersReducedMotion() ? this.closeReduced(onDone) : this.closeFull(onDone);
+  }
+
+  /**
+   * Shared teardown, identical regardless of which exit animation ran: the
+   * whole point of routing both paths through one closure is that Step 3's
+   * teardown guarantees (will-change cleared, card restored, scroll
+   * unlocked, section resumed, state back to 'closed') can't drift apart
+   * between the two.
+   */
+  buildOnClosed() {
+    const { flip, camera, backdrop, teaser, closeButton, layers } = this;
+    const card = this.sourceCard;
+
+    return () => {
+      this.root.classList.remove("is-open");
+      this.root.setAttribute("aria-hidden", "true");
+
+      // closeReduced() never touches the camera — it only fades flip/backdrop
+      // — so a dive that entered with full motion and then had the OS
+      // setting change mid-flight (see prefersReducedMotion()'s doc comment)
+      // can complete a reduced exit with the camera still at DOLLY. Harmless
+      // while hidden and self-healing on the next open() either way, but
+      // resetting it here means 'closed' is a single canonical rest state
+      // regardless of which exit path ran.
+      gsap.set(camera, { z: 0 });
+
+      camera.style.willChange = "";
+      flip.style.willChange = "";
+      backdrop.style.willChange = "";
+      layers.fore.style.willChange = "";
+      layers.near.style.willChange = "";
+      layers.mid.style.willChange = "";
+
+      if (card) card.style.visibility = "";
+      this.sourceCard = null;
+
+      this.unlockScroll();
+      if (this.section) this.section.setPausedState(this.sectionWasPaused);
+
+      // A resize mid-dive already made WorkSection re-measure and refresh
+      // itself (it listens for the same window resize independently of the
+      // dive), but that ran with the source card still visibility:hidden
+      // and the overlay covering the viewport. Refresh once more now that
+      // both are gone, so ScrollTrigger's start/end math is against the
+      // page the visitor actually sees.
+      if (this.resizedWhileOpen) ScrollTrigger.refresh();
+
+      this.state = "closed";
+    };
+  }
+
+  /** No transform animation at all — the overlay is already sitting at its
+   *  resting full-screen position, so closing is only ever a fade to 0. */
+  closeReduced(onComplete: () => void) {
+    const { flip, backdrop, teaser, closeButton } = this;
+
+    flip.style.willChange = "opacity";
+    backdrop.style.willChange = "opacity";
+
+    const tl = gsap.timeline({ onComplete });
+    tl.to([teaser, closeButton], { opacity: 0, duration: DURATION_REDUCED_OUT * 0.5, ease: "none" }, 0);
+    tl.to(
+      [flip, backdrop],
+      { opacity: 0, duration: DURATION_REDUCED_OUT, ease: "power1.in" },
+      DURATION_REDUCED_OUT * 0.15,
+    );
+
+    return tl;
+  }
+
+  closeFull(onComplete: () => void) {
     const { flip, camera, backdrop, teaser, closeButton, layers } = this;
     const card = this.sourceCard;
 
@@ -593,38 +737,7 @@ class DiveTransition {
     layers.near.style.willChange = "opacity";
     layers.mid.style.willChange = "opacity";
 
-    document.removeEventListener("keydown", this.onKeyDown);
-    window.removeEventListener("resize", this.onWindowResize);
-
-    const tl = gsap.timeline({
-      onComplete: () => {
-        this.root.classList.remove("is-open");
-        this.root.setAttribute("aria-hidden", "true");
-
-        camera.style.willChange = "";
-        flip.style.willChange = "";
-        backdrop.style.willChange = "";
-        layers.fore.style.willChange = "";
-        layers.near.style.willChange = "";
-        layers.mid.style.willChange = "";
-
-        if (card) card.style.visibility = "";
-        this.sourceCard = null;
-
-        this.unlockScroll();
-        if (this.section) this.section.setPausedState(this.sectionWasPaused);
-
-        // A resize mid-dive already made WorkSection re-measure and refresh
-        // itself (it listens for the same window resize independently of
-        // the dive), but that ran with the source card still
-        // visibility:hidden and the overlay covering the viewport. Refresh
-        // once more now that both are gone, so ScrollTrigger's start/end
-        // math is against the page the visitor actually sees.
-        if (this.resizedWhileOpen) ScrollTrigger.refresh();
-
-        this.state = "closed";
-      },
-    });
+    const tl = gsap.timeline({ onComplete });
 
     tl.to([teaser, closeButton], { opacity: 0, duration: DURATION_OUT * 0.3, ease: "none" }, 0);
     tl.to(
@@ -652,7 +765,7 @@ class DiveTransition {
     );
     tl.to(backdrop, { opacity: 0, duration: DURATION_OUT * 0.45, ease: "power1.in" }, DURATION_OUT * 0.4);
 
-    this.tl = tl;
+    return tl;
   }
 
   /* ----------------------------------------------------------------- lock */
