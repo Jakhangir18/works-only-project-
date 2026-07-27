@@ -269,6 +269,7 @@ class DiveTransition {
     document.body.appendChild(root);
 
     this.closeButton.addEventListener("click", this.onCloseClick);
+    this.teaserLink.addEventListener("click", this.onTeaserLinkClick);
   }
 
   /* ---------------------------------------------------------------- entry */
@@ -301,6 +302,24 @@ class DiveTransition {
 
   onCloseClick = () => {
     this.close();
+  };
+
+  /**
+   * The teaser link is the one way out of a dive that actually navigates, and
+   * it is the dive's own node — appended to document.body long after
+   * SiteController ran its one-shot querySelectorAll over
+   * a[href^="/work/"], a[href^="/projects/"], so it never got that listener.
+   * open() also clears returnScrollY, since the hijacked card click sets it
+   * for a navigation that no longer happens.
+   *
+   * So nothing was recording where the visitor actually was. The project
+   * page's own "Back to Works" then set returnToWorks, and SiteController's
+   * fallback dropped them at the top of the section with the carousel reset
+   * to progress 0. Save the pre-lock offset here, which is where they were
+   * standing when they dived.
+   */
+  onTeaserLinkClick = () => {
+    sessionStorage.setItem("returnScrollY", String(this.lockedScrollY));
   };
 
   onKeyDown = (event: KeyboardEvent) => {
