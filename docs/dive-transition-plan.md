@@ -145,6 +145,96 @@ Report before/after numbers; if a budget misses, say so at the top.
 
 ---
 
+## Steps 1–2 as built
+
+`src/utils/DiveTransition.ts` + `src/styles/site/_dive.scss`, wired from
+`SWork.astro`. Steps 3–5 (teardown discipline, reduced motion, measurement) are
+not implemented.
+
+### The rig
+
+```
+.dive              fixed, overflow:hidden, perspective:640px  (matches .s__scene)
+  .dive__backdrop  opacity 0 -> 1
+  .dive__flip      2D FLIP: card rect -> viewport          [animated transform]
+    .dive__stage   perspective: 900px, origin 50% 50%
+      .dive__camera  sized to the card's layout box, preserve-3d
+                                                            [animated transform]
+        .dive__layer--far   image plane: photo, or colour panel + accent glow
+        .dive__layer--mid   dot grid
+        .dive__layer--near  title
+        .dive__layer--fore  index, cta, card frame
+  .dive__vignette  opacity 0 -> 1
+  .dive__teaser    title, one line, "View full project"
+```
+
+Layers are authored by **how much each should grow over the dive**, and depth
+plus a static compensation scale are solved from that:
+
+```
+growth      g = (P + d) / (P + d - Z)          P = 900, Z = 560
+depth       d = g*Z/(g - 1) - P
+compensation k = (P + d) / P
+```
+
+| layer | growth | depth | compensation |
+|---|---|---|---|
+| far — image plane | 1.15× | 3393 | 4.77 |
+| mid — dot grid | 1.6× | 593 | 1.66 |
+| near — title | 2.2× | 127 | 1.14 |
+| fore — index / cta / frame | 4.0× | −153 | 0.83 |
+
+`k` makes every layer exactly coincident at `z = 0`, so frame one of the dive is
+the card and nothing else. Nothing but the camera's Z and the FLIP wrapper is
+animated — the layers never move on their own, so the separation is real
+perspective parallax rather than four tweens imitating one.
+
+**The photo is deliberately the slowest layer.** Step 0 measured `cover.jpg` as
+already upscaled 1.55× at full bleed on DPR 2 and 2.2× on DPR 3, so
+magnification cannot carry the travel. Separation does, and the layers that rush
+(type, grid, frame) are the resolution-independent ones.
+
+### Entry
+
+One delegated `click` on `.js-scene`. Modified, non-primary and already
+defaulted-prevented clicks fall through to the real link. Geometry is read in a
+single batch before any write; the card's screen scale and rotation come from
+its own computed matrix (`m22`, and `atan2(-m13, m11)`) rather than from CSS,
+because the phone and tablet variants of `.s__scene__work` drop
+`scale(var(--size))` entirely. Scroll locks with `overflow: hidden` on `<html>`
+plus non-passive `wheel`/`touchmove` cancels; `is-scroll-blocked` is not reused.
+`sessionStorage.returnScrollY`, which SiteController sets on the same click, is
+cleared because nothing is navigating.
+
+### Deviations from the plan
+
+1. **Portrait viewports fit the composition to width instead of cover-filling
+   it.** Cover-filling 390×844 with a 16:10 composition scales the card 6.5×,
+   and at 0.46 source pixels per device pixel the photo goes to mush. Fitting
+   width lands it at 208 → 390 CSS px, which needs no upscale at all. The band
+   sits above the teaser and reads as a deliberate layout.
+2. **The far plane gained an accent glow and a viewport vignette.** The plan's
+   four layers all *leave* during the dive, which for the four image-less
+   projects meant arriving at a flat colour field — verified visually, it looked
+   like a fade to paint. The glow (accent colour, cards without a photo only)
+   and the vignette both fade up from zero, so frame one still matches the card,
+   and the dot grid now rests at 0.18 instead of 0 so texture is still drifting
+   at the far plane.
+3. **A close path is included** (Escape and a close button, reverse timeline).
+   The transition is unusable and unverifiable without one; the *lifecycle*
+   hardening it implies — interrupt paths, `ScrollTrigger.refresh()`, the
+   zero-listener-growth audit — is still Step 3.
+
+### Verified visually, not yet measured
+
+At 1440×900 @2× and 390×844 @3×: frame one matches the card, layers separate,
+scroll holds under a wheel and is restored on exit, the source card is hidden
+and restored, `will-change` is cleared on completion, modified clicks still
+navigate, and there are zero console errors. **No performance measurement has
+been taken** — that is Step 5.
+
+---
+
 ## Open items — resolved in Step 0
 
 All three measured on the production build (`npm run preview -- --port 4322`) with
