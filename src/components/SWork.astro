@@ -161,8 +161,16 @@ const works = buildWorksList();
       left: 0;
 
       width: 100%;
+      /* svh, not lvh: this is the pinned container. `lvh` is the viewport with
+         the iOS toolbar *retracted*, so while the toolbar is showing the pin is
+         taller than the visible area and its bottom is clipped. `dvh` (and a px
+         value from innerHeight) would fit but track the toolbar animation, which
+         resizes the pin mid-scroll and staleness-checks ScrollTrigger's cached
+         geometry. `svh` is the only one that both fits and never changes.
+         Matches HeroHome's `100vh` -> `100svh`. Desktop is unaffected: vh, svh,
+         lvh and dvh are all equal where there is no dynamic toolbar. */
       height: 100vh;
-      height: 100lvh;
+      height: 100svh;
 
       background: #000000;
       color: color(primary);
@@ -191,8 +199,11 @@ const works = buildWorksList();
 
     .s__title,
     .s__scene {
+      /* Same basis as the pinned container above — type sized from the large
+         viewport inside a small-viewport box would overflow it on iOS and
+         re-lay-out the whole letter tunnel every time the toolbar moved. */
       font: 700 min(18.75rem, 25vh) / 1 font-family(bigger);
-      font-size: min(18.75rem, 25lvh);
+      font-size: min(18.75rem, 25svh);
       text-align: center;
       text-transform: uppercase;
     }

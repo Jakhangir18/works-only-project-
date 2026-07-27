@@ -105,13 +105,33 @@ layer already exists — the hint buys nothing and costs 108 layers. If you want
 keep a hint, apply it only while `--state > 0` and remove it on completion. CLAUDE.md
 invariant 4's "removed when the transition ends" principle applies here.
 
-**Confidence: high** that the count is real (measured in three engines). **Medium**
+> **TESTED 2026-07-27 — the proposal does not move the WebKit frame spread. Both
+> variants reverted.** Sum of frames over 50 ms across the six work phases, WebKit,
+> production build, two runs each: baseline (hints always on) **23 / 22**, hints
+> state-gated in JS **22 / 19**, hints removed entirely **18 / 19**. Median 17 ms and
+> p95 18 ms in every configuration, and the worst single frame is *worse* in every
+> variant (165 / 192 ms) than baseline (132–146 ms). The counts overlap inside a
+> ±1–3 run-to-run band, so there is no improvement to claim.
+>
+> Note also that the state-gated variant **cannot** improve these phases by
+> construction: during an open/close the tunnel is moving and the layers are wanted.
+> Its only real target is idle layer memory — a WebKit/iOS memory question that
+> nothing available here can measure (`performance.memory` is Chromium-only). If this
+> is picked up again, pick a memory criterion. Details and the partial-teardown bug
+> found while trying it are in `PERF-NOTES.md` → "Tried and reverted".
+
+**Confidence: high** that the count is real (measured in three engines). ~~**Medium**
 that removing it fixes the WebKit frame spread — it is the strongest single lead, but
-I could not profile WebKit's compositor directly.
+I could not profile WebKit's compositor directly.~~ **Measured: it does not.**
 
 ---
 
 ## 2. Card layout box is 52% larger in WebKit than in Chromium and Firefox
+
+> **CORRECTED 2026-07-27, and FIXED in `632d595`.** The cause stated below was
+> wrong, and the mobile explanation was incomplete. The measurements were real but
+> compared two different *states*, not two engines. Read the correction first —
+> the original text is kept only so the wrong premise is not re-derived.
 
 **Evidence.** `.a__card` untransformed layout box at 1440×900:
 
@@ -124,22 +144,61 @@ I could not profile WebKit's compositor directly.
 Measured with `offsetWidth`/`offsetHeight`, not `getBoundingClientRect`, specifically
 so the card's own transform does not pollute the number.
 
-**Cause.** `.a__card` has `width: auto` inside an absolutely positioned `a-work`, so
-its width is shrink-to-fit over intrinsic content — dominated by `.a__card__title`
-at `clamp(1.25rem, 3.5vw, 2.5rem)`. `aspect-ratio: 16/10` then derives the height.
-Engines legitimately differ on max-content width for that text, and only `min-width`
-/`min-height` are pinned. On mobile every engine agrees because `min-height: 130px`
-binds and removes the freedom.
+**Cause — as originally stated (wrong).** ~~`.a__card` has `width: auto` inside an
+absolutely positioned `a-work`, so its width is shrink-to-fit over intrinsic
+content — dominated by `.a__card__title` at `clamp(1.25rem, 3.5vw, 2.5rem)`.
+`aspect-ratio: 16/10` then derives the height. Engines legitimately differ on
+max-content width for that text, and only `min-width`/`min-height` are pinned. On
+mobile every engine agrees because `min-height: 130px` binds and removes the
+freedom.~~
+
+**Cause — corrected.** No engine is following a different rule here. All three
+resolve the box the same way: shrink-to-fit over the title's max-content, height
+derived by `aspect-ratio`, floored by the minimum **transferred** from
+`min-height: 180px` through the ratio (180 × 16/10 = **288 × 180**).
+
+The 288-vs-438 gap is `content-visibility`, not layout spec. `a-work` carries
+`content-visibility: hidden` until `.is-inview`, and `content-visibility: hidden`
+**implies size containment** (CSS Contain): the element sizes as if it had no
+contents, so `a-work` collapses to its own padding and the card inside it lands on
+that transferred minimum. WebKit never saw that state — `html.is-safari a-work`
+sets `content-visibility: visible` unconditionally (the Safari card-hiding branch
+in `AWork.astro`), so its cards were always laid out from real content. The audit
+therefore measured a size-contained Chromium/Firefox card against an uncontained
+WebKit one.
+
+Proof, same build, same card ("Engineering Rocket", 1440×900): forcing
+`content-visibility: visible` moves **Chromium 288×180 → 477×298** and **Firefox
+288×180 → 493×308**, against WebKit's 497×311. The residual three-engine spread is
+~4%, i.e. font metrics, not a sizing disagreement.
+
+Two consequences the original diagnosis missed:
+
+- In Chromium and Firefox the card **changed size on reveal** (288×180 → 477×298) —
+  a relayout of every card as it scrolls in, on every engine that honours the
+  containment.
+- Mobile agreeing in all three engines is *not* only `min-height: 130px` binding.
+  It is that at 390 px the title's max-content (~160 px at the clamped 20 px font)
+  is narrower than the 208 px transferred minimum, so the content never wins —
+  which is why mobile also never showed the reveal-time jump.
 
 **Symptom.** Safari users see visibly larger project cards with different overlap
 against the letter tunnel — a design deviation, not just a perf issue. Bigger cards
 also mean more composited pixels, feeding finding 1.
 
-**Proposed fix.** Give the card an explicit width instead of relying on
-`auto` + min/max, e.g. `width: clamp(280px, 30vw, 440px)` with `aspect-ratio`
-retained. Deterministic across engines.
+**Fix, applied in `632d595`.** Explicit `width: clamp(288px, 30vw, 440px)` on
+`.a__card` with `aspect-ratio` retained, and the phone box pinned to the 208 px it
+already resolved to. The clamp floor is the old transferred minimum, so
+`min-width`/`min-height` stay inert and 16/10 stays exact. Result: **432 × 270 in
+Chromium, Firefox and WebKit, in both the contained and revealed state**; mobile
+unchanged at 208 × 130. The dive's FLIP start rect follows the card box
+(`.dive__camera` is sized from `offsetWidth`/`offsetHeight`) and was re-verified in
+all three engines.
 
-**Confidence: high.** Measured directly, same viewport, three engines, reproducible.
+**Confidence: high** on the measurements. The *cause* was restated after direct
+testing — the lesson worth keeping is that `content-visibility` silently changes
+what a layout measurement means, so any cross-engine box comparison must first
+force it visible.
 
 ---
 
@@ -177,6 +236,13 @@ during a drag needs its own measurement before adopting.
 
 ## 4. `100lvh` on the pinned Work container is the wrong unit for iOS Safari
 
+> **APPLIED — and ⚠️ UNVERIFIED ON REAL iOS.** `.s__inner` is now `100vh` →
+> `100svh`, and `.s__title/.s__scene`'s `25lvh` moved to `25svh` with it. Desktop
+> is proven unchanged (below); **the iOS behaviour this is meant to fix has not
+> been observed before or after, on any device.** It is a reasoned unit choice,
+> not a confirmed fix. Do not close this finding until someone has scrolled the
+> Work section on a real iPhone with the toolbar visible.
+
 **Evidence.** `SWork.astro:161-162`:
 
 ```scss
@@ -209,6 +275,26 @@ simply not converted along with it.
 **Confidence: medium-high on the analysis, unverified in practice.** Desktop has no
 dynamic toolbar: my probe returned `vh = svh = lvh = dvh = 900` in all three engines,
 so **this cannot be reproduced anywhere I can run.** Needs your real-device check.
+
+**Why `svh` and not `dvh` or a px value.** A pinned container has two requirements:
+it must never exceed the visible viewport (or its bottom is clipped), and it must
+not change size while scrolling (or the pin resizes mid-scroll and ScrollTrigger's
+cached geometry goes stale — the same class of bug as finding 3). `lvh`/`vh` fail
+the first on iOS while the toolbar is showing. `dvh`, and equally a px height driven
+from `innerHeight`, fail the second because they track the toolbar animation. `svh`
+is the only unit that satisfies both; the cost is a strip of unused space once the
+toolbar retracts, which is the same trade `HeroHome` already accepts.
+
+**Desktop no-op check, three engines, 1440×900, before vs after — all identical:**
+pinned box `1440×900`, `position: fixed` with a `.pin-spacer` present, title
+computed font-size `225px`, `--height: 9000px`, document height `15891`, pinned box
+fills the viewport exactly. So the change is provably inert where it can be
+measured, which is the most that can be claimed for it.
+
+Left alone deliberately: `.s__ruler`'s `10vh`/`80vh` (a `pointer-events: none`
+element with no paint whose real geometry the mask recomputes in px from
+`safeHeight`), and `.s-work { --height: 100vh }` (a pre-JS fallback that
+`setSize()` overwrites in px during init).
 
 Full viewport-unit inventory (layout-affecting only):
 

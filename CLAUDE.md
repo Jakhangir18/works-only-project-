@@ -26,7 +26,7 @@ it is why the invariants below exist.
 | `npm run build` | Production build into `dist/`. Astro reports **7 pages**; `dist/` ends up with 8 `.html` files because `public/nasa-nns.html` is copied verbatim |
 | `npm run preview` | Serves the built `dist/` on **:4321** |
 | `npm run astro` | Astro CLI passthrough (e.g. `npm run astro -- --version`). With no arguments it prints CLI help |
-| `npm run perf:harness` | Frame timing, long tasks, forced reflows, heap/listener deltas. Add `-- --cpu=4`, `-- --mobile`, `-- --trace`, `-- --label=<name>` |
+| `npm run perf:harness` | Frame timing, long tasks, forced reflows, heap/listener deltas. Add `-- --cpu=4`, `-- --mobile`, `-- --trace`, `-- --label=<name>`, `-- --dive-only`, `-- --browser=chromium\|firefox\|webkit` |
 | `npm run perf:regression` | Functional sweep: routes, open/close/reopen, resize teardown, keyboard focus, reduced motion, first-load LCP/TBT |
 | `npm run perf:analyze` | Classifies a captured trace into gc/layout/style/paint/decode/script. Usage: `-- <trace.json> [thresholdMs]` |
 
@@ -112,6 +112,44 @@ GSAP's ticker is the master clock here. New animation work should subscribe to i
 rather than starting an independent loop. Independent loops compete for the same
 frame budget and interleave unpredictably.
 
+### 7. A promoted layer is rastered once, at layout size, then GPU-scaled
+
+Anything inside a `will-change` / animating-transform layer is rastered at its
+**layout** size and the transform is applied to that bitmap. Scaling such a layer
+**up** enlarges pixels — an image scaled up 5× is visibly mush for the whole
+animation and snaps sharp the moment `will-change` comes off. Lay the element out at
+the size it occupies at the **end** of the animation and statically scale it *down*
+to the start, so accumulated scale approaches 1.0 from below and only ever
+downsamples. Layout × static-scale is unchanged, so the composition does not move.
+
+*Was broken by:* the dive's image plane, laid out card-sized and scaled up 5–7×.
+
+### 8. Assigning `canvas.width` or `.height` resets the whole 2D context
+
+Not only the bitmap — `strokeStyle`, `fillStyle`, transform, clip, all back to
+defaults. Re-apply cached context state **synchronously, in the same function that
+resized the canvas**; a deferred re-apply leaves a window where draws land with
+default state. This is unforgiving when the draw loop early-exits on unchanged
+progress, because the bad frame is then never repainted.
+
+*Was broken by:* `WorkSection.setSize()` resizing the canvas while `setCtxStyle()`
+restored the stroke colour a tick later — the point grid rendered black-on-black and
+stayed that way at a resting scroll position.
+
+### 9. `content-visibility: hidden` implies size containment — it distorts measurement
+
+A size-contained element sizes as if it had no contents, which changes the used size
+of its descendants. Any layout measurement (especially cross-engine box comparisons)
+must **force `content-visibility: visible` first**, or it compares a contained box in
+one engine against an uncontained one in another and reads the difference as an
+engine bug. For the same reason, do not let a component's layout depend on
+shrink-to-fit content when it is under a `content-visibility` toggle: give it an
+explicit size.
+
+*Was broken by:* the audit's finding 2 — a 288×180 vs 438×273 card box read as an
+engine spec disagreement, when both engines agreed and only the containment state
+differed. The real engine spread was ~4%, from font metrics.
+
 ---
 
 ## Performance budgets
@@ -130,9 +168,18 @@ server — HMR and un-minified code make dev numbers meaningless.
 | console errors / warnings | 0 |
 
 Always measure with **4× CPU throttling** and at a **390 × 844** viewport as well as
-desktop. The development display is **75 Hz**, so a clean frame reads as 13.3 ms,
-not 16.7 — do not misreport 13.3 as a missed budget. Budgets stay at 60 fps because
-that is what most visitors have.
+desktop. **Read the idle median as the machine's refresh floor before judging any
+number against a budget:** runs here have read 13.3 ms (75 Hz) and, since
+2026-07-27, 8.3 ms (120 Hz) in Chromium. A clean frame is whatever that floor is —
+do not misreport it as a missed budget, and do not compare runs taken at different
+floors. Budgets stay at 60 fps because that is what most visitors have.
+
+Cross-engine runs (`--browser=webkit|firefox`) report **frame timing only** — no CDP,
+so no heap, listener, node or long-task numbers, no CPU throttling, no `--mobile`.
+They also idle at ~17 ms, not 13.3: those engines run headless at 60 Hz, so compare
+WebKit against WebKit, never against a Chromium column. **Playwright WebKit is not
+Safari** — same lineage, different JIT, media stack and process model. Treat it as a
+strong hint, never as proof, and say which one was measured.
 
 The measurement harness lives in `perf/` (`harness.mjs`, `regression.mjs`,
 `analyze-trace.mjs`). Reuse it instead of writing a new one.
@@ -171,5 +218,14 @@ The measurement harness lives in `perf/` (`harness.mjs`, `regression.mjs`,
 - An intermittent browser-level slow scroll at page top during idle has been
   observed with no JS caller. The harness detects and excludes it. Do not chase it
   without new evidence.
+- **`will-change` reduction on the letter tunnel is measured and rejected.** Both
+  variants (state-gated hints, and no hints at all) leave the WebKit frame spread
+  where it was — median/p95 identical, >50 ms counts inside the run-to-run band, and
+  the worst frame slightly worse. Do not re-propose it as a frame-rate fix. It is
+  still open as an idle *layer-memory* question, which needs a memory criterion and a
+  tool that can measure WebKit memory — nothing here can.
+- Cross-browser findings, and which ones are still unverified on real hardware, live
+  in `docs/cross-browser-audit.md`. Findings 4, 5 and 6 need a real iPhone; finding 4
+  has a fix applied but **unverified on iOS**.
 - Running notes and rejected hypotheses live in `PERF-NOTES.md`. Read it before
   re-proposing something that was already tried.
