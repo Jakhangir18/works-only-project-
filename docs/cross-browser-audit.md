@@ -221,6 +221,13 @@ during a drag needs its own measurement before adopting.
 
 ## 4. `100lvh` on the pinned Work container is the wrong unit for iOS Safari
 
+> **APPLIED — and ⚠️ UNVERIFIED ON REAL iOS.** `.s__inner` is now `100vh` →
+> `100svh`, and `.s__title/.s__scene`'s `25lvh` moved to `25svh` with it. Desktop
+> is proven unchanged (below); **the iOS behaviour this is meant to fix has not
+> been observed before or after, on any device.** It is a reasoned unit choice,
+> not a confirmed fix. Do not close this finding until someone has scrolled the
+> Work section on a real iPhone with the toolbar visible.
+
 **Evidence.** `SWork.astro:161-162`:
 
 ```scss
@@ -253,6 +260,26 @@ simply not converted along with it.
 **Confidence: medium-high on the analysis, unverified in practice.** Desktop has no
 dynamic toolbar: my probe returned `vh = svh = lvh = dvh = 900` in all three engines,
 so **this cannot be reproduced anywhere I can run.** Needs your real-device check.
+
+**Why `svh` and not `dvh` or a px value.** A pinned container has two requirements:
+it must never exceed the visible viewport (or its bottom is clipped), and it must
+not change size while scrolling (or the pin resizes mid-scroll and ScrollTrigger's
+cached geometry goes stale — the same class of bug as finding 3). `lvh`/`vh` fail
+the first on iOS while the toolbar is showing. `dvh`, and equally a px height driven
+from `innerHeight`, fail the second because they track the toolbar animation. `svh`
+is the only unit that satisfies both; the cost is a strip of unused space once the
+toolbar retracts, which is the same trade `HeroHome` already accepts.
+
+**Desktop no-op check, three engines, 1440×900, before vs after — all identical:**
+pinned box `1440×900`, `position: fixed` with a `.pin-spacer` present, title
+computed font-size `225px`, `--height: 9000px`, document height `15891`, pinned box
+fills the viewport exactly. So the change is provably inert where it can be
+measured, which is the most that can be claimed for it.
+
+Left alone deliberately: `.s__ruler`'s `10vh`/`80vh` (a `pointer-events: none`
+element with no paint whose real geometry the mask recomputes in px from
+`safeHeight`), and `.s-work { --height: 100vh }` (a pre-JS fallback that
+`setSize()` overwrites in px during init).
 
 Full viewport-unit inventory (layout-affecting only):
 
