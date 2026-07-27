@@ -113,6 +113,11 @@ I could not profile WebKit's compositor directly.
 
 ## 2. Card layout box is 52% larger in WebKit than in Chromium and Firefox
 
+> **CORRECTED 2026-07-27, and FIXED in `632d595`.** The cause stated below was
+> wrong, and the mobile explanation was incomplete. The measurements were real but
+> compared two different *states*, not two engines. Read the correction first —
+> the original text is kept only so the wrong premise is not re-derived.
+
 **Evidence.** `.a__card` untransformed layout box at 1440×900:
 
 | Engine | Desktop | Mobile 390×844 |
@@ -124,22 +129,61 @@ I could not profile WebKit's compositor directly.
 Measured with `offsetWidth`/`offsetHeight`, not `getBoundingClientRect`, specifically
 so the card's own transform does not pollute the number.
 
-**Cause.** `.a__card` has `width: auto` inside an absolutely positioned `a-work`, so
-its width is shrink-to-fit over intrinsic content — dominated by `.a__card__title`
-at `clamp(1.25rem, 3.5vw, 2.5rem)`. `aspect-ratio: 16/10` then derives the height.
-Engines legitimately differ on max-content width for that text, and only `min-width`
-/`min-height` are pinned. On mobile every engine agrees because `min-height: 130px`
-binds and removes the freedom.
+**Cause — as originally stated (wrong).** ~~`.a__card` has `width: auto` inside an
+absolutely positioned `a-work`, so its width is shrink-to-fit over intrinsic
+content — dominated by `.a__card__title` at `clamp(1.25rem, 3.5vw, 2.5rem)`.
+`aspect-ratio: 16/10` then derives the height. Engines legitimately differ on
+max-content width for that text, and only `min-width`/`min-height` are pinned. On
+mobile every engine agrees because `min-height: 130px` binds and removes the
+freedom.~~
+
+**Cause — corrected.** No engine is following a different rule here. All three
+resolve the box the same way: shrink-to-fit over the title's max-content, height
+derived by `aspect-ratio`, floored by the minimum **transferred** from
+`min-height: 180px` through the ratio (180 × 16/10 = **288 × 180**).
+
+The 288-vs-438 gap is `content-visibility`, not layout spec. `a-work` carries
+`content-visibility: hidden` until `.is-inview`, and `content-visibility: hidden`
+**implies size containment** (CSS Contain): the element sizes as if it had no
+contents, so `a-work` collapses to its own padding and the card inside it lands on
+that transferred minimum. WebKit never saw that state — `html.is-safari a-work`
+sets `content-visibility: visible` unconditionally (the Safari card-hiding branch
+in `AWork.astro`), so its cards were always laid out from real content. The audit
+therefore measured a size-contained Chromium/Firefox card against an uncontained
+WebKit one.
+
+Proof, same build, same card ("Engineering Rocket", 1440×900): forcing
+`content-visibility: visible` moves **Chromium 288×180 → 477×298** and **Firefox
+288×180 → 493×308**, against WebKit's 497×311. The residual three-engine spread is
+~4%, i.e. font metrics, not a sizing disagreement.
+
+Two consequences the original diagnosis missed:
+
+- In Chromium and Firefox the card **changed size on reveal** (288×180 → 477×298) —
+  a relayout of every card as it scrolls in, on every engine that honours the
+  containment.
+- Mobile agreeing in all three engines is *not* only `min-height: 130px` binding.
+  It is that at 390 px the title's max-content (~160 px at the clamped 20 px font)
+  is narrower than the 208 px transferred minimum, so the content never wins —
+  which is why mobile also never showed the reveal-time jump.
 
 **Symptom.** Safari users see visibly larger project cards with different overlap
 against the letter tunnel — a design deviation, not just a perf issue. Bigger cards
 also mean more composited pixels, feeding finding 1.
 
-**Proposed fix.** Give the card an explicit width instead of relying on
-`auto` + min/max, e.g. `width: clamp(280px, 30vw, 440px)` with `aspect-ratio`
-retained. Deterministic across engines.
+**Fix, applied in `632d595`.** Explicit `width: clamp(288px, 30vw, 440px)` on
+`.a__card` with `aspect-ratio` retained, and the phone box pinned to the 208 px it
+already resolved to. The clamp floor is the old transferred minimum, so
+`min-width`/`min-height` stay inert and 16/10 stays exact. Result: **432 × 270 in
+Chromium, Firefox and WebKit, in both the contained and revealed state**; mobile
+unchanged at 208 × 130. The dive's FLIP start rect follows the card box
+(`.dive__camera` is sized from `offsetWidth`/`offsetHeight`) and was re-verified in
+all three engines.
 
-**Confidence: high.** Measured directly, same viewport, three engines, reproducible.
+**Confidence: high** on the measurements. The *cause* was restated after direct
+testing — the lesson worth keeping is that `content-visibility` silently changes
+what a layout measurement means, so any cross-engine box comparison must first
+force it visible.
 
 ---
 
