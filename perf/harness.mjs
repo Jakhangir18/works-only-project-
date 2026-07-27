@@ -10,6 +10,8 @@
  *   node perf/harness.mjs --label=desktop-no-hero-loops --disable-hero-loops
  *   node perf/harness.mjs --label=desktop-cpu4x --cpu=4
  *   node perf/harness.mjs --label=mobile-390x844 --mobile
+ *   node perf/harness.mjs --label=dive-only --dive-only
+ *   node perf/harness.mjs --label=dive-firefox --dive-only --browser=firefox
  *
  * What it does, in order:
  *   1. Fresh Chrome profile, open the page, sample process-tree RSS from ps
@@ -20,9 +22,21 @@
  *      cadence, recording per-frame rAF deltas, layout reads, style writes,
  *      reads-after-write in the same frame (forced-reflow proxy), and
  *      a-work attributeChangedCallback fires. GC'd JS heap after every cycle.
- *   4. Scroll down+up through the rocket sequence section the same way.
- *   5. CDP Performance metrics (LayoutCount / RecalcStyleCount) before/after
+ *   4. Dive transition: open/close a project card's dive 5x, same per-frame
+ *      instrumentation, plus heap/listener/node deltas across the 5 cycles.
+ *   5. Scroll down+up through the rocket sequence section the same way.
+ *   6. CDP Performance metrics (LayoutCount / RecalcStyleCount) before/after
  *      every phase.
+ *
+ * --browser=chromium|firefox|webkit (default chromium). Firefox/WebKit have
+ * no CDP session in Playwright, no performance.memory, and (for WebKit) no
+ * long-task PerformanceObserver — so on those engines this reports frame
+ * timing only: no heap/listener/node deltas, no long-task counts, no RSS, no
+ * CPU throttling, no tracing. Chromium is the full measurement; the other
+ * engines are a frame-timing cross-check, not a like-for-like comparison.
+ * --dive-only skips the rocket-sequence preload and scroll phases, for a
+ * fast dive-specific run (required for non-Chromium engines, useful anywhere
+ * else).
  *
  * Caveats (also embedded in the JSON):
  *   - The sampler adds one rAF loop and the instrumentation adds call
@@ -32,7 +46,7 @@
  *     same rAF frame — a proxy, cross-checked against CDP LayoutCount.
  */
 
-import { chromium } from "playwright-core";
+import { chromium, firefox, webkit } from "playwright-core";
 import { execSync } from "node:child_process";
 import { mkdirSync, writeFileSync, rmSync } from "node:fs";
 import path from "node:path";
@@ -51,6 +65,17 @@ const MOBILE = Boolean(args.mobile);
 const DISABLE_HERO_LOOPS = Boolean(args["disable-hero-loops"]);
 const TRACE = Boolean(args.trace);
 const HEAP_PROFILE = Boolean(args["heap-profile"]);
+const DIVE_ONLY = Boolean(args["dive-only"]);
+const BROWSER_NAME = String(args.browser || "chromium");
+const BROWSER = { chromium, firefox, webkit }[BROWSER_NAME];
+if (!BROWSER) {
+  console.error(`unknown --browser=${BROWSER_NAME} (want chromium|firefox|webkit)`);
+  process.exit(1);
+}
+const IS_CHROMIUM = BROWSER_NAME === "chromium";
+if (MOBILE && !IS_CHROMIUM) {
+  console.error(`--mobile requested but ignored: mobile viewport emulation is Chromium-only.`);
+}
 const TOTAL_FRAMES = 240; // rocket JPG sequence length
 
 const TRACE_CATEGORIES = [
@@ -306,6 +331,49 @@ function stats(frames) {
   };
 }
 
+// ------------------------------------------------------------- dive helpers
+
+/**
+ * Only 1-2 of the 20 Work cards are ever rendered at once (content-visibility
+ * gates the rest), and the card at any given scroll offset changes as the
+ * carousel scrubs — so unlike the Work/rocket phases, the dive phase has to
+ * find a clickable card before it can measure anything.
+ */
+async function findRenderedCard(page, geom) {
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  let anyMatch = null;
+  for (let f = 0.15; f <= 0.95; f += 0.05) {
+    const y = Math.round(geom.workTop + geom.workH * f);
+    await page.evaluate((y) => window.scrollTo({ top: y, behavior: "instant" }), y);
+    await sleep(1300); // scrub:1 catch-up, same cadence as jumpTo()
+    const card = await page.evaluate(() => {
+      const vw = innerWidth, vh = innerHeight;
+      const el = [...document.querySelectorAll("a-work")].find((e) => {
+        const c = e.querySelector(".a__card");
+        const r = c.getBoundingClientRect();
+        return (
+          e.classList.contains("is-inview") &&
+          getComputedStyle(e).contentVisibility !== "hidden" &&
+          r.left > 4 && r.right < vw - 4 && r.top > 4 && r.bottom < vh - 4
+        );
+      });
+      if (!el) return null;
+      const c = el.querySelector(".a__card");
+      const r = c.getBoundingClientRect();
+      const href = el.querySelector("a")?.getAttribute("href") || null;
+      return { cx: r.x + r.width / 2, cy: r.y + r.height / 2, href, hasCover: !!c.querySelector(".a__card__cover") };
+    });
+    if (card) {
+      // Prefer the one card with a photo — that is the layer whose raster
+      // cost this phase exists to measure — falling back to any card if the
+      // sweep never lands on it.
+      if (card.hasCover) return { ...card, scrollY: y };
+      if (!anyMatch) anyMatch = { ...card, scrollY: y };
+    }
+  }
+  return anyMatch;
+}
+
 // -------------------------------------------------------------------- main
 
 async function main() {
@@ -314,9 +382,11 @@ async function main() {
     timestamp: STAMP,
     url: URL,
     config: {
-      cpuThrottle: CPU_RATE,
-      mobile: MOBILE,
-      viewport: MOBILE ? "390x844@3x" : "1440x900@2x",
+      browser: BROWSER_NAME,
+      cpuThrottle: IS_CHROMIUM ? CPU_RATE : null,
+      mobile: IS_CHROMIUM && MOBILE,
+      viewport: IS_CHROMIUM && MOBILE ? "390x844@3x" : "1440x900@2x",
+      diveOnly: DIVE_ONLY,
       disableHeroLoops: DISABLE_HERO_LOOPS,
     },
     notes: [
@@ -328,22 +398,31 @@ async function main() {
     pageErrors: [],
   };
 
-  const context = await chromium.launchPersistentContext(USER_DATA_DIR, {
-    channel: "chrome",
-    headless: false,
-    viewport: MOBILE ? { width: 390, height: 844 } : { width: 1440, height: 900 },
-    deviceScaleFactor: MOBILE ? 3 : 2,
-    isMobile: MOBILE,
-    hasTouch: MOBILE,
-    args: [
-      "--js-flags=--expose-gc",
-      "--no-first-run",
-      "--no-default-browser-check",
-      "--disable-background-timer-throttling",
-      "--disable-backgrounding-occluded-windows",
-      "--disable-renderer-backgrounding",
-    ],
-  });
+  const launchOpts = IS_CHROMIUM
+    ? {
+        channel: "chrome",
+        headless: false,
+        viewport: MOBILE ? { width: 390, height: 844 } : { width: 1440, height: 900 },
+        deviceScaleFactor: MOBILE ? 3 : 2,
+        isMobile: MOBILE,
+        hasTouch: MOBILE,
+        args: [
+          "--js-flags=--expose-gc",
+          "--no-first-run",
+          "--no-default-browser-check",
+          "--disable-background-timer-throttling",
+          "--disable-backgrounding-occluded-windows",
+          "--disable-renderer-backgrounding",
+        ],
+      }
+    : {
+        // Firefox/WebKit: no channel concept, no Chromium CLI flags, and
+        // isMobile/hasTouch are Chromium-only viewport emulation — mobile
+        // dive numbers on these engines are out of scope here.
+        headless: false,
+        viewport: { width: 1440, height: 900 },
+      };
+  const context = await BROWSER.launchPersistentContext(USER_DATA_DIR, launchOpts);
 
   try {
     await context.addInitScript(INSTRUMENTATION);
@@ -356,20 +435,26 @@ async function main() {
     });
     page.on("pageerror", (err) => result.pageErrors.push(String(err).slice(0, 300)));
 
-    const cdp = await context.newCDPSession(page);
-    await cdp.send("Performance.enable");
-    if (CPU_RATE > 1)
-      await cdp.send("Emulation.setCPUThrottlingRate", { rate: CPU_RATE });
+    const cdp = IS_CHROMIUM ? await context.newCDPSession(page) : null;
+    if (cdp) {
+      await cdp.send("Performance.enable");
+      if (CPU_RATE > 1)
+        await cdp.send("Emulation.setCPUThrottlingRate", { rate: CPU_RATE });
+    }
 
     const cdpMetrics = async () => {
+      if (!cdp) return {};
       const { metrics } = await cdp.send("Performance.getMetrics");
       return Object.fromEntries(metrics.map((m) => [m.name, m.value]));
     };
     const gcHeapMb = () =>
-      page.evaluate(() => {
-        if (window.gc) { window.gc(); window.gc(); }
-        return +(performance.memory.usedJSHeapSize / 1048576).toFixed(1);
-      });
+      page
+        .evaluate(() => {
+          if (window.gc) { window.gc(); window.gc(); }
+          if (!performance.memory) return null; // Firefox/WebKit: no such API
+          return +(performance.memory.usedJSHeapSize / 1048576).toFixed(1);
+        })
+        .catch(() => null);
 
     // RSS sampling during load + preload
     let rssPeak = null;
@@ -383,44 +468,49 @@ async function main() {
     await page.goto(URL, { waitUntil: "domcontentloaded" });
 
     // ---- Preload of the 240-frame rocket sequence
-    let preloadTimings = null;
-    try {
-      await page.waitForFunction(
-        (n) =>
-          performance
+    if (DIVE_ONLY) {
+      result.preload = { skipped: "dive-only run" };
+      await sleep(500);
+    } else {
+      let preloadTimings = null;
+      try {
+        await page.waitForFunction(
+          (n) =>
+            performance
+              .getEntriesByType("resource")
+              .filter((r) => r.name.includes("/1/ezgif-frame-")).length >= n,
+          TOTAL_FRAMES,
+          { timeout: 120000, polling: 500 },
+        );
+        preloadTimings = await page.evaluate(() => {
+          const frames = performance
             .getEntriesByType("resource")
-            .filter((r) => r.name.includes("/1/ezgif-frame-")).length >= n,
-        TOTAL_FRAMES,
-        { timeout: 120000, polling: 500 },
-      );
-      preloadTimings = await page.evaluate(() => {
-        const frames = performance
-          .getEntriesByType("resource")
-          .filter((r) => r.name.includes("/1/ezgif-frame-"));
-        const done = Math.max(...frames.map((r) => r.responseEnd));
-        const lt = window.__perf.longtasks.filter((t) => t.start <= done + 100);
-        return {
-          frameCount: frames.length,
-          totalTransferKb: +(
-            frames.reduce((s, r) => s + (r.transferSize || r.encodedBodySize), 0) / 1024
-          ).toFixed(0),
-          preloadDoneAtMs: +done.toFixed(0),
-          longTasksDuringPreload: lt.length,
-          longTaskMsDuringPreload: +lt.reduce((s, t) => s + t.dur, 0).toFixed(0),
-        };
-      });
-    } catch {
-      preloadTimings = { error: "preload did not reach 240 frames in 120s" };
+            .filter((r) => r.name.includes("/1/ezgif-frame-"));
+          const done = Math.max(...frames.map((r) => r.responseEnd));
+          const lt = window.__perf.longtasks.filter((t) => t.start <= done + 100);
+          return {
+            frameCount: frames.length,
+            totalTransferKb: +(
+              frames.reduce((s, r) => s + (r.transferSize || r.encodedBodySize), 0) / 1024
+            ).toFixed(0),
+            preloadDoneAtMs: +done.toFixed(0),
+            longTasksDuringPreload: lt.length,
+            longTaskMsDuringPreload: +lt.reduce((s, t) => s + t.dur, 0).toFixed(0),
+          };
+        });
+      } catch {
+        preloadTimings = { error: "preload did not reach 240 frames in 120s" };
+      }
+      await sleep(1500); // let decode/paint settle
+      rssTick();
+      result.preload = {
+        ...preloadTimings,
+        wallClockMs: Date.now() - t0,
+        rssPeakDuringPreload: rssPeak,
+        rssAfterPreload: chromeTreeRss(USER_DATA_DIR),
+        jsHeapAfterPreloadMb: await gcHeapMb(),
+      };
     }
-    await sleep(1500); // let decode/paint settle
-    rssTick();
-    result.preload = {
-      ...preloadTimings,
-      wallClockMs: Date.now() - t0,
-      rssPeakDuringPreload: rssPeak,
-      rssAfterPreload: chromeTreeRss(USER_DATA_DIR),
-      jsHeapAfterPreloadMb: await gcHeapMb().catch(() => null),
-    };
 
     // ---- Wait for site ready (loader gone, works initialized)
     await page.waitForFunction(
@@ -529,10 +619,10 @@ async function main() {
       }
       phases.push({
         label,
-        layoutCountDelta: after.LayoutCount - before.LayoutCount,
-        recalcStyleCountDelta: after.RecalcStyleCount - before.RecalcStyleCount,
-        scriptDurationDeltaS: +(after.ScriptDuration - before.ScriptDuration).toFixed(2),
-        layoutDurationDeltaS: +(after.LayoutDuration - before.LayoutDuration).toFixed(2),
+        layoutCountDelta: IS_CHROMIUM ? after.LayoutCount - before.LayoutCount : null,
+        recalcStyleCountDelta: IS_CHROMIUM ? after.RecalcStyleCount - before.RecalcStyleCount : null,
+        scriptDurationDeltaS: IS_CHROMIUM ? +(after.ScriptDuration - before.ScriptDuration).toFixed(2) : null,
+        layoutDurationDeltaS: IS_CHROMIUM ? +(after.LayoutDuration - before.LayoutDuration).toFixed(2) : null,
       });
     };
 
@@ -575,40 +665,89 @@ async function main() {
     const domBefore = await cdpMetrics();
 
     const tracePath = path.join(RESULTS_DIR, `${STAMP}-${LABEL}.trace.json`);
-    if (TRACE) {
+    const canTrace = TRACE && IS_CHROMIUM;
+    if (TRACE && !IS_CHROMIUM) result.notes.push("--trace requested but ignored: tracing is Chromium-only.");
+    if (canTrace) {
       await context
         .browser()
         .startTracing(page, { path: tracePath, categories: TRACE_CATEGORIES });
       result.tracePath = path.relative(REPO, tracePath);
     }
-    if (HEAP_PROFILE) {
+    const canHeapProfile = HEAP_PROFILE && IS_CHROMIUM;
+    if (HEAP_PROFILE && !IS_CHROMIUM) result.notes.push("--heap-profile requested but ignored: HeapProfiler is Chromium-only.");
+    if (canHeapProfile) {
       await cdp.send("HeapProfiler.enable");
       await cdp.send("HeapProfiler.startSampling", { samplingInterval: 16384 });
     }
 
-    for (let i = 1; i <= 3; i++) {
-      await runPhase(`work-open-${i}`, () => wheelBy(workDist), {
-        from: workStart,
-        to: workEnd,
-      });
-      await jumpTo(workEnd);
-      await runPhase(`work-close-${i}`, () => wheelBy(-workDist), {
-        from: workEnd,
-        to: workStart,
-      });
-      await jumpTo(workStart);
-      // Heap with the harness's recorded frames still in-page, then again
-      // after harvesting them out — the difference is measurement artifact,
-      // not app leak.
-      const heapRaw = await gcHeapMb();
-      await harvest();
-      const heapClean = await gcHeapMb();
-      result.heapCyclesMb.push(heapClean);
-      result.heapHarnessArtifactMb.push(+(heapRaw - heapClean).toFixed(2));
+    if (!DIVE_ONLY) {
+      for (let i = 1; i <= 3; i++) {
+        await runPhase(`work-open-${i}`, () => wheelBy(workDist), {
+          from: workStart,
+          to: workEnd,
+        });
+        await jumpTo(workEnd);
+        await runPhase(`work-close-${i}`, () => wheelBy(-workDist), {
+          from: workEnd,
+          to: workStart,
+        });
+        await jumpTo(workStart);
+        // Heap with the harness's recorded frames still in-page, then again
+        // after harvesting them out — the difference is measurement artifact,
+        // not app leak.
+        const heapRaw = await gcHeapMb();
+        await harvest();
+        const heapClean = await gcHeapMb();
+        result.heapCyclesMb.push(heapClean);
+        result.heapHarnessArtifactMb.push(+(heapRaw - heapClean).toFixed(2));
+      }
     }
 
-    if (TRACE) await context.browser().stopTracing();
-    if (HEAP_PROFILE) {
+    // ---- Dive transition: open/close a project card's dive 5x
+    const diveGeom = await findRenderedCard(page, geom);
+    result.dive = { found: !!diveGeom };
+    if (diveGeom) {
+      await jumpTo(diveGeom.scrollY);
+      const diveHeapBefore = await gcHeapMb();
+      const diveDomBefore = await cdpMetrics();
+
+      for (let i = 1; i <= 5; i++) {
+        // The scroll position never moves during a dive — it's locked — so
+        // from === to is the correct assertion, same as the idle phases.
+        await runPhase(
+          `dive-open-${i}`,
+          async () => {
+            await page.mouse.click(diveGeom.cx, diveGeom.cy);
+            await sleep(1400); // DURATION_IN 1.15s + settle
+          },
+          { from: diveGeom.scrollY, to: diveGeom.scrollY },
+        );
+        await runPhase(
+          `dive-close-${i}`,
+          async () => {
+            await page.keyboard.press("Escape");
+            await sleep(900); // DURATION_OUT 0.7s + settle
+          },
+          { from: diveGeom.scrollY, to: diveGeom.scrollY },
+        );
+      }
+
+      await harvest();
+      const diveHeapAfter = await gcHeapMb();
+      const diveDomAfter = await cdpMetrics();
+      result.dive = {
+        found: true,
+        cardHref: diveGeom.href,
+        heap: { beforeMb: diveHeapBefore, afterMb: diveHeapAfter, growthMb: IS_CHROMIUM ? +(diveHeapAfter - diveHeapBefore).toFixed(1) : null },
+        nodes: IS_CHROMIUM ? { before: diveDomBefore.Nodes, after: diveDomAfter.Nodes } : null,
+        listeners: IS_CHROMIUM ? { before: diveDomBefore.JSEventListeners, after: diveDomAfter.JSEventListeners } : null,
+      };
+    } else {
+      result.notes.push("dive phase skipped: no rendered card found near the sampled scroll position.");
+    }
+
+    if (canTrace) await context.browser().stopTracing();
+    if (canHeapProfile) {
       const { profile } = await cdp.send("HeapProfiler.stopSampling");
       const flat = new Map();
       (function walk(n) {
@@ -625,14 +764,16 @@ async function main() {
         .map(([site, bytes]) => ({ site, kb: +(bytes / 1024).toFixed(0) }));
     }
 
-    // Parked mid-Work: measures the per-frame cost of the section's own
-    // tick + competing loops with zero scroll input.
-    const workMid = workStart + Math.round(geom.workH / 2);
-    await jumpTo(workMid);
-    await runPhase("idle-work-mid", () => sleep(2500), {
-      from: workMid,
-      to: workMid,
-    });
+    if (!DIVE_ONLY) {
+      // Parked mid-Work: measures the per-frame cost of the section's own
+      // tick + competing loops with zero scroll input.
+      const workMid = workStart + Math.round(geom.workH / 2);
+      await jumpTo(workMid);
+      await runPhase("idle-work-mid", () => sleep(2500), {
+        from: workMid,
+        to: workMid,
+      });
+    }
     await jumpTo(workStart);
 
     await harvest();
@@ -641,24 +782,26 @@ async function main() {
     result.heap = {
       beforeCyclesMb: heapBefore,
       afterCyclesMb: heapAfter,
-      growthMb: +(heapAfter - heapBefore).toFixed(1),
+      growthMb: IS_CHROMIUM ? +(heapAfter - heapBefore).toFixed(1) : null,
       perCycleMb: result.heapCyclesMb,
       harnessArtifactPerCycleMb: result.heapHarnessArtifactMb,
-      nodes: { before: domBefore.Nodes, after: domAfter.Nodes },
-      listeners: { before: domBefore.JSEventListeners, after: domAfter.JSEventListeners },
+      nodes: IS_CHROMIUM ? { before: domBefore.Nodes, after: domAfter.Nodes } : null,
+      listeners: IS_CHROMIUM ? { before: domBefore.JSEventListeners, after: domAfter.JSEventListeners } : null,
     };
 
     // ---- Rocket sequence scroll
-    await jumpTo(0);
-    const rocketEnd = Math.min(geom.rocketTop + geom.rocketH, geom.maxScroll);
-    await runPhase("rocket-scroll-down", () => wheelBy(rocketEnd), {
-      from: 0,
-      to: rocketEnd,
-    });
-    await runPhase("rocket-scroll-up", () => wheelBy(-rocketEnd), {
-      from: rocketEnd,
-      to: 0,
-    });
+    if (!DIVE_ONLY) {
+      await jumpTo(0);
+      const rocketEnd = Math.min(geom.rocketTop + geom.rocketH, geom.maxScroll);
+      await runPhase("rocket-scroll-down", () => wheelBy(rocketEnd), {
+        from: 0,
+        to: rocketEnd,
+      });
+      await runPhase("rocket-scroll-up", () => wheelBy(-rocketEnd), {
+        from: rocketEnd,
+        to: 0,
+      });
+    }
 
     // ---- Collect in-page data
     await harvest();
@@ -707,10 +850,10 @@ async function main() {
         longTasks: s.longtasks.length,
         longTaskTotalMs: +s.longtasks.reduce((a, t) => a + t.dur, 0).toFixed(0),
         worstLongTaskMs: +Math.max(0, ...s.longtasks.map((t) => t.dur)).toFixed(0),
-        layoutPerFrame: s.frames.length
+        layoutPerFrame: s.frames.length && p.layoutCountDelta != null
           ? +(p.layoutCountDelta / s.frames.length).toFixed(2)
           : null,
-        recalcPerFrame: s.frames.length
+        recalcPerFrame: s.frames.length && p.recalcStyleCountDelta != null
           ? +(p.recalcStyleCountDelta / s.frames.length).toFixed(2)
           : null,
       };
@@ -728,7 +871,7 @@ async function main() {
 
   // ---- Console summary
   const pad = (v, n) => String(v ?? "-").padStart(n);
-  console.log(`\n=== ${LABEL} (cpu x${CPU_RATE}${MOBILE ? ", mobile" : ""}${DISABLE_HERO_LOOPS ? ", hero loops OFF" : ""}) ===`);
+  console.log(`\n=== ${LABEL} [${BROWSER_NAME}] (cpu x${CPU_RATE}${MOBILE ? ", mobile" : ""}${DIVE_ONLY ? ", dive-only" : ""}${DISABLE_HERO_LOOPS ? ", hero loops OFF" : ""}) ===`);
   if (result.preload) {
     const p = result.preload;
     console.log(
@@ -749,10 +892,21 @@ async function main() {
   }
   if (result.heap)
     console.log(
-      `heap: before ${result.heap.beforeCyclesMb}MB → after 3 cycles ${result.heap.afterCyclesMb}MB (Δ${result.heap.growthMb}MB), per-cycle [${result.heap.perCycleMb.join(", ")}], ` +
+      `heap: before ${result.heap.beforeCyclesMb}MB → after ${DIVE_ONLY ? "dive cycles" : "3 cycles"} ${result.heap.afterCyclesMb}MB (Δ${result.heap.growthMb}MB), per-cycle [${result.heap.perCycleMb.join(", ")}], ` +
       `harness artifact/cycle [${result.heap.harnessArtifactPerCycleMb.join(", ")}], ` +
-      `nodes ${result.heap.nodes.before}→${result.heap.nodes.after}, listeners ${result.heap.listeners.before}→${result.heap.listeners.after}`,
+      (result.heap.nodes
+        ? `nodes ${result.heap.nodes.before}→${result.heap.nodes.after}, listeners ${result.heap.listeners.before}→${result.heap.listeners.after}`
+        : "nodes/listeners: n/a (non-Chromium, no CDP)"),
     );
+  if (result.dive?.found)
+    console.log(
+      `dive (${result.dive.cardHref}): heap ${result.dive.heap.beforeMb}MB→${result.dive.heap.afterMb}MB` +
+      (result.dive.heap.growthMb != null ? ` (Δ${result.dive.heap.growthMb}MB)` : "") +
+      (result.dive.nodes
+        ? `, nodes ${result.dive.nodes.before}→${result.dive.nodes.after}, listeners ${result.dive.listeners.before}→${result.dive.listeners.after}`
+        : ", nodes/listeners: n/a (non-Chromium, no CDP)"),
+    );
+  else if (result.dive) console.log("dive: no rendered card found — phase skipped");
   const badAsserts = (result.scrollAssertions || []).filter((a) => !a.ok);
   const badScroll = badAsserts.filter((a) => !a.label.startsWith("idle"));
   console.log(
