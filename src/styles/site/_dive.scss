@@ -1,0 +1,310 @@
+/**
+ * Dive-into-image transition overlay.
+ *
+ * Global rather than scoped to a component because the overlay is built in JS
+ * and appended to document.body: .s__scene (perspective + will-change) and
+ * a-work (will-change + preserve-3d) each form a containing block for
+ * position: fixed, so an overlay nested in the pinned Work section is
+ * positioned against the pin, not the viewport. Measured in Step 0 — a
+ * fixed inset:0 probe inside .s__scene came back 1080x675 at (180, 6103)
+ * instead of 1440x900 at (0, 0).
+ *
+ * Every value that changes during a dive is written from DiveTransition.ts as
+ * transform or opacity. Nothing here animates width/height/top/left, and no
+ * per-frame custom property is written on an ancestor.
+ */
+
+@use "../helpers/colors" as *;
+@use "../helpers/fonts" as *;
+@use "../helpers/grid" as *;
+@use "../helpers/responsive" as *;
+
+.dive {
+  position: fixed;
+  inset: 0;
+  z-index: 200; /* above .works-layer (40) and .s__mask-outer (100) */
+
+  overflow: hidden;
+
+  /* Matches .s__scene's perspective: 40rem so the first frame reproduces the
+     card's own rotateY projection instead of snapping it flat. Applies to
+     .dive__flip only; .dive__stage below establishes its own. */
+  perspective: 640px;
+
+  visibility: hidden;
+  pointer-events: none;
+
+  &.is-open {
+    visibility: visible;
+    pointer-events: auto;
+  }
+}
+
+.dive__backdrop {
+  position: absolute;
+  inset: 0;
+
+  background: #000000;
+
+  opacity: 0;
+}
+
+/* 2D FLIP wrapper: carries the card-rect -> viewport morph. Kept outside the
+   stage so the perspective below always stays on-axis — projecting an
+   off-centre camera would separate the layers laterally at z = 0, and the
+   first frame has to be an exact match for the card. */
+.dive__flip {
+  position: absolute;
+  inset: 0;
+
+  transform-origin: 50% 50%;
+}
+
+.dive__stage {
+  position: absolute;
+  inset: 0;
+
+  perspective: var(--dive-perspective, 900px);
+  perspective-origin: 50% 50%;
+}
+
+/* Sized to the clicked card's layout box, written once per dive. The only
+   per-frame transform in the rig apart from .dive__flip. */
+.dive__camera {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+
+  transform-style: preserve-3d;
+}
+
+/* Layers are static: transform is written once at build time as
+   translateZ(-depth) scale(compensation). All apparent motion comes from the
+   camera's dolly through the perspective projection. */
+.dive__layer {
+  position: absolute;
+  inset: 0;
+
+  text-align: center;
+
+  backface-visibility: hidden;
+}
+
+/* -- far: the image plane (photo for AMS, colour panel for the rest) ------ */
+
+.dive__plate {
+  position: absolute;
+  inset: 0;
+}
+
+.dive__cover {
+  position: absolute;
+  inset: 0;
+
+  width: 100%;
+  height: 100%;
+
+  /* 0.85 matches .a__card__cover so frame one is identical to the card; the
+     timeline lifts it to 1 on the way in. */
+  object-fit: cover;
+  opacity: 0.85;
+}
+
+/* The far plane's light source for cards that have no photo. Fades up from
+   nothing during the dive, so frame one still matches the card exactly. */
+.dive__glow {
+  position: absolute;
+  inset: 0;
+
+  background: radial-gradient(
+    circle at 50% 45%,
+    color-mix(in srgb, var(--dive-accent, #ffffff) 22%, transparent) 0%,
+    color-mix(in srgb, var(--dive-accent, #ffffff) 6%, transparent) 38%,
+    transparent 70%
+  );
+
+  opacity: 0;
+}
+
+/* Viewport-level, not part of the 3D scene: the far layer settles larger than
+   the viewport, so a vignette drawn on it would have its edges pushed
+   off-screen exactly where they are supposed to be seen. */
+.dive__vignette {
+  position: absolute;
+  inset: 0;
+
+  background: radial-gradient(
+    ellipse at 50% 50%,
+    transparent 45%,
+    rgba(0, 0, 0, 0.45) 100%
+  );
+
+  pointer-events: none;
+  opacity: 0;
+}
+
+/* -- mid: the dot grid --------------------------------------------------- */
+
+.dive__grid {
+  position: absolute;
+  inset: 0;
+
+  background-image: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.06) 1px,
+    transparent 1px
+  );
+  background-size: 24px 24px;
+}
+
+/* -- near: the title ----------------------------------------------------- */
+
+.dive__layer--near {
+  @include flex(column, stretch, center);
+
+  padding: 1.25rem 1.5rem;
+
+  @include mq(phone) {
+    padding: 1rem 1.15rem;
+  }
+}
+
+.dive__title {
+  font: 700 clamp(1.25rem, 3.5vw, 2.5rem) / 1.1 font-family(editorial);
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  color: #ffffff;
+}
+
+/* -- fore: index, cta and the card frame --------------------------------- */
+
+.dive__layer--fore {
+  @include flex(column, stretch, space-between);
+
+  padding: 1.25rem 1.5rem;
+
+  @include mq(phone) {
+    padding: 1rem 1.15rem;
+  }
+}
+
+.dive__index,
+.dive__cta {
+  font: 700 11px / 1 font-family(fraktion);
+  text-transform: uppercase;
+}
+
+.dive__index {
+  letter-spacing: 0.2em;
+  opacity: 0.7;
+}
+
+.dive__cta {
+  letter-spacing: 0.15em;
+}
+
+.dive__frame {
+  position: absolute;
+  inset: 0;
+
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* -- teaser on the far side ---------------------------------------------- */
+
+.dive__teaser {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+
+  padding: 4rem 3rem 3rem;
+
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.92) 0%,
+    rgba(0, 0, 0, 0.72) 45%,
+    rgba(0, 0, 0, 0) 100%
+  );
+
+  opacity: 0;
+
+  @include mq(phone) {
+    padding: 3rem 1.5rem 2rem;
+  }
+}
+
+.dive__teaser__inner {
+  max-width: 46rem;
+  margin: 0 auto;
+
+  text-align: left;
+
+  @include mq(phone) {
+    text-align: center;
+  }
+}
+
+.dive__teaser__eyebrow {
+  margin: 0 0 0.75rem;
+
+  font: 700 11px / 1 font-family(fraktion);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.dive__teaser__title {
+  margin: 0 0 0.75rem;
+
+  color: color(primary);
+  font: 700 clamp(1.75rem, 5vw, 3.25rem) / 1.05 font-family(editorial);
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+
+.dive__teaser__blurb {
+  max-width: 34rem;
+  margin: 0 0 1.5rem;
+
+  color: rgba(245, 240, 232, 0.72);
+  font: 400 clamp(0.875rem, 1.6vw, 1.0625rem) / 1.5 font-family(fraktion);
+
+  @include mq(phone) {
+    margin-right: auto;
+    margin-left: auto;
+  }
+}
+
+.dive__teaser__link {
+  display: inline-block;
+
+  padding: 0.85rem 1.5rem;
+
+  border: 1px solid currentcolor;
+
+  font: 700 11px / 1 font-family(fraktion);
+  letter-spacing: 0.15em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.dive__close {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  z-index: 2;
+
+  width: 2.75rem;
+  height: 2.75rem;
+
+  padding: 0;
+
+  border: 1px solid rgba(245, 240, 232, 0.25);
+  background: rgba(0, 0, 0, 0.35);
+
+  color: color(primary);
+  font: 700 16px / 1 font-family(fraktion);
+
+  cursor: pointer;
+  opacity: 0;
+}

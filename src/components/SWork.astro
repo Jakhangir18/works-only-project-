@@ -58,7 +58,10 @@ const works = buildWorksList();
 
 <script>
   import { initWorkSection } from "../utils/WorkSection";
-  initWorkSection();
+  import { initDiveTransition } from "../utils/DiveTransition";
+
+  const section = initWorkSection();
+  initDiveTransition(section);
 </script>
 
 <style lang="scss">
