@@ -41,10 +41,10 @@ const DOLLY = 560;
  * is the card and nothing else.
  */
 const LAYERS = [
-  { name: "far", growth: 1.15 }, // image plane: photo, or the colour panel
-  { name: "mid", growth: 1.6 }, // dot grid
-  { name: "near", growth: 2.2 }, // title
-  { name: "fore", growth: 4.0 }, // index, cta and the card frame
+  { name: "far", growth: 1.12 }, // image plane: photo, or the colour panel
+  { name: "mid", growth: 2.6 }, // dot grid
+  { name: "near", growth: 4.5 }, // title
+  { name: "fore", growth: 8.0 }, // index, cta and the card frame
 ] as const;
 
 const depthOf = (growth: number) =>
@@ -256,6 +256,9 @@ class DiveTransition {
       ) as HTMLElement;
       this.layers[layer.name] = el;
 
+      // The image plane is laid out per dive instead — see layoutFarPlane().
+      if (layer.name === "far") continue;
+
       // A layer sits at -depth: positive depth is behind the camera plane,
       // negative depth (the foreground) is in front of it.
       const z = (-depthOf(layer.growth)).toFixed(2);
@@ -322,6 +325,9 @@ class DiveTransition {
       gsap.set(this.flip, {
         scale: this.endScale(this.cardBoxWidth, this.cardBoxHeight),
       });
+      // endScale moved, so the image plane's layout/static-scale split has to
+      // move with it or the plane stops resolving to 1.0 at rest.
+      this.layoutFarPlane(this.cardBoxWidth, this.cardBoxHeight);
     }
   };
 
@@ -460,6 +466,8 @@ class DiveTransition {
     this.camera.style.height = `${reading.boxHeight}px`;
     this.cardBoxWidth = reading.boxWidth;
     this.cardBoxHeight = reading.boxHeight;
+
+    this.layoutFarPlane(reading.boxWidth, reading.boxHeight);
   }
 
   /**
@@ -473,6 +481,45 @@ class DiveTransition {
     const vh = window.innerHeight;
     const byWidth = vw / boxWidth;
     return vh > vw ? byWidth : Math.max(byWidth, vh / boxHeight);
+  }
+
+  /**
+   * Lays the image plane out at the size it occupies at the END of the dive
+   * and statically scales it DOWN to meet the card, instead of laying it out
+   * card-sized and scaling up.
+   *
+   * Why: a layer carrying will-change/an animating transform is rastered at
+   * one scale and then GPU-transformed, so scaling up 5-7x showed a stretched
+   * card-sized bitmap of the photo. Measured directly — mid-dive the photo was
+   * mush while text in sibling layers stayed crisp, and it snapped sharp the
+   * moment the timeline finished and will-change came off. Sized this way the
+   * plane's accumulated scale runs (cardScale / endScale) -> 1.0 and never
+   * exceeds 1, so the raster is always at least as dense as the screen needs
+   * and only ever downsamples.
+   *
+   * Same composition either way: layout x static-scale is unchanged, only the
+   * split between them moves. On-screen size at z=0 still lands exactly on
+   * the card, which is what keeps frame one a match.
+   */
+  layoutFarPlane(boxWidth: number, boxHeight: number) {
+    const growth = LAYERS[0].growth;
+    const e = this.endScale(boxWidth, boxHeight);
+    const w = boxWidth * e * growth;
+    const h = boxHeight * e * growth;
+
+    // k / (e * growth): cancels the enlarged layout box back to the card at
+    // z = 0, and resolves to an accumulated scale of exactly 1 at z = DOLLY.
+    const s = compensationOf(growth) / (e * growth);
+
+    const far = this.layers.far;
+    far.style.width = `${w.toFixed(1)}px`;
+    far.style.height = `${h.toFixed(1)}px`;
+    // Centred by box geometry rather than a percentage translate, because a
+    // percentage translate resolves against the unscaled border box and would
+    // drift once the static scale is applied.
+    far.style.left = `${((boxWidth - w) / 2).toFixed(1)}px`;
+    far.style.top = `${((boxHeight - h) / 2).toFixed(1)}px`;
+    far.style.transform = `translateZ(${(-depthOf(growth)).toFixed(2)}px) scale(${s.toFixed(5)})`;
   }
 
   play(reading: CardReading) {
@@ -590,16 +637,19 @@ class DiveTransition {
     tl.to(cover, { opacity: 1, duration: DURATION_IN * 0.5, ease: "none" }, 0);
 
     // The near layers have to leave before they reach the eye, or they end
-    // the dive as a full-screen blur.
+    // the dive as a full-screen blur — but they are held on screen well past
+    // the point where they start rushing, because watching them sweep past
+    // and out is the whole depth cue. Fading them early (as this did at 0.28
+    // / 0.45) hid the separation the rig exists to produce.
     tl.to(
       layers.fore,
-      { opacity: 0, duration: DURATION_IN * 0.4, ease: "power1.in" },
-      DURATION_IN * 0.28,
+      { opacity: 0, duration: DURATION_IN * 0.34, ease: "power1.in" },
+      DURATION_IN * 0.42,
     );
     tl.to(
       layers.near,
-      { opacity: 0, duration: DURATION_IN * 0.35, ease: "power1.in" },
-      DURATION_IN * 0.45,
+      { opacity: 0, duration: DURATION_IN * 0.3, ease: "power1.in" },
+      DURATION_IN * 0.58,
     );
     // The grid thins out but never leaves: a dot field still drifting past at
     // rest is what keeps the far plane feeling like a place rather than paint.

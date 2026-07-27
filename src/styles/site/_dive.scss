@@ -92,6 +92,13 @@
 
 /* -- far: the image plane (photo for AMS, colour panel for the rest) ------ */
 
+/* width/height/left/top are written per dive by layoutFarPlane(): the plane
+   is laid out at its final on-screen size and statically scaled down, so its
+   raster is never stretched. inset must yield to those explicit offsets. */
+.dive__layer--far {
+  inset: auto;
+}
+
 .dive__plate {
   position: absolute;
   inset: 0;
