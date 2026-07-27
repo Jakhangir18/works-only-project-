@@ -190,6 +190,44 @@ Total sampled JS allocation across all 3 cycles is **small** — top sites: `Mor
 - H3/H4 unchanged (forced reflow ≈ 1/frame; rocket handler active during Work scroll, confirmed by its allocations).
 - Dropped per user + data: rocket JPG decode (0 decode events), card-callback storm (~1.1 fires/frame).
 
+## Dive transition — what the measurements taught (P1, P2)
+
+Both are now CLAUDE.md invariants; the detail lives here.
+
+**P1 — a promoted layer is rastered once, at its layout size, then GPU-scaled.**
+The dive's image plane was laid out at card size and scaled *up* 5–7× during the
+flight. Result, observed directly: mid-dive the photo was mush while text in sibling
+layers stayed crisp, and it snapped sharp the instant the timeline ended and
+`will-change` came off. Fix (`5a54cd1`): lay the plane out at the size it occupies
+at the **end** of the dive and statically scale it **down** to meet the card, so the
+accumulated scale runs (cardScale / endScale) → 1.0 and never exceeds 1. Same
+composition — layout × static-scale is unchanged, only the split between them moves.
+Applies to any `<img>` inside an animating/`will-change` layer, not just this one.
+
+**P2 — assigning `canvas.width` (or `.height`) resets the entire 2D context.**
+Not just the bitmap: `strokeStyle`, `fillStyle`, transform, clip, everything back to
+defaults. `WorkSection.setSize()` resized the canvas while `setCtxStyle()` only
+re-applied the stroke colour a tick later, so any draw landing in that gap was
+black-on-black — and `drawPoints()` early-exits once progress stops changing, so at
+a resting scroll position that black frame was never repainted. Symptom: the point
+grid vanished when the page opened straight into Work (returning from a project
+page). Fix (`fa910e0`): restore the cached stroke colour synchronously, in the same
+function that destroys it.
+
+## Cross-browser phase — measurement traps (F1)
+
+**`content-visibility: hidden` implies size containment, so it changes what a layout
+measurement means.** `a-work` carries it until `.is-inview`; a contained element
+sizes as if empty, which collapsed it to its padding and left `.a__card` sitting on
+the minimum transferred from `min-height` through `aspect-ratio` (288×180). WebKit
+never saw that state (`html.is-safari a-work` sets `content-visibility: visible`),
+so a cross-engine comparison of the same card was really contained-vs-uncontained —
+and got written up as an engine spec disagreement. Forcing it visible moved Chromium
+288×180 → 477×298 and Firefox → 493×308, against WebKit's 497×311: a ~4% font-metric
+spread, nothing more. **Before comparing any box across engines, force
+`content-visibility: visible` first.** Fixed in `632d595` by giving the card an
+explicit width; full write-up in `docs/cross-browser-audit.md` finding 2.
+
 ## Deferred follow-ups (separate branch, not part of this work)
 
 - **243 MB renderer RSS after the 240-frame preload** — no stutter link shown by the data, but risks tab eviction on real mid-range phones. Candidate fixes: halve frame count, cap decode dimensions, lazy-decode around current scroll position, or replace with scrubbed video.
@@ -225,7 +263,43 @@ Total sampled JS allocation across all 3 cycles is **small** — top sites: `Mor
 
 ## Tried and reverted
 
-Nothing — 6 of 6 measured changes improved their target metric. (H1 was kept on desktop evidence; its ×4 effect was within noise, stated in the commit.)
+**Phase 5 (work-stutter):** nothing — 6 of 6 measured changes improved their target
+metric. (H1 was kept on desktop evidence; its ×4 effect was within noise, stated in
+the commit.)
+
+**Cross-browser phase, F3 — cutting `will-change` did not move WebKit. Reverted.**
+Audit finding 1 proposed dropping the compositing hint from the 54 ghost letters and
+their 54 shadows (136 hinted elements out of 582 nodes, from 10 CSS declarations).
+Two variants were built and measured against two baseline runs — WebKit, production
+build, work open/close ×3, counting frames over 50 ms summed across the six phases,
+and the worst single frame:
+
+| Variant | run 1 | run 2 | med / p95 |
+|---|---|---|---|
+| baseline (hints always on) | 23 frames, worst 146 ms | 22, worst 132 | 17 / 18 |
+| hints state-gated in JS (added on the tunnel's state edge, removed on close) | 22, worst 165 | 19, worst 137 | 17 / 18 |
+| hints removed entirely | 18, worst 192 | 19, worst 154 | 17 / 18 |
+
+Median and p95 are identical in all three (17 / 18 ms). The >50 ms totals overlap
+inside a ±1–3 run-to-run band, and the **worst frame is worse in every variant than
+in the baseline**. No improvement to claim, so both variants were reverted.
+
+Worth keeping from the attempt:
+
+- The state-gated version does what it says on the tin — hinted elements at page top
+  fall **136 → 27** in all three engines — but only until the first close: when the
+  section scrolls out, `setPausedState(true)` stops the ticker, so `moveLetters()`
+  never sees the `state === 0` edge and the hint is never taken off (measured: back
+  at page top after one cycle, still 135). A complete version needs the removal
+  wired into the pause path as well.
+- **It cannot improve the open/close phases by construction**, because during those
+  phases the tunnel is open and the layers are wanted. Its only real target is idle
+  layer memory, which is a WebKit/iOS memory question, not a frame-time one — and
+  nothing here can measure that (`performance.memory` is Chromium-only). If this is
+  picked up again, pick a memory criterion, not a frame criterion.
+- `.s__mask-outer` carries `will-change: opacity, transform` while `setTimeline()`
+  writes its opacity and transform exactly once, at init, and never animates either.
+  One provably dead hint; removing it changed nothing measurable either.
 
 ## Pre-existing issues — now resolved
 

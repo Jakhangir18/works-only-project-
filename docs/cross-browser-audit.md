@@ -105,9 +105,24 @@ layer already exists — the hint buys nothing and costs 108 layers. If you want
 keep a hint, apply it only while `--state > 0` and remove it on completion. CLAUDE.md
 invariant 4's "removed when the transition ends" principle applies here.
 
-**Confidence: high** that the count is real (measured in three engines). **Medium**
+> **TESTED 2026-07-27 — the proposal does not move the WebKit frame spread. Both
+> variants reverted.** Sum of frames over 50 ms across the six work phases, WebKit,
+> production build, two runs each: baseline (hints always on) **23 / 22**, hints
+> state-gated in JS **22 / 19**, hints removed entirely **18 / 19**. Median 17 ms and
+> p95 18 ms in every configuration, and the worst single frame is *worse* in every
+> variant (165 / 192 ms) than baseline (132–146 ms). The counts overlap inside a
+> ±1–3 run-to-run band, so there is no improvement to claim.
+>
+> Note also that the state-gated variant **cannot** improve these phases by
+> construction: during an open/close the tunnel is moving and the layers are wanted.
+> Its only real target is idle layer memory — a WebKit/iOS memory question that
+> nothing available here can measure (`performance.memory` is Chromium-only). If this
+> is picked up again, pick a memory criterion. Details and the partial-teardown bug
+> found while trying it are in `PERF-NOTES.md` → "Tried and reverted".
+
+**Confidence: high** that the count is real (measured in three engines). ~~**Medium**
 that removing it fixes the WebKit frame spread — it is the strongest single lead, but
-I could not profile WebKit's compositor directly.
+I could not profile WebKit's compositor directly.~~ **Measured: it does not.**
 
 ---
 
