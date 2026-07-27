@@ -161,7 +161,15 @@ const palette = colorMap[site] ?? { bg: "#111", accent: "#fff" };
       position: relative;
       overflow: hidden;
 
-      width: auto;
+      /* Explicit width, never `auto`. Inside an absolutely positioned a-work,
+         `auto` is shrink-to-fit over the title's max-content, so the box
+         depended on two things it should not: per-engine text metrics (420 /
+         434 / 438 px for the same title in Chromium / Firefox / WebKit) and
+         whether a-work was still size-contained by `content-visibility:
+         hidden`, which collapses it and leaves the card on its transferred
+         minimum (288x180) until it scrolls in. The clamp floor is that same
+         288, so min-width/min-height stay inert and the ratio stays exact. */
+      width: clamp(288px, 30vw, 440px);
       max-width: 50vw;
       height: auto;
       max-height: 50vh;
@@ -174,6 +182,10 @@ const palette = colorMap[site] ?? { bg: "#111", accent: "#fff" };
       border: 1px solid rgba(255, 255, 255, 0.08);
 
       @include mq(phone) {
+        /* 208x130 is exactly what every engine already resolved here (the
+           transferred minimum of min-height: 130px); pinning it keeps the
+           phone box unchanged while removing the content dependence. */
+        width: 208px;
         max-width: 80vw;
         max-height: 80vh;
         min-width: 200px;
