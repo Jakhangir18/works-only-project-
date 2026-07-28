@@ -1,0 +1,250 @@
+# Work Redesign Plan
+
+Status: design only. No animation code has been changed in this branch.
+
+Goal: the Work section should show each project exactly once, number it by its own
+position in the project list, give important work a deliberate larger frame, and let
+the visitor dive from any rendered card without breaking the existing FLIP transition.
+
+## Fixed Decisions
+
+- The source list grows to roughly 10-15 works.
+- Adding a work must be a data edit, not a layout-code edit.
+- Each work appears once.
+- Numbering is per work, not per rendered slot.
+- Card size is selected from an enumerated rule, not from random values.
+- The last work settles in the centre before the pin releases.
+
+## Phase 0 - Composition Answers
+
+1. Existing loop: the redesigned scroll sequence stays on the existing
+   `WorkSection` GSAP/ScrollTrigger scrub and the shared `Ticker`/`gsap.ticker`
+   path. It must not add a new `requestAnimationFrame` loop.
+2. Pause: `SiteController` observes `[data-intersect]` and dispatches `intersect`;
+   `WorkSection.setPausedState()` removes or restores its `tick()` subscription.
+   The dive also pauses `WorkSection` while the overlay is open.
+3. Kill: `WorkSection.setTimeline()` must continue killing the previous timeline's
+   `scrollTrigger` and the pin trigger before rebuilding on resize. Any future
+   cover loader must be one observer/controller, with a real disconnect path if the
+   section ever gains a `destroy()`.
+4. Unchanged scroll frames: `tick()` already rounds and early-returns for repeated
+   scroll progress. The redesign should preserve that pattern and only update card
+   loading when the active work index changes.
+
+## Phase 1 - Current Loop Inventory
+
+| File | Driver | Pause / kill | In the Work scroll region? | Design consequence |
+|---|---|---|---|---|
+| `src/utils/Ticker.js` | `gsap.ticker` emits `tick` | global page clock | yes | Work should keep subscribing here through `Emitter`, not add a clock. |
+| `src/utils/WorkSection.ts` | ScrollTrigger scrub plus `tick()` | `setPausedState()`, timeline/pin killed on rebuild | yes | This is the only place that should own Work scroll progress and section length. |
+| `src/utils/DiveTransition.ts` | GSAP timelines on click | state machine, timeline kill, shared teardown | yes, on click | Card rect, index, cover and title contracts must remain stable for FLIP. |
+| `src/components/RocketStorySection.astro` | scroll listener + rAF scheduling | section-local visibility guards | adjacent page region | Do not add Work scroll listeners that compete with it. |
+| `src/components/DottedSurface.astro` | independent rAF | IntersectionObserver and visibility | hero only | Existing precedent for pause discipline. |
+| `src/components/MorphingText.astro` | independent rAF | IntersectionObserver and visibility | hero only | Existing precedent for pause discipline. |
+| `src/utils/SiteController.ts` | loader rAF, global scroll/resize | one-shot loader, page lifetime | yes | Return-scroll and resize paths must keep working. |
+
+## Current Work Inventory
+
+| File | What exists now | Change needed | Can stay |
+|---|---|---|---|
+| `src/data/works.ts` | `projects` has `title`, `site`, `blurb`; `buildWorksList()` duplicates each project into four shuffled slots. | Replace slot expansion with a stable `works` list. Add per-project visual metadata: `size`, `cover`, `focalPoint`, `palette`, and poster style for no-cover works. | `title`, `site`, `blurb` stay the source of truth for dive teaser text. |
+| `src/components/SWork.astro` | Calls `buildWorksList()`, maps 20 slots, passes slot index and total. | Map the real list once. Pass work index as `01`, `02`, etc., total as real count, and pass visual metadata through to `AWork`. | Section structure, mask, scene, canvas, and `initWorkSection()`/`initDiveTransition()` wiring can stay. |
+| `src/components/AWork.astro` | Renders card, index, title, CTA, one internal cover map, one internal palette map, and writes `--progress` on the `a-work` leaf when the `progress` attribute changes. | Move cover/palette out of local maps into `works.ts`. Add enumerated size class/data, focal point, lazy cover state, and first-class poster visual for no-cover works. | The custom element contract can mostly stay: `progress` attribute, leaf-only `--progress`, `is-inview`, and delegated link behavior are still right. |
+| `src/utils/WorkSection.ts` | Sets section height from rendered slot count; randomizes `--size` and `--y`; schedules card progress with `stagger: 0.25`. | Derive height from real work count. Replace random setup with deterministic lane and size metadata. Schedule each real work once, with a final centre hold. Add quantized near-cover loading if implemented. | Cached geometry, batched reads, ScrollTrigger ownership, mask/canvas/letter movement, and leaf-only per-frame writes should stay. |
+
+Note: the "1000vh" is not a literal in the current code anymore. It is the result of
+20 generated slots multiplied by `50vh`. The premise is still operationally right:
+the visible length is driven by duplicated slots instead of real work count.
+
+## 1. Section Length
+
+Recommendation: derive the pinned scroll distance from the number of real works, then
+set the section height to one viewport plus that distance because the current pin ends
+at `bottom bottom`.
+
+```ts
+const INTRO_VH = 140;
+const WORK_STEP_VH = 80;
+const END_HOLD_VH = 60;
+
+const pinDistance =
+  ((INTRO_VH + workCount * WORK_STEP_VH + END_HOLD_VH) * unitHeight) / 100;
+const sectionHeight = unitHeight + pinDistance;
+```
+
+`80vh` per work is the recommended focus beat: long enough for a card to enter, reach
+centre, and be clickable without making a 15-item list feel stalled. `140vh` preserves
+the tunnel/mask opening as a real entrance. `60vh` gives the final card a deliberate
+settle before release.
+
+At 5 works: pin distance is `600vh`, section height is `700vh`.
+At 15 works: pin distance is `1400vh`, section height is `1500vh`.
+At 10 works: section height lands at `1100vh`, close to today's perceived scale but
+with no repeated work.
+
+The timeline should be expressed in work units rather than GSAP default duration plus
+`stagger`. Each work gets one label; the last label resolves to `progress = 0` and
+then holds until the pin end. No random slot density should be needed.
+
+## 2. Size Rule
+
+Recommendation: use three editorial tiers in `works.ts`:
+
+| Tier | Meaning | Desktop visual frame |
+|---|---|---|
+| `hero` | strongest portfolio signal | up to current max, about `440 x 275` |
+| `feature` | above-normal importance | about `390 x 244` |
+| `standard` | default work | about `340 x 213` |
+
+The size should be a physical card frame, not a transform-only scale. That keeps cover
+rasters closer to their final displayed size and keeps `DiveTransition.readCard()`'s
+FLIP start honest because `offsetWidth`, `offsetHeight`, and the rendered rect all
+describe the same design decision.
+
+Large must stay scarce. Proposed constraint: `hero <= ceil(count / 8)` and
+`hero + feature <= ceil(count / 3)`. That means 5 works allow 1 hero and 2 promoted
+cards total; 15 works allow 2 heroes and 5 promoted cards total. The constraint should
+be validated from data so a future project edit cannot accidentally make every card
+large.
+
+The weight belongs in `works.ts`, not derived from cover presence or list position.
+Importance is editorial judgement. Layout code should only consume the enum.
+
+## 3. Image Normalization
+
+Recommendation: keep one frame ratio, `16 / 10`, because the existing card and dive
+rig are already built around that shape and the landscape AMS cover is close to it.
+Every cover uses:
+
+```css
+object-fit: cover;
+object-position: var(--cover-x, 50%) var(--cover-y, 50%);
+```
+
+Each project with a real cover gets a focal point in `works.ts`, for example:
+
+```ts
+cover: {
+  src: "/projects/ams/images/cover.jpg",
+  alt: "AMS tablet interface at an inspection checkpoint",
+  focalPoint: "50% 44%",
+}
+```
+
+Portrait covers will still be cropped by a horizontal frame. The focal point is the
+control that prevents face/head crops; it is not a promise that the full portrait will
+remain visible. If a portrait must be read full-length, it should be composed into a
+poster treatment rather than forced through `object-fit: cover`.
+
+## 4. Works With No Cover
+
+Recommendation: make "no cover" a first-class `visual.kind = "poster"`, not a missing
+image fallback. A poster card is a designed project plate: project palette, index,
+title, CTA, a stable grid/line motif, and one optional metadata-driven mark such as a
+monogram or system diagram. It should be deterministic from project data, never random.
+
+This works as a dive target because the dive already rebuilds a card into layers:
+plate, grid, title, index, CTA, frame, glow. For poster works, those layers are the
+art. The visitor should arrive at a deliberate graphic composition instead of flat
+paint or a broken-image state.
+
+The fallback hierarchy should be:
+
+1. decoded real cover, if present and ready;
+2. explicit poster visual, if no cover or cover is not ready;
+3. never an empty card.
+
+The current `onerror="this.style.display='none'"` behavior should become a last-resort
+state that returns to the poster visual, not a silent disappearance.
+
+## 5. Ending
+
+Recommendation: the last work should not animate off-screen. It should reach centre
+at `progress = 0`, remain there for `60vh` of scroll, and then let the pin release.
+In timeline terms, the final work has an arrival segment and a hold segment, but no
+exit segment inside the pin.
+
+The visual timing target is: during normal wheel/trackpad scrolling, the visitor gets
+roughly one short beat after the last card stops moving before the next section starts
+pulling the page. Because scroll speed varies, this should be specified as distance
+(`60vh`) and verified visually rather than as milliseconds.
+
+Verification after implementation:
+
+- at `1440 x 900 @2x` and `390 x 844 @3x`, scroll to the final hold midpoint;
+- assert the final card's rendered centre is within 5% of viewport centre;
+- wheel another `300px` and assert the card remains the same project and stays
+  centred;
+- wheel past the hold and assert the next section begins and the pin is released;
+- run the existing regression sweep, then add a Work-specific harness phase if the
+  final hold proves easy to miss by hand.
+
+## 6. Loading
+
+Recommendation: do not rely on native lazy loading alone. Pinned, transformed,
+content-visibility-managed cards are exactly the kind of scene where browser viewport
+heuristics can be late or inconsistent. Use explicit near-card loading driven by
+logical work index.
+
+`AWork` should render a stable poster immediately. Real covers start as `data-src`.
+`WorkSection` should maintain a quantized active index and ask cards in a window like
+`active - 2` through `active + 3` to prepare their covers. That update only happens
+when the active index changes, not per frame. Prepared means: set `src`, await or store
+`img.decode()`, then add an `is-cover-ready` class so the image can cross-fade in.
+
+Dive interaction rule: the transition may use an image only after that image's decode
+promise has resolved. In the normal path, a clickable in-view card should already be
+inside the preload window, so `decode()` is warm. In the cold edge case, the dive
+should either wait for the decode before reading/animating the image path, or open the
+poster version that exactly matches what the visitor clicked. It should not swap a
+newly decoded image into frame zero after the card rect has been read.
+
+Loading window at 15 works: at most six real covers are requested near the current
+position; far future works remain poster-only until they approach. Already-decoded
+covers stay cached for back-scroll and return navigation.
+
+## Per-Frame Write Budget
+
+Allowed per-frame writes for this redesign:
+
+- existing `a-work[progress]` attribute updates from the ScrollTrigger timeline;
+- existing `AWork.attributeChangedCallback()` writing `--progress` on the `a-work`
+  leaf only;
+- existing leaf transform/opacity writes in `WorkSection.moveLetters()`;
+- existing mask inner transform and canvas transform in `tick()`.
+
+Not allowed:
+
+- no per-frame CSS custom property on `.s-work`, `.s__inner`, `.s__scene`, or another
+  ancestor;
+- no random `--size`/`--y` writes on resize;
+- no per-card scroll listeners;
+- no new rAF loop;
+- no layout reads after writes in the same frame.
+
+One-time metadata writes on each `a-work` leaf during setup are acceptable, but static
+classes/data attributes are preferred where possible.
+
+## Step-0 Probe Status
+
+No new runtime probes were run for this design-only commit because no implementation
+exists yet. Existing measured probes from the dive still apply to the unchanged overlay
+and FLIP contract:
+
+- overlay stays appended to `document.body`;
+- scroll lock remains the existing dive strategy;
+- card geometry must be read from the rendered card, not re-derived from CSS;
+- `img.decode()` remains required before an image-backed dive starts.
+
+Before the build commit, re-run the applicable probes on production preview at
+`1440 x 900 @2x` and `390 x 844 @3x`: current card rect by tier, final-card hold,
+decode warm/cold behavior, console clean, and `will-change` count at rest.
+
+## Commit Plan After Approval
+
+1. Data model only: real work list, size tiers, cover/focal/poster metadata, validation.
+2. Card rendering only: `AWork` consumes metadata, poster treatment, normalized covers.
+3. Work scroll scheduling only: count-derived height, deterministic lanes, final hold.
+4. Loading only: near-card cover preparation and decode promise contract.
+5. Dive compatibility only if needed: read poster/cover state without breaking FLIP.
+6. Verification and docs: visual pass, perf/regression, as-built notes and deviations.
