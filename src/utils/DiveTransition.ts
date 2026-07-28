@@ -121,6 +121,9 @@ type CardReading = {
   background: string;
   accent: string;
   coverSrc: string;
+  coverPosition: string;
+  posterMark: string;
+  posterMotif: string;
   indexText: string;
   titleText: string;
   ctaText: string;
@@ -139,6 +142,8 @@ class DiveTransition {
   layers: Record<string, HTMLElement> = {};
   plate!: HTMLElement;
   cover!: HTMLImageElement;
+  poster!: HTMLElement;
+  posterMark!: HTMLElement;
   glow!: HTMLElement;
   vignette!: HTMLElement;
   indexEl!: HTMLElement;
@@ -197,6 +202,9 @@ class DiveTransition {
               <div class="dive__glow"></div>
             </div>
             <div class="dive__layer dive__layer--mid">
+              <div class="dive__poster">
+                <span class="dive__poster-mark"></span>
+              </div>
               <div class="dive__grid"></div>
             </div>
             <div class="dive__layer dive__layer--near">
@@ -232,6 +240,8 @@ class DiveTransition {
     this.camera = q(".dive__camera");
     this.plate = q(".dive__plate");
     this.cover = q<HTMLImageElement>(".dive__cover");
+    this.poster = q(".dive__poster");
+    this.posterMark = q(".dive__poster-mark");
     this.glow = q(".dive__glow");
     this.vignette = q(".dive__vignette");
     this.indexEl = q(".dive__index");
@@ -381,7 +391,13 @@ class DiveTransition {
       // and no second copy of the colour map.
       background: card.style.background || "#111111",
       accent: indexEl?.style.color || "#ffffff",
-      coverSrc: coverEl?.currentSrc || coverEl?.src || "",
+      coverSrc:
+        work.dataset.coverState === "ready"
+          ? coverEl?.currentSrc || coverEl?.src || ""
+          : "",
+      coverPosition: coverEl?.style.objectPosition || "50% 50%",
+      posterMark: work.dataset.posterMark || "",
+      posterMotif: work.dataset.posterMotif || "crosshair",
       indexText: indexEl?.textContent?.trim() || "",
       titleText: titleEl?.textContent?.trim() || "",
       ctaText: ctaEl?.textContent?.trim() || "View project →",
@@ -456,6 +472,12 @@ class DiveTransition {
     if (reading.coverSrc && this.cover.getAttribute("src") !== reading.coverSrc) {
       this.cover.src = reading.coverSrc;
     }
+    this.cover.style.objectPosition = reading.coverPosition;
+
+    this.poster.className = `dive__poster dive__poster--${reading.posterMotif}`;
+    this.poster.style.display = reading.coverSrc ? "none" : "";
+    this.poster.style.color = reading.accent;
+    this.posterMark.textContent = reading.posterMark;
 
     // The far plane is what the viewer arrives at. AMS arrives at its photo;
     // a composition card would otherwise arrive at flat paint, so it gets a
@@ -569,7 +591,7 @@ class DiveTransition {
     });
     gsap.set(camera, { xPercent: -50, yPercent: -50, z: 0 });
     gsap.set([layers.far, layers.mid, layers.near, layers.fore], { opacity: 1 });
-    gsap.set(cover, { opacity: reading.coverSrc ? 1 : 0.85 });
+    gsap.set(cover, { opacity: 1 });
     gsap.set([this.glow, this.vignette], { opacity: 1 });
     gsap.set(backdrop, { opacity: 0 });
     gsap.set(teaser, { opacity: 0, y: 0 });
@@ -613,7 +635,7 @@ class DiveTransition {
     });
     gsap.set(camera, { xPercent: -50, yPercent: -50, z: 0 });
     gsap.set([layers.far, layers.mid, layers.near, layers.fore], { opacity: 1 });
-    gsap.set(cover, { opacity: 0.85 });
+    gsap.set(cover, { opacity: 1 });
     gsap.set([this.glow, this.vignette], { opacity: 0 });
     gsap.set(backdrop, { opacity: 0 });
     gsap.set(teaser, { opacity: 0, y: 24 });
@@ -653,8 +675,6 @@ class DiveTransition {
     );
 
     tl.to(backdrop, { opacity: 1, duration: DURATION_IN * 0.45, ease: "power1.out" }, 0);
-    tl.to(cover, { opacity: 1, duration: DURATION_IN * 0.5, ease: "none" }, 0);
-
     // The near layers have to leave before they reach the eye, or they end
     // the dive as a full-screen blur — but they are held on screen well past
     // the point where they start rushing, because watching them sweep past
