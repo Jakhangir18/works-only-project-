@@ -1,6 +1,7 @@
 # Work Redesign Plan
 
-Status: design approved; build pending.
+Status: built and visually verified through phase 4. Performance measurement has not
+started, per the stop point for this phase.
 
 Goal: the Work section should show each project exactly once, number it by its own
 position in the project list, give important work a deliberate larger frame, and let
@@ -312,3 +313,59 @@ decode warm/cold behavior, console clean, and `will-change` count at rest.
 4. Loading only: near-card cover preparation and decode promise contract.
 5. Dive compatibility only if needed: read poster/cover state without breaking FLIP.
 6. Verification and docs: visual pass, perf/regression, as-built notes and deviations.
+
+## As Built
+
+- `works.ts` now exports one stable five-work array. It is rendered once, in order,
+  as `01` through `05`; cover/poster treatment does not affect numbering.
+- Editorial tiers are physical `16:10` frames: desktop `440 / 390 / 340px` and
+  mobile `272 / 240 / 208px` for `hero / feature / standard`.
+- Module-evaluation scarcity validation blocks an invalid hero/promoted mix during
+  Astro's production build.
+- Every work has a deterministic poster; AMS additionally has an explicitly loaded,
+  decoded cover with focal point `50% 44%`.
+- Work stays on the existing GSAP/ScrollTrigger timeline. Desktop uses `80vh` per
+  work, mobile uses `72svh`; the last work reaches `progress=0`, holds for `60vh`,
+  then the pin releases without an exit tween.
+- Cover preparation is quantized to active-work changes and calls `prepareCover()` for
+  `active - 2` through `active + 3`. Failed or cold covers remain the same poster the
+  visitor clicked.
+- Dive reads the real clicked box for all tiers. Visual probes confirmed its camera
+  box exactly equals the source layout box for all six tier/viewport combinations:
+  `440x275`, `390x244`, `340x213`, `272x170`, `240x150`, `208x130`.
+- Dive uses a cover only after its card reports `ready`; otherwise it rebuilds the
+  clicked poster motif and mark. No tier-specific FLIP branch was added.
+
+## Phase 4 Visual Verification
+
+The reproducible capture is `scripts/capture-work-redesign.mjs`. It ran against the
+production preview at `1440x900 @2x` and `390x844 @3x`, emitted zero browser warnings
+or errors, and asserted:
+
+- numbering is exactly `01, 02, 03, 04, 05`;
+- hero, feature and standard rendered widths match their tier at both viewports;
+- all three dive camera boxes match their source card's physical box at both
+  viewports, with cover/poster state preserved;
+- the final card centre is within 5% of the viewport centre during the hold;
+- the Work container is `fixed` during the hold and `relative` immediately after the
+  release, with Contact entering the viewport.
+
+Screenshots and the machine-readable geometry record are in
+`docs/work-redesign-visuals/`.
+
+## Deviations
+
+- The approved plan allowed the cover to cross-fade to `0.85` opacity. The build uses
+  full opacity after decode so the fallback poster cannot leak through with a
+  different stacking order; this keeps the image-backed frame zero exact.
+- The first visual pass exposed a scoped-SCSS selector error: tier classes rendered
+  but every card retained the standard width. It was corrected before accepting or
+  recording the visual artifacts.
+- No `IntersectionObserver` was added for covers. The existing logical active index is
+  a more reliable driver inside this pinned/transformed scene and needs no new loop or
+  teardown.
+
+## Not Yet Verified
+
+Per the requested stop point, phase 5 performance measurement, lifecycle-cycle
+measurement, cross-engine runs, and real-device iOS verification have not been run.
