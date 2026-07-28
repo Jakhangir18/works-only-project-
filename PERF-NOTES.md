@@ -146,7 +146,7 @@ Work phases: p95 up to 26.6, worst 106–265 ms, 1–3 frames >50 ms per phase, 
 
 ### The four requested extra measurements
 
-1. **Preload of `public/1/` (240 JPGs, 8.2 MB):** completes ~370–580 ms after navigation (local server). Long tasks during preload: 1 (86 ms) unthrottled, 4 (342 ms) at CPU ×4. **Renderer-process RSS peaks at 243 MB** during preload, settling to ~222 MB; JS heap only ~4.5 MB (decoded frames live off-heap in the image cache).
+1. **Preload of `public/1/` (240 JPGs, 8.2 MB):** completes ~370–580 ms after navigation (local server). Long tasks during preload: 1 (86 ms) unthrottled, 4 (342 ms) at CPU ×4. The earlier **243 MB "renderer RSS" is superseded**: it summed multiple Chrome renderer processes and is not a page-memory measurement. `perf/real-page-memory.mjs` removed the sequence entirely for three runs: no measurable desktop steady-state share; mobile ×4 page renderer −22.6 MB and shared GPU −9.3 MB. JS heap was ~4.5 MB (decoded frames live off-heap in the image cache).
 2. **Forced reflows while scrolling Work:** instrumented reads-after-write ≈ **1.0 per frame on average (max 5)** — one forced layout virtually every frame, steadily. CDP cross-check: LayoutCount ≈ 0.8–0.9/frame, RecalcStyleCount ≈ 2–3/frame, total layout-API reads ≈ 2.3/frame.
 3. **`attributeChangedCallback` on `a-work` cards:** average ≈ **1.1 fires/frame, max 3–5/frame** during open/close (staggering spreads the 20 cards out; this is not a callback storm).
 4. **Hero-loops-off diagnostic:** see table above — the dominant factor at desktop. Reverted by design (runtime injection only; repo code untouched).
@@ -230,8 +230,8 @@ explicit width; full write-up in `docs/cross-browser-audit.md` finding 2.
 
 ## Deferred follow-ups (separate branch, not part of this work)
 
-- **243 MB renderer RSS after the 240-frame preload** — no stutter link shown by the data, but risks tab eviction on real mid-range phones. Candidate fixes: halve frame count, cap decode dimensions, lazy-decode around current scroll position, or replace with scrubbed video.
-- Preload cost itself (8.2 MB network + 1–4 long tasks during load at 4× CPU).
+- The 243 MB renderer-RSS / tab-eviction premise is **closed as a measurement artifact**. Do not reopen a memory-replacement project without a new device-specific measurement with an explicit process scope; the rejected video branch is deleted.
+- Preload cost itself remains separate: the original set transferred 8.2 MB with 1–4 load-time long tasks at CPU ×4. The active 960-px set reduces transfer by 34%; no real-page RSS win is claimed.
 
 ## Final numbers (Phase 5, all fixes applied — runs assertion-valid, GC'd heap checks)
 

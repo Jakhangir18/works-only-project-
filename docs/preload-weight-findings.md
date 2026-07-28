@@ -1,13 +1,17 @@
 # Preload weight: replacing the 240-JPG rocket sequence
 
-Branch `perf/preload-weight`. **960-px frame set shipped on this branch, not merged.**
-The scrubbed-video path explored first is parked, working and measured, on
-`perf/rocket-video-scrub` — see *Why the video was parked, not deleted* below.
+Branch `perf/preload-weight`. **960-px frame set is ready to merge.**
+The scrubbed-video experiment was rejected and its branch deleted: it added a decoder
+probe, fallback logic and unstable load cost for a memory problem the attribution did
+not support. The historical measurements remain below so the same premise is not
+re-inherited.
 
 The rocket story plays 240 JPGs (1918×766, 8.4 MB) that are all eagerly preloaded at
 page load. Profiling had already cleared them of causing frame jank; the open concern
-was resident memory — the renderer sits around 270–290 MB, which risks tab eviction on
-mid-range phones.
+was resident memory. The old harness reported a 270–290 MB **sum across every Chrome
+renderer process in the fresh profile**, which was treated as if it belonged to the
+page. The attribution run below separates that sum from the heaviest renderer (the
+real page proxy) and from Chrome's large process baseline.
 
 This document records what was tried, including the two things that did not survive
 measurement.
@@ -33,6 +37,12 @@ show up as a full-page win, most plausibly because the rest of the page's own me
 pressure already forces the browser's image cache to evict before the sequence's true
 resident cost is ever paid — the same mechanism in both cases.
 
+Removing the sequence completely settles the larger premise: on desktop its real-page
+share is not measurable; on the 390×844, CPU×4 profile it is about **22.6 MB in the
+heaviest renderer plus 9.3 MB in the shared GPU process**. The sequence is therefore a
+minority cost, not the explanation for the previously quoted ~243 MB. Chrome's own
+fresh-profile baseline is the dominant part of the process-tree number.
+
 **960 is still what's shipped here**, not because the memory case holds up, but
 because it is strictly simpler and safer than the alternative it's compared against:
 smaller transfer, no decoder probe, no iOS-specific failure mode, a one-line revert.
@@ -42,13 +52,12 @@ See *Recommendation*.
 
 ## What was built
 
-**This section describes the video path, which now lives on `perf/rocket-video-scrub`,
-not this branch.** It stays in this document because the measurements against it are
-what the 960 recommendation is compared to. `git log perf/rocket-video-scrub` has the
-commits; `perf/preload-weight` has only the 960-px switch.
+**This is a historical description of the rejected video path; it is no longer in the
+source tree or available as a supported branch.** It remains here only because its
+measurements explain the 960-px recommendation.
 
-Two interchangeable frame sources behind one interface
-(`src/utils/rocketFrameSource.ts`), selected at runtime:
+The experiment implemented two interchangeable frame sources behind one runtime
+interface (historical; no longer in the source tree):
 
 - **video** — one all-intra H.264 MP4, scrubbed by setting `currentTime`. Holds a few
   decoded frames instead of 240.
@@ -222,7 +231,7 @@ in all three configs.
 
 `perf/preload-bench.mjs` loads N frames on a bare document on the same origin, forces
 a decode of each, and samples process-tree RSS — isolating the sequence from the
-Three.js scene and GSAP that otherwise dominate the number.
+browser baseline and the rest of the application.
 
 | What | RSS before → after | Delta |
 |---|---|---|
@@ -268,12 +277,12 @@ in Chromium, swapping to video does not reduce renderer RSS.
 
 ## Options
 
-| Option | Bytes | Reqs | Bare-page RSS | Real-page RSS, desktop (mean of 3, or single run where noted) | Work | Risk |
+| Option | Bytes | Reqs | Bare-page RSS | Legacy renderer-tree sum, desktop (mean of 3, or single run where noted) | Work | Risk |
 |---|---|---|---|---|---|---|
 | **A. Status quo** — 240 JPGs @1918 | 8.4 MB | 240 | 90.7 MB | 326.8 | — | unquantified eviction risk on phones |
 | **B. Every 2nd frame** — 120 @1918 | 4.2 MB | 120 | 81.6 MB | not measured | small | halves temporal resolution to save 9 MB — **not worth it** |
 | **C. 240 JPGs @960 (shipped)** | 5.4 MB | 240 | 45.3 MB | 329.8 — **does not clear noise, see below** | small | softer at large viewports; no new failure mode |
-| **D. Scrubbed video** (parked, see below) | 4.8 MB | 1 | 41.9 MB | 296.9 (single run) | medium | iOS decode/seek/Low-Power-Mode unverified |
+| **D. Scrubbed video** (rejected; implementation deleted) | 4.8 MB | 1 | 41.9 MB | 296.9 (single run) | medium | iOS decode/seek/Low-Power-Mode unverified |
 
 ### Option C measured on the real page — 3 runs per config, not 1
 
@@ -302,6 +311,58 @@ Visual cost, measured pixel-for-pixel against the source: mean absolute differen
 was encoded at 1400. Not visible at normal viewing distance; present on fine detail
 (the circuit board) under a diff.
 
+### Does the sequence drive real-page RSS? Full removal says no
+
+`perf/real-page-memory.mjs` runs the production page from a fresh Chrome profile and,
+before application code executes, either remaps the shipped path to the original 1918
+set or suppresses every frame request and replaces `updateRocketFrame` with a no-op.
+It then scrubs the complete rocket range, one rAF per requested frame. Each row below
+is three runs with reversed order on run 2; the full variant recorded 240 requests and
+the stub recorded zero.
+
+The old tables used `rendererSumMb`. A persistent Chrome profile has a second renderer
+process, so that value is not page-only and can move in the opposite direction.
+`rendererMaxMb` is the heaviest renderer and the best available proxy for this page;
+the GPU process is shared and is reported separately.
+
+| Final RSS | 1918, 3 runs (mean) | No frames, 3 runs (mean) | Change when removed | Finding |
+|---|---|---|---|---|
+| Desktop page renderer (max) | 205.1 / 208.6 / 209.2 (**207.6**) | 209.3 / 211.6 / 209.5 (**210.1**) | +2.5 MB, wrong direction | no measurable share |
+| Desktop GPU process | 143.4 / 144.5 / 144.5 (**144.1**) | 151.5 / 153.3 / 152.8 (**152.5**) | +8.4 MB, wrong direction | no memory win |
+| Mobile 390×844 + CPU×4 page renderer | 191.5 / 195.9 / 197.1 (**194.8**) | 171.7 / 171.5 / 173.4 (**172.2**) | **−22.6 MB** | real, minority share |
+| Mobile 390×844 + CPU×4 GPU process | 130.5 / 133.0 / 133.8 (**132.4**) | 123.7 / 122.0 / 123.7 (**123.1**) | **−9.3 MB** | real, shared-process signal |
+
+So the original premise was overstated: the sequence is not the source of the whole
+~243 MB. It is invisible at desktop steady state and accounts for roughly 23 MB in
+the page renderer on this mobile proxy. The result does **not** prove Chrome's precise
+cache-eviction mechanism, but it does prove that most of the real-page RSS remains
+when the sequence is gone.
+
+### Attribution of what remains
+
+Three desktop runs per ablation, all with the sequence removed:
+
+| Variant | Page renderer (max), mean | GPU, mean | Process tree, mean | JS heap |
+|---|---:|---:|---:|---:|
+| Empty same-origin page (Chrome baseline) | **116.7 MB** | **104.5 MB** | **637.6 MB** | 0.6 MB |
+| Full page, no frames | 175.6 MB | 123.3 MB | 694.1 MB | 4.2 MB |
+| No frames + no Three.js scene mount | 165.1 MB | 116.9 MB | 681.9 MB | 3.3 MB |
+| No frames + web fonts blocked | 168.4 MB | 117.8 MB | 681.3 MB | 4.2 MB |
+
+The dominant term is **Chrome itself**: the empty-page baseline is 66% of the page
+renderer proxy, 85% of GPU RSS and 92% of the complete process tree. The entire app
+above that baseline is about 59 MB in the heaviest renderer. The Three.js scene moves
+that proxy by about 10.5 MB and JS heap by 0.9 MB; it is material but not dominant.
+The font ablation is inside its own 18.3 MB run spread, so no font-memory claim clears
+noise. All application JS together adds only 3.6 MB of measured JS heap above bare;
+GSAP is inside that bucket and cannot explain a hundreds-of-megabytes result. These
+ablations are not additive — Chromium caches and shared processes overlap.
+
+Raw results:
+`perf-results/2026-07-28T05-14-46-855Z-attribution-desktop.json`,
+`perf-results/2026-07-28T05-16-14-993Z-attribution-mobile-cpu4x.json`, and
+`perf-results/2026-07-28T05-17-56-195Z-attribution-components-desktop.json`.
+
 ### Why adopt it anyway
 
 The isolated-sequence bench remains real and unambiguous: 90.7 MB → 45.3 MB with
@@ -322,9 +383,9 @@ shows resolution doesn't matter either, the revert costs one line
 
 ## Recommendation
 
-**Ship 960 px (option C), not the video** — but on grounds of simplicity and isolated
-cost, not a real-page memory win, because neither option produced one that clears
-noise.
+**Ship 960 px (option C), not the video** — as a transfer/low-risk optimization, not
+as a demonstrated real-page memory optimization, because neither candidate produced a
+full-page win that clears noise.
 
 - Both candidates match on the number that *is* real: isolated sequence cost roughly
   halves either way (90.7 → 45.3 MB JPG, → 41.9 MB video).
@@ -334,7 +395,7 @@ noise.
   tasks, up to 463 ms) that was unstable across runs.
 - 960 has no new failure mode. No probe, no Low Power Mode question, no audio session,
   no decoder death mid-scroll. Whatever risk 960 carries, it is the same risk the JPG
-  sequence already carries today, just at half the bytes.
+  sequence already carries today, with 34% fewer transferred bytes.
 - The revert is one line if 960 turns out to matter less than expected:
   `RocketBackground.astro`'s `PATH` constant back to `/1/ezgif-frame-`. The original
   1918-px set stays in `public/1/` for exactly this.
@@ -343,24 +404,15 @@ noise.
 the animation's temporal resolution and buys 9 MB in the one measurement (bare-page)
 that showed any effect at all.
 
-## Why the video was parked, not deleted
+## Why the video was deleted
 
-`perf/rocket-video-scrub` holds the full dual-path implementation: the frame-source
-abstraction, the 5-gate capability probe, seek coalescing, the mid-session
-JPG-fallback handover, and every commit and measurement described above. It is not on
-this branch's history — parked separately so `perf/preload-weight` stays a clean
-"switch the frame set" diff.
-
-Kept rather than deleted because the code works (12/12 regression, median scrub lag 0
-frames, visually verified) and the reason it isn't shipping is a measurement gap, not
-a defect: the iPhone-specific risks it was built to address (240-JPG resident memory
-under real Low Power Mode conditions, a possible multi-second first seek) are still
-open questions this machine cannot answer. If the iPhone session in the checklist
-below shows the JPG sequence really does risk eviction on device, and the video probe
-passes reliably including in Low Power Mode, the branch is ready to revisit without
-re-deriving any of it. If that session instead shows 960 px is already sufficient, the
-branch can be deleted with nothing lost — nothing on `perf/preload-weight` depends on
-it.
+The video path worked mechanically (12/12 regression, median scrub lag 0 frames), but
+it had no independent product value. Its proposed benefit was an unverified memory
+risk; full-page attribution removed that premise. Its observed costs remained real:
+an extra frame-source abstraction, five-gate decoder probe, JPG fallback handover, and
+an unstable load profile with 3–4 long tasks up to 463 ms. The local
+`perf/rocket-video-scrub` branch is therefore deleted. Do not revive this path unless
+a new, device-specific measurement identifies a problem that 960-px JPGs cannot solve.
 
 
 ---
@@ -371,67 +423,28 @@ Nothing below can be settled on this machine. Playwright WebKit is not Safari �
 differs in media stack, process model and memory limits, which are exactly the
 subsystems in question here.
 
-### The video scrub
-
-1. **Which path actually runs.** Safari Web Inspector → Console →
-   `window.__rocketFrameSource`. Expect `"video"`. If it says `"jpg"`, read
-   `window.__rocketVideoProbe.reason` — that names which of the five probe gates
-   rejected it.
-2. **The warm-up seek cost.** `window.__rocketVideoProbe` reports `warmupMs` and
-   `secondSeekMs`. This is where a 2 s first seek would show up. If `warmupMs` is
-   large but `secondSeekMs` is small, the warm-up is doing its job and the design
-   holds. If **both** are large, seeking is too expensive on iOS and the video path
-   should be abandoned rather than tuned.
-3. **Low Power Mode, on and off.** This is the highest-risk unknown. iOS restricts
-   media decoding in Low Power Mode; if the probe fails there, the phone falls back
-   to the 240-JPG path — i.e. the full memory cost lands on exactly the device the
-   change was meant to protect, and in the exact condition where it is already short
-   of resources. Check `__rocketFrameSource` with LPM enabled.
-4. **Does it paint at all.** Scroll into the rocket section and confirm the rocket is
-   visible, not a black rectangle. The probe's pixel check should prevent this, but
-   confirm it end to end.
-5. **Backward scrub.** Scroll up through the section. Watch for stalling or frames
-   arriving out of order.
-6. **Mid-session handover.** If `window.__rocketVideoFellBack` is set after a long
-   session, the decoder died and the JPG path took over — note what triggered it.
-7. **Memory, both paths.** Safari Web Inspector → Timelines, or Instruments attached
-   to the WebContent process. This is the number the whole change rests on and it is
-   the one thing desktop measurement could not supply. Force the JPG path for
-   comparison by running Safari with a device that fails the probe, or temporarily
-   serve the page with `rocket.mp4` removed (404 → probe fails → JPG path).
-8. **Tab eviction.** Background the tab, use two or three other apps, return. Does the
-   page reload? Compare both paths.
-9. **The audio session.** The video is muted and never played, but a media element can
-   still interact with iOS's audio session. Start music, then load the page, and
-   confirm playback is not interrupted or ducked.
-10. **Cellular data.** 4.8 MB video vs 8.4 MB of JPGs, on a metered connection.
-
 ### Audit findings 3, 4, 5, 6 — same trip
 
-11. **Finding 5 (rocket spacer `vh` vs `innerHeight`)** — now doubly relevant, because
-    a progress jump on toolbar collapse becomes a large *seek* jump in the video path.
-    Scroll the rocket section so the toolbar collapses mid-sequence and watch for the
-    sequence skipping or stalling. Test both paths: if only the video stutters, that is
-    a seek-latency problem, not the `vh` bug.
-12. **Finding 4 (`100svh` on the pinned Work container)** — fix applied, unverified on
+1. **Finding 5 (rocket spacer `vh` vs `innerHeight`)** — scroll the rocket section so
+   the toolbar collapses mid-sequence and watch for a progress jump or visual skip.
+2. **Finding 4 (`100svh` on the pinned Work container)** — fix applied, unverified on
     iOS. Scroll into Work, show and hide the toolbar. The pinned box should neither
     clip at the bottom nor leave a gap. Desktop proved the change inert; only iOS can
     prove it correct.
-13. **Finding 3 (stale pin geometry for 400 ms+)** — rotate the device while parked
+3. **Finding 3 (stale pin geometry for 400 ms+)** — rotate the device while parked
     inside Work. Expect the ~120 px title jump when the debounce fires. Note the
     direction of the jump: WebKit does not scroll-anchor during resize where Chromium
     and Firefox do, so iOS may move the opposite way.
-14. **Finding 6 (no `normalizeScroll`, `pinType: "fixed"`)** — pin jitter during
+4. **Finding 6 (no `normalizeScroll`, `pinType: "fixed"`)** — pin jitter during
     toolbar collapse is the classic symptom. Scroll slowly through Work so the toolbar
     animates, and watch the pinned container's top edge. Also check overscroll
     rubber-banding at both ends of the pinned range.
-15. While in Work with the rocket section above it, confirm the rocket background is
+5. While in Work with the rocket section above it, confirm the rocket background is
     hidden and stays hidden — `RocketStorySection` gates on `workIsVisible`, and the
     fixed layer is still `100vw`/`100vh` (audit finding 4's inventory), which overflows
     the visible area on iOS.
 
 ### Recording the results
 
-`window.__rocketVideoProbe`, `window.__rocketFrameSource` and
-`window.__rocketVideoFellBack` are all readable from the Web Inspector console with
-no build changes. Capture them alongside each observation.
+Record the device, iOS/Safari version, viewport state and the observed layout result.
+The removed video diagnostics are not available and are not a test target.
