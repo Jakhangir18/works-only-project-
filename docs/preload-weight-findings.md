@@ -97,12 +97,31 @@ decode. Measured by `perf/seek-bench.mjs` (240 seeks per pattern):
 | 1918×766 GOP-12 | WebKit | 68 ms | 2 / 3 ms | 4 ms | 3 ms |
 | 1918×766 GOP-12 | Chromium | 11.6 ms | 17.1 / 33.2 ms | 24.3 ms | 17.9 ms |
 
-In the running page the probe reported warm-up 57–67 ms → second seek 10.7–46.1 ms
-(higher than the isolated bench because it competes with page startup).
+In the running page the probe reported, across five runs:
 
-**Did it work?** Yes, in the sense that can be measured here: the cold seek is paid
-once during load and every subsequent seek is cheaper. Whether it removes a 2 s stall
-on real iOS is unverified.
+| Run | Warm-up seek | Second seek | Long tasks during load |
+|---|---|---|---|
+| video desktop | 67.0 ms | 46.1 ms | 1 (57 ms) |
+| video cpu ×4 | 57.5 ms | 10.7 ms | 1 (88 ms) |
+| video mobile ×4 | 62.2 ms | 7.6 ms | 2 (168 ms) |
+| final desktop (a) | 358.7 ms | 13.6 ms | 4 (463 ms) |
+| final desktop (b) | 266.0 ms | 9.2 ms | 3 (384 ms) |
+
+**Did it work?** The mechanism works in every run: the second seek is 6–30× cheaper
+than the first, which is exactly what a warm-up is for, and the fidelity check
+confirms scrubbing then tracks the requested frame with a median lag of 0 frames.
+
+**But the cost itself is unstable and I could not pin it down.** The last two runs
+were taken after an hour of continuous measurement on this machine and show a warm-up
+4–6× more expensive, and load-time long tasks (3–4, 384–463 ms) clearly worse than the
+JPG path's (0–2, ≤143 ms). Nothing in the code changed between them that plausibly
+explains it, so I attribute it to machine state rather than the implementation — but
+**that is an attribution, not a measurement.** One suspect worth checking on a quiet
+machine is the probe's `getImageData` readback, which forces a GPU→CPU sync.
+
+Either way, the video path's load profile is **not** established as clean, and
+`long tasks > 50 ms: 0` is a budget it does not currently meet. Re-measure on an idle
+machine before trusting any warm-up number here.
 
 ### Why all-intra at 1400×560
 
@@ -169,8 +188,18 @@ Do not compare these medians against runs taken at a different floor.
 | mobile ×4, video | video | 4890 KB | 1 | 288.5 | **269.2** | 33.1 / 34.3 / 37.0 | 32.7 / 34.7 / 35.4 | 0 |
 
 Leak and hygiene budgets, all three desktop runs: heap growth 0.4–0.5 MB across 3
-cycles (flat), **listeners added per resize 0** (96→96 jpg, 98→98 video — the video
-path's +2 are its `seeked` and `error` handlers), 0 console errors, 0 page errors.
+cycles (flat), **listeners added per resize 0** (96→96 jpg, 99→99 video — the video
+path's +3 are its `seeked`, `error` and probe handlers), 0 console errors, 0 page
+errors.
+
+Scrub fidelity (`perf/scrub-fidelity.mjs`, video source): median lag behind the
+requested frame **0 frames**, worst 4 of 240, and it settles on the exact requested
+frame. Seek coalescing is not silently dropping the animation.
+
+Regression sweep on the shipped build: **all 12 checks pass** — 7 routes 200,
+open→close→open, rapid jiggle with listeners stable, resize rebuilds geometry with no
+leak, keyboard focus, `prefers-reduced-motion` keeps the rocket static, first-load LCP
+636 ms with 0 long tasks in the 8 s window.
 
 **Frame timing is a tie.** Zero frames over 50 ms in any scrub, on either path.
 **Memory is not a win.** End-of-run renderer RSS is 7–16 MB *higher* on the video path
