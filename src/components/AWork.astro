@@ -233,14 +233,6 @@ const motifClass = `a__card__poster--${poster.motif}`;
       box-sizing: border-box;
       border: 1px solid rgba(255, 255, 255, 0.08);
 
-      .a-work--feature & {
-        width: 390px;
-      }
-
-      .a-work--hero & {
-        width: 440px;
-      }
-
       @include mq(phone) {
         /* 208x130 is exactly what every engine already resolved here (the
            transferred minimum of min-height: 130px); pinning it keeps the
@@ -251,13 +243,22 @@ const motifClass = `a__card__poster--${poster.motif}`;
         min-width: 200px;
         min-height: 130px;
 
-        .a-work--feature & {
-          width: 240px;
-        }
+      }
+    }
 
-        .a-work--hero & {
-          width: 272px;
-        }
+    &.a-work--feature .a__card {
+      width: 390px;
+
+      @include mq(phone) {
+        width: 240px;
+      }
+    }
+
+    &.a-work--hero .a__card {
+      width: 440px;
+
+      @include mq(phone) {
+        width: 272px;
       }
     }
 
