@@ -1,38 +1,51 @@
 # Preload weight: replacing the 240-JPG rocket sequence
 
-Branch `perf/preload-weight`. **Implemented, measured, not merged.**
+Branch `perf/preload-weight`. **960-px frame set shipped on this branch, not merged.**
+The scrubbed-video path explored first is parked, working and measured, on
+`perf/rocket-video-scrub` — see *Why the video was parked, not deleted* below.
 
 The rocket story plays 240 JPGs (1918×766, 8.4 MB) that are all eagerly preloaded at
 page load. Profiling had already cleared them of causing frame jank; the open concern
 was resident memory — the renderer sits around 270–290 MB, which risks tab eviction on
 mid-range phones.
 
-This document records what the replacement actually bought, including the part that
-did not work out.
+This document records what was tried, including the two things that did not survive
+measurement.
 
 ---
 
-## Headline: the memory premise did not survive measurement
+## Headline: neither memory premise survived measurement
 
-The change was approved on the expectation that a scrubbed video would cut renderer
-RSS substantially. **On the only platform this repo can measure, it does not.**
+Two candidate fixes were tried. **Neither produced a measurable full-page memory win
+on the only platform this repo can measure.**
 
-Frame timing is unchanged, network bytes drop by 43%, and the load-time long task
-disappears — but resident memory is a wash. The numbers are in the tables below.
+- **Scrubbed video** (frame timing unchanged, bytes −43%, but real-page RSS 7–16 MB
+  *worse* across three configs, and an unstable load-time cost — 3–4 long tasks,
+  266–359 ms, on later runs).
+- **960-px JPGs** (frame timing unchanged, bytes −34%, but a 3-run-per-config real-page
+  comparison shows the difference from the current 1918-px set does not clear
+  run-to-run noise: within-variant spread 11–15 MB, between-variant difference
+  0.3–3.0 MB, and on desktop the *wrong* direction).
 
-That does not make the video wrong, because the device the memory concern was about
-(a real iPhone) is exactly the device that cannot be measured here. It does mean the
-memory argument for it is currently **unsupported by evidence**, and that should be
-settled on hardware before this merges.
+Both did halve the sequence's cost in isolation, on a bare page with everything else
+held constant (90.7 MB → 45.3 / 41.9 MB). That isolated result is real. It does not
+show up as a full-page win, most plausibly because the rest of the page's own memory
+pressure already forces the browser's image cache to evict before the sequence's true
+resident cost is ever paid — the same mechanism in both cases.
 
-It also turned up something more useful: **frame count is not the lever, resolution
-is.** Halving the frame count saves 9 MB; halving the resolution saves 45 MB. That
-makes the 960-px option — smaller, safer, and with no device-specific unknown — the
-one I would ship. See *Recommendation* below.
+**960 is still what's shipped here**, not because the memory case holds up, but
+because it is strictly simpler and safer than the alternative it's compared against:
+smaller transfer, no decoder probe, no iOS-specific failure mode, a one-line revert.
+See *Recommendation*.
 
 ---
 
 ## What was built
+
+**This section describes the video path, which now lives on `perf/rocket-video-scrub`,
+not this branch.** It stays in this document because the measurements against it are
+what the 960 recommendation is compared to. `git log perf/rocket-video-scrub` has the
+commits; `perf/preload-weight` has only the 960-px switch.
 
 Two interchangeable frame sources behind one interface
 (`src/utils/rocketFrameSource.ts`), selected at runtime:
@@ -255,69 +268,99 @@ in Chromium, swapping to video does not reduce renderer RSS.
 
 ## Options
 
-| Option | Bytes | Reqs | Bare-page RSS | Real-page RSS (desktop, final) | Work | Risk |
+| Option | Bytes | Reqs | Bare-page RSS | Real-page RSS, desktop (mean of 3, or single run where noted) | Work | Risk |
 |---|---|---|---|---|---|---|
-| **A. Status quo** — 240 JPGs @1918 | 8.4 MB | 240 | 90.7 MB | 281–289 MB | — | unquantified eviction risk on phones |
+| **A. Status quo** — 240 JPGs @1918 | 8.4 MB | 240 | 90.7 MB | 326.8 | — | unquantified eviction risk on phones |
 | **B. Every 2nd frame** — 120 @1918 | 4.2 MB | 120 | 81.6 MB | not measured | small | halves temporal resolution to save 9 MB — **not worth it** |
-| **C. 240 JPGs @960** | 5.4 MB | 240 | 45.3 MB | **274.0 MB** | small | softer at large viewports; no new failure mode |
-| **D. Scrubbed video** (built here) | 4.8 MB | 1 | 41.9 MB | 296.9 MB | medium | iOS decode/seek/Low-Power-Mode unverified |
+| **C. 240 JPGs @960 (shipped)** | 5.4 MB | 240 | 45.3 MB | 329.8 — **does not clear noise, see below** | small | softer at large viewports; no new failure mode |
+| **D. Scrubbed video** (parked, see below) | 4.8 MB | 1 | 41.9 MB | 296.9 (single run) | medium | iOS decode/seek/Low-Power-Mode unverified |
 
-### Option C measured on the real page
+### Option C measured on the real page — 3 runs per config, not 1
 
-Run by swapping 960-px frames into `dist/` and forcing the JPG path, so it exercises
-the shipped component with smaller assets:
+The single-run numbers first reported here (274.0 / 255.1 MB) looked like a clean win.
+They were not repeatable. Three runs per config, alternating which variant ran first,
+same machine, same idle state:
 
-| Config | Current @1918 | Video | **@960** |
-|---|---|---|---|
-| desktop, RSS final | 281.1 / 288.7 | 296.9 | **274.0** |
-| mobile ×4, RSS final | 262.5 | 269.2 | **255.1** |
-| transfer | 8214 KB | 4890 KB | 5565 KB |
+| Config | @1918, 3 runs | mean | @960, 3 runs | mean | Δ mean |
+|---|---|---|---|---|---|
+| desktop, RSS final | 333.5 / 324.5 / 322.3 | 326.8 | 327.2 / 331.8 / 330.5 | 329.8 | **+3.0 MB (960 worse)** |
+| mobile ×4, RSS final | 281.8 / 285.5 / 297.2 | 288.2 | 287.5 / 294.0 / 282.2 | 287.9 | −0.3 MB (noise) |
 
-Frame timing at 960 px is the same as everything else (scrub 33.3 med, worst 35.4,
-0 frames over 50 ms), listeners flat, console clean.
+**This does not clear noise.** Within-variant spread is 11.2–15.4 MB; the between-variant
+difference is 0.3–3.0 MB. On desktop the mean is nominally in the wrong direction. The
+real-page memory case for 960 is **not supported by this measurement** — it is exactly
+as absent as the video's was.
 
-Visual cost, measured the same way as the video: mean absolute difference from the
-full-resolution render is **0.85/255 with worst subpixel 167** — slightly further
-from the original than the video's 0.61/115, which is expected since a 960-px frame
-is upscaled into a 1400-px canvas while the video is encoded at 1400. Side by side at
-frame 120 the softening is not obvious, but it is real on fine detail such as the
-circuit board.
+Frame timing at 960 px is unchanged from everything else (scrub 33.3 med, worst 35.4,
+0 frames over 50 ms), listeners flat, console clean, 12/12 regression checks pass.
+Visually verified at 2× desktop device scale, same scroll offset, before/after: the two
+are not distinguishable by eye.
 
-### Honest reading of the real-page numbers
+Visual cost, measured pixel-for-pixel against the source: mean absolute difference
+0.85/255, worst subpixel 167 — slightly further from the original than the video's
+0.61/115 was, since a 960-px frame is upscaled into the 1400-px canvas while the video
+was encoded at 1400. Not visible at normal viewing distance; present on fine detail
+(the circuit board) under a diff.
 
-The real-page spread across all three options is roughly ±15 MB on a ~280 MB base.
-For scale, **two runs of identical code differed by 7.6 MB** (pre-change 288.7 vs
-fallback 281.1). So the real-page differences are only just outside run-to-run noise,
-and each is a single run.
+### Why adopt it anyway
 
-The bare-page bench is the cleaner signal, and there the conclusion is unambiguous:
-the sequence's own cost is 90.7 MB today, 45.3 MB at 960 px, 41.9 MB as video. Both
-interventions roughly halve it; only one of them shows up as an improvement once the
-rest of the page is competing for memory.
+The isolated-sequence bench remains real and unambiguous: 90.7 MB → 45.3 MB with
+everything else held constant (`perf/preload-bench.mjs`, bare document, same origin,
+forced decode). That cost exists and 960 does cut it in half. It just does not show up
+as a full-page win here, most plausibly because the rest of the page's memory pressure
+already forces the image cache to evict before the sequence's true cost is realized —
+the same cache-eviction hypothesis that explained the video's real-page result.
+
+**Adopted for the reasons that hold up, not the one that didn't:** smaller transfer
+(5.4 vs 8.4 MB), a real halving of the sequence's isolated memory cost, zero new
+failure modes, and a one-line revert if it's ever wrong. Not adopted because of a
+real-page memory win — there isn't a measurable one here. If real-device testing later
+shows resolution doesn't matter either, the revert costs one line
+(`src/components/RocketBackground.astro`'s `PATH` constant back to `/1/ezgif-frame-`).
 
 ---
 
 ## Recommendation
 
-**Take option C (960 px), not the video** — on the evidence available here.
+**Ship 960 px (option C), not the video** — but on grounds of simplicity and isolated
+cost, not a real-page memory win, because neither option produced one that clears
+noise.
 
-- It is the only option that improved real-page RSS in **both** configs measured
-  (−7 MB desktop, −7 MB mobile, against a video that was 8–16 MB *worse*).
-- It matches the video's isolated memory win (45.3 vs 41.9 MB) without introducing a
-  decode path whose behaviour on the target device is unknown.
-- It cannot fail. There is no probe, no fallback, no Low Power Mode question, no
-  audio session, no mid-session decoder death. The failure modes of the video path
-  are all on the one platform that motivated the change.
-- It is a fraction of the code: a build step and a path change, versus a frame-source
-  abstraction, a five-gate capability probe, seek coalescing and a handover path.
+- Both candidates match on the number that *is* real: isolated sequence cost roughly
+  halves either way (90.7 → 45.3 MB JPG, → 41.9 MB video).
+- 960 gets there with a path constant. The video needs a frame-source abstraction, a
+  five-gate capability probe, seek coalescing and a mid-session handover — for a
+  real-page result that was 7–16 MB *worse*, not better, and a load-time cost (3–4 long
+  tasks, up to 463 ms) that was unstable across runs.
+- 960 has no new failure mode. No probe, no Low Power Mode question, no audio session,
+  no decoder death mid-scroll. Whatever risk 960 carries, it is the same risk the JPG
+  sequence already carries today, just at half the bytes.
+- The revert is one line if 960 turns out to matter less than expected:
+  `RocketBackground.astro`'s `PATH` constant back to `/1/ezgif-frame-`. The original
+  1918-px set stays in `public/1/` for exactly this.
 
-The video path is implemented, measured and left on this branch. If the iPhone session
-shows the JPG sequence really does cause eviction on device *and* the video probe
-passes reliably including in Low Power Mode, it becomes worth reconsidering — that is
-the evidence it needs, and it is exactly the evidence this machine cannot produce.
+**What I would not do:** option B (every-2nd-frame). Halving the frame count costs half
+the animation's temporal resolution and buys 9 MB in the one measurement (bare-page)
+that showed any effect at all.
 
-**What I would not do:** option B. Halving the frame count costs half the animation's
-temporal resolution and buys 9 MB.
+## Why the video was parked, not deleted
+
+`perf/rocket-video-scrub` holds the full dual-path implementation: the frame-source
+abstraction, the 5-gate capability probe, seek coalescing, the mid-session
+JPG-fallback handover, and every commit and measurement described above. It is not on
+this branch's history — parked separately so `perf/preload-weight` stays a clean
+"switch the frame set" diff.
+
+Kept rather than deleted because the code works (12/12 regression, median scrub lag 0
+frames, visually verified) and the reason it isn't shipping is a measurement gap, not
+a defect: the iPhone-specific risks it was built to address (240-JPG resident memory
+under real Low Power Mode conditions, a possible multi-second first seek) are still
+open questions this machine cannot answer. If the iPhone session in the checklist
+below shows the JPG sequence really does risk eviction on device, and the video probe
+passes reliably including in Low Power Mode, the branch is ready to revisit without
+re-deriving any of it. If that session instead shows 960 px is already sufficient, the
+branch can be deleted with nothing lost — nothing on `perf/preload-weight` depends on
+it.
 
 
 ---
