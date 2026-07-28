@@ -1,6 +1,6 @@
 # Work Redesign Plan
 
-Status: design only. No animation code has been changed in this branch.
+Status: design approved; build pending.
 
 Goal: the Work section should show each project exactly once, number it by its own
 position in the project list, give important work a deliberate larger frame, and let
@@ -224,6 +224,70 @@ Not allowed:
 
 One-time metadata writes on each `a-work` leaf during setup are acceptable, but static
 classes/data attributes are preferred where possible.
+
+## Approved Design Closure
+
+### FLIP Across Three Card Sizes
+
+`standard`, `feature`, and `hero` change the card's physical layout width, never a
+hidden scale supplied to the dive. `DiveTransition.readCard()` continues to read the
+clicked `.a__card`'s rendered `getBoundingClientRect()`, its `offsetWidth` and
+`offsetHeight`, and the computed projection matrix of that card's `a-work` wrapper in
+one read batch. The overlay camera is then sized from those actual box dimensions and
+the FLIP wrapper starts at the rendered centre, scale, and rotation.
+
+Therefore there is no tier-specific FLIP branch: the same geometry path consumes all
+three sizes. Frame zero matches for all tiers because the overlay's camera box is the
+clicked card's own physical box, and the static depth compensation still makes every
+dive layer coincident at camera `z = 0`. Verification must sample one card of each tier
+at desktop and phone widths before the source card is hidden.
+
+### Numbering Contract
+
+Numbering is the one-based index of the work in the exported `works` array:
+`String(index + 1).padStart(2, "0")`. The denominator is `works.length`. Posters and
+covers are visual treatments of that same work record and never create another index.
+There are no generated slots, so each number and each work occur exactly once across
+the whole section.
+
+### Exact Per-Frame Write Locations
+
+The redesigned Work scroll may write per frame only to these consumers:
+
+| Writer | Value | Destination | Scope |
+|---|---|---|---|
+| GSAP scrub | `progress` attribute | each `a-work.js-work` | the card custom-element leaf |
+| `AWork.attributeChangedCallback()` | `--progress` | that same `a-work` | the leaf that consumes it in its own transform |
+| `WorkSection.moveLetters()` | `transform`, `opacity`, `transform-origin` | individual ghost glyph and shadow spans | leaf glyphs |
+| `WorkSection.tick()` | `transform` | mask inner path and canvas | direct rendered leaves |
+| `WorkSection.drawPoints()` | canvas pixels | Work canvas | one canvas leaf |
+
+No new per-frame value is written to `.s-work`, `.s__outer`, `.s__inner`,
+`.s__scene`, `.a__inner`, or `.a__card`. Size tier, lane, palette, motif and focal
+point are static markup/classes or one-time leaf values. Near-cover preparation is
+quantized to an active-index change, not tied to every tick.
+
+### Build-Time Scarcity Validation
+
+`works.ts` owns an assertion that runs at module evaluation immediately after the
+literal `works` array is declared. It throws if
+`hero > ceil(count / 8)` or `hero + feature > ceil(count / 3)`, including the actual
+and allowed counts in the error. `SWork.astro` imports this already-validated module
+during Astro's production render, so an invalid third hero makes `npm run build` exit
+non-zero; there is no browser-only warning path.
+
+### Mobile Scroll Distance
+
+Use `80vh` per work from `576px` upward and `72svh` per work below `576px`. Mobile
+needs a slightly faster cadence because the narrower card is read sooner and 15 full
+viewport beats feels overlong, but dropping much below `72svh` makes ordinary flicks
+skip a centred card. Keep the intro at `140svh` and final hold at `60svh`.
+
+At 15 works the mobile pin distance is `1280svh` (`140 + 15 * 72 + 60`) and total
+section height is `1380svh`: 13.8 viewport screens including the pinned viewport,
+versus 15 screens on desktop. At 5 works it is `660svh` total. This is the proposed
+responsive difference; visual verification decides whether its cadence reads
+correctly, while performance measurement remains a later phase.
 
 ## Step-0 Probe Status
 
