@@ -195,6 +195,10 @@ The measurement harness lives in `perf/` (`harness.mjs`, `regression.mjs`,
   renamed variables, ever, even when the rename looks obviously better.
 - **No perf claim without a measurement.** "This should be smoother" is not a
   result. If something could not be measured, say so plainly.
+- **Reproduce inherited measurements before acting on them.** A number copied from a
+  prior report is a hypothesis, not evidence, until its method, scope and result are
+  re-derived. Precedent: the reported ~243 MB rocket RSS was a sum across Chrome
+  renderer processes, not the page's memory, and it drove an unnecessary video branch.
 - **Never fix performance by removing the feature.** If a feature genuinely cannot
   meet budget, present the trade-off instead of quietly reducing it.
 - Delete only what a tool (`knip`, `ts-prune`, `depcheck`) or a reference trace
@@ -211,10 +215,12 @@ The measurement harness lives in `perf/` (`harness.mjs`, `regression.mjs`,
   `git rm -r --cached`; their `.gitignore` rules never applied while the files were
   already in the index). Builds no longer dirty `git status`. Do not re-add them —
   if `git status` shows build output again, something re-added it.
-- `public/1/` holds 240 JPGs (~8.6 MB, 1918×766) eagerly preloaded at page load.
-  Profiling showed this is **not** a source of frame jank, but it drives renderer
-  RSS to ~243 MB, which risks tab eviction on mid-range phones. Tracked as separate
-  work — do not conflate it with frame-rate problems.
+- `public/1/` retains the original 240 JPGs (1918×766); `/public/1/960/` is the active
+  960-px set. The ~243 MB rocket-RSS concern was a measurement artifact: it summed
+  Chrome renderer processes. Full removal measured no desktop steady-state share and
+  ~22.6 MB page-renderer / ~9.3 MB shared-GPU share on the mobile ×4 proxy. The 960
+  switch is kept for 34% less transfer, **not** for a demonstrated real-page RSS win;
+  see `docs/preload-weight-findings.md`.
 - An intermittent browser-level slow scroll at page top during idle has been
   observed with no JS caller. The harness detects and excludes it. Do not chase it
   without new evidence.
