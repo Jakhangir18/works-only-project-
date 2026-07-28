@@ -345,3 +345,27 @@ floor for that session**, and it has moved between sessions in this repo: 8.3 ms
 
 1. Working tree is dirty on `main` (your uncommitted changes). Plan: create branch `perf/work-stutter` from the current state and make a first commit of the *existing* working state as the baseline snapshot, so every perf change after it is one clean commit. OK?
 2. The "WebP sequence" is actually 240 JPGs — confirming this is the section you meant (rocket frames under `public/1/`).
+
+## Work redesign verification (2026-07-28)
+
+Production `perf/harness.mjs`, stable 8.3 ms display floor, assertion-valid matrix:
+
+| Config | Work med / p95 / worst | Dive med / p95 / worst | LT | Heap cycles | Listeners |
+|---|---|---|---:|---|---|
+| desktop | 8.3 / 10.2 / 17.3 ms | 8.3 / 10.2 / **55.7** ms | 0 | 5.0 / 5.0 / 5.0 MB | 63 → 63 |
+| desktop x4 | 8.3 / 10.2 / 26.0 ms | 8.3 / 10.2 / 18.2 ms | 0 | 5.0 / 5.0 / 5.0 MB | 63 → 63 |
+| mobile | 8.3 / 10.2 / 15.9 ms | 8.3 / 10.3 / 10.4 ms | 0 | 4.7 / 4.8 / 4.8 MB | 65 → 65 |
+| mobile x4 | 8.3 / 9.3 / 17.6 ms | 8.3 / 10.1 / 26.3 ms | 0 | 4.7 / 4.8 / 4.8 MB | 65 → 65 |
+
+Work clears every frame budget in every configuration. The suite still has one
+formal miss: the first desktop hero-dive had one 55.7 ms frame. A separate five-cycle
+dive-only repeat was 8.3 / <=10.3 / 10.4 ms with zero long tasks, so the spike is
+non-reproducing but retained in the report.
+
+Regression is 15/15. Hero/feature/standard camera boxes equal their source boxes;
+hero cover state is decoded/ready, while both poster targets intentionally bypass
+image decode and remain complete dive compositions.
+
+Session caveat: refresh floor changed from 33.3 ms to 8.3 ms. The first desktop x1
+run at 33.3 ms was assertion-valid but had Work worst 424.9 ms and five long tasks;
+the matching x4 run was clean. Stable 8.3 ms reruns are the comparison set above.

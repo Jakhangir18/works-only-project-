@@ -367,5 +367,53 @@ Screenshots and the machine-readable geometry record are in
 
 ## Not Yet Verified
 
-Per the requested stop point, phase 5 performance measurement, lifecycle-cycle
-measurement, cross-engine runs, and real-device iOS verification have not been run.
+Cross-engine runs and real-device iOS verification have not been run.
+
+## Phase 5 Performance Verification
+
+Measured 2026-07-28 against the production build on `:4322` with the existing
+`perf/harness.mjs`. Each matrix run drove Work down/up three times and the selected
+dive open/closed five times. The accepted comparison set used a stable 8.3 ms display
+floor; every file below passed all 20 scroll assertions.
+
+| Configuration | Max median | Max p95 | Work worst | Dive worst | Long tasks | GC'd heap by cycle | Listeners | Console |
+|---|---:|---:|---:|---:|---:|---|---|---:|
+| Desktop | 8.3 ms | 10.2 ms | 17.3 ms | **55.7 ms** | 0 | 5.0 → 5.0 → 5.0 MB | 63 → 63 | 0 |
+| Desktop, CPU x4 | 8.3 ms | 10.2 ms | 26.0 ms | 18.2 ms | 0 | 5.0 → 5.0 → 5.0 MB | 63 → 63 | 0 |
+| Mobile 390x844@3x | 8.3 ms | 10.3 ms | 15.9 ms | 10.4 ms | 0 | 4.7 → 4.8 → 4.8 MB | 65 → 65 | 0 |
+| Mobile, CPU x4 | 8.3 ms | 10.1 ms | 17.6 ms | 26.3 ms | 0 | 4.7 → 4.8 → 4.8 MB | 65 → 65 | 0 |
+| Budget | <=16.7 ms | <=25 ms | <=50 ms | <=50 ms | 0 | flat | no growth | 0 |
+
+Overall result: Work itself clears every budget in all four configurations. The full
+suite does not receive an unqualified pass because the first desktop hero-dive in the
+stable-floor run contained one 55.7 ms frame. A separate desktop dive-only repeat
+ran five more open/close cycles at median 8.3 ms, p95 <=10.3 ms, worst 10.4 ms and
+zero long tasks, so the miss did not reproduce; it remains recorded rather than
+discarded.
+
+Full regression passed 15/15: seven routes, Work forward/backward, rapid jiggle,
+resize/listener stability, keyboard, reduced motion, and hero/feature/standard dives.
+The tier hand-offs were exact (`440x275`, `390x244`, `340x213`). The hero used its
+decoded cover (`ready`); feature and standard poster targets opened by deliberately
+bypassing image decode and reconstructing the matching poster motif.
+
+Raw accepted files:
+
+- `perf-results/2026-07-28T09-46-08-344Z-work-redesign-desktop-r2.json`
+- `perf-results/2026-07-28T09-49-52-306Z-work-redesign-desktop-cpu4-r2.json`
+- `perf-results/2026-07-28T09-53-23-772Z-work-redesign-mobile-r2.json`
+- `perf-results/2026-07-28T09-42-22-329Z-work-redesign-mobile-cpu4.json`
+- `perf-results/2026-07-28T09-57-19-605Z-work-redesign-dive-repeat.json`
+
+Deviations:
+
+- The display floor began at 33.3 ms and later switched to 8.3 ms. The initial
+  desktop x1 run was assertion-valid but noisy (Work worst 424.9 ms, five long tasks);
+  desktop x4 at the same 33.3 ms floor was clean. The mixed-floor mobile run is not
+  used for median/p95. Stable-floor reruns are the comparison table above.
+- Fresh profiles add 15 desktop / 17 mobile DOM nodes on first use while listener
+  counts remain flat and GC'd heap plateaus by cycle two. This is a one-time
+  materialization, not a per-cycle rising line.
+- Regression first-load was LCP 632 ms, one long task and TBT proxy 21 ms, versus the
+  prior recorded 0-11 ms TBT range. One run is insufficient to claim a load
+  regression, so it is recorded without that claim.
