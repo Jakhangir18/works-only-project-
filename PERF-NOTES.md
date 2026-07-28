@@ -311,6 +311,22 @@ Worth keeping from the attempt:
 - ~~Scroll position not restored from `/projects/*`~~ — fixed in `8eb440f`.
 - ~~`intro()` scrolled to the wrong place on the `returnToWorks` path~~ — `offsetTop` returned 0 because `.works-layer` is the positioned `offsetParent`; fixed in `c91008f` using `getBoundingClientRect().top + window.scrollY`. Verified both paths (card round-trip restores 7000; direct visit + Back to Works lands at 5991).
 
+## Display refresh floor — record it per session, never compare across sessions
+
+The idle median frame time is not a codebase property, it is **the machine's refresh
+floor for that session**, and it has moved between sessions in this repo: 8.3 ms
+(120 Hz) and 13.3 ms (75 Hz) on earlier dates, **33.3 ms (30 Hz) on 2026-07-27**
+(`perf/preload-weight` work). A perfect frame cannot beat that floor, so:
+
+- **Read the idle-top median before judging any run against the 16.7/25 ms budgets.**
+  If the floor itself is above 16.7 ms, median/p95 are uninformative for that session
+  — only worst-frame, long-task, listener and heap budgets still mean anything.
+- **Never diff medians taken in different sessions.** A 33.3 ms median today next to a
+  13.3 ms median from last week is not a regression; it is two different monitors (or
+  power states, or a laptop that changed refresh mode). Diff same-session runs only.
+- Record the floor in the run's own report line, not just in this file, so a reader
+  six months from now doesn't have to reconstruct it from context.
+
 ## Pre-existing issues — still open (owner's call)
 
 - **Stale `returnScrollY` — deliberately deferred, owner is deciding the expiry rule.**
