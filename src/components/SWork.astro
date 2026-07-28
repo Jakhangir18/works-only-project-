@@ -229,8 +229,6 @@ import { works } from "../data/works";
     }
 
     .s__scene {
-      --progress: 0.5;
-
       position: absolute;
       top: 0;
       left: 0;
@@ -278,10 +276,9 @@ import { works } from "../data/works";
         transform: rotateY(calc(var(--progress) * -20deg))
           translate3d(
             calc(var(--progress) * (50vw + 100%) - 50%),
-            calc(var(--y) * 50% - 50%),
+            calc(-50% + var(--y) * 10vh),
             calc(var(--progress) * var(--progress) * -5rem)
-          )
-          scale(var(--size));
+          );
 
         will-change: transform;
 
@@ -289,7 +286,7 @@ import { works } from "../data/works";
           transform: rotateY(calc(var(--progress) * -20deg))
             translate3d(
               calc(var(--progress) * (50vw + 100%) - 50%),
-              calc(var(--y) * 50% - 50%),
+              calc(-50% + var(--y) * 9vh),
               calc(var(--progress) * var(--progress) * -5rem)
             );
         }
@@ -298,7 +295,7 @@ import { works } from "../data/works";
           transform: rotateY(calc(var(--progress) * -20deg))
             translate3d(
               calc(var(--progress) * (50vw + 100%) - 50%),
-              calc(var(--y) * 100% - 50%),
+              calc(-50% + var(--y) * 7svh),
               calc(var(--progress) * var(--progress) * -5rem)
             );
         }
