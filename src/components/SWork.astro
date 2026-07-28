@@ -1,8 +1,6 @@
 ---
 import AWork from "./AWork.astro";
-import { buildWorksList } from "../data/works";
-
-const works = buildWorksList();
+import { works } from "../data/works";
 ---
 
 <section id="work" class="s-work" data-intersect>
@@ -22,10 +20,14 @@ const works = buildWorksList();
           works.map((work, index) => (
             <AWork
               cssClass="s__scene__work s__scene__work--video js-work"
-              caption={work.caption}
+              caption={work.title}
               site={work.site}
-              index={String(index).padStart(4, "0")}
+              index={String(index + 1).padStart(2, "0")}
               total={String(works.length).padStart(2, "0")}
+              size={work.size}
+              palette={work.palette}
+              poster={work.poster}
+              cover={"cover" in work ? work.cover : undefined}
             />
           ))
         }
@@ -227,8 +229,6 @@ const works = buildWorksList();
     }
 
     .s__scene {
-      --progress: 0.5;
-
       position: absolute;
       top: 0;
       left: 0;
@@ -276,10 +276,9 @@ const works = buildWorksList();
         transform: rotateY(calc(var(--progress) * -20deg))
           translate3d(
             calc(var(--progress) * (50vw + 100%) - 50%),
-            calc(var(--y) * 50% - 50%),
+            calc(-50% + var(--y) * 10vh),
             calc(var(--progress) * var(--progress) * -5rem)
-          )
-          scale(var(--size));
+          );
 
         will-change: transform;
 
@@ -287,7 +286,7 @@ const works = buildWorksList();
           transform: rotateY(calc(var(--progress) * -20deg))
             translate3d(
               calc(var(--progress) * (50vw + 100%) - 50%),
-              calc(var(--y) * 50% - 50%),
+              calc(-50% + var(--y) * 9vh),
               calc(var(--progress) * var(--progress) * -5rem)
             );
         }
@@ -296,7 +295,7 @@ const works = buildWorksList();
           transform: rotateY(calc(var(--progress) * -20deg))
             translate3d(
               calc(var(--progress) * (50vw + 100%) - 50%),
-              calc(var(--y) * 100% - 50%),
+              calc(-50% + var(--y) * 7svh),
               calc(var(--progress) * var(--progress) * -5rem)
             );
         }

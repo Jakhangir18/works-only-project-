@@ -111,10 +111,10 @@
   width: 100%;
   height: 100%;
 
-  /* 0.85 matches .a__card__cover so frame one is identical to the card; the
-     timeline lifts it to 1 on the way in. */
+  /* The card reveals a decoded cover at full opacity, so the poster beneath
+     it cannot leak into frame zero with a different layer order. */
   object-fit: cover;
-  opacity: 0.85;
+  opacity: 1;
 }
 
 /* The far plane's light source for cards that have no photo. Fades up from
@@ -151,6 +151,123 @@
 }
 
 /* -- mid: the dot grid --------------------------------------------------- */
+
+.dive__poster {
+  position: absolute;
+  inset: 0;
+
+  overflow: hidden;
+
+  opacity: 0.72;
+
+  &::before,
+  &::after {
+    position: absolute;
+
+    content: "";
+  }
+}
+
+.dive__poster-mark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+
+  color: currentcolor;
+  font: 700 clamp(3.5rem, 8vw, 7rem) / 1 font-family(bigger);
+  letter-spacing: -0.08em;
+
+  opacity: 0.1;
+  transform: translate(-50%, -50%);
+}
+
+.dive__poster--orbit {
+  background:
+    radial-gradient(circle at 50% 50%, currentcolor 0 1px, transparent 2px),
+    radial-gradient(circle at 50% 50%, transparent 0 24%, currentcolor 24.3% 24.8%, transparent 25.1%),
+    radial-gradient(circle at 50% 50%, transparent 0 42%, currentcolor 42.3% 42.7%, transparent 43%);
+
+  &::before {
+    top: 50%;
+    left: 50%;
+
+    width: 72%;
+    height: 38%;
+
+    border: 1px solid currentcolor;
+    border-radius: 50%;
+
+    opacity: 0.28;
+    transform: translate(-50%, -50%) rotate(-18deg);
+  }
+}
+
+.dive__poster--crosshair {
+  background:
+    linear-gradient(90deg, transparent 49.8%, currentcolor 50%, transparent 50.2%),
+    linear-gradient(transparent 49.8%, currentcolor 50%, transparent 50.2%);
+
+  &::before {
+    top: 50%;
+    left: 50%;
+
+    width: 38%;
+    aspect-ratio: 1;
+
+    border: 1px solid currentcolor;
+    border-radius: 50%;
+
+    opacity: 0.24;
+    transform: translate(-50%, -50%);
+  }
+}
+
+.dive__poster--signal {
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0 11%,
+    currentcolor 11.2% 11.45%,
+    transparent 11.7% 22%
+  );
+
+  &::before {
+    right: 7%;
+    bottom: 13%;
+    left: 7%;
+
+    height: 34%;
+
+    border-top: 1px solid currentcolor;
+    border-bottom: 1px solid currentcolor;
+
+    opacity: 0.26;
+    transform: skewY(-7deg);
+  }
+}
+
+.dive__poster--trajectory {
+  background: linear-gradient(
+    148deg,
+    transparent 0 45%,
+    currentcolor 45.2% 45.5%,
+    transparent 45.8%
+  );
+
+  &::before {
+    top: 12%;
+    right: 14%;
+
+    width: 42%;
+    aspect-ratio: 1;
+
+    border: 1px solid currentcolor;
+    border-left-color: transparent;
+    border-radius: 50%;
+
+    opacity: 0.34;
+    transform: rotate(-38deg);
+  }
+}
 
 .dive__grid {
   position: absolute;

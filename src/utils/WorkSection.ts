@@ -6,6 +6,13 @@ import { SlowMo } from "gsap/EasePack";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 gsap.registerPlugin(ScrollTrigger, SlowMo);
 
+const INTRO_VH = 140;
+const DESKTOP_WORK_STEP_VH = 80;
+const MOBILE_WORK_STEP_VH = 72;
+const END_HOLD_VH = 60;
+const MOBILE_BREAKPOINT = 576;
+const WORK_LANES = [0, -1, 1, -0.5, 0.75] as const;
+
 const isSafariBrowser = /^((?!chrome|android).)*safari/i.test(
   navigator.userAgent,
 );
@@ -59,6 +66,7 @@ class Section {
   state: 0;
   speed: number;
   isPaused: boolean;
+  activeWorkIndex: number;
 
   constructor() {
     if (isSafariBrowser) {
@@ -105,6 +113,7 @@ class Section {
       scrollProgress: null,
     };
     this.isPaused = true;
+    this.activeWorkIndex = -1;
 
     // Defer the heavy DOM work until fonts and the base page are ready.
     const doInit = () => {
@@ -219,9 +228,15 @@ class Section {
   setSize() {
     // Use px instead of vh/lvh to avoid iOS address-bar resize jitter.
     const unitHeight = (window as any).safeHeight || window.innerHeight;
+    const workStepVh =
+      ((window as any).safeWidth || window.innerWidth) < MOBILE_BREAKPOINT
+        ? MOBILE_WORK_STEP_VH
+        : DESKTOP_WORK_STEP_VH;
+    const pinDistanceVh =
+      INTRO_VH + this.works.length * workStepVh + END_HOLD_VH;
     this.el.style.setProperty(
       "--height",
-      (this.works.length * 50 * unitHeight) / 100 + "px",
+      (unitHeight * (100 + pinDistanceVh)) / 100 + "px",
     );
 
     const bounding = this.container.getBoundingClientRect();
@@ -403,17 +418,39 @@ class Section {
 
   setWorks() {
     this.works.forEach((work: any, i: number) => {
-      work.el.style.setProperty("--size", String(0.5 + Math.random() * 0.5));
+      const isLast = i === this.works.length - 1;
+      // Static, deterministic metadata on the card leaf. The last work has no
+      // lane offset because its hold contract is the viewport centre.
       work.el.style.setProperty(
         "--y",
-        String((0.5 + Math.random() * 0.5) * (i % 2 ? -1 : 1)),
+        String(isLast ? 0 : WORK_LANES[i % WORK_LANES.length]),
       );
     });
   }
 
+  prepareCoverWindow(activeIndex: number) {
+    if (activeIndex === this.activeWorkIndex) return;
+    this.activeWorkIndex = activeIndex;
+
+    const first = Math.max(0, activeIndex - 2);
+    const last = Math.min(this.works.length - 1, activeIndex + 3);
+
+    for (let index = first; index <= last; index++) {
+      const workEl = this.works[index]?.el as
+        | (HTMLElement & { prepareCover?: () => Promise<boolean> })
+        | undefined;
+      void workEl?.prepareCover?.();
+    }
+  }
+
   setTimeline() {
     const { el, container, works, scene, mask } = this;
-    const worksEl = works.map((w: any) => w.el);
+    const width = (window as any).safeWidth || window.innerWidth;
+    const workStepVh =
+      width < MOBILE_BREAKPOINT
+        ? MOBILE_WORK_STEP_VH
+        : DESKTOP_WORK_STEP_VH;
+    const workTravelEnd = INTRO_VH + works.length * workStepVh;
 
     // tl.kill() does not kill the timeline's ScrollTrigger — without the
     // explicit kill every resize leaked a trigger and its listeners.
@@ -437,35 +474,90 @@ class Section {
     // --state is mirrored onto the ghost letters in moveLetters(); writing
     // it here on the scene container would invalidate the whole subtree
     // (all cards included) on every scrub update.
-    const tl = gsap.timeline({
+    let tl!: gsap.core.Timeline;
+    tl = gsap.timeline({
       scrollTrigger: {
         trigger: el,
-        start: "top bottom",
-        end: "bottom top",
+        start: "top top",
+        end: "bottom bottom",
         scrub: 1,
+        onUpdate: () => {
+          const rawIndex = Math.floor((tl.time() - INTRO_VH) / workStepVh);
+          const activeIndex = Math.max(
+            0,
+            Math.min(works.length - 1, rawIndex),
+          );
+          this.prepareCoverWindow(activeIndex);
+        },
       },
     });
 
     maskOuter.style.opacity = "1";
     maskOuter.style.transform = "translate3d(0, 0, 0)";
 
-    tl.fromTo(mask.el, { scale: 1 }, { scale: mask.maxScale, duration: 1.5, ease: "power4.in" }, 0);
-    tl.fromTo(scene, { scale: 0.75 }, { scale: 1, duration: 1.5, ease: "power3.in" }, 0);
-    tl.fromTo(container, { clipPath: "inset(0 1rem)" }, { clipPath: "inset(0 0rem)", duration: 1.5, ease: "power3.in" }, 0);
-    tl.fromTo(this, { pointsProgress: 0 }, { pointsProgress: 1, duration: 1, ease: "power4.inOut" }, 0);
-    tl.fromTo(this, { state: 0 }, { state: 1, duration: 1.5, ease: "power4.in" }, 0);
+    tl.fromTo(
+      mask.el,
+      { scale: 1 },
+      { scale: mask.maxScale, duration: INTRO_VH, ease: "power4.in" },
+      0,
+    );
+    tl.fromTo(
+      scene,
+      { scale: 0.75 },
+      { scale: 1, duration: INTRO_VH, ease: "power3.in" },
+      0,
+    );
+    tl.fromTo(
+      container,
+      { clipPath: "inset(0 1rem)" },
+      { clipPath: "inset(0 0rem)", duration: INTRO_VH, ease: "power3.in" },
+      0,
+    );
+    tl.fromTo(
+      this,
+      { pointsProgress: 0 },
+      { pointsProgress: 1, duration: INTRO_VH, ease: "power4.inOut" },
+      0,
+    );
+    tl.fromTo(
+      this,
+      { state: 0 },
+      { state: 1, duration: INTRO_VH, ease: "power4.in" },
+      0,
+    );
 
-    // Delay card animations until mask is fully open (1.5s + 0.3s pause).
-    tl.fromTo(worksEl, { attr: { progress: 1 } }, { attr: { progress: -1 }, ease: "slow(0.15, 0.6)", stagger: 0.25 }, 1.8);
-    tl.fromTo(this, { animationProgress: 0 }, { animationProgress: 10000, duration: tl.totalDuration(), ease: "power1.out" }, 1.8);
+    works.forEach((work: any, index: number) => {
+      const isLast = index === works.length - 1;
+      tl.fromTo(
+        work.el,
+        { attr: { progress: 1 } },
+        {
+          attr: { progress: isLast ? 0 : -1 },
+          duration: workStepVh,
+          ease: isLast ? "power2.out" : "slow(0.15, 0.6)",
+        },
+        INTRO_VH + index * workStepVh,
+      );
+    });
 
-    tl.fromTo(this, { state: 1 }, { state: 0, duration: 0.75, ease: "power4.inOut", immediateRender: false }, "-=1");
-    tl.fromTo(mask.el, { scale: mask.maxScale }, { scale: 1, duration: 0.75, ease: "power4.inOut", immediateRender: false }, "-=1");
-    tl.fromTo(scene, { scale: 1 }, { scale: 0.75, duration: 0.75, ease: "power3.inOut", immediateRender: false }, "-=1");
-    tl.fromTo(container, { clipPath: "inset(0 0rem)" }, { clipPath: "inset(0 1rem)", duration: 0.75, ease: "power3.inOut", immediateRender: false }, "-=1");
-    tl.fromTo(this, { pointsProgress: 1 }, { pointsProgress: 0, duration: 1, ease: "power4.inOut" }, "-=1");
+    tl.fromTo(
+      this,
+      { animationProgress: 0 },
+      {
+        animationProgress: 10000,
+        duration: works.length * workStepVh,
+        ease: "power1.out",
+      },
+      INTRO_VH,
+    );
+
+    // A no-op tween gives the last centred card a real 60vh timeline segment.
+    // It has no exit tween inside the pin; release happens at timeline end.
+    tl.to({}, { duration: END_HOLD_VH }, workTravelEnd);
 
     this.tl = tl;
+    this.activeWorkIndex = -1;
+    this.prepareCoverWindow(0);
   }
 
   moveLetters() {
