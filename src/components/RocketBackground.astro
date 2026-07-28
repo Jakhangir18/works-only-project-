@@ -72,7 +72,12 @@
 
     const ctx = canvas.getContext("2d")!;
     const TOTAL = 240;
-    const PATH = "/1/ezgif-frame-";
+    // 960px wide, not the original 1918: same 240 frames decoded at a quarter
+    // of the pixels roughly halves resident memory (perf/preload-bench.mjs:
+    // 45.3 MB vs 90.7 MB, isolated). The original 1918px set stays in
+    // public/1/ unused, so this is a one-line revert if 960 ever needs
+    // reconsidering — see docs/preload-weight-findings.md.
+    const PATH = "/1/960/ezgif-frame-";
     const EXT = ".jpg";
 
     const images: HTMLImageElement[] = new Array(TOTAL).fill(null);
