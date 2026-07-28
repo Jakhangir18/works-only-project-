@@ -12,6 +12,8 @@
  *  6. prefers-reduced-motion: rocket container stays static
  *  7. first-load: LCP, long tasks in first 8s (TBT proxy), JS bytes
  *  8. optional: mid-tunnel screenshots of this build and --shots-vs build
+ *  9. dive opens/closes from hero, feature and standard cards; cover/poster
+ *     state and source box size survive the hand-off
  */
 
 import { chromium } from "playwright-core";
@@ -190,10 +192,17 @@ async function main() {
       height: document.querySelector(".s-work").style.getPropertyValue("--height"),
     }));
     const m2 = await metrics();
+    const workCount = await page.locator("a-work").count();
+    const expectedShrinkHeight = `${
+      ((100 + 140 + workCount * 80 + 60) * 700) / 100
+    }px`;
+    const expectedRestoreHeight = `${
+      ((100 + 140 + workCount * 80 + 60) * 900) / 100
+    }px`;
     check(
       "resize rebuilds geometry, no leak",
-      afterShrink.height === `${20 * 0.5 * 700}px` &&
-        afterRestore.height === `${20 * 0.5 * 900}px` &&
+      afterShrink.height === expectedShrinkHeight &&
+        afterRestore.height === expectedRestoreHeight &&
         page.errors.length === 0 &&
         m2.JSEventListeners - m1.JSEventListeners <= 4,
       `--height ${afterShrink.height} → ${afterRestore.height}, listeners ${m1.JSEventListeners}→${m2.JSEventListeners}`,
@@ -223,6 +232,118 @@ async function main() {
       reachedNav && cardFocusable,
       `nav ${reachedNav}, in-view card focusable ${cardFocusable}`,
     );
+
+    // ---- 9. Dive from every physical size. This checks the FLIP hand-off,
+    // not its frame rate: camera dimensions must equal the source layout box,
+    // and poster cards must bypass the image decode path without becoming an
+    // empty target.
+    const verifyTierDive = async (tier) => {
+      const target = await page.evaluate((tier) => {
+        const works = [...document.querySelectorAll("a-work")];
+        const work = works.find((item) =>
+          item.classList.contains(`a-work--${tier}`),
+        );
+        const section = document.querySelector(".s-work");
+        if (!(work instanceof HTMLElement) || !(section instanceof HTMLElement)) {
+          return null;
+        }
+
+        const index = works.indexOf(work);
+        const sectionTop =
+          section.getBoundingClientRect().top + window.scrollY;
+        const pinDistance = section.offsetHeight - window.innerHeight;
+        const totalVh = 140 + works.length * 80 + 60;
+        const centreVh = 140 + (index + 0.5) * 80;
+        window.scrollTo({
+          top: sectionTop + (centreVh / totalVh) * pinDistance,
+          behavior: "instant",
+        });
+        return { index };
+      }, tier);
+
+      if (!target) return { ok: false, detail: "target missing" };
+      await sleep(1800);
+
+      const source = await page.evaluate((tier) => {
+        const work = document.querySelector(`a-work.a-work--${tier}`);
+        const card = work?.querySelector(".a__card");
+        const link = work?.querySelector("a");
+        if (
+          !(work instanceof HTMLElement) ||
+          !(card instanceof HTMLElement) ||
+          !(link instanceof HTMLAnchorElement)
+        ) {
+          return null;
+        }
+        const result = {
+          width: card.offsetWidth,
+          height: card.offsetHeight,
+          coverState: work.dataset.coverState || "poster",
+          motif: work.dataset.posterMotif || "",
+        };
+        link.click();
+        return result;
+      }, tier);
+
+      if (!source) return { ok: false, detail: "source missing" };
+      await page.waitForSelector(".dive.is-open", { timeout: 2000 });
+
+      const handoff = await page.evaluate(() => {
+        const camera = document.querySelector(".dive__camera");
+        const poster = document.querySelector(".dive__poster");
+        const cover = document.querySelector(".dive__cover");
+        if (
+          !(camera instanceof HTMLElement) ||
+          !(poster instanceof HTMLElement) ||
+          !(cover instanceof HTMLImageElement)
+        ) {
+          return null;
+        }
+        return {
+          width: Number.parseFloat(camera.style.width),
+          height: Number.parseFloat(camera.style.height),
+          posterClass: poster.className,
+          posterDisplay: poster.style.display,
+          coverDisplay: cover.style.display,
+        };
+      });
+
+      await sleep(1400);
+      const opened = await page.evaluate(
+        () => document.querySelector(".dive")?.classList.contains("is-open"),
+      );
+      await page.keyboard.press("Escape");
+      await page.waitForFunction(
+        () => !document.querySelector(".dive")?.classList.contains("is-open"),
+        { timeout: 2000 },
+      );
+
+      const boxMatches =
+        handoff?.width === source.width && handoff?.height === source.height;
+      const visualMatches =
+        source.coverState === "ready"
+          ? handoff?.posterDisplay === "none" &&
+            handoff?.coverDisplay !== "none"
+          : handoff?.posterClass.includes(source.motif) &&
+            handoff?.posterDisplay !== "none" &&
+            handoff?.coverDisplay === "none";
+
+      return {
+        ok:
+          Boolean(opened) &&
+          boxMatches &&
+          visualMatches &&
+          page.errors.length === 0,
+        detail:
+          `${source.width}x${source.height} → ${handoff?.width}x${handoff?.height}, ` +
+          `${source.coverState}, errors ${page.errors.length}`,
+      };
+    };
+
+    for (const tier of ["hero", "feature", "standard"]) {
+      const outcome = await verifyTierDive(tier);
+      check(`dive ${tier} card`, outcome.ok, outcome.detail);
+    }
 
     // ---- screenshots (this build)
     await jump(geom.workTop + geom.workH * 0.3);
