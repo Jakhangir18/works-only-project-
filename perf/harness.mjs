@@ -66,6 +66,7 @@ const DISABLE_HERO_LOOPS = Boolean(args["disable-hero-loops"]);
 const TRACE = Boolean(args.trace);
 const HEAP_PROFILE = Boolean(args["heap-profile"]);
 const DIVE_ONLY = Boolean(args["dive-only"]);
+const FORCE_JPG = Boolean(args["force-jpg"]);
 const BROWSER_NAME = String(args.browser || "chromium");
 const BROWSER = { chromium, firefox, webkit }[BROWSER_NAME];
 if (!BROWSER) {
@@ -260,6 +261,13 @@ const DISABLE_HERO_SCRIPT = `(() => {
   };
 })();`;
 
+const FORCE_JPG_SCRIPT = `(() => {
+  // Simulate a device with no h.264 decode so the capability probe rejects the
+  // video and the real JPG fallback runs. This exercises the shipped selection
+  // path rather than a test-only branch — no repo code is modified.
+  HTMLMediaElement.prototype.canPlayType = function () { return ""; };
+})();`;
+
 // ------------------------------------------------------------------- stats
 
 function stats(frames) {
@@ -384,6 +392,7 @@ async function main() {
   try {
     await context.addInitScript(INSTRUMENTATION);
     if (DISABLE_HERO_LOOPS) await context.addInitScript(DISABLE_HERO_SCRIPT);
+    if (FORCE_JPG) await context.addInitScript(FORCE_JPG_SCRIPT);
 
     const page = context.pages()[0] || (await context.newPage());
     page.on("console", (msg) => {
@@ -431,22 +440,48 @@ async function main() {
     } else {
       let preloadTimings = null;
       try {
-        await page.waitForFunction(
-          (n) =>
-            performance
-              .getEntriesByType("resource")
-              .filter((r) => r.name.includes("/1/ezgif-frame-")).length >= n,
-          TOTAL_FRAMES,
-          { timeout: 120000, polling: 500 },
-        );
-        preloadTimings = await page.evaluate(() => {
+        // Which frame source won is decided in the page by a decoder probe, so
+        // wait for that verdict before deciding what "loaded" even means.
+        await page.waitForFunction(() => Boolean(window.__rocketFrameSource), null, {
+          timeout: 30000,
+          polling: 250,
+        });
+        const kind = await page.evaluate(() => window.__rocketFrameSource);
+
+        if (kind === "jpg") {
+          await page.waitForFunction(
+            (n) =>
+              performance
+                .getEntriesByType("resource")
+                .filter((r) => r.name.includes("/1/ezgif-frame-")).length >= n,
+            TOTAL_FRAMES,
+            { timeout: 120000, polling: 500 },
+          );
+        } else {
+          // The video is one request; it is "done" once the probe's warm-up
+          // seek has produced a frame, which is what the probe resolving means.
+          await page.waitForFunction(
+            () =>
+              performance
+                .getEntriesByType("resource")
+                .some((r) => r.name.includes("rocket.mp4")),
+            null,
+            { timeout: 120000, polling: 250 },
+          );
+        }
+
+        preloadTimings = await page.evaluate((k) => {
+          const match = k === "jpg" ? "/1/ezgif-frame-" : "rocket.mp4";
           const frames = performance
             .getEntriesByType("resource")
-            .filter((r) => r.name.includes("/1/ezgif-frame-"));
+            .filter((r) => r.name.includes(match));
           const done = Math.max(...frames.map((r) => r.responseEnd));
           const lt = window.__perf.longtasks.filter((t) => t.start <= done + 100);
           return {
-            frameCount: frames.length,
+            source: k,
+            probe: window.__rocketVideoProbe ?? null,
+            frameCount: k === "jpg" ? frames.length : 1,
+            requestCount: frames.length,
             totalTransferKb: +(
               frames.reduce((s, r) => s + (r.transferSize || r.encodedBodySize), 0) / 1024
             ).toFixed(0),
@@ -454,9 +489,9 @@ async function main() {
             longTasksDuringPreload: lt.length,
             longTaskMsDuringPreload: +lt.reduce((s, t) => s + t.dur, 0).toFixed(0),
           };
-        });
-      } catch {
-        preloadTimings = { error: "preload did not reach 240 frames in 120s" };
+        }, kind);
+      } catch (e) {
+        preloadTimings = { error: `frame source never became ready: ${e.message}` };
       }
       await sleep(1500); // let decode/paint settle
       rssTick();
@@ -832,10 +867,16 @@ async function main() {
   if (result.preload) {
     const p = result.preload;
     console.log(
-      `preload: ${p.frameCount ?? "?"} frames, ${p.totalTransferKb ?? "?"} KB, done@${p.preloadDoneAtMs ?? "?"}ms, ` +
+      `preload[${p.source ?? "?"}]: ${p.frameCount ?? "?"} frames, ${p.totalTransferKb ?? "?"} KB, done@${p.preloadDoneAtMs ?? "?"}ms, ` +
       `longtasks ${p.longTasksDuringPreload ?? "?"} (${p.longTaskMsDuringPreload ?? "?"}ms), ` +
       `renderer RSS peak ${p.rssPeakDuringPreload?.rendererSumMb ?? "?"}MB after ${p.rssAfterPreload?.rendererSumMb ?? "?"}MB, JS heap ${p.jsHeapAfterPreloadMb ?? "?"}MB`,
     );
+    if (p.probe) {
+      console.log(
+        `probe: ok=${p.probe.ok}${p.probe.reason ? ` (${p.probe.reason})` : ""}, ` +
+        `warm-up seek ${p.probe.warmupMs}ms → second seek ${p.probe.secondSeekMs}ms`,
+      );
+    }
   }
   console.log(
     "phase              med   p95  worst  >50ms LT(ms)   layout/f reads/f forced/f acc/f(max)",
