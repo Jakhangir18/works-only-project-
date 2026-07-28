@@ -1,8 +1,6 @@
 ---
 import AWork from "./AWork.astro";
-import { buildWorksList } from "../data/works";
-
-const works = buildWorksList();
+import { works } from "../data/works";
 ---
 
 <section id="work" class="s-work" data-intersect>
@@ -22,10 +20,14 @@ const works = buildWorksList();
           works.map((work, index) => (
             <AWork
               cssClass="s__scene__work s__scene__work--video js-work"
-              caption={work.caption}
+              caption={work.title}
               site={work.site}
-              index={String(index).padStart(4, "0")}
+              index={String(index + 1).padStart(2, "0")}
               total={String(works.length).padStart(2, "0")}
+              size={work.size}
+              palette={work.palette}
+              poster={work.poster}
+              cover={"cover" in work ? work.cover : undefined}
             />
           ))
         }

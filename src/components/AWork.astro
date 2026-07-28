@@ -1,41 +1,56 @@
 ---
-const { caption, cssClass, index, site, total, coverImage } = Astro.props;
+import type { WorkCover, WorkPalette, WorkPoster, WorkSize } from "../data/works";
 
-const key = Math.random().toString(36).slice(2, 6) + "-" + index + "/" + total;
+interface Props {
+  caption: string;
+  cssClass: string;
+  index: string;
+  site: string;
+  total: string;
+  size: WorkSize;
+  palette: WorkPalette;
+  poster: WorkPoster;
+  cover?: WorkCover;
+}
 
+const { caption, cssClass, index, site, total, size, palette, poster, cover } =
+  Astro.props;
+
+const key = `${index}/${total}`;
 const isInternal = site.startsWith("/");
-
-const coverImageMap: Record<string, string> = {
-  "/projects/ams": "/projects/ams/images/cover.jpg",
-};
-const cardCover = coverImage || coverImageMap[site] || "";
-
-const colorMap: Record<string, { bg: string; accent: string }> = {
-  "/work/gochain": { bg: "#071a0f", accent: "#4ade80" },
-  "/work/private-clinic": { bg: "#0e0a18", accent: "#a78bfa" },
-  "/work/ams-device": { bg: "#080f1a", accent: "#60a5fa" },
-  "/projects/ams": { bg: "#080f1a", accent: "#3b82f6" },
-  "/work/engineering-rocket": { bg: "#180a06", accent: "#fb923c" },
-  "/work/portfolio-rocket": { bg: "#0d0d0d", accent: "#f5f5f5" },
-};
-const palette = colorMap[site] ?? { bg: "#111", accent: "#fff" };
+const motifClass = `a__card__poster--${poster.motif}`;
 ---
 
-<a-work class={cssClass}>
+<a-work
+  class:list={[cssClass, `a-work--${size}`]}
+  data-work-index={index}
+  data-work-total={total}
+  data-poster-mark={poster.mark}
+  data-poster-motif={poster.motif}
+>
   <div class="a__inner">
     <a
       href={site}
       target={isInternal ? "_self" : "_blank"}
       rel={isInternal ? undefined : "noopener noreferrer"}
     >
-      <div class="a__card" style={`background:${palette.bg};`}>
+      <div class="a__card" style={`background:${palette.background};`}>
+        <div
+          class:list={["a__card__poster", motifClass]}
+          style={`color:${palette.accent};`}
+          aria-hidden="true"
+        >
+          <span class="a__card__poster-mark">{poster.mark}</span>
+        </div>
         {
-          cardCover && (
+          cover && (
             <img
-              src={cardCover}
-              alt={caption}
+              data-src={cover.src}
+              alt={cover.alt}
               class="a__card__cover"
-              onerror="this.style.display='none'"
+              loading="lazy"
+              decoding="async"
+              style={`object-position:${cover.focalPoint.x} ${cover.focalPoint.y};`}
             />
           )
         }
@@ -62,9 +77,14 @@ const palette = colorMap[site] ?? { bg: "#111", accent: "#fff" };
     static observedAttributes = ["progress"];
 
     link: HTMLAnchorElement | null = null;
+    cover: HTMLImageElement | null = null;
+    coverPromise: Promise<boolean> | null = null;
 
     connectedCallback() {
       this.link = this.querySelector("a") as HTMLAnchorElement | null;
+      this.cover = this.querySelector(
+        ".a__card__cover",
+      ) as HTMLImageElement | null;
 
       if (!this.link) return;
 
@@ -77,6 +97,7 @@ const palette = colorMap[site] ?? { bg: "#111", accent: "#fff" };
       // ScrollTrigger pin re-parents the container (each resize), and a
       // fresh bind() stacked a duplicate listener per reconnection.
       this.link.addEventListener("click", this.onClick);
+      this.cover?.addEventListener("error", this.onCoverError);
     }
 
     attributeChangedCallback(
@@ -102,6 +123,36 @@ const palette = colorMap[site] ?? { bg: "#111", accent: "#fff" };
       if (this.link?.href.includes("#")) {
         event.preventDefault();
       }
+    };
+
+    prepareCover() {
+      if (!this.cover) return Promise.resolve(false);
+      if (this.coverPromise) return this.coverPromise;
+
+      const src = this.cover.dataset.src;
+      if (!src) return Promise.resolve(false);
+
+      this.dataset.coverState = "loading";
+      if (!this.cover.getAttribute("src")) this.cover.src = src;
+
+      this.coverPromise = this.cover
+        .decode()
+        .then(() => {
+          this.dataset.coverState = "ready";
+          this.classList.add("is-cover-ready");
+          return true;
+        })
+        .catch(() => {
+          this.onCoverError();
+          return false;
+        });
+
+      return this.coverPromise;
+    }
+
+    onCoverError = () => {
+      this.dataset.coverState = "error";
+      this.classList.remove("is-cover-ready");
     };
   }
 
@@ -169,7 +220,7 @@ const palette = colorMap[site] ?? { bg: "#111", accent: "#fff" };
          hidden`, which collapses it and leaves the card on its transferred
          minimum (288x180) until it scrolls in. The clamp floor is that same
          288, so min-width/min-height stay inert and the ratio stays exact. */
-      width: clamp(288px, 30vw, 440px);
+      width: 340px;
       max-width: 50vw;
       height: auto;
       max-height: 50vh;
@@ -181,6 +232,14 @@ const palette = colorMap[site] ?? { bg: "#111", accent: "#fff" };
       box-sizing: border-box;
       border: 1px solid rgba(255, 255, 255, 0.08);
 
+      .a-work--feature & {
+        width: 390px;
+      }
+
+      .a-work--hero & {
+        width: 440px;
+      }
+
       @include mq(phone) {
         /* 208x130 is exactly what every engine already resolved here (the
            transferred minimum of min-height: 130px); pinning it keeps the
@@ -190,6 +249,133 @@ const palette = colorMap[site] ?? { bg: "#111", accent: "#fff" };
         max-height: 80vh;
         min-width: 200px;
         min-height: 130px;
+
+        .a-work--feature & {
+          width: 240px;
+        }
+
+        .a-work--hero & {
+          width: 272px;
+        }
+      }
+    }
+
+    .a__card__poster {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+
+      overflow: hidden;
+
+      opacity: 0.72;
+      pointer-events: none;
+
+      &::before,
+      &::after {
+        position: absolute;
+
+        content: "";
+      }
+    }
+
+    .a__card__poster-mark {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+
+      color: currentcolor;
+      font: 700 clamp(3.5rem, 8vw, 7rem) / 1 font-family(bigger);
+      letter-spacing: -0.08em;
+
+      opacity: 0.1;
+      transform: translate(-50%, -50%);
+    }
+
+    .a__card__poster--orbit {
+      background:
+        radial-gradient(circle at 50% 50%, currentcolor 0 1px, transparent 2px),
+        radial-gradient(circle at 50% 50%, transparent 0 24%, currentcolor 24.3% 24.8%, transparent 25.1%),
+        radial-gradient(circle at 50% 50%, transparent 0 42%, currentcolor 42.3% 42.7%, transparent 43%);
+
+      &::before {
+        top: 50%;
+        left: 50%;
+
+        width: 72%;
+        height: 38%;
+
+        border: 1px solid currentcolor;
+        border-radius: 50%;
+
+        opacity: 0.28;
+        transform: translate(-50%, -50%) rotate(-18deg);
+      }
+    }
+
+    .a__card__poster--crosshair {
+      background:
+        linear-gradient(90deg, transparent 49.8%, currentcolor 50%, transparent 50.2%),
+        linear-gradient(transparent 49.8%, currentcolor 50%, transparent 50.2%);
+
+      &::before {
+        top: 50%;
+        left: 50%;
+
+        width: 38%;
+        aspect-ratio: 1;
+
+        border: 1px solid currentcolor;
+        border-radius: 50%;
+
+        opacity: 0.24;
+        transform: translate(-50%, -50%);
+      }
+    }
+
+    .a__card__poster--signal {
+      background: repeating-linear-gradient(
+        90deg,
+        transparent 0 11%,
+        currentcolor 11.2% 11.45%,
+        transparent 11.7% 22%
+      );
+
+      &::before {
+        right: 7%;
+        bottom: 13%;
+        left: 7%;
+
+        height: 34%;
+
+        border-top: 1px solid currentcolor;
+        border-bottom: 1px solid currentcolor;
+
+        opacity: 0.26;
+        transform: skewY(-7deg);
+      }
+    }
+
+    .a__card__poster--trajectory {
+      background: linear-gradient(
+        148deg,
+        transparent 0 45%,
+        currentcolor 45.2% 45.5%,
+        transparent 45.8%
+      );
+
+      &::before {
+        top: 12%;
+        right: 14%;
+
+        width: 42%;
+        aspect-ratio: 1;
+
+        border: 1px solid currentcolor;
+        border-left-color: transparent;
+        border-radius: 50%;
+
+        opacity: 0.34;
+        transform: rotate(-38deg);
       }
     }
 
@@ -199,14 +385,18 @@ const palette = colorMap[site] ?? { bg: "#111", accent: "#fff" };
       width: 100%;
       height: 100%;
       object-fit: cover;
-      z-index: 0;
-      opacity: 0.85;
+      z-index: 1;
+      opacity: 0;
       transition:
         opacity 0.3s ease,
         transform 0.5s ease;
     }
 
-    .a__card:hover .a__card__cover {
+    &.is-cover-ready .a__card__cover {
+      opacity: 0.85;
+    }
+
+    &.is-cover-ready .a__card:hover .a__card__cover {
       opacity: 1;
       transform: scale(1.03);
     }
@@ -220,6 +410,7 @@ const palette = colorMap[site] ?? { bg: "#111", accent: "#fff" };
         transparent 1px
       );
       background-size: 24px 24px;
+      z-index: 2;
       pointer-events: none;
     }
 
@@ -229,7 +420,7 @@ const palette = colorMap[site] ?? { bg: "#111", accent: "#fff" };
       text-transform: uppercase;
       opacity: 0.7;
       position: relative;
-      z-index: 1;
+      z-index: 3;
     }
 
     .a__card__title {
@@ -237,7 +428,7 @@ const palette = colorMap[site] ?? { bg: "#111", accent: "#fff" };
       text-transform: uppercase;
       letter-spacing: -0.02em;
       position: relative;
-      z-index: 1;
+      z-index: 3;
     }
 
     .a__card__cta {
@@ -245,7 +436,7 @@ const palette = colorMap[site] ?? { bg: "#111", accent: "#fff" };
       letter-spacing: 0.15em;
       text-transform: uppercase;
       position: relative;
-      z-index: 1;
+      z-index: 3;
     }
 
     .a__caption {
