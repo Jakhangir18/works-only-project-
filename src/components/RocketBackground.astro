@@ -12,6 +12,10 @@
       width="1400"
       height="1400"></canvas>
   </div>
+  <!-- Host for the scrubbed video, when the device proves it can decode one.
+       It is never seen: frames are drawn into the canvas above. -->
+  <div class="rocket-bg__video-mount js-rocket-video-mount" aria-hidden="true">
+  </div>
 </div>
 
 <style lang="scss">
@@ -55,48 +59,72 @@
       max-height: 65vh;
     }
   }
+
+  /* The video is a decode source, not a visual. It still has to be laid out
+     and non-hidden, because iOS skips decoding for display:none /
+     visibility:hidden / opacity:0 media. 1x1 at 0.01 alpha satisfies it
+     without being visible. */
+  .rocket-bg__video-mount {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    opacity: 0.01;
+    pointer-events: none;
+
+    :global(video) {
+      width: 1px;
+      height: 1px;
+    }
+  }
 </style>
 
 <script>
   /**
    * Rocket background frame renderer.
-   * Loads all frames and updates based on progress passed from parent scroll handler.
-   * Activates background only during rocket section scroll.
+   * Updates based on progress passed from the parent scroll handler, and
+   * activates the background only during the rocket section scroll.
+   *
+   * Frames come from one of two sources. The video is preferred because it
+   * holds a handful of decoded frames instead of 240; the JPG sequence is the
+   * fallback and is byte-for-byte the behaviour this component always had.
+   * The choice is made by probing the decoder, not by reading the user agent.
    */
+  import {
+    createJpgSource,
+    createVideoSource,
+    probeVideo,
+    TOTAL_FRAMES,
+    type RocketFrameSource,
+  } from "../utils/rocketFrameSource";
+
   (function initRocketBg() {
     const canvas = document.querySelector(
       ".js-rocket-canvas",
     ) as HTMLCanvasElement;
     const bg = document.querySelector(".js-rocket-bg") as HTMLElement;
+    const videoMount = document.querySelector(
+      ".js-rocket-video-mount",
+    ) as HTMLElement;
     if (!canvas || !bg) return;
 
     const ctx = canvas.getContext("2d")!;
-    const TOTAL = 240;
-    const PATH = "/1/ezgif-frame-";
-    const EXT = ".jpg";
+    const VIDEO_SRC = "/1/rocket.mp4";
 
-    const images: HTMLImageElement[] = new Array(TOTAL).fill(null);
+    let source: RocketFrameSource | null = null;
     let lastFrameIdx = -1;
-
-    /* Draw each frame centered on the canvas. */
-    function drawFrame(img: HTMLImageElement) {
-      if (!img?.complete || !img.naturalWidth) return;
-      const W = canvas.width,
-        H = canvas.height;
-      const scale = Math.min(W / img.naturalWidth, H / img.naturalHeight);
-      const dw = img.naturalWidth * scale,
-        dh = img.naturalHeight * scale;
-      ctx.clearRect(0, 0, W, H);
-      ctx.drawImage(img, (W - dw) * 0.5, (H - dh) * 0.5, dw, dh);
-    }
 
     /* Update the displayed frame from scroll progress. */
     window.updateRocketFrame = function (progress: number) {
-      const frameIdx = Math.min(TOTAL - 1, Math.round(progress * (TOTAL - 1)));
+      const frameIdx = Math.min(
+        TOTAL_FRAMES - 1,
+        Math.round(progress * (TOTAL_FRAMES - 1)),
+      );
       if (frameIdx !== lastFrameIdx) {
         lastFrameIdx = frameIdx;
-        const img = images[frameIdx];
-        if (img?.complete && img.naturalWidth) drawFrame(img);
+        source?.show(frameIdx);
       }
 
       // Toggle background visibility based on progress
@@ -108,15 +136,50 @@
       }
     };
 
-    /* Preload all frames so scroll playback stays responsive. */
-    for (let i = 0; i < TOTAL; i++) {
-      const img = new Image();
-      img.decoding = "async";
-      img.src = `${PATH}${String(i + 1).padStart(3, "0")}${EXT}`;
-      images[i] = img;
+    /* Adopt whichever source won, and catch it up to the current scroll. */
+    function useSource(next: RocketFrameSource) {
+      source = next;
+      window.__rocketFrameSource = next.kind;
+      next.show(lastFrameIdx === -1 ? 0 : lastFrameIdx);
     }
 
-    // Initial frame
-    setTimeout(() => window.updateRocketFrame?.(0), 50);
+    /* Hand over to the JPG sequence if the decoder dies mid-session. */
+    function fallBackToJpg(reason: string) {
+      if (source?.kind !== "video") return;
+      source.destroy();
+      window.__rocketVideoFellBack = reason;
+      // lastFrameIdx is preserved, so the sequence resumes where it was
+      // instead of snapping back to frame 0.
+      useSource(createJpgSource(canvas, ctx));
+    }
+
+    // The probe's warm-up seek is the first decode, so the first user-driven
+    // scrub is never paying for a cold decoder. Both numbers are published for
+    // the harness to assert on.
+    probeVideo(VIDEO_SRC, videoMount ?? bg)
+      .then((result) => {
+        window.__rocketVideoProbe = {
+          ok: Boolean(result.video),
+          reason: result.reason,
+          warmupMs: +result.warmupMs.toFixed(1),
+          secondSeekMs: +result.secondSeekMs.toFixed(1),
+        };
+        if (result.video) {
+          useSource(
+            createVideoSource(result.video, canvas, ctx, fallBackToJpg),
+          );
+        } else {
+          useSource(createJpgSource(canvas, ctx));
+        }
+      })
+      .catch(() => {
+        window.__rocketVideoProbe = {
+          ok: false,
+          reason: "probe threw",
+          warmupMs: -1,
+          secondSeekMs: -1,
+        };
+        useSource(createJpgSource(canvas, ctx));
+      });
   })();
 </script>
