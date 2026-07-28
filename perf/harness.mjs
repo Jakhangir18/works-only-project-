@@ -47,9 +47,9 @@
  */
 
 import { chromium, firefox, webkit } from "playwright-core";
-import { execSync } from "node:child_process";
 import { mkdirSync, writeFileSync, rmSync } from "node:fs";
 import path from "node:path";
+import { chromeTreeRss } from "./rss.mjs";
 
 const args = Object.fromEntries(
   process.argv.slice(2).map((a) => {
@@ -101,50 +101,7 @@ const USER_DATA_DIR = path.join(
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // ---------------------------------------------------------------- ps helpers
-
-function chromeTreeRss(userDataDir) {
-  let out;
-  try {
-    out = execSync("ps -axo pid=,ppid=,rss=,command=", {
-      maxBuffer: 32 * 1024 * 1024,
-    }).toString();
-  } catch {
-    return null;
-  }
-  const rows = [];
-  for (const line of out.split("\n")) {
-    const m = line.match(/^\s*(\d+)\s+(\d+)\s+(\d+)\s+(.*)$/);
-    if (m) rows.push({ pid: +m[1], ppid: +m[2], rss: +m[3], cmd: m[4] });
-  }
-  const root = rows.find(
-    (r) => r.cmd.includes(userDataDir) && r.cmd.includes("Chrome"),
-  );
-  if (!root) return null;
-  const byPpid = new Map();
-  for (const r of rows) {
-    if (!byPpid.has(r.ppid)) byPpid.set(r.ppid, []);
-    byPpid.get(r.ppid).push(r);
-  }
-  const tree = [];
-  const queue = [root];
-  while (queue.length) {
-    const n = queue.shift();
-    tree.push(n);
-    for (const c of byPpid.get(n.pid) || []) queue.push(c);
-  }
-  const sumKb = (pred) =>
-    tree.filter(pred).reduce((s, r) => s + r.rss, 0);
-  const renderers = tree.filter((r) => r.cmd.includes("Helper (Renderer)"));
-  return {
-    totalMb: +(sumKb(() => true) / 1024).toFixed(1),
-    rendererSumMb: +(sumKb((r) => r.cmd.includes("Helper (Renderer)")) / 1024).toFixed(1),
-    rendererMaxMb: +(
-      Math.max(0, ...renderers.map((r) => r.rss)) / 1024
-    ).toFixed(1),
-    gpuMb: +(sumKb((r) => r.cmd.includes("Helper (GPU)")) / 1024).toFixed(1),
-    processes: tree.length,
-  };
-}
+// chromeTreeRss lives in ./rss.mjs so the focused benches sample identically.
 
 // ------------------------------------------------------------- page scripts
 
