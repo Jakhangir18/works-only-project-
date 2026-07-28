@@ -66,6 +66,7 @@ class Section {
   state: 0;
   speed: number;
   isPaused: boolean;
+  activeWorkIndex: number;
 
   constructor() {
     if (isSafariBrowser) {
@@ -112,6 +113,7 @@ class Section {
       scrollProgress: null,
     };
     this.isPaused = true;
+    this.activeWorkIndex = -1;
 
     // Defer the heavy DOM work until fonts and the base page are ready.
     const doInit = () => {
@@ -426,6 +428,21 @@ class Section {
     });
   }
 
+  prepareCoverWindow(activeIndex: number) {
+    if (activeIndex === this.activeWorkIndex) return;
+    this.activeWorkIndex = activeIndex;
+
+    const first = Math.max(0, activeIndex - 2);
+    const last = Math.min(this.works.length - 1, activeIndex + 3);
+
+    for (let index = first; index <= last; index++) {
+      const workEl = this.works[index]?.el as
+        | (HTMLElement & { prepareCover?: () => Promise<boolean> })
+        | undefined;
+      void workEl?.prepareCover?.();
+    }
+  }
+
   setTimeline() {
     const { el, container, works, scene, mask } = this;
     const width = (window as any).safeWidth || window.innerWidth;
@@ -457,12 +474,21 @@ class Section {
     // --state is mirrored onto the ghost letters in moveLetters(); writing
     // it here on the scene container would invalidate the whole subtree
     // (all cards included) on every scrub update.
-    const tl = gsap.timeline({
+    let tl!: gsap.core.Timeline;
+    tl = gsap.timeline({
       scrollTrigger: {
         trigger: el,
         start: "top top",
         end: "bottom bottom",
         scrub: 1,
+        onUpdate: () => {
+          const rawIndex = Math.floor((tl.time() - INTRO_VH) / workStepVh);
+          const activeIndex = Math.max(
+            0,
+            Math.min(works.length - 1, rawIndex),
+          );
+          this.prepareCoverWindow(activeIndex);
+        },
       },
     });
 
@@ -530,6 +556,8 @@ class Section {
     tl.to({}, { duration: END_HOLD_VH }, workTravelEnd);
 
     this.tl = tl;
+    this.activeWorkIndex = -1;
+    this.prepareCoverWindow(0);
   }
 
   moveLetters() {
