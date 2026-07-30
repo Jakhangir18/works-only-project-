@@ -247,6 +247,30 @@ const INSTRUMENTATION = `(() => {
     P.recording = null;
     return s.label;
   };
+
+  // Per-phase refresh floor. The single idle-top control at the start of a run
+  // is not enough: a ~5-minute run has been observed halving its rAF cadence
+  // partway through (WebKit 17ms -> 32ms from the dive phases onward, with the
+  // dive itself cleared as the cause), and every phase after the shift then
+  // reads as a regression it is not. Sampling the floor immediately before each
+  // phase makes each phase self-calibrating, so a shift downgrades one phase
+  // instead of silently poisoning the comparison.
+  P.floor = (ms) =>
+    new Promise((res) => {
+      const dts = [];
+      let prev = 0;
+      const t0 = performance.now();
+      const step = (t) => {
+        if (prev) dts.push(t - prev);
+        prev = t;
+        if (performance.now() - t0 < ms) requestAnimationFrame(step);
+        else {
+          dts.sort((a, b) => a - b);
+          res(dts.length ? +dts[Math.floor(dts.length / 2)].toFixed(2) : null);
+        }
+      };
+      requestAnimationFrame(step);
+    });
 })();`;
 
 const DISABLE_HERO_SCRIPT = `(() => {
@@ -555,6 +579,10 @@ async function main() {
     // mismatch marks the whole run invalid so a silent mis-measurement
     // (e.g. the offsetTop-vs-positioned-ancestor bug) cannot recur.
     const runPhase = async (label, fn, expect) => {
+      // Sampled before the phase, while nothing is moving: this phase's own
+      // refresh floor. A clean frame cannot beat it, so median/p95 mean nothing
+      // until they are read against it.
+      const floorMs = await page.evaluate(() => window.__perf.floor(700));
       const before = await cdpMetrics();
       const actualFrom = await getScrollY();
       await page.evaluate((l) => window.__perf.start(l), label);
@@ -576,6 +604,7 @@ async function main() {
       }
       phases.push({
         label,
+        floorMs,
         layoutCountDelta: IS_CHROMIUM ? after.LayoutCount - before.LayoutCount : null,
         recalcStyleCountDelta: IS_CHROMIUM ? after.RecalcStyleCount - before.RecalcStyleCount : null,
         scriptDurationDeltaS: IS_CHROMIUM ? +(after.ScriptDuration - before.ScriptDuration).toFixed(2) : null,
@@ -837,14 +866,30 @@ async function main() {
       `renderer RSS peak ${p.rssPeakDuringPreload?.rendererSumMb ?? "?"}MB after ${p.rssAfterPreload?.rendererSumMb ?? "?"}MB, JS heap ${p.jsHeapAfterPreloadMb ?? "?"}MB`,
     );
   }
+  // Floor drift check: every phase samples its own refresh floor, so a cadence
+  // shift mid-run is visible instead of being read as a regression.
+  const floors = result.phases.map((p) => p.floorMs).filter((f) => f != null);
+  const floorMin = floors.length ? Math.min(...floors) : null;
+  const floorMax = floors.length ? Math.max(...floors) : null;
+  result.floor = {
+    minMs: floorMin,
+    maxMs: floorMax,
+    stable: floorMin != null ? floorMax <= floorMin * 1.25 : null,
+  };
   console.log(
-    "phase              med   p95  worst  >50ms LT(ms)   layout/f reads/f forced/f acc/f(max)",
+    `refresh floor: ${floorMin ?? "?"}-${floorMax ?? "?"} ms` +
+      (result.floor.stable === false
+        ? "  ** UNSTABLE: cadence shifted mid-run, do not compare medians across the shift **"
+        : "  (stable)"),
+  );
+  console.log(
+    "phase              med   p95  worst  >50ms LT(ms)   layout/f reads/f forced/f acc/f(max) floor",
   );
   for (const p of result.phases) {
     console.log(
       `${p.label.padEnd(17)}${pad(p.medianMs, 6)}${pad(p.p95Ms, 6)}${pad(p.worstMs, 7)}${pad(p.over50ms, 6)}` +
       `${pad(p.longTasks + "(" + p.longTaskTotalMs + ")", 9)}${pad(p.layoutPerFrame, 9)}${pad(p.layoutReadsPerFrame, 8)}` +
-      `${pad(p.forcedReadsPerFrame, 9)}${pad(p.accPerFrame + "(" + p.accMax + ")", 10)}`,
+      `${pad(p.forcedReadsPerFrame, 9)}${pad(p.accPerFrame + "(" + p.accMax + ")", 10)}${pad(p.floorMs, 7)}`,
     );
   }
   if (result.heap)
