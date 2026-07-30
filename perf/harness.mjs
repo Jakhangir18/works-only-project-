@@ -47,7 +47,7 @@
  */
 
 import { chromium, firefox, webkit } from "playwright-core";
-import { mkdirSync, writeFileSync, rmSync } from "node:fs";
+import { mkdirSync, writeFileSync, rmSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { chromeTreeRss } from "./rss.mjs";
 
@@ -66,6 +66,11 @@ const DISABLE_HERO_LOOPS = Boolean(args["disable-hero-loops"]);
 const TRACE = Boolean(args.trace);
 const HEAP_PROFILE = Boolean(args["heap-profile"]);
 const DIVE_ONLY = Boolean(args["dive-only"]);
+// A file of page script injected before anything else runs, for attributing
+// per-frame cost by neutralising one suspect at a time without touching the
+// repo. Same technique as --disable-hero-loops, but not hard-coded to one
+// suspect: the hypothesis lives in a scratch file, the harness stays the harness.
+const INJECT = args.inject ? String(args.inject) : null;
 const BROWSER_NAME = String(args.browser || "chromium");
 const BROWSER = { chromium, firefox, webkit }[BROWSER_NAME];
 if (!BROWSER) {
@@ -369,6 +374,7 @@ async function main() {
       viewport: IS_CHROMIUM && MOBILE ? "390x844@3x" : "1440x900@2x",
       diveOnly: DIVE_ONLY,
       disableHeroLoops: DISABLE_HERO_LOOPS,
+      inject: INJECT,
     },
     notes: [
       "Sampler adds one rAF + instrumentation overhead, identical across runs.",
@@ -408,6 +414,10 @@ async function main() {
   try {
     await context.addInitScript(INSTRUMENTATION);
     if (DISABLE_HERO_LOOPS) await context.addInitScript(DISABLE_HERO_SCRIPT);
+    if (INJECT) {
+      await context.addInitScript(readFileSync(INJECT, "utf8"));
+      result.notes.push(`injected page script: ${INJECT} — this run is a diagnostic, not a baseline.`);
+    }
 
     const page = context.pages()[0] || (await context.newPage());
     page.on("console", (msg) => {
