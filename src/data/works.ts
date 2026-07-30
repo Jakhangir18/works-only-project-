@@ -36,7 +36,7 @@ export type ProjectInfo = {
   cover?: WorkCover;
 };
 
-export const works = [
+const realWorks = [
   {
     title: "AMS Tablet",
     site: "/projects/ams",
@@ -87,6 +87,74 @@ export const works = [
     palette: { background: "#0d0d0d", accent: "#f5f5f5" },
     poster: { mark: "PR", motif: "crosshair" },
   },
+] as const satisfies readonly ProjectInfo[];
+
+/* ========================= TEMPORARY — DELETE ME =========================
+ * Placeholder entries that exist only to judge the carousel at 10 works
+ * instead of 5: pacing, scroll length, tier scarcity and poster density.
+ * They are NOT projects and must not ship.
+ *
+ * These are deliberately not inventions and not copies. Every one is titled
+ * PLACEHOLDER, linked to `#`, given a grey palette and a numeric poster mark,
+ * so it is obvious on screen that it is scaffolding — duplicating a real work
+ * would have reintroduced exactly the repetition that was just removed.
+ *
+ * The tier mix is chosen to sit exactly on the scarcity limits at n=10
+ * (heroLimit ceil(10/8)=2, promotedLimit ceil(10/3)=4): one hero and one
+ * feature added to the real one of each gives 2 hero and 4 promoted, so this
+ * is the densest ladder the rule permits at 10, and it exercises the assert at
+ * its boundary. Making one more of these `feature` fails `npm run build` with
+ * "5 hero/feature works exceed the limit of 4 for 10 works" — verified.
+ *
+ * TO REVERT: delete this array and drop the `...placeholderWorks` spread from
+ * the `works` export below. Nothing else in the codebase references it.
+ * ======================================================================= */
+const placeholderWorks = [
+  {
+    title: "PLACEHOLDER 06",
+    site: "#",
+    blurb: "Temporary entry for pacing evaluation at ten works. Not a project.",
+    size: "hero",
+    palette: { background: "#141414", accent: "#8a8a8a" },
+    poster: { mark: "06", motif: "orbit" },
+  },
+  {
+    title: "PLACEHOLDER 07",
+    site: "#",
+    blurb: "Temporary entry for pacing evaluation at ten works. Not a project.",
+    size: "feature",
+    palette: { background: "#121212", accent: "#9a9a9a" },
+    poster: { mark: "07", motif: "trajectory" },
+  },
+  {
+    title: "PLACEHOLDER 08",
+    site: "#",
+    blurb: "Temporary entry for pacing evaluation at ten works. Not a project.",
+    size: "standard",
+    palette: { background: "#161616", accent: "#8a8a8a" },
+    poster: { mark: "08", motif: "signal" },
+  },
+  {
+    title: "PLACEHOLDER 09",
+    site: "#",
+    blurb: "Temporary entry for pacing evaluation at ten works. Not a project.",
+    size: "standard",
+    palette: { background: "#101010", accent: "#9a9a9a" },
+    poster: { mark: "09", motif: "crosshair" },
+  },
+  {
+    title: "PLACEHOLDER 10",
+    site: "#",
+    blurb: "Temporary entry for pacing evaluation at ten works. Not a project.",
+    size: "standard",
+    palette: { background: "#181818", accent: "#8a8a8a" },
+    poster: { mark: "10", motif: "orbit" },
+  },
+] as const satisfies readonly ProjectInfo[];
+
+export const works = [
+  ...realWorks,
+  ...placeholderWorks,
 ] as const satisfies readonly ProjectInfo[];
 
 function assertScarcePromotedWorks(items: readonly ProjectInfo[]) {
