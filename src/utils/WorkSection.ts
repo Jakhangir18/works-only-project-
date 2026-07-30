@@ -469,6 +469,23 @@ class Section {
       pin: container,
       pinSpacing: false,
       anticipatePin: 1,
+      // Pin by translating the container, not by switching it to
+      // `position: fixed`. GSAP's default here is pinType "fixed" (probed: the
+      // pinned container computed to `position: fixed` in all three engines),
+      // and the flip in and out of the fixed positioning scheme is the only
+      // thing in this section that WebKit cannot do in a frame. Measured:
+      // across four 7200px scroll phases (two drivers, so the synthetic wheel
+      // is ruled out) every single frame over 40ms landed at one of exactly two
+      // scroll offsets — the pin's engage point and its release point — and
+      // carried 0-2ms of JS with zero style writes, zero canvas work and zero
+      // attribute callbacks. The engine was rebuilding the layer tree for the
+      // whole pinned subtree, which under `.is-safari` holds the letter tunnel
+      // plus five cards that `content-visibility: visible` keeps permanently
+      // live. A transform pin never changes positioning scheme, so there is no
+      // rebuild. Safe here specifically because nothing `position: fixed` lives
+      // inside .js-container (probed in all three engines) — a transform pin
+      // would otherwise become their containing block.
+      pinType: "transform",
     });
 
     // --state is mirrored onto the ghost letters in moveLetters(); writing
