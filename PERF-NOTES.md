@@ -228,6 +228,77 @@ spread, nothing more. **Before comparing any box across engines, force
 `content-visibility: visible` first.** Fixed in `632d595` by giving the card an
 explicit width; full write-up in `docs/cross-browser-audit.md` finding 2.
 
+## Safari / WebKit Work phase (2026-07-29, branch `fix/safari-work-section`)
+
+### What the stutter was
+
+The pin, and nothing else. Attribution method matters here because WebKit gives
+no long-task API, no CDP, no `performance.memory` and no tracing in Playwright:
+`perf-results/frame-anatomy.mjs` times **every rAF callback** and books it
+against that frame's own rAF delta, which splits a frame into the part JS owns
+and the part the engine owns. Across four 7200 px Work scroll phases, driven
+twice (Playwright synthetic wheel and an in-page `scrollBy` loop, so the input
+protocol is ruled out), **every frame over 40 ms sat at exactly two scroll
+offsets — the pin's engage point and its release point** — with 0–2 ms of JS and
+zero style writes, canvas calls, attribute callbacks or class toggles. App JS is
+1.4 ms/frame throughout. Fix: `pinType: "transform"` (`32a1a05`). Numbers in
+`docs/cross-browser-audit.md` finding 6.
+
+### Hypotheses tried and dead — do not re-propose without new evidence
+
+All measured in Playwright WebKit on the production build, 3 open/close cycles,
+counting frames over 50 ms across the six phases against a ±2 run-to-run band:
+
+| Hypothesis | How it was neutralised | Result |
+|---|---|---|
+| Dot grid raster: 2280 stroked sub-pixel rects in one path is a WebKit slow path | `--inject` no-op of `ctx.stroke()` on the Work canvas, `rect()` calls left in | **No change** — worst 134–232 ms. Cleared as a cause. |
+| Invariant 2: `--progress` set on the card root invalidates the card subtree, and `.is-safari` forces `content-visibility: visible` so all five are live | `--inject` no-op of `setProperty("--progress")` | **No change** — worst 126–235 ms |
+| Animated `clip-path: inset()` on the pinned container re-clips the whole composited subtree | `.s__inner{clip-path:none!important}` | **No change** — 7 over 50 ms vs 6 |
+| The `.is-safari` `content-visibility: visible` override keeps five card subtrees permanently live | `a-work:not(.is-inview){content-visibility:hidden!important}` | **No change** — 9 vs 6, if anything worse |
+| `.s__scene` scale 0.75→1 re-rasters 108 preserve-3d children | `.s__scene{transform:none!important}` | **No change** — 8 vs 6 |
+
+The last three are three consecutive failures, which is the skill's stop
+condition; the loop was stopped there deliberately rather than continuing.
+
+### The residual, stated honestly
+
+After the pin fix WebKit still misses the 50 ms worst-frame budget. The residual
+is characterised but **not isolated**:
+
+- 5 of 6 phases carry 0–1 frames over 50 ms; the **last** open of the three
+  consistently carries 3–6. Same "pressure builds after the first pass" shape
+  already recorded for Chromium in the H0 section above.
+- Every one of those frames still contains 0–3 ms of JS and no app writes at
+  all, and they have moved off the pin boundaries into the entry/intro band
+  (rel −0.87 to +1.04 vh).
+- Nothing available here can go further: an engine-side cost that accumulates
+  across cycles and is not attributable to any single animation needs either
+  real Safari with Web Inspector attached or a WebKit build with tracing.
+  `performance.memory` is Chromium-only, so the accumulation cannot even be
+  confirmed as memory. **This needs a real device, or a different tool.**
+
+### Measurement traps found this session
+
+- **The refresh floor can move *inside* one run, not just between sessions.** A
+  WebKit run read idle-top 17 ms and then median 31–34 ms from the first dive
+  close to the end, never recovering — which reads as a huge regression in every
+  later phase and is not one. The dive was cleared as the cause by direct probe
+  (`perf-results/dive-after-probe.mjs`: dive held open, 5 cycles, reload, and
+  the non-passive wheel/touchmove listeners added and removed by hand — cadence
+  stayed 15–16 ms throughout). `harness.mjs` now samples a floor per phase and
+  prints the range, marking the run UNSTABLE when max exceeds min by 25%.
+- **Do not pixel-diff two Work screenshots from different runs.** The letter
+  tunnel's phase depends on accumulated `animationProgress`, so the same engine
+  at the same scroll offset differs run to run (measured: ghost `rotateY`
+  −10.752° vs −10.334° in two Chromium runs at identical scrollY). Compare
+  structural state — pin box, position, spacer, transform, ghost count, card
+  boxes — or compare only at stops where the tunnel is closed or frozen.
+- **To compare a time-driven animation across engines, drive the clock.** For
+  MorphingText the `Date` *constructor* was stubbed to a virtual clock (leaving
+  `Date.now` real, so GSAP, the loader and the harness gates are untouched),
+  which lands every engine on an identical morph fraction instead of an
+  identical instant.
+
 ## Deferred follow-ups (separate branch, not part of this work)
 
 - The 243 MB renderer-RSS / tab-eviction premise is **closed as a measurement artifact**. Do not reopen a memory-replacement project without a new device-specific measurement with an explicit process scope; the rejected video branch is deleted.

@@ -361,6 +361,37 @@ merged on desktop-only evidence.
 **Confidence: medium.** The configuration facts are verified; the Safari consequence
 is a well-known GSAP issue I cannot reproduce without a real device.
 
+> **`pinType: "transform"` APPLIED 2026-07-29 in `32a1a05` — and it turned out
+> to be the whole WebKit Work stutter, on the desktop viewport, with nothing to
+> do with iOS.** The `normalizeScroll` half of this finding is untouched and
+> still needs a real device; only the pinType half is resolved.
+>
+> How it was found. WebKit has no long-task API, no CDP and no tracing in
+> Playwright, so each frame was split into the part JS owns and the part the
+> engine owns by timing every rAF callback against that frame's own rAF delta
+> (`perf-results/frame-anatomy.mjs`). Across four 7200 px scroll phases, driven
+> twice — once by Playwright's synthetic wheel, once by an in-page `scrollBy`
+> loop, which rules out the input protocol — **every frame over 40 ms landed at
+> one of exactly two scroll offsets: +0.00vh (pin engage) and +6.02vh (pin
+> release, `workTop + workH - vh`)**, and each carried 0–2 ms of JS with zero
+> style writes, zero canvas calls, zero attribute callbacks and zero class
+> toggles. App JS is 1.4 ms/frame throughout. The engine was rebuilding the
+> layer tree for the pinned subtree on each flip in and out of `position:
+> fixed`; under `.is-safari` that subtree holds the 54-ghost tunnel plus five
+> cards that `content-visibility: visible` keeps permanently live.
+>
+> Result, WebKit, work open/close x3, floor 14–16 ms stable: steady-state worst
+> frame **133–186 ms → 56–84 ms**, p95 25–26 → 19–24, frames over 50 ms 3–6 → 1–4
+> per phase. Counting all four anatomy phases together, over 50 ms **6 → 1** and
+> the survivors no longer sit at the pin boundaries. Chromium did not regress —
+> it improved: floor 8.6 ms, Work worst 17.7 ms, dive worst 10.6 ms (the 55.7 ms
+> dive miss recorded in PERF-NOTES is gone), 0 long tasks, heap flat,
+> listeners 63→63.
+>
+> Safe here specifically because **nothing `position: fixed` lives inside
+> `.js-container`** — already probed in all three engines, see "Checked and
+> clean" below. A transform pin would otherwise become their containing block.
+
 ---
 
 ## 7. Firefox warns that the site uses scroll-linked positioning
@@ -385,6 +416,31 @@ not reproduce a bad fling synthetically.
 ---
 
 ## 8. Animated `blur()` every frame in `MorphingText`
+
+> **MEASURED AND FIXED 2026-07-29 in `28e1115`, and the diagnosis below was
+> pointing at the wrong half.** The blur is not what makes Safari look wrong —
+> the *missing threshold* is. `feColorMatrix` alpha `255 -140` is what restores
+> full opacity after the per-frame `blur()` spreads the ink, so
+> `filter: none` removed the contrast along with the gooey merge. Captured at a
+> matched morph fraction in all three engines (the `Date` constructor stubbed to
+> a virtual clock, so the comparison is at identical blur/opacity rather than
+> merely the same instant), peak luminance of the title band at fraction 0.5:
+> **Chromium 247, Firefox 246, WebKit 162** — the title washed out to a dim grey
+> smear for the whole 1.5 s morph and only snapped back at rest. Screenshots in
+> `perf-results/p1/`.
+>
+> Fix: Safari keeps `url(#threshold)` and drops only the second `blur(0.6px)`
+> pass. Peak luminance returns to 248. Cost, hero parked 8 s x2 in Playwright
+> WebKit via the new `perf/hero-bench.mjs`, frames over 25 ms: **no filter 0/1,
+> `url(#threshold)` 1/3, `url(#threshold) blur(0.6px)` 4/4** — median 17 ms,
+> p95 19 ms, zero frames over 50 ms and zero long tasks in every variant. One
+> filter pass instead of two is strictly cheaper than the chain the original
+> "severe GPU lag" note was written about. `MAX_BLUR` stays 8 under Safari: with
+> the threshold back it is visually near-irrelevant (both layers are already at
+> 8 px at fraction 0.5, and past that the over-blurred layer falls below the
+> threshold and disappears either way).
+>
+> **Confirmed in Playwright WebKit 26.5. NOT verified on real Safari.**
 
 **Evidence.** `MorphingText.astro:75,78` write `style.filter = blur(Npx)` per frame.
 Already mitigated for Safari: `MAX_BLUR` is 8 there vs 20 elsewhere, the SVG
@@ -464,6 +520,11 @@ Recorded so this ground is not covered twice:
 - **Scroll listeners are passive.** Every `scroll`/`resize` listener passes
   `{ passive: true }` (verified with context, not line-grep). There are **no `wheel`
   or `touchmove` listeners at all**, so nothing blocks the compositor.
+  *Amended 2026-07-29:* no longer strictly true — `DiveTransition.lockScroll()`
+  adds non-passive `wheel` and `touchmove` listeners for the duration of a dive
+  and removes them in `unlockScroll()`. Measured harmless in WebKit: adding and
+  removing them by hand, and holding a dive open, left the rAF cadence at
+  15–16 ms in every stage (`perf-results/dive-after-probe.mjs`).
 - **The Safari card-hiding branch works.** `html.is-safari a-work { opacity:0;
   visibility:hidden }` correctly reveals via `.is-inview`: mid-section WebKit shows
   2 in-view / 2 painted / 54 ghosts visible — identical to Chromium — and the
