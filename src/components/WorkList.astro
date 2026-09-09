@@ -1,0 +1,130 @@
+---
+import { getCollection } from "astro:content";
+
+const works = (await getCollection("work", ({ data }) => !data.draft)).sort(
+  (a, b) => a.data.order - b.data.order,
+);
+const pad = (n: number) => String(n).padStart(2, "0");
+---
+
+<section id="work" class="work wrap section" aria-labelledby="work-title">
+  <div class="section__head mono">
+    <h2 id="work-title">Selected work</h2>
+    <span>{pad(works.length)}</span>
+  </div>
+
+  <ol class="work__list">
+    {
+      works.map((entry, i) => {
+        const thumb = `/projects/${entry.id}/thumb.webp`;
+        return (
+          <li class="work__row reveal" style={`--reveal-delay: ${i * 40}ms`}>
+            <a href={`/work/${entry.id}/`} class="work__link" data-thumb={thumb}>
+              <span class="work__idx mono">{pad(i + 1)}</span>
+              <span class="work__title" transition:name={`title-${entry.id}`}>
+                {entry.data.title}
+              </span>
+              <span class="work__summary">{entry.data.summary}</span>
+              <span class="work__meta mono">
+                {entry.data.year} · {entry.data.kind}
+              </span>
+              <img
+                class="work__inline"
+                src={thumb}
+                alt=""
+                width="480"
+                height="300"
+                loading="lazy"
+                decoding="async"
+              />
+            </a>
+          </li>
+        );
+      })
+    }
+  </ol>
+</section>
+
+<script>
+  import "../scripts/follower";
+</script>
+
+<style lang="scss">
+  .work__list {
+    border-top: 1px solid var(--rule);
+  }
+
+  .work__row {
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .work__link {
+    display: grid;
+    grid-template-columns: 3.5rem minmax(0, 1fr) auto;
+    grid-template-areas:
+      "idx title meta"
+      "idx summary meta"
+      "idx inline inline";
+    column-gap: var(--gap);
+    row-gap: 0.5rem;
+    align-items: baseline;
+    padding-block: clamp(1.25rem, 3vh, 2rem);
+
+    @include mq(sm) {
+      grid-template-columns: 2.5rem minmax(0, 1fr);
+      grid-template-areas:
+        "idx title"
+        "idx summary"
+        "idx meta"
+        "idx inline";
+    }
+  }
+
+  .work__idx {
+    grid-area: idx;
+    color: var(--ink-2);
+    transition: color var(--dur) var(--ease);
+  }
+
+  .work__title {
+    grid-area: title;
+    font-size: var(--fs-title);
+    line-height: 1.05;
+    letter-spacing: -0.015em;
+  }
+
+  .work__summary {
+    grid-area: summary;
+    max-width: var(--measure);
+    color: var(--ink-2);
+  }
+
+  .work__meta {
+    grid-area: meta;
+    color: var(--ink-2);
+    text-align: right;
+    white-space: nowrap;
+
+    @include mq(sm) {
+      text-align: left;
+    }
+  }
+
+  .work__inline {
+    grid-area: inline;
+    display: none;
+    width: min(100%, 30rem);
+    margin-top: 0.75rem;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+
+    @include mq(coarse) {
+      display: block;
+    }
+  }
+
+  .work__link:hover .work__idx,
+  .work__link:focus-visible .work__idx {
+    color: var(--accent);
+  }
+</style>

@@ -24,3 +24,5 @@ function init(): void {
 }
 
 document.addEventListener("astro:page-load", init);
+
+export {};
