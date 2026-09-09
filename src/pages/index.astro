@@ -1,80 +1,15 @@
 ---
-import HeroHome from "../components/HeroHome.astro";
-import TransitionVideo from "../components/TransitionVideo.astro";
-import WhyWorkWithMe from "../components/WhyWorkWithMe.astro";
-import SWork from "../components/SWork.astro";
-import ContactSection from "../components/ContactSection.astro";
 import "../styles/global.scss";
 ---
 
-<html lang="en" class="is-scroll-blocked theme-contrasted">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-
-    <title>Jakhangir - Portfolio</title>
-
-    <meta
-      name="description"
-      content="Interactive works portfolio section with smooth animations."
-    />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="generator" content={Astro.generator} />
-
+    <title>Jakhangir Tynshimov</title>
     <meta name="robots" content="noindex, nofollow" />
-
-    <link rel="icon" type="image/svg+xml" href="/icons/favicon.svg" />
-    <link rel="apple-touch-icon" href="/icons/favicon.svg" />
-
-    <meta name="theme-color" content="#160000" />
-    <meta name="msapplication-navbutton-color" content="#160000" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="#160000" />
-
-    <link rel="preload" href="/fonts/PPEditorialNew-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous" />
-    <!-- PPEditorialNew-Ultralight.woff2 (weight 200) is not preloaded: no rule
-         anywhere sets font-weight: 200, so the browser never requests it and
-         preloading it only ever produced an unused-preload warning. -->
-    <link rel="preload" href="/fonts/PPFraktionMono-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous" />
-    <link rel="preload" href="/fonts/PPFraktionMono-Bold.woff2" as="font" type="font/woff2" crossorigin="anonymous" />
-    <link rel="preload" href="/fonts/Bigger-Display.woff2" as="font" type="font/woff2" crossorigin="anonymous" />
   </head>
-
   <body>
-    <div class="site-loader js-site-loader" aria-hidden="true">
-      <div class="site-loader__inner">
-        <div class="site-loader__logo">
-          <span class="site-loader__logo__letter site-loader__logo__letter--j">J</span>
-          <span class="site-loader__logo__letter site-loader__logo__letter--t">T</span>
-        </div>
-        <div class="site-loader__progress">
-          <div class="site-loader__progress__bar js-loader-progress"></div>
-        </div>
-        <div class="site-loader__text">Loading Experience</div>
-      </div>
-    </div>
-
-    <div class="site-wrapper js-site-wrapper" style="opacity: 0;">
-      <HeroHome />
-      <TransitionVideo />
-      <WhyWorkWithMe />
-
-      <div class="works-layer">
-        <SWork />
-      </div>
-
-      <ContactSection />
-    </div>
+    <h1>Jakhangir Tynshimov</h1>
   </body>
-
-  <script>
-    import { initSite } from "../utils/SiteController";
-    initSite();
-  </script>
-
-  <style lang="scss">
-    .works-layer {
-      position: relative;
-      z-index: 40;
-      background: #000000;
-    }
-  </style>
 </html>

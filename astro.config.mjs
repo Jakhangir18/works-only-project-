@@ -1,38 +1,42 @@
-import { defineConfig } from 'astro/config';
-import { fileURLToPath } from 'url';
-import path, { dirname } from 'path';
+import { defineConfig } from "astro/config";
+import { fileURLToPath } from "url";
+import path, { dirname } from "path";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
-  site: process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://localhost:4321',
+  site: process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : "https://localhost:4321",
 
-  scopedStyleStrategy: 'class',
+  scopedStyleStrategy: "class",
 
   server: {
-    host: true,
+    host: "127.0.0.1",
   },
 
   vite: {
+    server: {
+      allowedHosts: [".ts.net"],
+    },
     resolve: {
       alias: {
-        '@/': `${path.resolve(__dirname, 'src')}/`
-      }
+        "@/": `${path.resolve(__dirname, "src")}/`,
+      },
     },
     css: {
       preprocessorOptions: {
         scss: {
-          additionalData: `@use 'sass:math'; @use 'sass:map'; @use "@/styles/import" as *;`
-        }
-      }
+          additionalData: `@use 'sass:math'; @use 'sass:map'; @use "@/styles/import" as *;`,
+        },
+      },
     },
     build: {
-      assetsInlineLimit: 0
-    }
+      assetsInlineLimit: 0,
+    },
   },
 
   devToolbar: {
-    enabled: false
-  }
+    enabled: false,
+  },
 });

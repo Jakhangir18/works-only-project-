@@ -1,5 +1,5 @@
 {
-  "name": "works-only-project",
+  "name": "jakhangir-portfolio",
   "type": "module",
   "version": "0.0.1",
   "scripts": {
@@ -7,23 +7,17 @@
     "start": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro",
-    "perf:harness": "node perf/harness.mjs",
-    "perf:regression": "node perf/regression.mjs",
-    "perf:analyze": "node --max-old-space-size=12288 perf/analyze-trace.mjs"
+    "astro": "astro"
   },
   "dependencies": {
     "astro": "^5.7.13",
     "autoprefixer": "^10.4.21",
     "gsap": "^3.13.0",
     "modern-normalize": "^3.0.1",
-    "sass": "^1.89.0",
-    "three": "^0.183.1"
+    "sass": "^1.89.0"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
-    "@types/three": "^0.183.1",
-    "playwright-core": "^1.62.0",
     "prettier": "^3.8.3",
     "prettier-plugin-astro": "^0.14.1",
     "typescript": "^5.9.3"
