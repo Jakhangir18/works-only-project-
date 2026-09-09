@@ -20,14 +20,7 @@
 html {
   background: var(--bg);
   color: var(--ink);
-  scroll-behavior: smooth;
   scroll-padding-top: var(--nav-h);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
 }
 
 body {
@@ -185,7 +178,7 @@ img {
   padding-block: clamp(2rem, 6vh, 4rem);
   counter-reset: section;
 
-  @media (max-width: 899px) {
+  @include mq(md) {
     grid-template-columns: minmax(0, 1fr);
   }
 
@@ -203,9 +196,7 @@ img {
     margin-top: clamp(2.5rem, 7vh, 5rem);
     padding-top: 1.25rem;
     border-top: 1px solid var(--rule);
-    font: 400 var(--fs-mono) / 1.4 var(--font-mono);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    @extend .mono;
     color: var(--ink-2);
 
     &::before {
@@ -213,7 +204,7 @@ img {
       margin-right: 1rem;
     }
 
-    @media (max-width: 899px) {
+    @include mq(md) {
       margin-bottom: 1rem;
     }
   }
@@ -222,7 +213,7 @@ img {
     grid-column: 2;
     max-width: var(--measure);
 
-    @media (max-width: 899px) {
+    @include mq(md) {
       grid-column: 1;
     }
   }
@@ -232,7 +223,7 @@ img {
     padding-top: 1.25rem;
     border-top: 1px solid var(--rule);
 
-    @media (max-width: 899px) {
+    @include mq(md) {
       margin-top: 0;
       padding-top: 0;
       border-top: 0;

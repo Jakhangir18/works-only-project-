@@ -1,7 +1,7 @@
 ---
-const links = [
-  { label: "GitHub", href: "https://github.com/Jakhangir18" },
-];
+import { site } from "../lib/site";
+
+const links = [{ label: "GitHub", href: site.github }];
 ---
 
 <section id="contact" class="contact wrap section" aria-labelledby="contact-title">
@@ -9,8 +9,8 @@ const links = [
     <h2 id="contact-title">Say hello</h2>
   </div>
 
-  <a href="mailto:tynshimj@oregonstate.edu" class="contact__email reveal">
-    tynshimj@oregonstate.edu
+  <a href={`mailto:${site.email}`} class="contact__email reveal">
+    {site.email}
   </a>
 
   <ul class="contact__links mono reveal" style="--reveal-delay: 80ms">

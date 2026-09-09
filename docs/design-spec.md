@@ -21,9 +21,9 @@ A portfolio a recruiter or professor reads in two minutes and believes. Every se
 
 ## Aesthetic
 
-- Ground: warm off-white `#fff2ed` (already in the palette). Ink: `#160000`. Muted ink: `rgba(22,0,0,.55)`. Rule lines: `rgba(22,0,0,.14)`. Accent `#f40c3f` only for link hover underline and the focus ring. No dark mode in v1.
+- Ground: warm off-white `#fff2ed` (already in the palette). Ink: `#160000`. Muted ink: `rgba(22,0,0,.62)` (contrast 4.5:1 on the ground). Rule lines: `rgba(22,0,0,.14)`. Accent `#f40c3f` only for link hover underline and the focus ring. No dark mode in v1.
 - Type: PP Editorial New Regular for display and prose (already licensed, in `public/fonts`). PP Fraktion Mono Regular for labels, numbers, metadata, nav. Bigger Display is dropped.
-- Scale (fluid, `clamp`): display `clamp(3rem, 9vw, 8.5rem)` line-height 0.95; list title `clamp(2rem, 5vw, 4.5rem)`; prose `clamp(1.0625rem, 1.2vw, 1.25rem)` line-height 1.5, measure 34em; mono `0.75rem` letter-spacing `0.08em` uppercase.
+- Scale (fluid, `clamp`): display `clamp(3.25rem, 11vw, 8.5rem)` line-height 0.95; list title `clamp(2rem, 5vw, 4.5rem)`; prose `clamp(1.0625rem, 1.2vw, 1.25rem)` line-height 1.5, measure 34em; mono `0.75rem` letter-spacing `0.08em` uppercase.
 - Grid: 12 columns, gutter `clamp(1rem, 2vw, 2rem)`, page padding `clamp(1.25rem, 4vw, 4rem)`. Sections separated by a 1px rule and `clamp(5rem, 14vh, 12rem)` of space.
 - No cards, no shadows, no gradients, no blur, no emoji, no icons except an arrow glyph.
 
@@ -45,7 +45,7 @@ A portfolio a recruiter or professor reads in two minutes and believes. Every se
 3. Selected work: heading "Selected work" + count. Numbered rows `01 … 06`. Each row: index (mono), title (serif), one-line summary (prose, muted), meta right (year, kind). Whole row is the link. Hover preview as above.
 4. About: two paragraphs, first person, facts only (Oregon State, CS + physics, hackathons, URSA research, rocket club presidency in Kazakhstan). Then a mono list: "Currently", "Based in", "Email", "GitHub", "LinkedIn".
 5. Contact: "Say hello" heading, email as the largest text on the page, GitHub and LinkedIn links.
-6. Footer: "© 2026 Jakhangir Tynshimov", "Set in Editorial New and Fraktion Mono", "Built with Astro", local time in Oregon (static text, no JS clock).
+6. Footer: "© 2026 Jakhangir Tynshimov", "Set in Editorial New and Fraktion Mono. Built with Astro.", "Corvallis, Oregon".
 
 ### `/work/<slug>`
 

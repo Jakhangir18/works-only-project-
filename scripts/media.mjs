@@ -48,18 +48,20 @@ async function dirSize(dir) {
   return total;
 }
 
-function base(src, crop) {
-  let img = sharp(src).rotate();
+// Rotate (EXIF) into a buffer first so crop fractions apply to the oriented image.
+async function base(src, crop) {
+  const oriented = await sharp(src).rotate().toBuffer();
+  let img = sharp(oriented);
   if (crop) {
-    img = img.metadata().then((m) => {
-      const left = Math.round(m.width * crop.left);
-      const top = Math.round(m.height * crop.top);
-      const width = Math.round(m.width * crop.width);
-      const height = Math.round(m.height * crop.height);
-      return sharp(src).rotate().extract({ left, top, width, height });
+    const m = await img.metadata();
+    img = img.extract({
+      left: Math.round(m.width * crop.left),
+      top: Math.round(m.height * crop.top),
+      width: Math.round(m.width * crop.width),
+      height: Math.round(m.height * crop.height),
     });
   }
-  return Promise.resolve(img);
+  return img;
 }
 
 async function write(img, out, opts) {

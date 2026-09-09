@@ -1,13 +1,12 @@
 ---
-import { getCollection, render } from "astro:content";
+import { render } from "astro:content";
+import { getWorks, pad } from "../../lib/work";
 import Base from "../../layouts/Base.astro";
 import Meta from "../../components/Meta.astro";
 import Gallery from "../../components/Gallery.astro";
 
 export async function getStaticPaths() {
-  const works = (await getCollection("work", ({ data }) => !data.draft)).sort(
-    (a, b) => a.data.order - b.data.order,
-  );
+  const works = await getWorks();
   return works.map((entry, i) => ({
     params: { slug: entry.id },
     props: { entry, index: i, next: works[(i + 1) % works.length] },
@@ -17,7 +16,6 @@ export async function getStaticPaths() {
 const { entry, index, next } = Astro.props;
 const { data } = entry;
 const { Content } = await render(entry);
-const pad = (n: number) => String(n).padStart(2, "0");
 const meta = [
   { label: "Year", value: data.year },
   { label: "Role", value: data.role },

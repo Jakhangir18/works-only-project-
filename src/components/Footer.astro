@@ -1,11 +1,13 @@
 ---
+import { site } from "../lib/site";
+
 const year = new Date().getFullYear();
 ---
 
 <footer class="footer wrap mono">
-  <p>© {year} Jakhangir Tynshimov</p>
-  <p>Set in Editorial New and Fraktion Mono</p>
-  <p>Corvallis, Oregon</p>
+  <p>© {year} {site.name}</p>
+  <p>Set in Editorial New and Fraktion Mono. Built with Astro.</p>
+  <p>{site.place}</p>
 </footer>
 
 <style lang="scss">

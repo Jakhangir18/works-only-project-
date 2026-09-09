@@ -1,11 +1,13 @@
 ---
 // Facts only. Sources: owner's notes and PROJECT-PAGE-PROMPTS.md. Lines that
 // wait for the owner's confirmation are listed in docs/plans/2026-09-09-minimal-redesign.md.
+import { site } from "../lib/site";
+
 const facts = [
-  { label: "Based in", value: "Corvallis, Oregon" },
+  { label: "Based in", value: site.place },
   { label: "Studying", value: "Computer science and physics, Oregon State University" },
-  { label: "Email", value: "tynshimj@oregonstate.edu", href: "mailto:tynshimj@oregonstate.edu" },
-  { label: "GitHub", value: "github.com/Jakhangir18", href: "https://github.com/Jakhangir18" },
+  { label: "Email", value: site.email, href: `mailto:${site.email}` },
+  { label: "GitHub", value: site.githubLabel, href: site.github },
 ];
 ---
 

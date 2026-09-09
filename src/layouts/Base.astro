@@ -22,7 +22,7 @@ const { title, description } = Astro.props;
     <meta name="robots" content="noindex, nofollow" />
     <meta name="theme-color" content="#fff2ed" />
     <link rel="icon" type="image/svg+xml" href="/icons/favicon.svg" />
-    <link rel="apple-touch-icon" href="/icons/favicon.svg" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
     <link
       rel="preload"
       href="/fonts/PPEditorialNew-Regular.woff2"
@@ -38,7 +38,7 @@ const { title, description } = Astro.props;
       crossorigin="anonymous"
     />
     <ClientRouter />
-    <script is:inline>
+    <script is:inline data-astro-rerun>
       document.documentElement.classList.add("js");
     </script>
   </head>

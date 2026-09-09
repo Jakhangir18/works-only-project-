@@ -1,10 +1,7 @@
 ---
-import { getCollection } from "astro:content";
+import { getWorks, pad, thumbFor } from "../lib/work";
 
-const works = (await getCollection("work", ({ data }) => !data.draft)).sort(
-  (a, b) => a.data.order - b.data.order,
-);
-const pad = (n: number) => String(n).padStart(2, "0");
+const works = await getWorks();
 ---
 
 <section id="work" class="work wrap section" aria-labelledby="work-title">
@@ -16,7 +13,7 @@ const pad = (n: number) => String(n).padStart(2, "0");
   <ol class="work__list">
     {
       works.map((entry, i) => {
-        const thumb = `/projects/${entry.id}/thumb.webp`;
+        const thumb = thumbFor(entry);
         return (
           <li class="work__row" style={`--reveal-delay: ${Math.min(i, 2) * 40}ms`}>
             <a href={`/work/${entry.id}/`} class="work__link" data-thumb={thumb}>
@@ -125,6 +122,6 @@ const pad = (n: number) => String(n).padStart(2, "0");
 
   .work__link:hover .work__idx,
   .work__link:focus-visible .work__idx {
-    color: var(--accent);
+    color: var(--ink);
   }
 </style>

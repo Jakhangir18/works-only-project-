@@ -51,11 +51,9 @@ function init(): void {
 
   const place = (e: PointerEvent): void => {
     tx = e.clientX + 24;
-    ty = e.clientY - H / 2;
     if (tx + W > window.innerWidth - 8) tx = e.clientX - W - 24;
-    if (tx < 8) tx = 8;
-    if (ty < 8) ty = 8;
-    if (ty + H > window.innerHeight - 8) ty = window.innerHeight - H - 8;
+    tx = Math.max(8, Math.min(tx, window.innerWidth - W - 8));
+    ty = Math.max(8, Math.min(e.clientY - H / 2, window.innerHeight - H - 8));
   };
 
   const hide = (): void => {
@@ -91,7 +89,11 @@ function init(): void {
       .then(() => {
         if (current === link && visible) box.classList.add("is-on");
       })
-      .catch(hide);
+      .catch(() => {
+        // A superseded decode (src changed for another row) rejects too; only
+        // a failure of the current row hides the preview.
+        if (current === link) hide();
+      });
     start();
   };
 
@@ -101,12 +103,15 @@ function init(): void {
   }
   window.addEventListener("scroll", hide, { passive: true });
 
+  // Whatever this init created, the swap destroys.
   document.addEventListener(
     "astro:before-swap",
     () => {
       if (raf) cancelAnimationFrame(raf);
       raf = 0;
       hide();
+      window.removeEventListener("scroll", hide);
+      box.remove();
     },
     { once: true },
   );
@@ -125,6 +130,7 @@ function init(): void {
   }
 }
 
-document.addEventListener("astro:page-load", init);
+init();
+document.addEventListener("astro:after-swap", init);
 
 export {};

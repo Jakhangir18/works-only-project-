@@ -1,7 +1,15 @@
 // Adds .is-in to .reveal elements as they enter the viewport. Elements already
-// in view get the class synchronously so a view-transition swap never shows an
-// empty page. Reduced motion: reveal everything at once.
+// in view get the class synchronously, so neither the first paint nor a
+// view-transition swap shows an empty page. Runs at module evaluation (after
+// the DOM is parsed, before window load) and again after every swap.
+// Reduced motion: reveal everything at once.
+let io: IntersectionObserver | null = null;
+
 function init(): void {
+  document.documentElement.classList.add("js");
+  io?.disconnect();
+  io = null;
+
   const els = Array.from(document.querySelectorAll<HTMLElement>(".reveal:not(.is-in)"));
   if (els.length === 0) return;
 
@@ -19,12 +27,12 @@ function init(): void {
   }
   if (pending.length === 0) return;
 
-  const io = new IntersectionObserver(
-    (entries) => {
+  io = new IntersectionObserver(
+    (entries, observer) => {
       for (const entry of entries) {
         if (!entry.isIntersecting) continue;
         entry.target.classList.add("is-in");
-        io.unobserve(entry.target);
+        observer.unobserve(entry.target);
       }
     },
     { threshold: 0, rootMargin: "0px 0px -12% 0px" },
@@ -32,7 +40,7 @@ function init(): void {
   for (const el of pending) io.observe(el);
 }
 
-document.addEventListener("astro:page-load", init);
+init();
 document.addEventListener("astro:after-swap", init);
 
 export {};
