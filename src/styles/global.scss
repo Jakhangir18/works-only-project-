@@ -1,21 +1,142 @@
-/**
- * Global style entry file
- */
-
-/* CSS variables */
-@use "variables-css/colors";
-@use "variables-css/fonts";
-
-/* Global classes */
-@use "site/base";
-@use "site/text";
-
-/* Utility classes */
-@use "utilities/visibility";
-
-/* Import */
+@use "tokens";
 @import "../../node_modules/modern-normalize/modern-normalize.css";
 
-@import "/fonts/bigger-display.css";
-@import "/fonts/editorial-new.css";
-@import "/fonts/fraktion-mono.css";
+@font-face {
+  font-family: "Editorial New";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/PPEditorialNew-Regular.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Fraktion Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/PPFraktionMono-Regular.woff2") format("woff2");
+}
+
+html {
+  background: var(--bg);
+  color: var(--ink);
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+body {
+  margin: 0;
+  font: 400 var(--fs-prose) / 1.5 var(--font-serif);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: clip;
+}
+
+::selection {
+  background: var(--ink);
+  color: var(--bg);
+}
+
+h1,
+h2,
+h3,
+p,
+ul,
+ol,
+dl,
+dd,
+figure {
+  margin: 0;
+}
+
+ul,
+ol {
+  padding: 0;
+  list-style: none;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+// Mono label: nav, indices, metadata.
+.mono {
+  font: 400 var(--fs-mono) / 1.4 var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+// Inline link with an underline that appears on hover / focus.
+.link {
+  text-decoration: underline;
+  text-decoration-color: var(--rule);
+  text-underline-offset: 0.18em;
+  transition: text-decoration-color var(--dur) var(--ease);
+
+  &:hover,
+  &:focus-visible {
+    text-decoration-color: var(--accent);
+  }
+}
+
+// Scroll reveal: src/scripts/reveal.ts adds .is-in once the element is 15% visible.
+.reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition:
+    opacity var(--dur) var(--ease),
+    transform var(--dur) var(--ease);
+  transition-delay: var(--reveal-delay, 0ms);
+
+  &.is-in {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.wrap {
+  padding-inline: var(--pad);
+}
+
+.section {
+  padding-block: var(--section);
+  border-top: 1px solid var(--rule);
+}
+
+.section__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--gap);
+  margin-bottom: clamp(2rem, 5vh, 4rem);
+  color: var(--ink-2);
+}

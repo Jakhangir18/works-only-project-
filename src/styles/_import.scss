@@ -1,15 +1,16 @@
-/**
- * Files to import
- */
+// Injected into every SCSS block via astro.config additionalData.
+// Only mixins live here; tokens are CSS custom properties in tokens.scss.
 
-/* SCSS variables */
-@forward "variables-scss/breakpoints";
-@forward "variables-scss/colors";
-@forward "variables-scss/fonts";
-
-/* Helpers */
-@forward "helpers/responsive";
-@forward "helpers/colors";
-@forward "helpers/easing";
-@forward "helpers/fonts";
-@forward "helpers/grid";
+@mixin mq($bp) {
+  @if $bp == sm {
+    @media (max-width: 639px) { @content; }
+  } @else if $bp == md {
+    @media (max-width: 899px) { @content; }
+  } @else if $bp == fine {
+    @media (hover: hover) and (pointer: fine) { @content; }
+  } @else if $bp == coarse {
+    @media (hover: none), (pointer: coarse) { @content; }
+  } @else {
+    @error "Unknown breakpoint #{$bp}";
+  }
+}

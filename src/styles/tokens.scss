@@ -1,0 +1,33 @@
+// Design tokens. See docs/design-spec.md "Aesthetic".
+:root {
+  --bg: #fff2ed;
+  --ink: #160000;
+  --ink-2: rgba(22, 0, 0, 0.62);
+  --rule: rgba(22, 0, 0, 0.14);
+  --accent: #f40c3f;
+
+  --font-serif: "Editorial New", Georgia, "Times New Roman", serif;
+  --font-mono: "Fraktion Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --fs-display: clamp(3rem, 9vw, 8.5rem);
+  --fs-title: clamp(2rem, 5vw, 4.5rem);
+  --fs-h2: clamp(1.5rem, 2.6vw, 2.25rem);
+  --fs-lede: clamp(1.25rem, 1.8vw, 1.75rem);
+  --fs-prose: clamp(1.0625rem, 1.2vw, 1.25rem);
+  --fs-mono: 0.75rem;
+
+  --measure: 34em;
+  --pad: clamp(1.25rem, 4vw, 4rem);
+  --gap: clamp(1rem, 2vw, 2rem);
+  --section: clamp(5rem, 14vh, 12rem);
+  --nav-h: 3.5rem;
+
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --dur: 500ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur: 0ms;
+  }
+}
