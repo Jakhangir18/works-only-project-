@@ -12,6 +12,32 @@ cover:
   alt: "Two glass columns on an aluminum frame with the control unit and emergency stop of a remote chemistry lab rig"
   width: 1600
   height: 2133
+gallery:
+  - src: "/projects/remote-lab-vision/gallery/01.webp"
+    alt: "LabVIEW front panel showing the live camera feed of the two columns next to the process diagram"
+    width: 1200
+    height: 900
+    caption: "LabVIEW front panel with the live camera feed of the rig"
+  - src: "/projects/remote-lab-vision/gallery/02.webp"
+    alt: "Jakhangir and Professor Lucas Ellis in front of the URSA research poster"
+    width: 1200
+    height: 900
+    caption: "Poster session with Professor Lucas Ellis"
+  - src: "/projects/remote-lab-vision/gallery/03.webp"
+    alt: "The full rig: columns, camera mount on aluminum extrusion, control box"
+    width: 1200
+    height: 2134
+    caption: "Camera mounted on custom aluminum extrusion"
+  - src: "/projects/remote-lab-vision/gallery/04.webp"
+    alt: "LabVIEW block diagram for the camera acquisition through NI-IMAQdx"
+    width: 1200
+    height: 1600
+    caption: "Acquisition block diagram, NI-IMAQdx"
+  - src: "/projects/remote-lab-vision/gallery/05.webp"
+    alt: "The URSA Engage research poster: camera comparison, histograms and results"
+    width: 1200
+    height: 939
+    caption: "URSA Engage poster"
 order: 3
 draft: false
 ---

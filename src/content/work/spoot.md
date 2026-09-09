@@ -14,9 +14,20 @@ links:
     href: "https://github.com/Jakhangir18"
 cover:
   src: "/projects/spoot/cover.webp"
-  alt: "The SPOOT team receiving the Google track award at BeaverHacks 2026"
-  width: 1600
+  alt: "The SPOOT team on stage receiving the Google track award at BeaverHacks 2026"
+  width: 1152
   height: 1200
+gallery:
+  - src: "/projects/spoot/gallery/01.webp"
+    alt: "On stage under the BeaverHacks banner during the award ceremony"
+    width: 1200
+    height: 900
+    caption: "BeaverHacks 2026, Google track, third place"
+  - src: "/projects/spoot/gallery/02.webp"
+    alt: "The two-person team in the corridor after the ceremony"
+    width: 1200
+    height: 1600
+    caption: "After the ceremony"
 order: 2
 draft: false
 ---

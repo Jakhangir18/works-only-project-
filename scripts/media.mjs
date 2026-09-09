@@ -21,7 +21,7 @@ const BUDGET = 15 * 1024 * 1024;
 const SELECTION = {
   touchpoint: {
     cover: { file: "touchpoint-13.webp" },
-    gallery: ["touchpoint-15.webp", "touchpoint-19.webp", "touchpoint-20.webp", "touchpoint-10.webp", "touchpoint-12.webp", "touchpoint-14.webp"],
+    gallery: ["touchpoint-21.webp", "touchpoint-23.webp", "touchpoint-02.webp", "touchpoint-11.webp", "touchpoint-20.webp", "touchpoint-09.webp"],
   },
   spoot: {
     cover: { file: "spoot-03.webp", crop: { left: 0, top: 0, width: 0.72, height: 1 } },
@@ -29,7 +29,7 @@ const SELECTION = {
   },
   "remote-lab-vision": {
     cover: { file: "remote-lab-vision-11.webp" },
-    gallery: ["remote-lab-vision-02.webp", "remote-lab-vision-03.webp", "remote-lab-vision-07.webp", "remote-lab-vision-13.webp"],
+    gallery: ["remote-lab-vision-03.webp", "remote-lab-vision-02.webp", "remote-lab-vision-12-poster.webp", "remote-lab-vision-07.webp", "remote-lab-vision-13.webp"],
   },
   // AMS sources were already in the repo as JPGs (public/projects/ams/images), converted in place.
   "ams-tablet": {

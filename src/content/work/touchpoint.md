@@ -9,9 +9,40 @@ stack: ["Raspberry Pi", "Coin vibration motors", "Custom driver board", "Python"
 where: "QuackHacks 3.0, University of Oregon"
 cover:
   src: "/projects/touchpoint/cover.webp"
-  alt: "TouchPoint glove with the driver board and vibration motors on the fingers"
-  width: 1600
-  height: 1067
+  alt: "The TouchPoint glove on the hackathon table, wired to the driver board"
+  width: 1200
+  height: 1600
+gallery:
+  - src: "/projects/touchpoint/gallery/01.webp"
+    alt: "Close-up of the glove with vibration motors taped to the fingertips and the driver board on the back of the hand"
+    width: 1200
+    height: 1600
+    caption: "Six coin motors on the fingers, driver board on the back of the hand"
+  - src: "/projects/touchpoint/gallery/02.webp"
+    alt: "Schematic of the driver board: eight motor channels and five key inputs around a Raspberry Pi"
+    width: 1200
+    height: 764
+    caption: "Driver board schematic: eight motor channels, five debounced keys, one Raspberry Pi"
+  - src: "/projects/touchpoint/gallery/03.webp"
+    alt: "Hackathon work table covered with parts, wires, a breadboard and the glove in progress"
+    width: 1200
+    height: 800
+    caption: "Hour ten of twenty-four"
+  - src: "/projects/touchpoint/gallery/04.webp"
+    alt: "The team showing the glove to visitors at the table"
+    width: 1200
+    height: 1600
+    caption: "Walking visitors through the tree navigation"
+  - src: "/projects/touchpoint/gallery/05.webp"
+    alt: "Three team members on stage with the TouchPoint slide behind them at the awards"
+    width: 1200
+    height: 800
+    caption: "Awards: 2nd overall and the Google track"
+  - src: "/projects/touchpoint/gallery/06.webp"
+    alt: "Group photo on the QuackHacks 3 stage"
+    width: 1200
+    height: 800
+    caption: "QuackHacks 3.0, University of Oregon, May 2026"
 order: 1
 draft: false
 ---
