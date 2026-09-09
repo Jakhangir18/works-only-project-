@@ -1,0 +1,14 @@
+[
+  {"id": "F1", "title": "Heavy systems removed, build green", "done_when": "three, gsap-driven sections, public/1 frames, perf/ are gone; init.sh exits 0; dist/ has only index, fonts, icons, projects", "passes": false},
+  {"id": "F2", "title": "Design tokens and base typography", "done_when": "tokens.scss defines the spec palette and scale; global CSS < 8 KB; focus ring visible; reduced-motion sets --dur to 0", "passes": false},
+  {"id": "F3", "title": "Base layout with nav, footer, view transitions, reveal", "done_when": "dist/index.html preloads the two fonts, contains ClientRouter output, nav has 3 links and no burger", "passes": false},
+  {"id": "F4", "title": "Work content collection", "done_when": "src/content.config.ts schema validates; TouchPoint, SPOOT, Remote Lab Vision entries build; AMS, Rocket, Clinic are draft and absent from dist", "passes": false},
+  {"id": "F5", "title": "Hero", "done_when": "name does not wrap mid-word at 390px; hero line is the owner's exact sentence; screenshots reviewed", "passes": false},
+  {"id": "F6", "title": "Work list with hover preview", "done_when": "rows render from the collection; follower shows/swaps/hides in Playwright; rAF stops after leave; inline covers on coarse pointer only; keyboard reaches every row with a visible ring", "passes": false},
+  {"id": "F7", "title": "Project pages", "done_when": "dist/work/<slug>/index.html for the three live projects; one h1 each; meta, prose sections, gallery, next link render; view transition list->page->back works in Chromium", "passes": false},
+  {"id": "F8", "title": "About and contact", "done_when": "copy follows the spec rules; contrast of muted ink >= 4.5:1 (axe); email is a mailto link at title size", "passes": false},
+  {"id": "F9", "title": "Media pipeline", "done_when": "scripts/media.mjs produces cover/thumb/gallery webp for three slugs; public/projects <= 15 MB; every img on every page has naturalWidth > 0", "passes": false},
+  {"id": "F10", "title": "QA gate", "done_when": "0 console errors Chromium+WebKit desktop+mobile; axe 0 serious/critical; Lighthouse mobile perf >= 95 and a11y 100; client JS <= 12 KB gz; screenshots reviewed", "passes": false},
+  {"id": "F11", "title": "Preview reachable and branch pushed", "done_when": "https://vps-worker.taild24189.ts.net:8447 serves the production build from tmux; redesign/minimal pushed; owner has the link and the safari-gate list", "passes": false},
+  {"id": "F12", "title": "Code review passed", "done_when": "/code-review on main..redesign/minimal has no open blocker or major; /simplify applied", "passes": false}
+]

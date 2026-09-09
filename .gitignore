@@ -10,3 +10,6 @@ perf-results/
 # ignore only machine-local settings.
 .claude/settings.local.json
 .DS_Store
+
+# Claude Code task memory (per machine)
+.claude/memory/
