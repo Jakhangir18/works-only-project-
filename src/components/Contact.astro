@@ -1,0 +1,56 @@
+---
+const links = [
+  { label: "GitHub", href: "https://github.com/Jakhangir18" },
+];
+---
+
+<section id="contact" class="contact wrap section" aria-labelledby="contact-title">
+  <div class="section__head mono">
+    <h2 id="contact-title">Say hello</h2>
+  </div>
+
+  <a href="mailto:tynshimj@oregonstate.edu" class="contact__email reveal">
+    tynshimj@oregonstate.edu
+  </a>
+
+  <ul class="contact__links mono reveal" style="--reveal-delay: 80ms">
+    {
+      links.map((l) => (
+        <li>
+          <a href={l.href} class="link" rel="noopener">
+            {l.label} ↗
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+</section>
+
+<style lang="scss">
+  .contact__email {
+    display: inline-block;
+    max-width: 100%;
+    font-size: var(--fs-title);
+    line-height: 1.05;
+    letter-spacing: -0.015em;
+    overflow-wrap: anywhere;
+    text-decoration: underline;
+    text-decoration-color: var(--rule);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.12em;
+    transition: text-decoration-color var(--dur) var(--ease);
+
+    &:hover,
+    &:focus-visible {
+      text-decoration-color: var(--accent);
+    }
+  }
+
+  .contact__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem 2rem;
+    margin-top: clamp(2rem, 5vh, 4rem);
+    color: var(--ink-2);
+  }
+</style>

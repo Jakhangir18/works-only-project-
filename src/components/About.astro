@@ -1,0 +1,90 @@
+---
+// Facts only. Sources: owner's notes and PROJECT-PAGE-PROMPTS.md. Lines that
+// wait for the owner's confirmation are listed in docs/plans/2026-09-09-minimal-redesign.md.
+const facts = [
+  { label: "Based in", value: "Corvallis, Oregon" },
+  { label: "Studying", value: "Computer science and physics, Oregon State University" },
+  { label: "Email", value: "tynshimj@oregonstate.edu", href: "mailto:tynshimj@oregonstate.edu" },
+  { label: "GitHub", value: "github.com/Jakhangir18", href: "https://github.com/Jakhangir18" },
+];
+---
+
+<section id="about" class="about wrap section" aria-labelledby="about-title">
+  <div class="section__head mono">
+    <h2 id="about-title">About</h2>
+  </div>
+
+  <div class="about__grid">
+    <div class="about__text">
+      <p class="reveal">
+        I study computer science and physics at Oregon State University. Most
+        of what I build starts as hardware: a haptic glove that let a deafblind
+        user browse the web by feel and took 2nd overall at QuackHacks 3.0;
+        sound-locating glasses that placed 3rd in the Google track at
+        BeaverHacks 2026; the camera system behind Oregon State's remote
+        chemistry labs, funded by URSA Engage.
+      </p>
+      <p class="reveal" style="--reveal-delay: 60ms">
+        Before Oregon I ran a student rocket club in Kazakhstan: 3D-printed
+        airframes, Arduino avionics, launches. Day to day I work in Python,
+        C++ and TypeScript, on Raspberry Pi and in LabVIEW, and I print the
+        parts I cannot buy.
+      </p>
+    </div>
+
+    <dl class="about__facts reveal" style="--reveal-delay: 120ms">
+      {
+        facts.map((f) => (
+          <div class="about__fact">
+            <dt class="mono">{f.label}</dt>
+            <dd>{f.href ? <a href={f.href} class="link">{f.value}</a> : f.value}</dd>
+          </div>
+        ))
+      }
+    </dl>
+  </div>
+</section>
+
+<style lang="scss">
+  .about__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    gap: clamp(2rem, 6vw, 6rem);
+
+    @include mq(md) {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  .about__text {
+    max-width: var(--measure);
+    font-size: var(--fs-lede);
+    line-height: 1.35;
+
+    p + p {
+      margin-top: 1.25em;
+    }
+  }
+
+  .about__facts {
+    display: grid;
+    gap: 1.25rem;
+    align-content: start;
+  }
+
+  .about__fact {
+    display: grid;
+    gap: 0.35rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--rule);
+  }
+
+  dt {
+    color: var(--ink-2);
+  }
+
+  dd {
+    font-size: 1rem;
+    line-height: 1.4;
+  }
+</style>
