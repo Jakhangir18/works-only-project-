@@ -38,6 +38,9 @@ const { title, description } = Astro.props;
       crossorigin="anonymous"
     />
     <ClientRouter />
+    <script is:inline>
+      document.documentElement.classList.add("js");
+    </script>
   </head>
   <body>
     <Nav />

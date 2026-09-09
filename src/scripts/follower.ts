@@ -23,7 +23,8 @@ function init(): void {
     el.innerHTML = `<img alt="" width="${W}" height="${H}" decoding="async">`;
     document.body.appendChild(el);
   }
-  const img = el.querySelector("img") as HTMLImageElement;
+  const box = el;
+  const img = box.querySelector("img") as HTMLImageElement;
 
   let raf = 0;
   let tx = 0;
@@ -31,11 +32,12 @@ function init(): void {
   let x = 0;
   let y = 0;
   let visible = false;
+  let current: HTMLAnchorElement | null = null;
 
   const tick = (): void => {
     x += (tx - x) * LERP;
     y += (ty - y) * LERP;
-    el!.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)`;
+    box.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)`;
     if (visible || Math.abs(tx - x) > 0.5 || Math.abs(ty - y) > 0.5) {
       raf = requestAnimationFrame(tick);
     } else {
@@ -51,40 +53,75 @@ function init(): void {
     tx = e.clientX + 24;
     ty = e.clientY - H / 2;
     if (tx + W > window.innerWidth - 8) tx = e.clientX - W - 24;
+    if (tx < 8) tx = 8;
     if (ty < 8) ty = 8;
     if (ty + H > window.innerHeight - 8) ty = window.innerHeight - H - 8;
   };
 
+  const hide = (): void => {
+    visible = false;
+    current = null;
+    box.classList.remove("is-on");
+  };
+
+  // Called on pointermove only, so rows scrolling under a resting cursor do
+  // not flash the preview.
   const show = (link: HTMLAnchorElement, e: PointerEvent): void => {
-    const src = link.dataset.thumb!;
-    if (img.getAttribute("src") !== src) {
-      el!.classList.remove("is-on");
-      img.src = src;
-    }
     place(e);
+    if (current === link) {
+      start();
+      return;
+    }
+    current = link;
+    const src = link.dataset.thumb!;
     if (!visible) {
       x = tx;
       y = ty;
     }
     visible = true;
-    el!.classList.add("is-on");
+    if (img.getAttribute("src") === src) {
+      box.classList.add("is-on");
+      start();
+      return;
+    }
+    box.classList.remove("is-on");
+    img.src = src;
+    img
+      .decode()
+      .then(() => {
+        if (current === link && visible) box.classList.add("is-on");
+      })
+      .catch(hide);
     start();
   };
 
-  const hide = (): void => {
-    visible = false;
-    el!.classList.remove("is-on");
-  };
-
-  img.addEventListener("error", hide);
-
   for (const link of links) {
-    link.addEventListener("pointerenter", (e) => show(link, e));
-    link.addEventListener("pointermove", (e) => {
-      place(e);
-      start();
-    });
+    link.addEventListener("pointermove", (e) => show(link, e));
     link.addEventListener("pointerleave", hide);
+  }
+  window.addEventListener("scroll", hide, { passive: true });
+
+  document.addEventListener(
+    "astro:before-swap",
+    () => {
+      if (raf) cancelAnimationFrame(raf);
+      raf = 0;
+      hide();
+    },
+    { once: true },
+  );
+
+  // Warm the thumbs once the page is idle so the first hover has no blank frame.
+  const warm = (): void => {
+    for (const link of links) {
+      const i = new Image();
+      i.src = link.dataset.thumb!;
+    }
+  };
+  if ("requestIdleCallback" in window) {
+    (window as Window & { requestIdleCallback: (cb: () => void) => number }).requestIdleCallback(warm);
+  } else {
+    setTimeout(warm, 800);
   }
 }
 

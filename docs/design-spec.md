@@ -29,10 +29,10 @@ A portfolio a recruiter or professor reads in two minutes and believes. Every se
 
 ## Motion
 
-- Page load: nothing blocks. Hero words fade + rise 12px over 600ms with a 60ms stagger, once. No loader, no progress bar.
-- Scroll reveal: each section's children get `opacity 0 -> 1`, `translateY 16px -> 0`, 500ms, `cubic-bezier(.2,.7,.2,1)`, triggered by IntersectionObserver at 15% visibility, once. No pinning, no scrub, no parallax.
-- Work list hover (pointer: fine only): a 320x200 cover follows the cursor with a lerp of 0.12 per frame; it fades in 200ms and swaps image on row change. rAF loop runs only while a row is hovered. On touch devices each row shows its cover inline below the title, no JS.
-- Page transitions: Astro `<ClientRouter />` view transitions, 300ms crossfade; project title uses `transition:name` so it persists from list to page. Falls back to a normal navigation where unsupported.
+- Page load: nothing blocks. Hero words fade + rise 0.4em over 400ms with a 60ms stagger (line at 160ms), once. No loader, no progress bar. Hidden states exist only under `html.js`; without JS every word is visible.
+- Scroll reveal: labels, summaries, metadata and gallery items get `opacity 0 -> 1`, `translateY 0.4em -> 0`, 400ms, `cubic-bezier(.2,.7,.2,1)`, once, when they enter the viewport (IntersectionObserver, threshold 0, rootMargin -12% bottom). Elements already in view on load or after a view-transition swap reveal synchronously. Titles that carry a `transition:name` and prose bodies never sit under a reveal. No pinning, no scrub, no parallax.
+- Work list hover (pointer: fine only): a 320x200 cover follows the cursor with a lerp of 0.12 per frame; it appears on the first pointermove over a row (never on scroll under a resting cursor), fades in 200ms after the image has decoded, swaps on row change, hides on scroll and on leave. rAF loop runs only while a row is hovered and is cancelled before a view-transition swap. Thumbs are warmed on idle. On touch devices each row shows its cover inline below the title, no JS.
+- Page transitions: Astro `<ClientRouter />` view transitions, 300ms crossfade; project title uses `transition:name` so it persists from list to page. Falls back to a normal navigation where unsupported. Under reduced motion the view-transition pseudo-elements get `animation: none`.
 - `prefers-reduced-motion: reduce` turns every transition and the hover follower off; content is visible immediately.
 - No Lenis, no GSAP, no Three.js. Total client JS budget: under 12 KB gzipped.
 

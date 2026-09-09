@@ -21,6 +21,7 @@ html {
   background: var(--bg);
   color: var(--ink);
   scroll-behavior: smooth;
+  scroll-padding-top: var(--nav-h);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -96,10 +97,12 @@ img {
   }
 }
 
-// Scroll reveal: src/scripts/reveal.ts adds .is-in once the element is 15% visible.
-.reveal {
+// Scroll reveal: src/scripts/reveal.ts adds .is-in once the element enters the
+// viewport. Hidden state only exists when JS has run (html.js), so a blocked or
+// failed script still shows every word.
+.js .reveal {
   opacity: 0;
-  transform: translateY(16px);
+  transform: translateY(0.4em);
   transition:
     opacity var(--dur) var(--ease),
     transform var(--dur) var(--ease);
@@ -108,6 +111,14 @@ img {
   &.is-in {
     opacity: 1;
     transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
   }
 }
 
