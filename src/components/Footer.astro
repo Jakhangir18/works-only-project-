@@ -1,0 +1,25 @@
+---
+const year = new Date().getFullYear();
+---
+
+<footer class="footer wrap mono">
+  <p>© {year} Jakhangir Tynshimov</p>
+  <p>Set in Editorial New and Fraktion Mono</p>
+  <p>Corvallis, Oregon</p>
+</footer>
+
+<style lang="scss">
+  .footer {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--gap);
+    padding-block: 2rem;
+    border-top: 1px solid var(--rule);
+    color: var(--ink-2);
+
+    @include mq(sm) {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+  }
+</style>
