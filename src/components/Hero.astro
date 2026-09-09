@@ -1,0 +1,46 @@
+---
+// Hero: name + one honest line. Copy is fixed by the owner (docs/design-spec.md).
+---
+
+<section class="hero wrap" aria-labelledby="hero-title">
+  <h1 id="hero-title" class="hero__name">
+    <span class="reveal">Jakhangir</span>
+    <span class="reveal" style="--reveal-delay: 60ms">Tynshimov</span>
+  </h1>
+  <p class="hero__line mono reveal" style="--reveal-delay: 160ms">
+    CS + Physics student, Oregon State. Builds hardware and web.
+  </p>
+</section>
+
+<style lang="scss">
+  .hero {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: clamp(1.25rem, 3vh, 2.5rem);
+    min-height: calc(100svh - var(--nav-h));
+    padding-block: clamp(3rem, 8vh, 6rem);
+  }
+
+  .hero__name {
+    display: flex;
+    flex-direction: column;
+    font-size: var(--fs-display);
+    font-weight: 400;
+    line-height: 0.95;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+
+    span {
+      display: block;
+    }
+  }
+
+  .hero__line {
+    max-width: 60ch;
+    color: var(--ink-2);
+    text-transform: none;
+    letter-spacing: 0.02em;
+    font-size: 0.875rem;
+  }
+</style>
