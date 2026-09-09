@@ -1,0 +1,46 @@
+---
+interface Props {
+  items: { label: string; value?: string }[];
+}
+const { items } = Astro.props;
+const rows = items.filter((i) => i.value && i.value.length > 0);
+---
+
+<dl class="meta">
+  {
+    rows.map((row) => (
+      <div class="meta__row">
+        <dt class="mono">{row.label}</dt>
+        <dd>{row.value}</dd>
+      </div>
+    ))
+  }
+</dl>
+
+<style lang="scss">
+  .meta {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem var(--gap);
+    border-top: 1px solid var(--rule);
+    padding-top: 1.25rem;
+
+    @include mq(sm) {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  .meta__row {
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  dt {
+    color: var(--ink-2);
+  }
+
+  dd {
+    font-size: 1rem;
+    line-height: 1.4;
+  }
+</style>

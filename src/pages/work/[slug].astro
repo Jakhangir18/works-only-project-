@@ -1,0 +1,163 @@
+---
+import { getCollection, render } from "astro:content";
+import Base from "../../layouts/Base.astro";
+import Meta from "../../components/Meta.astro";
+import Gallery from "../../components/Gallery.astro";
+
+export async function getStaticPaths() {
+  const works = (await getCollection("work", ({ data }) => !data.draft)).sort(
+    (a, b) => a.data.order - b.data.order,
+  );
+  return works.map((entry, i) => ({
+    params: { slug: entry.id },
+    props: { entry, index: i, next: works[(i + 1) % works.length] },
+  }));
+}
+
+const { entry, index, next } = Astro.props;
+const { data } = entry;
+const { Content } = await render(entry);
+const pad = (n: number) => String(n).padStart(2, "0");
+const meta = [
+  { label: "Year", value: data.year },
+  { label: "Role", value: data.role },
+  { label: "Team", value: data.team },
+  { label: "Where", value: data.where },
+  { label: "Stack", value: data.stack.join(" · ") },
+];
+---
+
+<Base title={`${data.title} — Jakhangir Tynshimov`} description={data.summary}>
+  <article class="project">
+    <header class="project__head wrap">
+      <p class="mono project__kicker">
+        <a href="/#work" class="link">Selected work</a> / {pad(index + 1)}
+      </p>
+      <h1 class="project__title" transition:name={`title-${entry.id}`}>
+        {data.title}
+      </h1>
+      <p class="project__lede">{data.summary}</p>
+      <Meta items={meta} />
+    </header>
+
+    <figure class="project__cover wrap">
+      <img
+        src={data.cover.src}
+        alt={data.cover.alt}
+        width={data.cover.width}
+        height={data.cover.height}
+        loading="eager"
+        fetchpriority="high"
+        decoding="async"
+      />
+    </figure>
+
+    <div class="prose wrap reveal">
+      <Content />
+    </div>
+
+    {
+      data.gallery && data.gallery.length > 0 && (
+        <section class="project__gallery wrap" aria-label="Gallery">
+          <Gallery items={data.gallery} />
+        </section>
+      )
+    }
+
+    {
+      data.links && data.links.length > 0 && (
+        <section class="project__links wrap" aria-label="Links">
+          <ul>
+            {data.links.map((l) => (
+              <li>
+                <a href={l.href} class="link mono" rel="noopener">
+                  {l.label} ↗
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+
+    <nav class="project__next wrap" aria-label="Next project">
+      <a href={`/work/${next.id}/`} class="project__next-link">
+        <span class="mono">Next</span>
+        <span class="project__next-title">{next.data.title} →</span>
+      </a>
+    </nav>
+  </article>
+</Base>
+
+<style lang="scss">
+  .project__head {
+    display: grid;
+    gap: clamp(1.25rem, 3vh, 2rem);
+    padding-block: clamp(3rem, 8vh, 6rem) clamp(2rem, 5vh, 4rem);
+  }
+
+  .project__kicker {
+    color: var(--ink-2);
+  }
+
+  .project__title {
+    font-size: var(--fs-display);
+    font-weight: 400;
+    line-height: 0.95;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+
+  .project__lede {
+    max-width: var(--measure);
+    font-size: var(--fs-lede);
+    line-height: 1.3;
+    color: var(--ink-2);
+  }
+
+  .project__cover {
+    padding-block: clamp(1rem, 3vh, 2rem);
+
+    img {
+      width: 100%;
+      max-height: 85vh;
+      object-fit: cover;
+      background: var(--rule);
+    }
+  }
+
+  .project__gallery,
+  .project__links {
+    padding-block: clamp(2rem, 6vh, 4rem);
+    border-top: 1px solid var(--rule);
+  }
+
+  .project__links ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem 2rem;
+  }
+
+  .project__next {
+    border-top: 1px solid var(--rule);
+  }
+
+  .project__next-link {
+    display: grid;
+    gap: 0.75rem;
+    padding-block: clamp(3rem, 8vh, 6rem);
+    color: var(--ink-2);
+
+    &:hover .project__next-title,
+    &:focus-visible .project__next-title {
+      color: var(--ink);
+    }
+  }
+
+  .project__next-title {
+    font-size: var(--fs-title);
+    line-height: 1.05;
+    letter-spacing: -0.015em;
+    transition: color var(--dur) var(--ease);
+  }
+</style>
