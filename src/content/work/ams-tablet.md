@@ -8,8 +8,8 @@ stack: []
 cover:
   src: "/projects/ams-tablet/cover.webp"
   alt: "AMS Tablet"
-  width: 1600
-  height: 1000
+  width: 932
+  height: 932
 order: 4
 draft: true
 ---
