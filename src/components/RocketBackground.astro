@@ -105,6 +105,10 @@
         lastFrameIdx = frameIdx;
         const img = images[frameIdx];
         if (img?.complete && img.naturalWidth) drawFrame(img);
+        // Not here yet: ask for it at high priority so it outranks the backlog
+        // instead of queueing behind every frame the visitor already passed.
+        // loadFrame is idempotent, so this is a no-op once the request exists.
+        else if (!img) loadFrame(frameIdx, "high");
       }
 
       // Toggle background visibility based on progress
@@ -124,10 +128,16 @@
        rocket section is already close. */
     let preloadStarted = false;
 
-    const loadFrame = (i: number) => {
+    const loadFrame = (i: number, priority: "high" | "low" = "low") => {
       if (images[i]) return;
       const img = new Image();
       img.decoding = "async";
+      // The bulk set is a backlog; the frame the scroll position is asking for
+      // right now is not. Without the split, a 250 kB/s link served the 240
+      // frames strictly in index order and frame 197 — wanted at t=5.9 s —
+      // painted at t=23.8 s, because the loader spent that bandwidth on
+      // frames 1..196, none of which were ever shown.
+      (img as HTMLImageElement & { fetchPriority?: string }).fetchPriority = priority;
       img.onload = () => {
         if (i === lastFrameIdx) drawFrame(img);
       };
@@ -138,12 +148,12 @@
     const preloadFrames = () => {
       if (preloadStarted) return;
       preloadStarted = true;
-      for (let i = 0; i < TOTAL; i++) loadFrame(i);
+      for (let i = 0; i < TOTAL; i++) loadFrame(i, "low");
     };
 
     // The first frame is one small request and is what the section shows the
     // moment it appears, so it does not wait for idle.
-    loadFrame(0);
+    loadFrame(0, "high");
 
     // Whichever comes first: the browser goes idle, or the section approaches.
     const startWhenIdle = () => {

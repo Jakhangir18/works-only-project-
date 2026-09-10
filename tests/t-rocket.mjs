@@ -105,6 +105,52 @@ const browser = await chromium.launch();
   await ctx.close();
 }
 
+// 4. A resize mid-story must not send the rocket back to its start pose.
+//    TransitionVideo re-inits the motion controller on a 200 ms resize
+//    debounce, 200 ms after the story section's own handler has already run,
+//    so nothing downstream can repair a reset — and a resize that produces no
+//    follow-on scroll event leaves the wrong pose on screen indefinitely.
+{
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+  const page = await ctx.newPage();
+  await page.goto(BASE + '/', { waitUntil: 'load' });
+  await page.waitForTimeout(6000);
+  const story = await page.evaluate(() => {
+    const s = document.querySelector('.js-rocket-story');
+    if (!s) return null;
+    const r = s.getBoundingClientRect();
+    return { top: r.top + window.scrollY, height: r.height };
+  });
+  if (story) {
+    const pose = () => page.evaluate(() => {
+      const el = document.querySelector('.js-rocket-container');
+      return el ? getComputedStyle(el).transform : null;
+    });
+    await page.evaluate((y) => window.scrollTo({ top: y, behavior: 'instant' }), story.top + (story.height - 800) * 0.45);
+    await page.waitForTimeout(700);
+    const before = await pose();
+    // Bare resize events: no viewport change, so nothing produces the stray
+    // scroll that repaired this by accident in some runs. Five of them,
+    // because whether the story section's rAF lands before or after the
+    // 200 ms re-init is a race — the defect showed in 3 of 5 sampled runs.
+    const after = [];
+    for (let i = 0; i < 5; i++) {
+      await page.evaluate(() => window.dispatchEvent(new Event('resize')));
+      await page.waitForTimeout(500);
+      after.push(await pose());
+    }
+    const startPose = await page.evaluate(() => {
+      window.updateRocketMotion?.(0);
+      const el = document.querySelector('.js-rocket-container');
+      return el ? getComputedStyle(el).transform : null;
+    });
+    const drifted = after.filter((p) => p !== before);
+    results.push(check('rocket: mid-story pose is not the start pose', !!before && before !== startPose, `${before} vs start ${startPose}`));
+    results.push(check('rocket: a resize does not snap the pose back to the start', drifted.length === 0, `${drifted.length}/5 resizes moved it: ${drifted[0] || 'none'}`));
+  }
+  await ctx.close();
+}
+
 await browser.close();
 const s = summarize(results);
 console.log(JSON.stringify({ suite: 'rocket', ...s }, null, 1));

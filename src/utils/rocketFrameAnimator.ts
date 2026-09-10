@@ -9,6 +9,18 @@ import gsap from "gsap";
 
 gsap.registerPlugin();
 
+/**
+ * The last progress the controller was driven to, kept across re-inits.
+ * TransitionVideo re-initialises this controller on a 200 ms resize debounce,
+ * and the story section's own resize handler runs immediately — 200 ms before
+ * it — so it can never repair what the re-init does. Ending the re-init at
+ * progress 0 snapped the rocket from its scrolled pose to its start pose
+ * (measured at 45% of the story: canvas left 30 px -> 540 px, rotation 50 deg
+ * -> 0 deg) and, when the resize produced no follow-on scroll event, it stayed
+ * there. Replaying the last progress makes the re-init a no-op on screen.
+ */
+let lastProgress = 0;
+
 export function initRocketMotionController(): void {
   const rocketContainer = document.querySelector(
     ".js-rocket-container",
@@ -21,7 +33,8 @@ export function initRocketMotionController(): void {
     "(prefers-reduced-motion: reduce)",
   ).matches;
   if (prefersReduced) {
-    window.updateRocketMotion = () => {
+    window.updateRocketMotion = (progress: number) => {
+      lastProgress = progress;
       rocketContainer.style.transform = `translate3d(0, 0, 0) rotateZ(0deg)`;
     };
     return;
@@ -37,6 +50,7 @@ export function initRocketMotionController(): void {
    * Called every scroll frame from RocketStorySection.
    */
   window.updateRocketMotion = function (progress: number) {
+    lastProgress = progress;
     let x = 0,
       y = 0,
       rotation = 0;
@@ -90,6 +104,7 @@ export function initRocketMotionController(): void {
     rocketContainer.style.transform = `translate3d(${x}px, ${y}px, 0) rotateZ(${rotation}deg)`;
   };
 
-  // Start from a neutral pose.
-  window.updateRocketMotion(0);
+  // Restore the pose the visitor is actually scrolled to. On the first init
+  // lastProgress is 0, so this is the neutral pose it always was.
+  window.updateRocketMotion(lastProgress);
 }
