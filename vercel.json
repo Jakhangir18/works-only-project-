@@ -1,0 +1,14 @@
+{
+  "redirects": [
+    {
+      "source": "/work/ams-device",
+      "destination": "/projects/ams/",
+      "permanent": true
+    },
+    {
+      "source": "/work/ams-device/",
+      "destination": "/projects/ams/",
+      "permanent": true
+    }
+  ]
+}

@@ -23,7 +23,7 @@ it is why the invariants below exist.
 |---|---|
 | `npm run dev` | Dev server on **:4321**. `astro.config.mjs` sets `server.host: true`, so it also binds to the LAN address |
 | `npm start` | Identical to `npm run dev` — same server, same port |
-| `npm run build` | Production build into `dist/`. Astro reports **7 pages**; `dist/` ends up with 8 `.html` files because `public/nasa-nns.html` is copied verbatim |
+| `npm run build` | Production build into `dist/`. Astro reports **8 pages**; `dist/` ends up with 9 `.html` files because `public/nasa-nns.html` is copied verbatim |
 | `npm run preview` | Serves the built `dist/` on **:4321** |
 | `npm run astro` | Astro CLI passthrough (e.g. `npm run astro -- --version`). With no arguments it prints CLI help |
 | `npm run perf:harness` | Frame timing, long tasks, forced reflows, heap/listener deltas. Add `-- --cpu=4`, `-- --mobile`, `-- --trace`, `-- --label=<name>`, `-- --dive-only`, `-- --browser=chromium\|firefox\|webkit` |

@@ -18,11 +18,17 @@ const __dirname = dirname(__filename);
 //               https://localhost:4321, which shipped a whole branch of link
 //               previews pointing at the reader's own machine.
 //
+// The two environments are named explicitly rather than treating "not
+// production" as preview: `vercel dev` sets VERCEL_ENV=development and
+// VERCEL_URL=localhost:3000, which would put localhost straight back.
+//
 // SITE_URL overrides all of it, which is how a custom domain arrives.
 const vercelSite =
   process.env.VERCEL_ENV === 'production'
     ? process.env.VERCEL_PROJECT_PRODUCTION_URL
-    : process.env.VERCEL_URL;
+    : process.env.VERCEL_ENV === 'preview'
+      ? process.env.VERCEL_URL
+      : null;
 
 const site =
   process.env.SITE_URL ||

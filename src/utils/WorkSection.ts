@@ -7,6 +7,17 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 gsap.registerPlugin(ScrollTrigger, SlowMo);
 
 const INTRO_VH = 140;
+
+/**
+ * The ghost shadow's opacity for a given tunnel state. It ramps to full over
+ * the first half of the intro and holds. Written in two places — once when a
+ * ghost is created and once per frame while the state moves — and they have to
+ * agree, because a ghost holding an opacity the state does not imply is
+ * exactly the defect this ramp already produced once.
+ */
+function shadowOpacity(state: number): string {
+  return String(Math.min(state * 2, 1));
+}
 const DESKTOP_WORK_STEP_VH = 80;
 const MOBILE_WORK_STEP_VH = 72;
 const END_HOLD_VH = 60;
@@ -412,7 +423,7 @@ class Section {
         // never be given one and would keep the stylesheet's 0 until the
         // visitor scrolled back to the intro. On iOS the address bar
         // collapsing rebuilds these on every scroll-direction change.
-        shadow.style.opacity = String(Math.min(this.state * 2, 1));
+        shadow.style.opacity = shadowOpacity(this.state);
         el.appendChild(shadow);
 
         scene.appendChild(el);
@@ -440,7 +451,6 @@ class Section {
         letter.ghosts.push(ghost);
       }
     });
-
   }
 
   setWorks() {
@@ -627,7 +637,7 @@ class Section {
         // is already there. Writing them anyway cost 3 of the 4 inline
         // writes per ghost, 136 per frame across 54 ghosts.
         if (stateChanged) {
-          ghost.shadow.style.opacity = String(Math.min(state * 2, 1));
+          ghost.shadow.style.opacity = shadowOpacity(state);
         }
         ghost.shadow.style.transform =
           `scale(1.05, 1.02) translate3d(${head * 0.1 * state * state}rem, 0, 0)`;
