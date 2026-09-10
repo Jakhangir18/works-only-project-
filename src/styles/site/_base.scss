@@ -29,7 +29,13 @@ html {
 
   background-color: color(secondary);
   scrollbar-width: none;
-  overflow-x: hidden;
+  // clip, not hidden: hidden makes this element a scroll container, and a
+  // sticky descendant then sticks to it rather than to the viewport — the
+  // Timeline's year marker scrolled away with its group. clip suppresses the
+  // same overflow without creating that container. Safari below 16 does not
+  // know clip and falls back to visible, which is why the regression suite
+  // asserts no horizontal overflow on every route at every width.
+  overflow-x: clip;
 
   color: color(secondary);
 
@@ -45,7 +51,8 @@ html {
 
 body {
   background-color: #000000;
-  overflow-x: hidden;
+  // Same reason as html above.
+  overflow-x: clip;
 
   font-family: inherit;
 }

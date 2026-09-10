@@ -7,6 +7,27 @@ const { className = "" } = Astro.props;
 <script>
   import * as THREE from "three";
 
+  /**
+   * True when this browser will actually hand out a WebGL context. Covers an
+   * old machine, a blocklisted driver, WebGL switched off in settings, and a
+   * headless run. The probe canvas is thrown away immediately.
+   */
+  function hasWebGL(): boolean {
+    try {
+      const canvas = document.createElement("canvas");
+      const gl =
+        canvas.getContext("webgl2") ||
+        canvas.getContext("webgl") ||
+        canvas.getContext("experimental-webgl");
+      if (!gl) return false;
+      const lose = (gl as WebGLRenderingContext).getExtension("WEBGL_lose_context");
+      lose?.loseContext();
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
   class DottedSurfaceAnimation {
@@ -14,6 +35,8 @@ const { className = "" } = Astro.props;
     scene!: THREE.Scene;
     camera!: THREE.PerspectiveCamera;
     renderer!: THREE.WebGLRenderer;
+    /** False when WebGL is unavailable; every entry point then does nothing. */
+    supported = false;
     points!: THREE.Points;
     geometry!: THREE.BufferGeometry;
     material!: THREE.PointsMaterial;
@@ -32,13 +55,22 @@ const { className = "" } = Astro.props;
       this.animationId = 0;
       this.frameCount = 0;
 
-      this.initScene();
+      this.supported = this.initScene();
+      if (!this.supported) return;
+
       this.createParticles();
       this.bindEvents();
       this.animate();
     }
 
-    initScene() {
+    /**
+     * Returns false when this browser cannot give us a WebGL context — an old
+     * machine, a blocklisted driver, WebGL switched off, or a headless run.
+     * Three.js logs its own console error and throws in that case; the hero
+     * has its type and its background without us, so the honest response is
+     * to leave the field out rather than to fail loudly.
+     */
+    initScene(): boolean {
       this.scene = new THREE.Scene();
 
       this.camera = new THREE.PerspectiveCamera(
@@ -50,11 +82,20 @@ const { className = "" } = Astro.props;
       this.camera.position.set(0, 355, 1220);
 
       // Safari gets a lighter renderer setup to keep the background smooth.
-      this.renderer = new THREE.WebGLRenderer({
-        alpha: true,
-        antialias: !isSafari, // Antialias triggers extra GPU passes in Safari
-        powerPreference: isSafari ? "default" : "high-performance",
-      });
+      // Ask for a context ourselves first. Three.js logs its own console
+      // error before it throws, so catching the throw is not enough to keep
+      // the console clean on a machine without WebGL.
+      if (!hasWebGL()) return false;
+
+      try {
+        this.renderer = new THREE.WebGLRenderer({
+          alpha: true,
+          antialias: !isSafari, // Antialias triggers extra GPU passes in Safari
+          powerPreference: isSafari ? "default" : "high-performance",
+        });
+      } catch {
+        return false;
+      }
       // Cap pixel ratio at 1 on Safari to halve GPU fill-rate
       this.renderer.setPixelRatio(
         Math.min(window.devicePixelRatio, isSafari ? 1 : 2),
@@ -63,6 +104,7 @@ const { className = "" } = Astro.props;
       this.renderer.setClearColor(0x000000, 0);
 
       this.container.appendChild(this.renderer.domElement);
+      return true;
     }
 
     createParticles() {
@@ -105,13 +147,13 @@ const { className = "" } = Astro.props;
     }
 
     pause() {
-      if (this.paused) return;
+      if (!this.supported || this.paused) return;
       this.paused = true;
       cancelAnimationFrame(this.animationId);
     }
 
     resume() {
-      if (!this.paused) return;
+      if (!this.supported || !this.paused) return;
       this.paused = false;
       this.animate();
     }
@@ -156,6 +198,10 @@ const { className = "" } = Astro.props;
     }
 
     destroy() {
+      // Nothing was ever created when WebGL is unavailable, so there is
+      // nothing to tear down and no renderer to dispose.
+      if (!this.supported) return;
+
       window.removeEventListener("resize", this.handleResize);
       cancelAnimationFrame(this.animationId);
 
