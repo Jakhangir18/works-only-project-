@@ -9,7 +9,8 @@
 
 import sharp from "sharp";
 import { mkdir, readdir, stat } from "node:fs/promises";
-import { join, resolve } from "node:path";
+import { existsSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
 
 const IN = resolve("../in/my_work_experience/_web");
 const OUT = resolve("public/projects");
@@ -99,6 +100,21 @@ for (const slug of slugs) {
     // needs to be at the size it is displayed.
     await write(await base(join(src, file)), join(dst, "gallery", `${String(n).padStart(2, "0")}.webp`), { width: 1200, height: 1400, fit: "inside", withoutEnlargement: true }, GALLERY_QUALITY);
   }
+}
+
+// Share cards. Link previews want a 1200x630 landscape JPEG: a portrait webp
+// is cropped unpredictably by one scraper and ignored by another.
+for (const slug of await readdir(OUT)) {
+  const cover = existsSync(join(OUT, slug, "cover.webp"))
+    ? join(OUT, slug, "cover.webp")
+    : join(OUT, slug, "images", "cover.webp");
+  if (!existsSync(cover)) continue;
+  const out = join(dirname(cover), "og.jpg");
+  const info = await sharp(cover)
+    .resize(1200, 630, { fit: "cover", position: "attention" })
+    .jpeg({ quality: 86 })
+    .toFile(out);
+  console.log(JSON.stringify({ file: out.replace(OUT, "/projects"), width: info.width, height: info.height, kb: Math.round(info.size / 1024) }));
 }
 
 const total = await dirSize(OUT);

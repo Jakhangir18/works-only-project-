@@ -17,7 +17,7 @@ import "../styles/global.scss";
 
     <meta
       name="description"
-      content="Interactive works portfolio section with smooth animations."
+      content="Jakhangir Tynshimov — computer science and physics at Oregon State. Haptic hardware, sound-locating glasses, camera research for remote chemistry labs, and an industrial inspection tablet."
     />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="generator" content={Astro.generator} />
@@ -26,6 +26,26 @@ import "../styles/global.scss";
 
     <link rel="icon" type="image/svg+xml" href="/icons/favicon.svg" />
     <link rel="apple-touch-icon" href="/icons/favicon.svg" />
+
+    <!-- Link previews. The card image is a capture of this page's own hero, so
+         what someone sees in a message is what they land on. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Jakhangir Tynshimov" />
+    <meta
+      property="og:description"
+      content="Computer science and physics at Oregon State. Haptic hardware, sound-locating glasses, camera research for remote chemistry labs, and an industrial inspection tablet."
+    />
+    <meta property="og:image" content={new URL("/og-home.jpg", Astro.site)} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:url" content={new URL("/", Astro.site)} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Jakhangir Tynshimov" />
+    <meta
+      name="twitter:description"
+      content="Computer science and physics at Oregon State. Haptic hardware, sound-locating glasses, camera research for remote chemistry labs, and an industrial inspection tablet."
+    />
+    <meta name="twitter:image" content={new URL("/og-home.jpg", Astro.site)} />
 
     <meta name="theme-color" content="#160000" />
     <meta name="msapplication-navbutton-color" content="#160000" />

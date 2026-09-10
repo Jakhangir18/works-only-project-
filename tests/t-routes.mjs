@@ -73,6 +73,32 @@ for (const [ename, engine] of Object.entries(ENGINES)) {
       results.push(check(`${tag} images have alt`, dom.imgsNoAlt.length === 0, dom.imgsNoAlt.slice(0, 2).join(', ')));
       results.push(check(`${tag} declared image sizes match the files`, dom.imgsWrongRatio.length === 0, dom.imgsWrongRatio.slice(0, 2).join(' | ')));
 
+      // A link to this site will be pasted into a chat: the preview must have a
+      // title, a description and an image that actually resolves.
+      if (ename === 'chromium' && size === 'desktop') {
+        const share = await page.evaluate(() => {
+          const meta = (sel) => document.querySelector(sel)?.getAttribute('content') || null;
+          return {
+            title: meta('meta[property="og:title"]'),
+            desc: meta('meta[property="og:description"]'),
+            image: meta('meta[property="og:image"]'),
+            card: meta('meta[name="twitter:card"]'),
+            description: meta('meta[name="description"]'),
+          };
+        });
+        results.push(check(`${tag} has a share title`, !!share.title && share.title.length > 3, String(share.title)));
+        results.push(check(`${tag} has a share description`, !!share.desc && share.desc.length > 30, String(share.desc).slice(0, 60)));
+        results.push(check(`${tag} has a twitter card type`, share.card === 'summary_large_image', String(share.card)));
+        results.push(check(`${tag} page description is not the template one`, !!share.description && !/Interactive works portfolio section/.test(share.description), String(share.description).slice(0, 60)));
+        if (share.image) {
+          const path = share.image.replace(/^https?:\/\/[^/]+/, '');
+          const resp = await page.request.get(BASE + path);
+          results.push(check(`${tag} share image resolves`, resp.status() === 200, `${resp.status()} ${path}`));
+        } else {
+          results.push(check(`${tag} share image resolves`, false, 'no og:image'));
+        }
+      }
+
       // A section label must never sit on top of the text it introduces.
       // At one column a sticky label pins itself over its own paragraph.
       const overlaps = await page.evaluate(() => {

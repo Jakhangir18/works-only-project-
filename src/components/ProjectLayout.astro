@@ -46,6 +46,10 @@ const {
   gallery,
   downloads,
 } = Astro.props;
+
+// The share card sits beside the cover: /projects/<slug>/og.jpg, a 1200x630
+// JPEG, because a portrait webp previews badly and some scrapers skip webp.
+const shareCard = heroImage?.replace(/\/[^/]+$/, "/og.jpg");
 ---
 
 <!doctype html>
@@ -56,6 +60,25 @@ const {
     <title>{title} — Portfolio</title>
     <meta name="description" content={intro} />
     <meta name="robots" content="noindex, nofollow" />
+
+    <!-- Sharing a single project should preview that project. -->
+    <meta property="og:type" content="article" />
+    <meta property="og:title" content={`${title} — Jakhangir Tynshimov`} />
+    <meta property="og:description" content={intro} />
+    <meta property="og:url" content={new URL(Astro.url.pathname, Astro.site)} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={`${title} — Jakhangir Tynshimov`} />
+    <meta name="twitter:description" content={intro} />
+    {
+      shareCard && (
+        <>
+          <meta property="og:image" content={new URL(shareCard, Astro.site)} />
+          <meta property="og:image:width" content="1200" />
+          <meta property="og:image:height" content="630" />
+          <meta name="twitter:image" content={new URL(shareCard, Astro.site)} />
+        </>
+      )
+    }
     <link rel="icon" type="image/svg+xml" href="/icons/favicon.svg" />
     <style is:global>
       @import url("/fonts/editorial-new.css");
