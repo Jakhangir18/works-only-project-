@@ -5,7 +5,15 @@ const { className = "" } = Astro.props;
 <div class:list={["dotted-surface", className]} data-dotted-surface></div>
 
 <script>
-  import * as THREE from "three";
+  import type * as THREEType from "three";
+
+  // Three.js is imported at runtime rather than at parse time. The whole
+  // library rides on WebGLRenderer — 491 KB raw, 123 KB gzipped, and named
+  // imports do not shrink it — and this field is decoration behind the hero
+  // type. Loading it with the page put it on the critical path ahead of
+  // everything the visitor actually reads. It now arrives once the browser is
+  // idle, and the hero is complete without it.
+  let THREE: typeof THREEType;
 
   /**
    * True when this browser will actually hand out a WebGL context. Covers an
@@ -224,11 +232,21 @@ const { className = "" } = Astro.props;
     }
   }
 
-  const mount = () => {
+  const mount = async () => {
     const container = document.querySelector(
       "[data-dotted-surface]",
     ) as HTMLElement;
     if (!container) {
+      return;
+    }
+
+    // Nothing below can run without a context, and asking first means a
+    // machine without WebGL never downloads the library at all.
+    if (!hasWebGL()) return;
+
+    try {
+      THREE = await import("three");
+    } catch {
       return;
     }
 
@@ -267,14 +285,23 @@ const { className = "" } = Astro.props;
     };
   };
 
-  // Mount only after the component is in the DOM so the canvas has a container.
+  // Mount once the page has settled: the field is decoration, and fetching
+  // half a megabyte of library before the hero has painted is the wrong order.
   if (typeof window !== "undefined") {
-    if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", mount, { once: true });
-    } else {
-      // DOM already loaded, mount immediately
-      setTimeout(mount, 0);
-    }
+    const start = () => {
+      if ("requestIdleCallback" in window) {
+        (
+          window as Window & {
+            requestIdleCallback: (cb: () => void, o?: { timeout: number }) => number;
+          }
+        ).requestIdleCallback(() => void mount(), { timeout: 2500 });
+      } else {
+        setTimeout(() => void mount(), 400);
+      }
+    };
+
+    if (document.readyState === "complete") start();
+    else window.addEventListener("load", start, { once: true });
   }
 </script>
 

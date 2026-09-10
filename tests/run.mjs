@@ -35,7 +35,7 @@ if (!lstatSync(link).isSymbolicLink() && !existsSync(join(link, 'playwright'))) 
   console.error(`${link} exists and is not a usable playwright link.`);
   process.exit(2);
 }
-const SUITES = ['t-routes', 't-a11y', 't-hero', 't-work', 't-dive', 't-timeline'];
+const SUITES = ['t-routes', 't-a11y', 't-hero', 't-work', 't-dive', 't-timeline', 't-rocket'];
 
 const run = (name) =>
   new Promise((resolve) => {
