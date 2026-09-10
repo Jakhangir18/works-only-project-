@@ -887,18 +887,25 @@ class DiveTransition {
 
     const controller = new AbortController();
     this.prefetchAbort = controller;
-    // Best effort, and honestly so. The Accept header is set to match the
-    // navigation that follows, because an edge that varies on it would
-    // otherwise store an entry the navigation never matches; Sec-Fetch-Dest
-    // cannot be set from script, so a Vary on that defeats this and the dive
-    // is simply back where it started. The body is read and discarded, since
-    // an unread stream can stall on backpressure and an incomplete body is
-    // not guaranteed to reach the cache at all.
+    // Best effort, and honestly so. The Accept header is the string a document
+    // navigation actually sends, so an edge that varies on Accept stores the
+    // entry under the key the navigation will look for — an abbreviated one
+    // guarantees the miss it was added to prevent. Sec-Fetch-Dest cannot be
+    // set from script, so a Vary on that defeats this and the dive is simply
+    // back where it started. The body is read to completion — these pages are
+    // about 10 KB — because an unread stream can stall on backpressure and a
+    // partial body is not guaranteed to reach the cache. priority is a hint
+    // no engine on this path implements yet; it costs nothing and says what
+    // is meant.
     fetch(href, {
       credentials: "same-origin",
       signal: controller.signal,
-      headers: { Accept: "text/html,application/xhtml+xml" },
-    })
+      priority: "low",
+      headers: {
+        Accept:
+          "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+      },
+    } as RequestInit)
       .then((response) => response.arrayBuffer())
       .catch(() => {
         /* aborted, offline, or 404 — the navigation will handle it */
