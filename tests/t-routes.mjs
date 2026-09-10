@@ -82,6 +82,7 @@ for (const [ename, engine] of Object.entries(ENGINES)) {
             title: meta('meta[property="og:title"]'),
             desc: meta('meta[property="og:description"]'),
             image: meta('meta[property="og:image"]'),
+            url: meta('meta[property="og:url"]'),
             card: meta('meta[name="twitter:card"]'),
             description: meta('meta[name="description"]'),
           };
@@ -90,12 +91,34 @@ for (const [ename, engine] of Object.entries(ENGINES)) {
         results.push(check(`${tag} has a share description`, !!share.desc && share.desc.length > 30, String(share.desc).slice(0, 60)));
         results.push(check(`${tag} has a twitter card type`, share.card === 'summary_large_image', String(share.card)));
         results.push(check(`${tag} page description is not the template one`, !!share.description && !/Interactive works portfolio section/.test(share.description), String(share.description).slice(0, 60)));
-        if (share.image) {
-          const path = share.image.replace(/^https?:\/\/[^/]+/, '');
+        // A share card is only a share card if a stranger's scraper can fetch
+        // it. The first version of this check stripped the origin before
+        // testing, so it passed for a whole branch while every card pointed at
+        // https://localhost:4321 — the reader's own machine. Assert the host
+        // first, then the path.
+        const publicOrigin = (value) => {
+          if (!value) return 'missing';
+          let u;
+          try { u = new URL(value); } catch { return `not absolute: ${value}`; }
+          if (u.protocol !== 'https:') return `not https: ${value}`;
+          if (/^(localhost|127\.|0\.0\.0\.0|\[?::1)/.test(u.hostname)) return `local host: ${value}`;
+          if (!u.hostname.includes('.')) return `not a public host: ${value}`;
+          return null;
+        };
+        const imageProblem = publicOrigin(share.image);
+        results.push(check(`${tag} share image is a public absolute URL`, imageProblem === null, imageProblem || String(share.image)));
+        const urlProblem = publicOrigin(share.url);
+        results.push(check(`${tag} og:url is a public absolute URL`, urlProblem === null, urlProblem || String(share.url)));
+        if (!urlProblem) {
+          const got = new URL(share.url).pathname;
+          results.push(check(`${tag} og:url points at this page`, got === route, `${got} vs ${route}`));
+        }
+        if (share.image && !imageProblem) {
+          const path = new URL(share.image).pathname;
           const resp = await page.request.get(BASE + path);
           results.push(check(`${tag} share image resolves`, resp.status() === 200, `${resp.status()} ${path}`));
         } else {
-          results.push(check(`${tag} share image resolves`, false, 'no og:image'));
+          results.push(check(`${tag} share image resolves`, false, imageProblem || 'no og:image'));
         }
       }
 
