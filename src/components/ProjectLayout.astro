@@ -14,6 +14,17 @@ interface Props {
   outcome: string;
   /** Optional hero image. Omitted pages show the colored placeholder. */
   heroImage?: string;
+  /** Optional photographs shown after Outcome. Every entry needs real pixel
+   * dimensions so the grid reserves its space before the image decodes. */
+  gallery?: {
+    src: string;
+    alt: string;
+    width: number;
+    height: number;
+    caption?: string;
+  }[];
+  /** Optional outbound links (demo video, repository, document). */
+  downloads?: { href: string; label: string }[];
 }
 
 const {
@@ -27,6 +38,8 @@ const {
   solution,
   outcome,
   heroImage,
+  gallery,
+  downloads,
 } = Astro.props;
 ---
 
@@ -139,6 +152,56 @@ const {
           <p>{outcome}</p>
         </div>
       </article>
+
+      {
+        gallery && gallery.length > 0 && (
+          <section class="proj-gallery proj-animate" aria-label="Photographs">
+            <ul class="proj-gallery__grid">
+              {gallery.map((item) => (
+                <li class="proj-gallery__item">
+                  <figure>
+                    <img
+                      src={item.src}
+                      alt={item.alt}
+                      width={item.width}
+                      height={item.height}
+                      loading="lazy"
+                      decoding="async"
+                    />
+                    {item.caption && (
+                      <figcaption class="proj-gallery__caption">
+                        {item.caption}
+                      </figcaption>
+                    )}
+                  </figure>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )
+      }
+
+      {
+        downloads && downloads.length > 0 && (
+          <section class="proj-links proj-animate" aria-label="Links">
+            <ul class="proj-links__list">
+              {downloads.map((link) => (
+                <li>
+                  <a
+                    href={link.href}
+                    class="proj-links__link"
+                    style={`color: ${accentColor};`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {link.label} ↗
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )
+      }
     </main>
 
     <!-- Footer -->
@@ -422,6 +485,70 @@ const {
   .proj-hero__placeholder {
     will-change: transform;
   }
+
+  /* Gallery and links (optional props) */
+  .proj-gallery,
+  .proj-links {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 3rem clamp(1.5rem, 5vw, 5rem);
+  }
+
+  .proj-gallery__grid {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: clamp(1rem, 2vw, 2rem);
+  }
+
+  .proj-gallery__item figure {
+    margin: 0;
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .proj-gallery__item img {
+    width: 100%;
+    height: auto;
+    display: block;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+  }
+
+  .proj-gallery__caption {
+    font-family: var(--font-family-fraktion);
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    line-height: 1.4;
+    color: rgba(255, 255, 255, 0.55);
+  }
+
+  .proj-links__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem 2rem;
+  }
+
+  .proj-links__link {
+    font-family: var(--font-family-fraktion);
+    font-size: 0.8125rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+
+  @media (max-width: 768px) {
+    .proj-gallery__grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
 </style>
 
 <script>

@@ -31,11 +31,9 @@ const SELECTION = {
     cover: { file: "remote-lab-vision-11.webp" },
     gallery: ["remote-lab-vision-03.webp", "remote-lab-vision-02.webp", "remote-lab-vision-12-poster.webp", "remote-lab-vision-07.webp", "remote-lab-vision-13.webp"],
   },
-  // AMS sources were already in the repo as JPGs (public/projects/ams/images), converted in place.
-  "ams-tablet": {
-    src: resolve("../in/ams-jpg"),
-    cover: { file: "hero-tablet.jpg" },
-    gallery: ["cover.jpg", "dashboard-mobile.jpg", "deploy-manufacturing.jpg", "deploy-construction.jpg", "deploy-industrial.jpg", "deploy-akimat.jpg", "deploy-police.jpg", "certification.jpg", "patent.jpg"],
+  "engineering-rocket": {
+    cover: { file: "engineering-rocket-07.webp" },
+    gallery: ["engineering-rocket-19.webp", "engineering-rocket-06.webp", "engineering-rocket-09.webp", "engineering-rocket-05.webp", "engineering-rocket-20.webp", "engineering-rocket-31-poster.webp"],
   },
 };
 

@@ -1,0 +1,55 @@
+---
+import ProjectLayout from "../../components/ProjectLayout.astro";
+
+const gallery = [
+  {
+    src: "/projects/remote-lab-vision/gallery/01.webp",
+    alt: "LabVIEW front panel showing the live camera feed of the two columns next to the process diagram",
+    width: 1200,
+    height: 900,
+    caption: "The LabVIEW front panel a remote student actually sees",
+  },
+  {
+    src: "/projects/remote-lab-vision/gallery/02.webp",
+    alt: "Standing with Professor Lucas Ellis in front of the URSA research poster",
+    width: 1200,
+    height: 900,
+    caption: "Poster session, with Professor Lucas Ellis",
+  },
+  {
+    src: "/projects/remote-lab-vision/gallery/03.webp",
+    alt: "The rig from the front: glass columns, camera on aluminium extrusion, control box and emergency stop",
+    width: 1200,
+    height: 2134,
+    caption: "Camera mounted on custom aluminium extrusion, focal length calibrated to the target",
+  },
+  {
+    src: "/projects/remote-lab-vision/gallery/04.webp",
+    alt: "LabVIEW block diagram for camera acquisition through NI-IMAQdx",
+    width: 1200,
+    height: 1600,
+    caption: "Acquisition through the NI-IMAQdx module",
+  },
+  {
+    src: "/projects/remote-lab-vision/gallery/05.webp",
+    alt: "The URSA Engage research poster: camera comparison, intensity histograms and results",
+    width: 1200,
+    height: 939,
+    caption: "The URSA Engage poster: four cameras, RGB intensity histograms, one recommendation",
+  },
+];
+---
+
+<ProjectLayout
+  title="Remote Lab Vision"
+  number="03"
+  accentColor="#34d399"
+  heroColor="#0a1a14"
+  heroImage="/projects/remote-lab-vision/cover.webp"
+  intro="Oregon State runs one of the largest online degree programs in the country, and chemical engineering has a problem the rest of the catalog does not: the lab. Remote Learning Labs are real benchtop apparatus, in a real building, operated over the internet by students who may never enter it. I evaluated and integrated the vision system those labs see through — research funded by URSA Engage, with Professor Lucas Ellis and Stephen Stockton."
+  problem="A remote lab lives or dies on its video feed. The student is not watching a webcam stream for comfort — they are reading a meniscus, timing a color change, judging whether a bed has fluidized. That is a measurement instrument disguised as a camera, and it has to deliver resolution, frame rate and color fidelity into LabVIEW, which is what actually drives the hardware. When we started, there was no baseline: no data on which cameras could hold a stable high-resolution feed inside LabVIEW, and no way to justify the spend on one over another for every future rig."
+  approach="I treated it as an instrumentation problem rather than a purchasing one. Four cameras across three categories went onto the bench — the OBSBOT Meet 2-4K, a Logitech C922 Pro Stream, a GoPro Hero 8 Black and a Yi action camera. Each was acquired through the NI-IMAQdx module in LabVIEW, and each was tested for what it actually delivered rather than what the box claimed: true resolution and frame rate as received by LabVIEW, standard UVC plug-and-play against proprietary driver stacks, and RGB pixel intensity histograms to compare sensor dynamic range and noise under real lab lighting. Then I mounted them on custom aluminum extrusion and calibrated focal length to the target."
+  solution="The action cameras failed outright — closed software ecosystems that will not surrender a clean stream to a third-party acquisition layer, regardless of sensor quality. The Logitech connected without complaint but did not resolve enough detail to read an instrument. The OBSBOT Meet 2-4K came out as the viable solution on the balance of resolution, LabVIEW compatibility and cost, and its histogram showed the broadest, smoothest intensity distribution of the four — better dynamic range and visibly less sensor noise in lab lighting. That result is now the baseline every current and future rig in the lab is built against."
+  outcome="The vision architecture is in use across the Remote Learning Labs, which let students run genuine chemical engineering coursework from a browser — students who are remote, who cannot travel to campus, or who cannot physically access a lab bench. The known limitation is the fixed lens: adjusting the view still means walking over and moving the camera by hand. The path out of that is a DSLR body — Canon Rebel T5i or T8i — for interchangeable optics, true optical zoom and software-driven focus. This research was funded by URSA Engage through Oregon State's Office of Undergraduate Research, Scholarship, and the Arts."
+  gallery={gallery}
+/>
