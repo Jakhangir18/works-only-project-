@@ -31,3 +31,4 @@ OPEN: home Lighthouse perf 61/56, LCP 11.9s. Cause is not the frames — the LCP
 - docs/facts-to-confirm.md written and sent to the owner.
 - QA at HEAD: 8 routes, 2 engines, 2 viewports, 0 failures; home axe 0, keyboard 18/18 with a visible ring.
 - Running: a 5-dimension adversarial review workflow over 24dac7d..HEAD (hero, dive, tunnel, rocket, cross-cutting), each finding refuted by 3 lenses, then a completeness critic. Host caps concurrency at 2 agents, so it is slow.
+2026-09-10 owner decision: KEEP the four-second "Loading Experience" screen. Home LCP ~3.8s mobile (gzip-served) is therefore accepted, not an open defect. Do not propose shortening or removing the loader again without the owner raising it.

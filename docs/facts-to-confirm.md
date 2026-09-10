@@ -108,7 +108,7 @@ Anything else that belongs on the timeline? ACM, Microsoft Ambassador and Mangis
 
 ## 10. Two design calls
 
-- The home page holds a four-second "Loading Experience" screen. It is the largest remaining cost on that page. Keep it, shorten it, or drop it?
-  Answer: ________
+- ~~The home page holds a four-second "Loading Experience" screen. Keep it, shorten it, or drop it?~~
+  **Answered 2026-09-10: keep it.** The home page's largest contentful paint therefore stays around 3.8 s on mobile with compression, and that is a deliberate cost, not a defect. Nothing further to do here.
 - In the Work tunnel each letter's shadow shifts by about 1.6 px per frame. Freezing it would cut more per-frame work; it would also make the tunnel very slightly stiller. Freeze it?
   Answer: ________
