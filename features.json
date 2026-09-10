@@ -64,5 +64,29 @@
     "title": "Safari gate",
     "done_when": "the owner has run the checklist on a real iPhone and reported per item",
     "passes": false
+  },
+  {
+    "id": "F12",
+    "title": "Hero effect replaced",
+    "done_when": "MorphingText gone; RollingText cycles, pauses off-screen, off under reduced motion; longest title fits at 320-2560px",
+    "passes": true
+  },
+  {
+    "id": "F13",
+    "title": "Dive click lag",
+    "done_when": "tweened gradients hinted, priming in the click task, destination prefetched during the dive; all three measured",
+    "passes": true
+  },
+  {
+    "id": "F14",
+    "title": "Tunnel per-frame writes",
+    "done_when": "redundant shadow opacity, 3240 flowX copies and the post-write scroll reads all gone; frames >50ms down; visual output unchanged",
+    "passes": true
+  },
+  {
+    "id": "F15",
+    "title": "Adversarial review of the perf branch",
+    "done_when": "5 dimensions reviewed, every finding refuted by 3 lenses, survivors fixed",
+    "passes": false
   }
 ]
