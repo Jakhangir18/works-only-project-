@@ -3,13 +3,14 @@ import ProjectLayout from "../../components/ProjectLayout.astro";
 ---
 
 <ProjectLayout
-  title="Portfolio Rocket Experience"
-  number="05"
-  accentColor="#f9fafb"
-  heroColor="#0a0a0a"
-  intro="This portfolio itself — a cinematic, scroll-driven web experience built in Astro, powered by GSAP and a custom frame-sequencing engine, designed to transform 240 extracted video frames into an interactive rocket launch narrative."
-  problem="Standard portfolio websites present work as static pages — they tell rather than show. For a developer focused on motion, systems, and premium digital craft, a conventional portfolio would be a contradiction in terms. The challenge was to design an experience that demonstrates capabilities through the medium itself, not just describes them — while remaining performant, accessible, and production-grade."
-  approach="I extracted 240 frames from a rocket launch sequence and built a custom scroll-progress engine in Astro that maps window scroll position to individual frames, creating the illusion of a video controlled by the user's scroll. Four cinematic text slides overlay the sequence with directional animations. The layout system uses fixed positioning layers with z-index orchestration rather than traditional page flow, enabling simultaneous visual narratives."
-  solution="The site ships with a zero-JavaScript-framework approach (pure Astro + vanilla TS), GSAP for scroll triggers and easing, a bento grid skills section, a canvas-based frame renderer for the rocket sequence, a Spline 3D robot on the contact page, and full responsive support. Build output is a static HTML site with sub-2-second load time."
-  outcome="The portfolio communicates technical depth, design sensibility, and engineering rigor before a single word is read. The scroll-driven rocket sequence creates a memorable first impression that differentiates the work from any conventional developer portfolio. It serves as both a professional introduction and a live demonstration of exactly the kind of cinematic web experience I build for clients."
+  title="Portfolio Rocket"
+  number="06"
+  accentColor="#f5f5f5"
+  heroColor="#0d0d0d"
+  heroImage="/projects/portfolio-rocket/cover.webp"
+  intro="This site. A 240-frame rocket sequence scrubbed by scroll, a Three.js field behind the hero, and a Work section that expands into a tunnel of letters. It is also the project where I learned that composing animations is harder than writing them."
+  problem="Each animation worked on its own. The hero field, the frame sequence and the Work tunnel were built separately, and each was smooth in isolation. Put on one page they competed for the same 16.7 milliseconds: four independent requestAnimationFrame loops running at once, two of which never stopped even when their section was far off screen. The result was a site that felt heavy for reasons no single component was responsible for."
+  approach="I stopped guessing and built a measurement harness — frame timing, long tasks, forced reflows, listener and heap deltas — that runs against the production build in Chromium, WebKit and Firefox at desktop and 390-pixel widths. Every hypothesis had to move a number in that harness or be written down as rejected. Several were rejected: reducing the compositor hints on the letter tunnel changed nothing measurable, and a memory figure that drove an entire branch of work turned out to be a sum across Chrome processes rather than the page's own."
+  solution="The fixes that held were structural. Nothing animates while it cannot be seen, so every loop pauses on an IntersectionObserver and on tab visibility. Per-frame values are written on the leaf element that consumes them, never as a custom property on an ancestor — inherited properties invalidated roughly 1,600 nodes per frame and produced style recalculations of 44 to 89 milliseconds. Geometry is read before styles are written, never interleaved. Whatever a component creates it destroys, which took listener growth from plus 160 per resize to zero. The frame sequence runs at 960 pixels rather than 1918, cutting transfer by 34 percent."
+  outcome="The invariants are written down in the repository so the next change cannot quietly break them, and the rejected hypotheses are written down too, so nobody re-runs them. What is still open is honest: three cross-browser findings need a real iPhone rather than a headless WebKit, and headless numbers on a shared machine are a hint, not proof. The site you are reading is the current state of that work."
 />

@@ -1,15 +1,62 @@
 ---
 import ProjectLayout from "../../components/ProjectLayout.astro";
+
+const gallery = [
+  {
+    src: "/projects/engineering-rocket/gallery/01.webp",
+    alt: "A rocket body sliced for printing in the slicer, supports and layer preview visible",
+    width: 1200,
+    height: 900,
+    caption: "Every airframe section went through the slicer before it went on the printer",
+  },
+  {
+    src: "/projects/engineering-rocket/gallery/02.webp",
+    alt: "The assembled white airframe held in one hand",
+    width: 1200,
+    height: 2133,
+    caption: "A finished section, printed and cleaned up",
+  },
+  {
+    src: "/projects/engineering-rocket/gallery/03.webp",
+    alt: "The nose cone separated from the body, avionics bay open",
+    width: 1200,
+    height: 2133,
+    caption: "The bay the electronics ride in",
+  },
+  {
+    src: "/projects/engineering-rocket/gallery/04.webp",
+    alt: "A microcontroller board wired on the bench during avionics work",
+    width: 1200,
+    height: 1600,
+    caption: "Avionics on the bench",
+  },
+  {
+    src: "/projects/engineering-rocket/gallery/05.webp",
+    alt: "A certificate of thanks awarded at the faculty ceremony",
+    width: 1200,
+    height: 1600,
+    caption: "Faculty of Science and Technology",
+  },
+  {
+    src: "/projects/engineering-rocket/gallery/06.webp",
+    alt: "An open field on a cold day with equipment set out",
+    width: 1200,
+    height: 2120,
+    caption: "The field",
+  },
+];
 ---
 
 <ProjectLayout
-  title="Engineering Rocket Project"
+  title="Engineering Rocket"
   number="04"
   accentColor="#fb923c"
-  heroColor="#1a0e0a"
-  intro="An applied aerospace research project exploring small-scale rocket propulsion, structural analysis, and systems integration — combining engineering fundamentals with original experimental design at Oregon State University."
-  problem="Existing student rocketry projects at the university level often followed prescriptive kits with limited opportunities for original engineering work. The challenge was to design and analyze a rocket system from first principles — addressing propulsion selection, structural load analysis, guidance considerations, and recovery systems — under real engineering constraints and a defined performance envelope."
-  approach="The project began with a target flight profile: a sub-orbital vehicle capable of stable flight to 1,500 feet AGL with a controlled recovery. I applied finite element analysis to the airframe, modeled thrust curves against drag coefficients, and iterated on fin geometry for passive stability. All computational work was validated against published small-rocket test data and supplemented with CAD modeling and simulation."
-  solution="The final design document covers the complete vehicle system: propulsion stage selection and verification, structural analysis under max-Q conditions, stability margin calculations via Barrowman equations, and a dual-event recovery sequence (drogue at apogee, main at 500 AGL). Simulated flights using OpenRocket matched the target altitude within 4% error."
-  outcome="The project was reviewed and approved by the university's aeronautical engineering faculty, earning distinction for its systematic approach to uncertainty quantification and documentation quality. The design serves as a reference model in the undergraduate rocketry curriculum and has been cited by two subsequent student teams as a baseline for their own projects."
+  heroColor="#180a06"
+  heroImage="/projects/engineering-rocket/cover.webp"
+  intro="A student rocket club in Kazakhstan, run out of a faculty of science and technology. We designed airframes in CAD, printed them section by section, built the avionics on microcontrollers and took the result out to a field. I led the club."
+  problem="A student club has no wind tunnel, no machine shop and no budget for a machined airframe. What it has is a 3D printer, a bench, and people who have never built a rocket before. So the real problem was never aerodynamics — it was making the whole loop cheap and repeatable enough that a beginner could design a part on Monday, hold it on Wednesday and understand why it failed on Friday. Every design decision that follows was made against that constraint."
+  approach="We modeled each section separately — nose cone, body tube, fin can, avionics bay — so a failure meant reprinting one part rather than the whole rocket, and so several people could work in parallel. Everything went through the slicer before it went on the printer: wall count, infill and print orientation were part of the design, because on a printed airframe those decide whether a fin shears off. The avionics were built on microcontroller boards, wired and tested on the bench before they ever went into a body. Assembly and finishing were done by hand."
+  solution="What the club produced was a working design loop rather than a single rocket: CAD models that print without supports where it matters, an avionics bay sized around the boards we actually had, and printed sections that fit together and survive handling. New members could join at any point in the loop, which is what kept the club running rather than collapsing into one person's project."
+  outcome="The work was presented at the faculty, and the club was recognised with certificates of thanks. The honest limits of this page: the flight record, the altitudes reached and the exact division of design work between members are not documented in the material I have, so they are deliberately absent rather than estimated. The engineering that is visible — the printed sections, the sliced models, the avionics on the bench, the field — is what this page claims."
+  gallery={gallery}
 />

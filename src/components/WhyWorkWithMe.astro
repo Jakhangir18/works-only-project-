@@ -4,31 +4,30 @@ import BentoCard from "./BentoCard.astro";
 const cards = [
   {
     variant: "large" as const,
-    title: "jack of all trades",
-    text: "My background is in systems architecture, giving me a solid understanding of structure and flow. I know JavaScript, TypeScript, and modern frameworks inside out. Expert in animation libraries like GSAP, and comfortable building anything from scratch.",
+    title: "hardware, not just screens",
+    text: "Most of what I build starts as a physical thing: a haptic glove wired to a Raspberry Pi, 3D-printed glasses with an OLED on the frame, printed rocket airframes, cameras calibrated into a LabVIEW rig. I design the board, print the parts, write the firmware and then build the interface on top of it.",
   },
   {
     variant: "medium" as const,
-    title: "detail-oriented craftsman",
-    text: "Every pixel matters. Every transition serves a purpose. I obsess over the small things that most people won't notice, but everyone will feel. Clean code, smooth animations, perfect timing.",
+    title: "24 hours, twice",
+    text: "TouchPoint took 2nd overall and won the Google track at QuackHacks 3.0. SPOOT placed 3rd in the Google track at BeaverHacks 2026. Both were built from nothing inside a day, by teams of two and three.",
   },
   {
     variant: "wide" as const,
-    title: "performance first",
-    text: "Beautiful means nothing if it's slow. I optimize ruthlessly—from bundle sizes to render performance, from lazy loading to frame rates. Every millisecond counts. Users don't care about your stack, they care about speed. I build experiences that load fast, feel instant, and never compromise on quality.",
+    title: "measured, not asserted",
+    text: "This site has a performance harness that runs against the production build in three engines and reports frame timing, long tasks, forced reflows and listener growth. It exists because four animation systems on one page competed for the same frame budget, and no amount of reasoning found it — the profile did. Every fix in the repository carries its before and after numbers, and the hypotheses that failed are written down so nobody re-runs them.",
   },
   {
     variant: "small" as const,
-    title: "problem solver at heart",
-    text: "I love nothing more than a good challenge. Complex interactions, scroll-driven narratives, physics-based animations—bring it on. The harder the problem, the more satisfying the solution.",
+    title: "research, written up",
+    text: "URSA Engage funded me to answer one question for Oregon State's remote chemistry labs: which camera can hold a readable feed inside LabVIEW. Four cameras, RGB intensity histograms, one recommendation the lab now builds against.",
   },
   {
     variant: "small" as const,
-    title: "nice human being",
-    text: "I do my best to be a positive, kind, and accommodating person. Good work comes from good relationships. I believe in transparency, honesty, and treating people with respect.",
+    title: "students, taught",
+    text: "I ran a rocket club at a faculty of science and technology, where the job was less about rockets than about a loop a beginner could join: design a part, print it, find out why it failed, do it again.",
   },
-];
----
+];---
 
 <section class="bento-section">
   <div class="bento-separator">
