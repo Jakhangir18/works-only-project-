@@ -54,6 +54,26 @@ Guessed dates come from when files were saved on the Mac, which is not when the 
   their source named.
   Answer: ________
 
+### Two things on the AMS page that involve other people
+
+- **The dashboard screenshot published nine employees' names with their
+  check-in times, and highlighted in red who arrived late on 9 October 2024.**
+  That is other people's attendance record on a public page. I blurred the
+  name column; the interface still reads and the original is untouched in your
+  media folder. Say the word if you have their consent and want it back.
+  Answer: ________
+- One deployment photograph shows a colleague's face clearly. Photographs of
+  people at work are normal on a portfolio, so I left it — but you know them
+  and I do not. Keep it?
+  Answer: ________
+- The tablets in the deployment photographs are branded **ESG**, not AMS. Is
+  ESG the product name, the client, or the manufacturer?
+  Answer: ________
+- The patent image is a Republic of Kazakhstan utility model patent, № 8784,
+  registered 2024, and the certification is an EAEU declaration of conformity.
+  Are you named on either, and may the documents stay on a public page?
+  Answer: ________
+
 ## 5. Engineering Rocket
 
 - Club name and city:
