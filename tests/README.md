@@ -6,13 +6,14 @@ server.
 ```bash
 npm run build
 tmux new -d -s preview 'cd dist && exec python3 -m http.server 4347 --bind 127.0.0.1'
-SITE=http://127.0.0.1:4347 \
-NODE_PATH=$HOME/work/Personal-Website/repo/audit/node_modules \
-  npm test
+SITE=http://127.0.0.1:4347 npm test
 ```
 
-Playwright is deliberately not a dependency of this site; point `NODE_PATH` at
-an install that carries chromium, webkit and firefox.
+Playwright is deliberately not a dependency of this site. The runner links one
+in: it defaults to `~/work/Personal-Website/repo/audit/node_modules` and reads
+`PLAYWRIGHT_HOME` when that is somewhere else. That install needs chromium,
+webkit **and** firefox — `npx playwright install firefox` if firefox is
+missing, or the route suite reports a launch failure instead of skipping.
 
 | Suite | What it holds the site to |
 |---|---|

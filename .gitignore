@@ -10,3 +10,6 @@ perf-results/
 # ignore only machine-local settings.
 .claude/settings.local.json
 .DS_Store
+
+# Linked in by tests/run.mjs to resolve playwright without depending on it
+tests/node_modules

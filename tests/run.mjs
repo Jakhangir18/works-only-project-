@@ -3,14 +3,38 @@
 //   npm run build && npm run preview -- --port 4347   (or serve dist/ any way)
 //   SITE=http://127.0.0.1:4347 node tests/run.mjs
 //
-// Playwright is not a dependency of this project; point NODE_PATH at an
-// install that has chromium, webkit and firefox, e.g.
-//   NODE_PATH=../../Personal-Website/repo/audit/node_modules node tests/run.mjs
+// Playwright is deliberately not a dependency of this site. Point
+// PLAYWRIGHT_HOME at a node_modules that carries chromium, webkit and
+// firefox; the runner links it in so ESM can resolve the bare specifier
+// (NODE_PATH does not apply to ESM imports).
+//
+//   PLAYWRIGHT_HOME=~/work/Personal-Website/repo/audit/node_modules npm test
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { existsSync, symlinkSync, lstatSync, unlinkSync, realpathSync } from 'node:fs';
+import { homedir } from 'node:os';
 
 const here = dirname(fileURLToPath(import.meta.url));
+
+const DEFAULT_PW = join(homedir(), 'work/Personal-Website/repo/audit/node_modules');
+const pwHome = process.env.PLAYWRIGHT_HOME || DEFAULT_PW;
+const link = join(here, 'node_modules');
+
+if (!existsSync(join(pwHome, 'playwright'))) {
+  console.error(`No playwright at ${pwHome}. Set PLAYWRIGHT_HOME to a node_modules that has chromium, webkit and firefox.`);
+  process.exit(2);
+}
+try {
+  if (existsSync(link) && realpathSync(link) !== realpathSync(pwHome)) unlinkSync(link);
+} catch {
+  try { unlinkSync(link); } catch {}
+}
+if (!existsSync(link)) symlinkSync(pwHome, link, 'dir');
+if (!lstatSync(link).isSymbolicLink() && !existsSync(join(link, 'playwright'))) {
+  console.error(`${link} exists and is not a usable playwright link.`);
+  process.exit(2);
+}
 const SUITES = ['t-routes', 't-a11y', 't-hero', 't-work', 't-dive', 't-timeline'];
 
 const run = (name) =>
