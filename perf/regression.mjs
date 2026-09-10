@@ -47,7 +47,6 @@ const ROUTES = [
   "/work/engineering-rocket/",
   "/work/private-clinic/",
   "/work/portfolio-rocket/",
-  "/work/ams-device/",
 ];
 
 async function newPage(context) {
