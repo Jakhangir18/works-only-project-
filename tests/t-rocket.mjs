@@ -121,11 +121,16 @@ const browser = await chromium.launch();
     const r = s.getBoundingClientRect();
     return { top: r.top + window.scrollY, height: r.height };
   });
+  results.push(check('rocket: the story section exists for the resize check', !!story, story ? 'found' : 'missing'));
   if (story) {
     const pose = () => page.evaluate(() => {
       const el = document.querySelector('.js-rocket-container');
       return el ? getComputedStyle(el).transform : null;
     });
+    // Sampled at scroll 0, before anything drives the controller. Calling
+    // updateRocketMotion(0) here instead would write the module-level progress
+    // cache that this block exists to test.
+    const startPose = await pose();
     await page.evaluate((y) => window.scrollTo({ top: y, behavior: 'instant' }), story.top + (story.height - 800) * 0.45);
     await page.waitForTimeout(700);
     const before = await pose();
@@ -139,14 +144,58 @@ const browser = await chromium.launch();
       await page.waitForTimeout(500);
       after.push(await pose());
     }
-    const startPose = await page.evaluate(() => {
-      window.updateRocketMotion?.(0);
-      const el = document.querySelector('.js-rocket-container');
-      return el ? getComputedStyle(el).transform : null;
-    });
     const drifted = after.filter((p) => p !== before);
     results.push(check('rocket: mid-story pose is not the start pose', !!before && before !== startPose, `${before} vs start ${startPose}`));
     results.push(check('rocket: a resize does not snap the pose back to the start', drifted.length === 0, `${drifted.length}/5 resizes moved it: ${drifted[0] || 'none'}`));
+  }
+  await ctx.close();
+}
+
+// 5. On a slow link the frame the visitor is looking at must arrive in a time
+//    they would accept. Requesting the set in index order put the wanted frame
+//    behind every frame already scrolled past: measured 17.9 s late at
+//    250 kB/s. The loader now fetches through a small window, nearest-first.
+{
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+  const page = await ctx.newPage();
+  const cdp = await ctx.newCDPSession(page);
+  await cdp.send('Network.enable');
+  await cdp.send('Network.emulateNetworkConditions', {
+    offline: false, latency: 40, downloadThroughput: 250000, uploadThroughput: 250000,
+  });
+  await page.addInitScript(() => {
+    window.__drawn = [];
+    const orig = CanvasRenderingContext2D.prototype.drawImage;
+    CanvasRenderingContext2D.prototype.drawImage = function (img, ...rest) {
+      const m = img && img.src && /ezgif-frame-(\d{3})\./.exec(img.src);
+      if (m) window.__drawn.push({ frame: Number(m[1]) - 1, t: Math.round(performance.now()) });
+      return orig.call(this, img, ...rest);
+    };
+  });
+  await page.goto(BASE + '/', { waitUntil: 'load', timeout: 120000 });
+  await page.waitForTimeout(3000);
+  const story = await page.evaluate(() => {
+    const s = document.querySelector('.js-rocket-story');
+    if (!s) return null;
+    const r = s.getBoundingClientRect();
+    return { top: r.top + window.scrollY, height: r.height };
+  });
+  results.push(check('rocket: the story section exists for the slow-link check', !!story, story ? 'found' : 'missing'));
+  if (story) {
+    await page.evaluate(() => { window.__wanted = -1; const f = window.updateRocketFrame; window.updateRocketFrame = (p) => { window.__wanted = Math.min(239, Math.round(p * 239)); return f(p); }; });
+    await page.evaluate((y) => window.scrollTo({ top: y, behavior: 'instant' }), story.top + (story.height - 800) * 0.8);
+    let waited = 0;
+    let near = false;
+    while (waited < 12000 && !near) {
+      await page.waitForTimeout(500);
+      waited += 500;
+      near = await page.evaluate(() => {
+        const last = window.__drawn[window.__drawn.length - 1];
+        return !!last && window.__wanted >= 0 && Math.abs(last.frame - window.__wanted) <= 30;
+      });
+    }
+    const state = await page.evaluate(() => ({ wanted: window.__wanted, drawn: window.__drawn.slice(-3) }));
+    results.push(check('rocket: the wanted frame arrives within 12 s on a 250 KB/s link', near, `${waited} ms, wanted ${state.wanted}, drew ${JSON.stringify(state.drawn)}`));
   }
   await ctx.close();
 }

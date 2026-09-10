@@ -37,6 +37,11 @@ export function initRocketMotionController(): void {
       lastProgress = progress;
       rocketContainer.style.transform = `translate3d(0, 0, 0) rotateZ(0deg)`;
     };
+    // Apply it once, exactly as the full-motion path does at the end of this
+    // function. Without this, turning Reduce Motion on mid-session leaves the
+    // container holding whatever full-motion transform it had until the next
+    // scroll frame.
+    window.updateRocketMotion(lastProgress);
     return;
   }
 

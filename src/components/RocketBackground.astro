@@ -105,10 +105,11 @@
         lastFrameIdx = frameIdx;
         const img = images[frameIdx];
         if (img?.complete && img.naturalWidth) drawFrame(img);
-        // Not here yet: ask for it at high priority so it outranks the backlog
-        // instead of queueing behind every frame the visitor already passed.
-        // loadFrame is idempotent, so this is a no-op once the request exists.
-        else if (!img) loadFrame(frameIdx, "high");
+        // Not here yet. The loader picks its next request from wherever the
+        // visitor is, so telling it the position moved is enough — there is
+        // nothing to re-prioritize, because the frames behind this one have
+        // not been requested yet.
+        else pump();
       }
 
       // Toggle background visibility based on progress
@@ -128,32 +129,69 @@
        rocket section is already close. */
     let preloadStarted = false;
 
-    const loadFrame = (i: number, priority: "high" | "low" = "low") => {
+    /* Requesting all 240 at once put them on the wire in index order and gave
+       the loader no way to change its mind. Measured on a 250 kB/s link: the
+       frame the visitor had scrolled to was wanted at 5.9 s and painted at
+       23.8 s, because the bandwidth in between went to frames already scrolled
+       past. Setting fetchPriority afterwards does not help — a request in
+       flight cannot be re-prioritized.
+
+       So the set is fetched through a small window instead, and the next
+       request is always the missing frame nearest to where the visitor is.
+       Same bytes, same completeness; what changes is the order, and the order
+       is what was wrong. */
+    const WINDOW = 6;
+    let inFlight = 0;
+
+    const loadFrame = (i: number) => {
       if (images[i]) return;
       const img = new Image();
+      images[i] = img;
+      inFlight++;
       img.decoding = "async";
-      // The bulk set is a backlog; the frame the scroll position is asking for
-      // right now is not. Without the split, a 250 kB/s link served the 240
-      // frames strictly in index order and frame 197 — wanted at t=5.9 s —
-      // painted at t=23.8 s, because the loader spent that bandwidth on
-      // frames 1..196, none of which were ever shown.
-      (img as HTMLImageElement & { fetchPriority?: string }).fetchPriority = priority;
+      const settle = () => {
+        inFlight--;
+        if (preloadStarted) pump();
+      };
       img.onload = () => {
         if (i === lastFrameIdx) drawFrame(img);
+        settle();
       };
+      img.onerror = settle;
       img.src = `${PATH}${String(i + 1).padStart(3, "0")}${EXT}`;
-      images[i] = img;
     };
+
+    /* The missing frame closest to the one on screen, searched outward so a
+       visitor scrolling either direction is served before the far end of the
+       sequence. */
+    const nextWanted = () => {
+      for (let d = 0; d < TOTAL; d++) {
+        const ahead = lastFrameIdx + d;
+        if (ahead < TOTAL && !images[ahead]) return ahead;
+        const behind = lastFrameIdx - d;
+        if (behind >= 0 && !images[behind]) return behind;
+      }
+      return -1;
+    };
+
+    function pump() {
+      if (!preloadStarted) return;
+      while (inFlight < WINDOW) {
+        const i = nextWanted();
+        if (i < 0) return;
+        loadFrame(i);
+      }
+    }
 
     const preloadFrames = () => {
       if (preloadStarted) return;
       preloadStarted = true;
-      for (let i = 0; i < TOTAL; i++) loadFrame(i, "low");
+      pump();
     };
 
     // The first frame is one small request and is what the section shows the
     // moment it appears, so it does not wait for idle.
-    loadFrame(0, "high");
+    loadFrame(0);
 
     // Whichever comes first: the browser goes idle, or the section approaches.
     const startWhenIdle = () => {
