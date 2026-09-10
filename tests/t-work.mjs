@@ -57,6 +57,26 @@ for (const [ename, engine] of Object.entries({ chromium, webkit })) {
     results.push(check(`${tag} covers pre-warm before the scrub`, coversBefore >= 3, `${coversBefore} of ${covers.length} arrived before scrolling`));
     results.push(check(`${tag} every cover ends ready`, samples[samples.length - 1].ready === 7, `${samples[samples.length - 1].ready}/7 ready`));
 
+    // The letter shadows survive a resize taken inside the tunnel. setLetters()
+    // rebuilds every ghost with no inline opacity over a stylesheet default of
+    // 0, and the per-frame opacity write only runs when the tunnel state
+    // changed — which it does not, anywhere inside the works region. On iOS
+    // the address bar collapsing fires exactly this resize.
+    const litShadows = () => page.evaluate(() => {
+      const all = [...document.querySelectorAll('.s__scene__letter__shadow')];
+      return { total: all.length, lit: all.filter((el) => Number(getComputedStyle(el).opacity) > 0.9).length };
+    });
+    await page.evaluate((y) => window.scrollTo({ top: y, behavior: 'instant' }), box.top + (box.height - h) * 0.5);
+    await page.waitForTimeout(500);
+    const before = await litShadows();
+    await page.setViewportSize({ width: w, height: h - 40 });
+    await page.waitForTimeout(1200);
+    const after = await litShadows();
+    await page.setViewportSize({ width: w, height: h });
+    await page.waitForTimeout(600);
+    results.push(check(`${tag} letter shadows are lit inside the tunnel`, before.total > 0 && before.lit === before.total, `${before.lit}/${before.total}`));
+    results.push(check(`${tag} letter shadows survive a resize inside the tunnel`, after.total > 0 && after.lit === after.total, `${after.lit}/${after.total} after a 40px height change`));
+
     await ctx.close();
   }
   await browser.close();

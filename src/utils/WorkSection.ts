@@ -433,6 +433,16 @@ class Section {
         letter.ghosts.push(ghost);
       }
     });
+
+    // Every ghost above is brand new and carries no inline opacity, while the
+    // stylesheet starts its shadow at 0. moveLetters() only writes opacity
+    // when the tunnel state changed, and anywhere inside the works region the
+    // state is held at exactly 1 — so without this line a rebuild leaves all
+    // 54-58 shadows invisible until the visitor scrolls back to the intro and
+    // in again. On iOS the address bar collapsing is exactly this event.
+    // Invalidating the cache the way setSize() already does for
+    // last.scrollProgress costs one extra opacity pass on the next frame.
+    this.last.state = -1;
   }
 
   setWorks() {
