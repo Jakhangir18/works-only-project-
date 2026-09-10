@@ -1,6 +1,6 @@
 # What happened overnight, 9–10 September 2026
 
-Branch `feat/work-content`, 54 commits over `main`, pushed. Nothing merged,
+Branch `feat/work-content`, 55 commits over `main`, pushed. Nothing merged,
 nothing deployed. The preview is the tailnet link; the live Vercel site is
 untouched.
 
@@ -75,10 +75,15 @@ threw the second time, a preview build that would have advertised the
 production site, a media-query listener that would have taken the whole rocket
 section down on an older iPhone. All fixed and committed separately.
 
-Two contrast failures also turned out to be invisible to the accessibility
+Three contrast failures also turned out to be invisible to the accessibility
 tool the suite uses: it declines to judge text when it cannot work out what is
 behind it, and the hero sits over a canvas. The suite no longer depends on it
-for that, and now checks contrast itself on all eight pages.
+for that, and now checks contrast itself on all eight pages — including the
+tunnel cards, which is where it found the third: the small numeral on two of
+the seven cards read at 4.0 and 4.2 against the 4.5 that text that size needs.
+Those cards take their colours from each project's own palette, so that is the
+text most likely to fail again when you add the next project, and it is the
+text the check now watches most closely.
 
 ## Where the numbers are
 
@@ -110,7 +115,7 @@ rather than something I did.
 The home page's 2.5 s is the four-second loader you decided to keep. It is a
 deliberate cost and the only thing holding that number down.
 
-The regression suite is 941 checks across eight files, in Chromium, WebKit and
+The regression suite is 955 checks across eight files, in Chromium, WebKit and
 Firefox. For every visitor-facing defect above I put the bug back, watched the
 new check go red, and took it out again — the invisible dive, the erased letter
 shadows, the snapped rocket pose, the frame that arrived eighteen seconds

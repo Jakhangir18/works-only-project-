@@ -427,7 +427,12 @@ const motifClass = `a__card__poster--${poster.motif}`;
       font: 700 11px / 1 font-family(fraktion);
       letter-spacing: 0.2em;
       text-transform: uppercase;
-      opacity: 0.7;
+      // 0.7 put the two darkest accents at 4.02:1 and 4.23:1 against the 4.5:1
+      // that 11px text needs. At full strength the same two measure 7.18:1 and
+      // 7.55:1, and the numeral is still the quietest thing on the card —
+      // eleven pixels of letter-spaced accent against a title six times its
+      // size.
+      opacity: 1;
       position: relative;
       z-index: 3;
     }

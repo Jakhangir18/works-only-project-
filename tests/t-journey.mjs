@@ -120,8 +120,17 @@ const browser = await chromium.launch();
     // into one produces a warning every frame and no pixels, so the loss has
     // to be caught and the loop stopped; preventDefault on it is also what
     // makes a restore possible at all. Driven here with WEBGL_lose_context.
+    // Only messages about rendering, and the whole text before it is trimmed —
+    // this host's GL driver emits performance notices over a hundred
+    // characters long that have nothing to do with the context being lost.
     const glErrors = [];
-    const onConsole = (m) => { if (m.type() === 'error' || m.type() === 'warning') glErrors.push(m.text().slice(0, 120)); };
+    const onConsole = (m) => {
+      if (m.type() !== 'error' && m.type() !== 'warning') return;
+      const text = m.text();
+      if (!/CONTEXT_LOST|context lost|WebGLRenderer/i.test(text)) return;
+      if (/loseContext/.test(text)) return;
+      glErrors.push(text.slice(0, 160));
+    };
     page.on('console', onConsole);
     const lost = await page.evaluate(async () => {
       const canvas = document.querySelector('[data-dotted-surface] canvas');
@@ -154,8 +163,7 @@ const browser = await chromium.launch();
       // pause and watching the check stay green. On a machine with a GPU it
       // has teeth. Chromium also reports the deliberate loseContext() call,
       // which is this test's own doing and not the page's.
-      const spam = glErrors.filter((m) => !/loseContext/.test(m));
-      results.push(check('return: nothing renders into the lost context', spam.length === 0, spam.slice(0, 2).join(' | ')));
+      results.push(check('return: nothing renders into the lost context', glErrors.length === 0, glErrors.slice(0, 2).join(' | ')));
     } else {
       results.push(check('return: WEBGL_lose_context is available to drive the test', false, JSON.stringify(lost)));
     }

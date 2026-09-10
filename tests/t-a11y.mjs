@@ -20,14 +20,22 @@ for (const [w, h, size] of [[1440, 900, 'desktop'], [390, 844, 'phone']]) {
     // invisible page — axe returns contrast results as "incomplete" rather
     // than violations, and the contrast pass below skips every candidate. Both
     // then report a clean pass on the one route they matter most for.
-    const hasWrapper = await page.evaluate(() => !!document.querySelector('.js-site-wrapper'));
-    if (hasWrapper) {
-      const shown = await page
-        .waitForFunction(() => Number(getComputedStyle(document.querySelector('.js-site-wrapper')).opacity) > 0.95,
-          null, { timeout: 15000 })
-        .then(() => true)
-        .catch(() => false);
-      results.push(check(`${tag} the page is shown before it is graded`, shown, 'wrapper still transparent after 15 s'));
+    // Asserted on every route, not only the ones that have a wrapper: if the
+    // selector ever drifts the check has to go red rather than quietly stop
+    // existing, which is the failure it was written to prevent in the first
+    // place. On a route with no wrapper the predicate is true immediately.
+    const wrapperState = await page
+      .waitForFunction(() => {
+        const w = document.querySelector('.js-site-wrapper');
+        if (!w) return 'none';
+        return Number(getComputedStyle(w).opacity) > 0.95 ? 'shown' : false;
+      }, null, { timeout: 15000 })
+      .then((handle) => handle.jsonValue())
+      .catch(() => 'stuck');
+    if (route === '/') {
+      results.push(check(`${tag} the loader hands the page over`, wrapperState === 'shown', `wrapper state: ${wrapperState}`));
+    } else {
+      results.push(check(`${tag} the page is shown before it is graded`, wrapperState !== 'stuck', `wrapper state: ${wrapperState}`));
     }
 
     const res = await new AxeBuilder({ page }).analyze();
@@ -76,6 +84,7 @@ for (const [w, h, size] of [[1440, 900, 'desktop'], [390, 844, 'phone']]) {
         // first opaque one is composited rather than skipped.
         const resolve = (el) => {
           let opacity = 1;
+          let ancestorOpacity = 1;
           let bg = null;
           let unreadable = false;
           const layers = [];
@@ -87,6 +96,7 @@ for (const [w, h, size] of [[1440, 900, 'desktop'], [390, 844, 'phone']]) {
           for (let n = el; n; n = n.parentElement) {
             const cs = getComputedStyle(n);
             opacity *= Number(cs.opacity);
+            if (n !== el) ancestorOpacity *= Number(cs.opacity);
             if (bg !== null) continue;
             if (cs.backgroundImage && cs.backgroundImage !== 'none') { unreadable = true; bg = undefined; continue; }
             const c = parse(cs.backgroundColor);
@@ -103,13 +113,13 @@ for (const [w, h, size] of [[1440, 900, 'desktop'], [390, 844, 'phone']]) {
           // A gradient or a colour this cannot read sits between the text and
           // anything it could compare against, so it declines rather than
           // inventing an answer — but only after the opacity walk has run.
-          if (unreadable || bg === undefined) return { bg: null, opacity };
+          if (unreadable || bg === undefined) return { bg: null, opacity, ancestorOpacity, own: Number(getComputedStyle(el).opacity) };
           if (bg === null) {
             let resolved = [0, 0, 0];
             while (layers.length) resolved = over(layers.pop(), resolved);
             bg = resolved;
           }
-          return { bg, opacity };
+          return { bg, opacity, ancestorOpacity, own: Number(getComputedStyle(el).opacity) };
         };
 
         const bad = [];
@@ -136,7 +146,12 @@ for (const [w, h, size] of [[1440, 900, 'desktop'], [390, 844, 'phone']]) {
           const r = el.getBoundingClientRect();
           if (r.width < 4 || r.height < 4) continue;
           const resolved = resolve(el);
-          if (!resolved.bg || resolved.opacity < 0.95) continue;
+          // An ancestor mid-fade is a transient state and not the resting
+          // design, so it is declined. The element's *own* opacity is a design
+          // decision — the tunnel's index numerals are set at 0.7 — so it is
+          // composited into the colour rather than used as an excuse to skip
+          // the element, which is how two live failures went unseen.
+          if (!resolved.bg || resolved.ancestorOpacity < 0.95) continue;
           const fgColor = parse(cs.color);
           if (!fgColor) continue;
           examined++;
@@ -144,7 +159,10 @@ for (const [w, h, size] of [[1440, 900, 'desktop'], [390, 844, 'phone']]) {
           const size = parseFloat(cs.fontSize);
           const large = size >= 24 || (size >= 18.66 && Number(cs.fontWeight) >= 700);
           const need = large ? 3 : 4.5;
-          const fg = over(fgColor, resolved.bg);
+          const withOwnOpacity = fgColor.length > 3
+            ? [fgColor[0], fgColor[1], fgColor[2], fgColor[3] * resolved.own]
+            : [fgColor[0], fgColor[1], fgColor[2], resolved.own];
+          const fg = over(withOwnOpacity, resolved.bg);
           const l1 = lum(fg), l2 = lum(resolved.bg);
           const ratio = (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
           if (ratio + 0.01 < need) bad.push(`${el.tagName}.${el.className || '-'} ${ratio.toFixed(2)}:1 needs ${need}`);
@@ -152,15 +170,19 @@ for (const [w, h, size] of [[1440, 900, 'desktop'], [390, 844, 'phone']]) {
         forced.forEach((el) => el.classList.remove('is-inview'));
         return { bad, examined, inCards, cards: document.querySelectorAll('a-work').length };
       });
-      // The floor is low because a project page legitimately grades about
-      // seventeen strings — most of its text sits over a gradient and is
-      // declined. What a bare count cannot catch is a whole region dropping
-      // out, so the tunnel is asserted separately: those cards are the text
-      // most likely to acquire a failure later, because their background comes
-      // from per-project data rather than from the stylesheet.
-      results.push(check(`${tag} the contrast check looked at real text`, contrast.examined >= 10, `${contrast.examined} elements graded`));
+      // Measured: a project page grades 11 strings, the home page many more.
+      // Most project-page text sits over a gradient and is declined, so the
+      // floor is only a tripwire for the check silently grading nothing.
+      results.push(check(`${tag} the contrast check looked at real text`, contrast.examined >= 8, `${contrast.examined} elements graded`));
+      // A bare count cannot notice one region dropping out, and the tunnel is
+      // the region that matters: those cards take their colours from
+      // per-project data rather than the stylesheet, so they are where a new
+      // project introduces a failure. Measured at five graded strings per card
+      // on desktop and two on a phone, so four per card is a real floor rather
+      // than a formality — three cards going dark would clear `>= cards`.
       if (contrast.cards > 0) {
-        results.push(check(`${tag} the contrast check reached the tunnel cards`, contrast.inCards >= contrast.cards, `${contrast.inCards} card strings graded across ${contrast.cards} cards`));
+        const perCard = size === 'phone' ? 2 : 4;
+        results.push(check(`${tag} the contrast check reached the tunnel cards`, contrast.inCards >= contrast.cards * perCard, `${contrast.inCards} card strings graded across ${contrast.cards} cards`));
       }
       results.push(check(`${tag} static text meets the WCAG AA contrast ratio`, contrast.bad.length === 0, contrast.bad.slice(0, 3).join(' | ')));
     }
