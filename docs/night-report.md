@@ -1,6 +1,6 @@
 # What happened overnight, 9–10 September 2026
 
-Branch `feat/work-content`, 53 commits over `main`, pushed. Nothing merged,
+Branch `feat/work-content`, 54 commits over `main`, pushed. Nothing merged,
 nothing deployed. The preview is the tailnet link; the live Vercel site is
 untouched.
 
@@ -110,7 +110,7 @@ rather than something I did.
 The home page's 2.5 s is the four-second loader you decided to keep. It is a
 deliberate cost and the only thing holding that number down.
 
-The regression suite is 953 checks across eight files, in Chromium, WebKit and
+The regression suite is 941 checks across eight files, in Chromium, WebKit and
 Firefox. For every visitor-facing defect above I put the bug back, watched the
 new check go red, and took it out again — the invisible dive, the erased letter
 shadows, the snapped rocket pose, the frame that arrived eighteen seconds
@@ -134,8 +134,15 @@ are on the iPhone gate.
 
 ## What I chose not to do
 
-Three things the reviews raised that I left alone, so you know they were
+Four things the reviews raised that I left alone, so you know they were
 decisions and not oversights.
+
+Two checks in the suite exercise code they cannot fail on. Whether the hero
+field really stops drawing while its GPU context is gone, and whether it really
+starts again on a back/forward restore, have no signature this machine can
+read: it has no GPU, so its software renderer stays silent either way, and no
+browser here will produce a real restore. Both checks are labelled as such in
+the test file, and both behaviours are on the iPhone gate below.
 
 The four components that read the reduce-motion setting each read it their own
 way, and only the rocket now notices when you change it mid-visit. Making that

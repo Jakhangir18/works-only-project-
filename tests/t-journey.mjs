@@ -147,7 +147,15 @@ const browser = await chromium.launch();
       // off screen — has no observable signature from outside the page, and is
       // on the iPhone gate.
       results.push(check('return: a lost context is actually lost, then restored', lost.wasLost === true && lost.stillLost === false, JSON.stringify(lost)));
-      results.push(check('return: losing the context leaves the canvas in place', lost.canvas === true, JSON.stringify(lost)));
+      // Rendering into a lost context is reported by the browser's WebGL layer
+      // once per frame on a real driver, so silence over the second the
+      // context was gone is worth asserting. It is not proof here: this host's
+      // software renderer stays quiet either way, verified by removing the
+      // pause and watching the check stay green. On a machine with a GPU it
+      // has teeth. Chromium also reports the deliberate loseContext() call,
+      // which is this test's own doing and not the page's.
+      const spam = glErrors.filter((m) => !/loseContext/.test(m));
+      results.push(check('return: nothing renders into the lost context', spam.length === 0, spam.slice(0, 2).join(' | ')));
     } else {
       results.push(check('return: WEBGL_lose_context is available to drive the test', false, JSON.stringify(lost)));
     }

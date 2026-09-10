@@ -110,18 +110,12 @@
         // so the only case needing a direct request is the gate still being
         // shut: a visitor who arrived by anchor or a restored scroll offset
         // must not wait on idle for the frame in front of them.
-        else {
-          // Once the bulk gate is open the pump asks for exactly this frame —
-          // its search is anchored on the index just set — so the only case
-          // needing a direct request is the gate still being shut: a visitor
-          // who arrived by anchor or a restored scroll offset must not wait on
-          // idle for the frame in front of them. Still inside the window,
-          // because updateRocketFrame is driven from four places besides
-          // scroll and an uncapped direct path is the index-order loader's
-          // bandwidth split by another route.
-          if (!preloadStarted && inFlight < WINDOW) loadFrame(frameIdx);
-          pump();
-        }
+        // Not here yet: ask for this one and nothing else. Opening the bulk
+        // gate here would defeat the deferral — the story section drives this
+        // from an initial animation frame and from its load handler, before
+        // the first screen has settled — and requesting it uncapped would put
+        // one image on the wire per frame crossed during a fling.
+        else demand();
       }
 
       // Toggle background visibility based on progress
@@ -171,6 +165,10 @@
       img.decoding = "async";
       const settle = () => {
         inFlight--;
+        // Both, in this order: the frame the visitor is on comes before the
+        // backlog, and demand() is what keeps a wanted frame from being
+        // starved by a full window while the bulk gate is still shut.
+        demand();
         pump();
       };
       img.onload = () => {
@@ -210,6 +208,19 @@
       }
       return -1;
     };
+
+    /**
+     * The frame the scroll position is on, if it is missing and there is room
+     * on the wire. Independent of the bulk gate, because a visitor who arrives
+     * at the rocket section by anchor or a restored scroll offset must not
+     * wait on idle for the frame in front of them — but capped by the same
+     * window, and retried from settle() whenever a slot frees.
+     */
+    function demand() {
+      if (lastFrameIdx < 0 || images[lastFrameIdx]) return;
+      if (inFlight >= WINDOW) return;
+      loadFrame(lastFrameIdx);
+    }
 
     function pump() {
       if (!preloadStarted) return;

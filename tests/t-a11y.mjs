@@ -15,6 +15,21 @@ for (const [w, h, size] of [[1440, 900, 'desktop'], [390, 844, 'phone']]) {
     await page.waitForTimeout(1000);
     await sweepScroll(page);
 
+    // The home page holds its whole wrapper at opacity 0 behind a four-second
+    // loader. Anything graded before the intro finishes is graded on an
+    // invisible page — axe returns contrast results as "incomplete" rather
+    // than violations, and the contrast pass below skips every candidate. Both
+    // then report a clean pass on the one route they matter most for.
+    const hasWrapper = await page.evaluate(() => !!document.querySelector('.js-site-wrapper'));
+    if (hasWrapper) {
+      const shown = await page
+        .waitForFunction(() => Number(getComputedStyle(document.querySelector('.js-site-wrapper')).opacity) > 0.95,
+          null, { timeout: 15000 })
+        .then(() => true)
+        .catch(() => false);
+      results.push(check(`${tag} the page is shown before it is graded`, shown, 'wrapper still transparent after 15 s'));
+    }
+
     const res = await new AxeBuilder({ page }).analyze();
     const bad = res.violations.filter((v) => ['serious', 'critical'].includes(v.impact));
     results.push(check(`${tag} axe serious/critical`, bad.length === 0,
@@ -26,21 +41,17 @@ for (const [w, h, size] of [[1440, 900, 'desktop'], [390, 844, 'phone']]) {
     // background by compositing every layer above the first opaque one, the
     // way a reader's eye does, and applies the WCAG AA ratio.
     {
-      // The home page holds its wrapper at opacity 0 behind the loader. Every
-      // candidate would then be skipped as invisible and the check would
-      // report a clean pass on the one route it was written for, so wait for
-      // the page to be shown and assert afterwards that it actually looked at
-      // something.
-      const shown = await page
-        .waitForFunction(() => {
-          const w = document.querySelector('.js-site-wrapper');
-          return !w || Number(getComputedStyle(w).opacity) > 0.95;
-        }, null, { timeout: 15000 })
-        .then(() => true)
-        .catch(() => false);
-      results.push(check(`${tag} the page is actually shown before it is graded`, shown, 'wrapper still transparent after 15 s'));
-
       const contrast = await page.evaluate(() => {
+        // The tunnel's cards are content-visibility: hidden until the section
+        // brings them into view, and nothing is in view at scroll 0 — so their
+        // text would never be graded at all. Put them in the state the visitor
+        // reaches, using the site's own class rather than an override, and put
+        // it back afterwards. Their background comes from per-project data, so
+        // this is the text most likely to acquire a contrast failure later.
+        const forced = [...document.querySelectorAll('a-work:not(.is-inview)')];
+        forced.forEach((el) => el.classList.add('is-inview'));
+        void document.body.offsetHeight;
+
         const lum = (c) => {
           const v = c.map((n) => { const s = n / 255; return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4); });
           return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2];
@@ -103,7 +114,11 @@ for (const [w, h, size] of [[1440, 900, 'desktop'], [390, 844, 'phone']]) {
 
         const bad = [];
         let examined = 0;
-        const tags = 'p,h1,h2,h3,h4,h5,h6,a,span,li,em,strong,button,label,td,th,figcaption,blockquote,dd,dt';
+        let inCards = 0;
+        // div is in the list because this codebase puts real copy in one —
+        // the tunnel card titles are divs — and the direct-text-node test
+        // below keeps wrappers out.
+        const tags = 'p,h1,h2,h3,h4,h5,h6,a,span,li,em,strong,button,label,td,th,figcaption,blockquote,dd,dt,div';
         for (const el of document.querySelectorAll(tags)) {
           const cs = getComputedStyle(el);
           if (cs.visibility === 'hidden' || cs.display === 'none') continue;
@@ -125,6 +140,7 @@ for (const [w, h, size] of [[1440, 900, 'desktop'], [390, 844, 'phone']]) {
           const fgColor = parse(cs.color);
           if (!fgColor) continue;
           examined++;
+          if (el.closest('a-work')) inCards++;
           const size = parseFloat(cs.fontSize);
           const large = size >= 24 || (size >= 18.66 && Number(cs.fontWeight) >= 700);
           const need = large ? 3 : 4.5;
@@ -133,9 +149,19 @@ for (const [w, h, size] of [[1440, 900, 'desktop'], [390, 844, 'phone']]) {
           const ratio = (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
           if (ratio + 0.01 < need) bad.push(`${el.tagName}.${el.className || '-'} ${ratio.toFixed(2)}:1 needs ${need}`);
         }
-        return { bad, examined };
+        forced.forEach((el) => el.classList.remove('is-inview'));
+        return { bad, examined, inCards, cards: document.querySelectorAll('a-work').length };
       });
-      results.push(check(`${tag} the contrast check looked at real text`, contrast.examined >= 5, `${contrast.examined} elements graded`));
+      // The floor is low because a project page legitimately grades about
+      // seventeen strings — most of its text sits over a gradient and is
+      // declined. What a bare count cannot catch is a whole region dropping
+      // out, so the tunnel is asserted separately: those cards are the text
+      // most likely to acquire a failure later, because their background comes
+      // from per-project data rather than from the stylesheet.
+      results.push(check(`${tag} the contrast check looked at real text`, contrast.examined >= 10, `${contrast.examined} elements graded`));
+      if (contrast.cards > 0) {
+        results.push(check(`${tag} the contrast check reached the tunnel cards`, contrast.inCards >= contrast.cards, `${contrast.inCards} card strings graded across ${contrast.cards} cards`));
+      }
       results.push(check(`${tag} static text meets the WCAG AA contrast ratio`, contrast.bad.length === 0, contrast.bad.slice(0, 3).join(' | ')));
     }
 

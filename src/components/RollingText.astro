@@ -38,8 +38,13 @@ const { texts = [], className = "" } = Astro.props;
     const items = [...root.querySelectorAll<HTMLElement>(".rolling-text__item")];
     if (items.length < 2) return;
 
-    if (typeof window.matchMedia === "function" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    // An engine with no matchMedia cannot tell us the visitor's answer, and
+    // the safe assumption when the answer is unknown is the one that moves
+    // nothing: a hard jump-cut every 2.6 s is exactly what someone who asked
+    // for reduced motion is trying to avoid, and the reduced-motion stylesheet
+    // only removes the transition, not the swap.
+    if (typeof window.matchMedia !== "function") return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     let index = 0;
     let timer = 0;
