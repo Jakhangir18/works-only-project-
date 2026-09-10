@@ -51,6 +51,17 @@ for (const [ename, engine] of Object.entries(ENGINES)) {
           imgsBroken: imgs.filter((i) => !i.naturalWidth).map((i) => i.getAttribute('src')),
           imgsUnsized: imgs.filter((i) => !i.hasAttribute('width') || !i.hasAttribute('height')).map((i) => i.getAttribute('src')),
           imgsNoAlt: imgs.filter((i) => !i.hasAttribute('alt')).map((i) => i.getAttribute('src')),
+          // A declared size that does not match the file's own aspect ratio
+          // reserves the wrong box and shifts the layout when the image lands.
+          imgsWrongRatio: imgs
+            .filter((i) => i.naturalWidth && i.hasAttribute('width') && i.hasAttribute('height'))
+            .map((i) => ({
+              src: i.getAttribute('src'),
+              declared: +i.getAttribute('width') / +i.getAttribute('height'),
+              actual: i.naturalWidth / i.naturalHeight,
+            }))
+            .filter((r) => Math.abs(r.declared - r.actual) > 0.02)
+            .map((r) => `${r.src} declared ${r.declared.toFixed(2)} vs ${r.actual.toFixed(2)}`),
         };
       });
       results.push(check(`${tag} exactly one h1`, dom.h1 === 1, `h1=${dom.h1}`));
@@ -60,6 +71,7 @@ for (const [ename, engine] of Object.entries(ENGINES)) {
       results.push(check(`${tag} images decoded`, dom.imgsBroken.length === 0, dom.imgsBroken.slice(0, 2).join(', ')));
       results.push(check(`${tag} images sized`, dom.imgsUnsized.length === 0, dom.imgsUnsized.slice(0, 2).join(', ')));
       results.push(check(`${tag} images have alt`, dom.imgsNoAlt.length === 0, dom.imgsNoAlt.slice(0, 2).join(', ')));
+      results.push(check(`${tag} declared image sizes match the files`, dom.imgsWrongRatio.length === 0, dom.imgsWrongRatio.slice(0, 2).join(' | ')));
 
       // A section label must never sit on top of the text it introduces.
       // At one column a sticky label pins itself over its own paragraph.

@@ -27,6 +27,12 @@ for (const [ename, engine] of Object.entries({ chromium, webkit })) {
       yearsAscending: years.map((y) => y.textContent.trim()),
       times: [...document.querySelectorAll('.s-timeline__entry time')].map((t) => t.getAttribute('datetime')),
       links: [...document.querySelectorAll('a.s-timeline__body')].map((a) => a.getAttribute('href')),
+      thumbs: [...document.querySelectorAll('.s-timeline__thumb')].map((i) => ({
+        src: i.getAttribute('src'),
+        ok: i.complete ? i.naturalWidth > 0 : null,
+        sized: i.hasAttribute('width') && i.hasAttribute('height'),
+        alt: i.getAttribute('alt'),
+      })),
       heights: entries.map((e) => Math.round(e.getBoundingClientRect().height)),
       drafts: entries.filter((e) => /Reverlab|STEP Academy|Google Developer/.test(e.textContent)).length,
     };
@@ -42,6 +48,8 @@ for (const [ename, engine] of Object.entries({ chromium, webkit })) {
   results.push(check(`${tag} kinds are the four expected`, info.kinds.every((k) => ['work', 'research', 'competition', 'club'].includes(k)), info.kinds.join(',')));
   results.push(check(`${tag} long entries are taller than short ones`, Math.max(...info.heights) > Math.min(...info.heights) * 1.2, info.heights.join(',')));
   results.push(check(`${tag} project links are internal routes`, info.links.every((h) => h.startsWith('/')), info.links.join(',')));
+  results.push(check(`${tag} every linked entry carries a picture`, info.thumbs.length === info.links.length, `${info.thumbs.length} thumbs for ${info.links.length} links`));
+  results.push(check(`${tag} timeline pictures are sized and decorative`, info.thumbs.every((t) => t.sized && t.alt === ''), JSON.stringify(info.thumbs.filter((t) => !t.sized || t.alt !== '').slice(0, 2))));
 
   // Every timeline link must resolve.
   for (const href of info.links) {

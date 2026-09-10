@@ -50,8 +50,8 @@ export const works = [
     poster: { mark: "TP", motif: "signal" },
     cover: {
       src: "/projects/touchpoint/cover.webp",
-      width: 1200,
-      height: 1600,
+      width: 1125,
+      height: 1500,
       alt: "The TouchPoint glove wired to its driver board on the hackathon table",
       focalPoint: { x: "50%", y: "45%" },
     },
@@ -98,8 +98,8 @@ export const works = [
     poster: { mark: "RLV", motif: "signal" },
     cover: {
       src: "/projects/remote-lab-vision/cover.webp",
-      width: 1600,
-      height: 2133,
+      width: 1125,
+      height: 1500,
       alt: "Two glass columns on an aluminium frame with the control unit of a remote chemistry lab rig",
       focalPoint: { x: "50%", y: "38%" },
     },
@@ -114,8 +114,8 @@ export const works = [
     poster: { mark: "ER", motif: "trajectory" },
     cover: {
       src: "/projects/engineering-rocket/cover.webp",
-      width: 1200,
-      height: 1600,
+      width: 1125,
+      height: 1500,
       alt: "Holding a printed rocket airframe at the faculty of science and technology",
       focalPoint: { x: "50%", y: "35%" },
     },

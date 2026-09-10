@@ -14,6 +14,8 @@ import { join, resolve } from "node:path";
 const IN = resolve("../in/my_work_experience/_web");
 const OUT = resolve("public/projects");
 const QUALITY = 82;
+const GALLERY_QUALITY = 74;
+const COVER_QUALITY = 76;
 const BUDGET = 15 * 1024 * 1024;
 
 // Selection per docs/plans/2026-09-09-minimal-redesign.md (Task 9).
@@ -65,8 +67,8 @@ async function base(src, crop) {
   return img;
 }
 
-async function write(img, out, opts) {
-  const info = await img.resize(opts).webp({ quality: QUALITY }).toFile(out);
+async function write(img, out, opts, quality = QUALITY) {
+  const info = await img.resize(opts).webp({ quality }).toFile(out);
   console.log(JSON.stringify({ file: out.replace(OUT, "/projects"), width: info.width, height: info.height, kb: Math.round(info.size / 1024) }));
 }
 
@@ -79,12 +81,23 @@ for (const slug of slugs) {
   await mkdir(join(dst, "gallery"), { recursive: true });
 
   const coverSrc = join(src, sel.cover.file);
-  await write(await base(coverSrc, sel.cover.crop), join(dst, "cover.webp"), { width: 1600, withoutEnlargement: true });
+  // The cover is the page's largest contentful paint and the layout caps it
+  // at 85svh, so a 2100 px tall portrait is three times the pixels anyone
+  // sees and 200 KB of blocking weight. Cap the long edge at 1500.
+  await write(
+    await base(coverSrc, sel.cover.crop),
+    join(dst, "cover.webp"),
+    { width: 1500, height: 1500, fit: "inside", withoutEnlargement: true },
+    COVER_QUALITY,
+  );
 
   let n = 0;
   for (const file of sel.gallery) {
     n += 1;
-    await write(await base(join(src, file)), join(dst, "gallery", `${String(n).padStart(2, "0")}.webp`), { width: 1200, withoutEnlargement: true });
+    // Cap the long edge, not just the width: a 1200-wide portrait is 2100 px
+    // tall and lands around 240 KB, which is heavier than a gallery frame
+    // needs to be at the size it is displayed.
+    await write(await base(join(src, file)), join(dst, "gallery", `${String(n).padStart(2, "0")}.webp`), { width: 1200, height: 1400, fit: "inside", withoutEnlargement: true }, GALLERY_QUALITY);
   }
 }
 

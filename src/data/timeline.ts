@@ -12,6 +12,8 @@ export type TimelineEntry = {
   summary: string;
   /** Internal route to the project page, when one exists. */
   href?: string;
+  /** A 360x240 thumbnail, shown beside the entry when it links somewhere. */
+  thumb?: string;
   /** Kept out of the build until the owner confirms the role and the dates. */
   draft?: boolean;
 };
@@ -38,6 +40,7 @@ export const timeline: readonly TimelineEntry[] = [
     summary:
       "A haptic glove for deafblind web browsing. 2nd overall, and the Google track.",
     href: "/work/touchpoint",
+    thumb: "/projects/touchpoint/thumb.webp",
   },
   {
     title: "SPOOT",
@@ -48,6 +51,7 @@ export const timeline: readonly TimelineEntry[] = [
     summary:
       "Glasses that show where a sound came from. 3rd in the Google track.",
     href: "/work/spoot",
+    thumb: "/projects/spoot/thumb.webp",
   },
   {
     title: "Sadap Clinic",
@@ -58,6 +62,7 @@ export const timeline: readonly TimelineEntry[] = [
     summary:
       "The clinic's booking channel: doctor search, patient accounts, three languages.",
     href: "/work/private-clinic",
+    thumb: "/projects/private-clinic/thumb.webp",
   },
   {
     title: "Remote Lab Vision",
@@ -68,6 +73,7 @@ export const timeline: readonly TimelineEntry[] = [
     summary:
       "Which camera can hold a readable feed inside LabVIEW, answered with histograms.",
     href: "/work/remote-lab-vision",
+    thumb: "/projects/remote-lab-vision/thumb.webp",
   },
   {
     title: "AMS Tablet",
@@ -78,6 +84,7 @@ export const timeline: readonly TimelineEntry[] = [
     summary:
       "Pre-shift inspection and workforce verification at industrial checkpoints.",
     href: "/projects/ams",
+    thumb: "/projects/ams/images/thumb.webp",
   },
   {
     title: "Rocket club",
@@ -88,6 +95,7 @@ export const timeline: readonly TimelineEntry[] = [
     summary:
       "Printed airframes, avionics on the bench, and a design loop a beginner could join.",
     href: "/work/engineering-rocket",
+    thumb: "/projects/engineering-rocket/thumb.webp",
   },
   {
     title: "Google Developer Group on Campus",
