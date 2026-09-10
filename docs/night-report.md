@@ -1,6 +1,6 @@
 # What happened overnight, 9–10 September 2026
 
-Branch `feat/work-content`, 47 commits over `main`, pushed. Nothing merged,
+Branch `feat/work-content`, 50 commits over `main`, pushed. Nothing merged,
 nothing deployed. The preview is the tailnet link; the live Vercel site is
 untouched.
 
@@ -69,10 +69,16 @@ frame you are looking at arrives in about a second and a half.
 itself down whenever the page was hidden, including when the browser was only
 freezing it for the Back button. Safari does that far more often than Chrome.
 
-Two more rounds of review found fifteen further faults, most of them in the
-fixes themselves — a loader that could refuse to start, a teardown that threw
-the second time, a preview build that would have advertised the production
-site. All fixed and all committed separately.
+Two more rounds of review found twenty-nine further faults, most of them in
+the fixes themselves — a loader that could refuse to start, a teardown that
+threw the second time, a preview build that would have advertised the
+production site, a media-query listener that would have taken the whole rocket
+section down on an older iPhone. All fixed and committed separately.
+
+Two contrast failures also turned out to be invisible to the accessibility
+tool the suite uses: it declines to judge text when it cannot work out what is
+behind it, and the hero sits over a canvas. The suite no longer depends on it
+for that, and now checks contrast itself on all eight pages.
 
 ## Where the numbers are
 
@@ -95,8 +101,9 @@ That is a switch waiting for your answer, not a defect.
 The home page's 2.5 s is the four-second loader you decided to keep. It is a
 deliberate cost and the only thing holding that number down.
 
-The regression suite is 903 checks across eight files, in Chromium, WebKit and
-Firefox.
+The regression suite is 918 checks across eight files, in Chromium, WebKit and
+Firefox. Every fix above has a check in it that fails without the fix; I
+verified that by breaking each one again and watching the check go red.
 
 ## What I removed, and why
 
@@ -109,6 +116,25 @@ Firefox.
 - **Nine employees' names** on the AMS dashboard screenshot, blurred.
 - **Three timeline entries** — the Google Developer Group, Reverlab and STEP
   Academy — hidden until you can tell me what your role in each was.
+
+## What I chose not to do
+
+Three things the reviews raised that I left alone, so you know they were
+decisions and not oversights.
+
+The four components that read the reduce-motion setting each read it their own
+way, and only the rocket now notices when you change it mid-visit. Making that
+one shared mechanism is the right change and touches four files; it is worth
+doing deliberately, not at the end of a long night.
+
+Some listeners are added and never removed. In a site like this one there is
+no unmount and no route change — every navigation is a fresh document — so
+nothing accumulates. The repository's own notes say as much.
+
+One commit carries four related fixes rather than four commits carrying one
+each, which the repository's rules ask for. It is a bisect cost, not a
+correctness one, and unpicking it after the fact was more risk than it was
+worth.
 
 ## What is waiting for you
 
