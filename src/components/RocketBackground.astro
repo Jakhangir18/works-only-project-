@@ -110,7 +110,12 @@
         // a restored scroll offset must not wait on idle for the frame in
         // front of them. Then let the window carry on from the new position.
         else {
-          loadFrame(frameIdx);
+          // Directly, because the bulk gate may not have opened yet and the
+          // pump does nothing before it does — but still inside the window,
+          // or a fling through the section would put one request on the wire
+          // per frame crossed and split the bandwidth exactly the way the
+          // index-order loader did.
+          if (inFlight < WINDOW) loadFrame(frameIdx);
           pump();
         }
       }
@@ -144,22 +149,20 @@
        Same bytes, same completeness; what changes is the order, and the order
        is what was wrong. */
     const WINDOW = 6;
-    /* How far either side of the visitor the nearest-first search looks before
-       falling back to the sweep. Bounded because this runs from a scroll
-       handler and an unbounded outward search is O(TOTAL) per free slot. */
-    const NEAR = 24;
     const RETRY_LIMIT = 2;
     let inFlight = 0;
-    /* A monotone fill cursor for everything outside the near window. It only
-       ever advances, so filling the whole set costs O(TOTAL) once rather than
-       O(TOTAL) per request. */
-    let sweep = 0;
+    /* How many slots are still empty. The outward search below is the whole
+       point of the loader, so it is not bounded — but once the set is complete
+       the search would otherwise walk all 240 slots on every scroll frame that
+       changes the index, so it is skipped entirely at zero. */
+    let missing = TOTAL;
     const attempts: number[] = [];
 
     const loadFrame = (i: number) => {
       if (images[i]) return;
       const img = new Image();
       images[i] = img;
+      missing--;
       inFlight++;
       img.decoding = "async";
       const settle = () => {
@@ -178,7 +181,7 @@
         attempts[i] = (attempts[i] || 0) + 1;
         if (attempts[i] <= RETRY_LIMIT) {
           images[i] = undefined as unknown as HTMLImageElement;
-          if (i < sweep) sweep = i;
+          missing++;
         }
         settle();
       };
@@ -189,16 +192,19 @@
        visitor scrolling either direction is served before the far end of the
        sequence, then the sweep for the rest. */
     const nextWanted = () => {
+      if (missing <= 0) return -1;
+      // lastFrameIdx is -1 until something drives the controller, and -1 is
+      // also this function's "nothing left" answer, so an unclamped anchor
+      // stops the loader before it starts and the gate can never reopen.
       const anchor = lastFrameIdx < 0 ? 0 : lastFrameIdx;
-      for (let d = 0; d <= NEAR; d++) {
+      for (let d = 0; d < TOTAL; d++) {
         const ahead = anchor + d;
         if (ahead < TOTAL && !images[ahead]) return ahead;
         if (d === 0) continue;
         const behind = anchor - d;
         if (behind >= 0 && !images[behind]) return behind;
       }
-      while (sweep < TOTAL && images[sweep]) sweep++;
-      return sweep < TOTAL ? sweep : -1;
+      return -1;
     };
 
     function pump() {

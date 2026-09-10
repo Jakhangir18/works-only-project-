@@ -178,16 +178,26 @@ const { className = "" } = Astro.props;
      */
     watchContext() {
       const canvas = this.renderer.domElement;
-      canvas.addEventListener("webglcontextlost", (event) => {
-        event.preventDefault();
-        this.contextLost = true;
-        this.pause();
-      });
-      canvas.addEventListener("webglcontextrestored", () => {
-        this.contextLost = false;
-        this.resume();
-      });
+      canvas.addEventListener("webglcontextlost", this.onContextLost);
+      canvas.addEventListener("webglcontextrestored", this.onContextRestored);
     }
+
+    onContextLost = (event: Event) => {
+      event.preventDefault();
+      this.contextLost = true;
+      this.pause();
+    };
+
+    onContextRestored = () => {
+      this.contextLost = false;
+      // Only if the hero is actually on screen. A restore that arrives while
+      // the visitor is down in the Work section would otherwise start a
+      // full-viewport render loop nobody can see, and the observer will not
+      // fire again to stop it — its intersection state never changed.
+      const rect = this.container.getBoundingClientRect();
+      if (!document.hidden && rect.bottom > 0 && rect.top < window.innerHeight)
+        this.resume();
+    };
 
     animate = () => {
       if (this.paused) return;
@@ -241,6 +251,8 @@ const { className = "" } = Astro.props;
       this.paused = true;
 
       window.removeEventListener("resize", this.handleResize);
+      this.renderer.domElement.removeEventListener("webglcontextlost", this.onContextLost);
+      this.renderer.domElement.removeEventListener("webglcontextrestored", this.onContextRestored);
       cancelAnimationFrame(this.animationId);
 
       this.scene.traverse((object: THREEType.Object3D) => {

@@ -28,11 +28,17 @@ export function initRocketMotionController(): void {
   // else re-runs this: the only other caller is a 200 ms resize debounce, and
   // changing the OS setting fires no resize. Bound once, because this function
   // runs again on every resize.
-  if (!motionQueryBound && typeof window !== "undefined") {
+  const motionQuery =
+    typeof window !== "undefined"
+      ? window.matchMedia("(prefers-reduced-motion: reduce)")
+      : null;
+  // addEventListener on a MediaQueryList is not universal — older WebKit only
+  // has addListener — and this runs before any other guard, so an unguarded
+  // call would throw here and leave window.updateRocketMotion unassigned,
+  // which the scroll handler calls without optional chaining on every frame.
+  if (!motionQueryBound && motionQuery?.addEventListener) {
     motionQueryBound = true;
-    window
-      .matchMedia("(prefers-reduced-motion: reduce)")
-      .addEventListener("change", () => initRocketMotionController());
+    motionQuery.addEventListener("change", () => initRocketMotionController());
   }
 
   const rocketContainer = document.querySelector(
@@ -42,9 +48,7 @@ export function initRocketMotionController(): void {
   if (!rocketContainer) return;
 
   // Respect reduced-motion preferences and keep the rocket static.
-  const prefersReduced = window.matchMedia(
-    "(prefers-reduced-motion: reduce)",
-  ).matches;
+  const prefersReduced = !!motionQuery?.matches;
   if (prefersReduced) {
     window.updateRocketMotion = (progress: number) => {
       lastProgress = progress;

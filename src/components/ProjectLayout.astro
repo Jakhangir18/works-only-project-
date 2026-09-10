@@ -111,7 +111,11 @@ const shareCard = heroImage?.replace(/\/[^/]+$/, "/og.jpg");
               />
             )
           }
-          <span class="proj-hero__placeholder-num">{number}</span>
+          {/* A watermark, not a label: 7% white at 22rem behind the hero
+              image, and the same number is already read out by the kicker
+              below it. Marked decorative so nothing announces it twice and
+              nothing grades it as text a reader has to read. */}
+          <span class="proj-hero__placeholder-num" aria-hidden="true">{number}</span>
         </div>
       </div>
       <div class="proj-hero__title-wrap">

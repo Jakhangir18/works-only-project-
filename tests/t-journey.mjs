@@ -88,11 +88,17 @@ const browser = await chromium.launch();
 
     // No engine here produces a real back/forward restore — all three report
     // persisted false — so the freeze branch is driven directly. A frozen page
-    // must keep its canvas, and a restore must put it back on screen; the old
-    // teardown destroyed the renderer on both kinds of pagehide and left the
-    // hero empty for the rest of the visit.
+    // must keep its canvas: the old teardown destroyed the renderer on both
+    // kinds of pagehide and left the hero empty for the rest of the visit.
+    // This assertion fails against that teardown.
+    //
+    // Whether the restored field is actually drawing again is not asserted
+    // here and cannot honestly be: a WebGL canvas cannot be read back from
+    // outside its own render call without preserveDrawingBuffer, and the
+    // animation-frame rate on this page has a floor from other systems that
+    // swamps the difference. That half is on the owner's iPhone gate.
     await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
-    await page.waitForTimeout(600);
+    await page.waitForTimeout(900);
     const frozen = await page.evaluate(() => {
       window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true }));
       const canvas = document.querySelector('[data-dotted-surface] canvas');
@@ -101,14 +107,28 @@ const browser = await chromium.launch();
     results.push(check('return: a freeze keeps the hero field', frozen.canvas && frozen.w > 0, JSON.stringify(frozen)));
 
     await page.evaluate(() => window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true })));
-    await page.waitForTimeout(1200);
+    await page.waitForTimeout(800);
     const restored = await page.evaluate(() => {
       const canvas = document.querySelector('[data-dotted-surface] canvas');
-      if (!canvas) return { canvas: false, moving: false };
-      const ctx = canvas.getContext('webgl') || canvas.getContext('webgl2');
-      return { canvas: true, w: canvas.width, lost: ctx ? ctx.isContextLost() : null };
+      if (!canvas) return { canvas: false };
+      const ctx = canvas.getContext('webgl2') || canvas.getContext('webgl');
+      return { canvas: true, w: canvas.width, lost: ctx ? ctx.isContextLost() : 'no context' };
     });
-    results.push(check('return: a restore leaves the hero field usable', restored.canvas && restored.w > 0 && restored.lost !== true, JSON.stringify(restored)));
+    results.push(check('return: a restore leaves a live context on the hero field', restored.canvas && restored.w > 0 && restored.lost === false, JSON.stringify(restored)));
+
+    // Two real unloads in a row. destroy() removes the renderer's canvas from
+    // its container, which throws NotFoundError the second time unless it
+    // refuses to run twice — and the pagehide listener is no longer once-only.
+    const twice = await page.evaluate(() => {
+      const errors = [];
+      const onError = (e) => errors.push(String(e.message || e.error));
+      window.addEventListener('error', onError);
+      window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: false }));
+      window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: false }));
+      window.removeEventListener('error', onError);
+      return errors;
+    });
+    results.push(check('return: a second unload does not throw out of the teardown', twice.length === 0, twice.join(' | ')));
   }
   await ctx.close();
 }
