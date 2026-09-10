@@ -10,6 +10,9 @@ export type WorkPalette = {
 export type WorkCover = {
   src: string;
   alt: string;
+  /** Intrinsic pixel size, so the card reserves the box before the file decodes. */
+  width: number;
+  height: number;
   focalPoint: {
     x: string;
     y: string;
@@ -47,6 +50,8 @@ export const works = [
     poster: { mark: "TP", motif: "signal" },
     cover: {
       src: "/projects/touchpoint/cover.webp",
+      width: 1200,
+      height: 1600,
       alt: "The TouchPoint glove wired to its driver board on the hackathon table",
       focalPoint: { x: "50%", y: "45%" },
     },
@@ -61,6 +66,8 @@ export const works = [
     poster: { mark: "SP", motif: "orbit" },
     cover: {
       src: "/projects/spoot/cover.webp",
+      width: 1152,
+      height: 1200,
       alt: "The SPOOT team on stage receiving the Google track award at BeaverHacks 2026",
       focalPoint: { x: "45%", y: "40%" },
     },
@@ -75,6 +82,8 @@ export const works = [
     poster: { mark: "AMS", motif: "crosshair" },
     cover: {
       src: "/projects/ams/images/cover.webp",
+      width: 1600,
+      height: 952,
       alt: "AMS tablet interface at an industrial inspection checkpoint",
       focalPoint: { x: "50%", y: "44%" },
     },
@@ -89,6 +98,8 @@ export const works = [
     poster: { mark: "RLV", motif: "signal" },
     cover: {
       src: "/projects/remote-lab-vision/cover.webp",
+      width: 1600,
+      height: 2133,
       alt: "Two glass columns on an aluminium frame with the control unit of a remote chemistry lab rig",
       focalPoint: { x: "50%", y: "38%" },
     },
@@ -103,6 +114,8 @@ export const works = [
     poster: { mark: "ER", motif: "trajectory" },
     cover: {
       src: "/projects/engineering-rocket/cover.webp",
+      width: 1200,
+      height: 1600,
       alt: "Holding a printed rocket airframe at the faculty of science and technology",
       focalPoint: { x: "50%", y: "35%" },
     },
@@ -117,6 +130,8 @@ export const works = [
     poster: { mark: "SC", motif: "signal" },
     cover: {
       src: "/projects/private-clinic/cover.webp",
+      width: 1600,
+      height: 1000,
       alt: "The Sadap Clinic home page with its doctor search",
       focalPoint: { x: "50%", y: "25%" },
     },
@@ -131,6 +146,8 @@ export const works = [
     poster: { mark: "PR", motif: "crosshair" },
     cover: {
       src: "/projects/portfolio-rocket/cover.webp",
+      width: 960,
+      height: 383,
       alt: "A frame from the scroll sequence: the rocket opened up, avionics board visible",
       focalPoint: { x: "50%", y: "50%" },
     },

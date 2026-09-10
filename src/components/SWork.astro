@@ -15,6 +15,24 @@ import { works } from "../data/works";
         </span>
       </h2>
 
+      {/* The cards live inside a scroll-driven scene whose contents are skipped
+          (content-visibility) until the tunnel opens, so they are not a reliable
+          tab stop. This list is the keyboard and screen-reader route to the same
+          projects, and it is always present. */}
+      <nav class="s__index u-sr-only" aria-label="Projects">
+        <ul>
+          {
+            works.map((work) => (
+              <li>
+                <a href={work.site}>
+                  {work.title} — {work.blurb}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
+
       <div class="s__scene js-scene">
         {
           works.map((work, index) => (

@@ -30,6 +30,7 @@
       <span class="nav__label">AMS / Workforce Monitoring</span>
     </nav>
 
+    <main>
     <!-- ─── S1 · HERO ─────────────────────────────────────────── -->
     <header class="hero ams-animate">
       <div class="hero__image">
@@ -280,7 +281,7 @@
             <li class="feature-list__item">
               <span class="feature-list__dot"></span>
               <div>
-                <h4 class="feature-list__title">CRUD Employee Management</h4>
+                <h3 class="feature-list__title">CRUD Employee Management</h3>
                 <p class="feature-list__desc">
                   Add, edit, deactivate and archive employee records with
                   role-based access controls.
@@ -290,7 +291,7 @@
             <li class="feature-list__item">
               <span class="feature-list__dot"></span>
               <div>
-                <h4 class="feature-list__title">Attendance Tracking</h4>
+                <h3 class="feature-list__title">Attendance Tracking</h3>
                 <p class="feature-list__desc">
                   Automated time-stamped shift logs with pass/fail status per
                   inspection.
@@ -300,7 +301,7 @@
             <li class="feature-list__item">
               <span class="feature-list__dot"></span>
               <div>
-                <h4 class="feature-list__title">Health Status Logs</h4>
+                <h3 class="feature-list__title">Health Status Logs</h3>
                 <p class="feature-list__desc">
                   Per-employee health history: temperature, BAC, SpO₂ across all
                   shifts.
@@ -310,7 +311,7 @@
             <li class="feature-list__item">
               <span class="feature-list__dot"></span>
               <div>
-                <h4 class="feature-list__title">Push Notifications</h4>
+                <h3 class="feature-list__title">Push Notifications</h3>
                 <p class="feature-list__desc">
                   Instant alerts for late workers, failed inspections, and
                   critical health flags.
@@ -320,7 +321,7 @@
             <li class="feature-list__item">
               <span class="feature-list__dot"></span>
               <div>
-                <h4 class="feature-list__title">ERP / 1C Integration</h4>
+                <h3 class="feature-list__title">ERP / 1C Integration</h3>
                 <p class="feature-list__desc">
                   Native sync with 1C:Enterprise and compatible ERP systems for
                   payroll and HR data flow.
@@ -354,7 +355,12 @@
         </div>
       </div>
 
-      <div class="gallery-scroll" aria-label="Deployment locations gallery">
+      <div
+        class="gallery-scroll"
+        role="group"
+        aria-label="Deployment locations gallery"
+        tabindex="0"
+      >
         <div class="gallery-scroll__track">
           <!-- Real images load from /projects/ams/images/ -->
           <div class="gallery-slide">
@@ -591,6 +597,8 @@
       </div>
     </section>
 
+    </main>
+
     <!-- ─── FOOTER ────────────────────────────────────────────── -->
     <footer class="footer">
       <a href="/" class="footer__back" id="js-back-footer">
@@ -620,9 +628,12 @@
     --border: rgba(255, 255, 255, 0.07);
     --border-strong: rgba(255, 255, 255, 0.12);
     --text: #ffffff;
-    --text-muted: rgba(255, 255, 255, 0.45);
-    --text-dim: rgba(255, 255, 255, 0.25);
-    --accent: #3b82f6;
+    /* 0.45 and 0.25 measured 4.49:1 and 2.17:1 against the page ground,
+       both under the 4.5:1 minimum. */
+    --text-muted: rgba(255, 255, 255, 0.68);
+    --text-dim: rgba(255, 255, 255, 0.56);
+    /* #3b82f6 measured 4.06:1 inside the accent-dim node; #60a5fa clears 4.5:1. */
+    --accent: #60a5fa;
     --accent-dim: rgba(59, 130, 246, 0.15);
     --accent-glow: rgba(59, 130, 246, 0.08);
     --font-editorial: "EditorialNew", "Georgia", serif;

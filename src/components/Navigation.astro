@@ -36,7 +36,7 @@ const menuItems = [
 </nav>
 
 <!-- Mobile overlay -->
-<div class="nav-overlay js-nav-overlay" aria-hidden="true">
+<div class="nav-overlay js-nav-overlay" inert>
   <ul class="nav-overlay__menu">
     {
       menuItems.map((item) => (
@@ -58,6 +58,7 @@ const menuItems = [
 
   function openMenu() {
     overlay.classList.add("is-open");
+    overlay.removeAttribute("inert");
     burger.classList.add("is-active");
     burger.setAttribute("aria-expanded", "true");
     document.documentElement.classList.add("is-nav-open");
@@ -65,6 +66,7 @@ const menuItems = [
 
   function closeMenu() {
     overlay.classList.remove("is-open");
+    overlay.setAttribute("inert", "");
     burger.classList.remove("is-active");
     burger.setAttribute("aria-expanded", "false");
     document.documentElement.classList.remove("is-nav-open");

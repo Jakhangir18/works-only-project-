@@ -14,6 +14,9 @@ interface Props {
   outcome: string;
   /** Optional hero image. Omitted pages show the colored placeholder. */
   heroImage?: string;
+  /** Intrinsic size of heroImage, so the browser reserves its box. */
+  heroImageWidth?: number;
+  heroImageHeight?: number;
   /** Optional photographs shown after Outcome. Every entry needs real pixel
    * dimensions so the grid reserves its space before the image decodes. */
   gallery?: {
@@ -38,6 +41,8 @@ const {
   solution,
   outcome,
   heroImage,
+  heroImageWidth,
+  heroImageHeight,
   gallery,
   downloads,
 } = Astro.props;
@@ -64,6 +69,7 @@ const {
       <span class="proj-nav__num">{number}</span>
     </nav>
 
+    <main>
     <!-- Hero -->
     <header class="proj-hero" style={`--hero-color: ${heroColor};`}>
       <div class="proj-hero__image-wrap">
@@ -73,6 +79,10 @@ const {
               <img
                 src={heroImage}
                 alt={title}
+                width={heroImageWidth}
+                height={heroImageHeight}
+                fetchpriority="high"
+                decoding="async"
                 class="proj-hero__img"
                 onerror="this.style.display='none'"
               />
@@ -98,7 +108,7 @@ const {
     <div class="proj-divider"></div>
 
     <!-- Storytelling sections -->
-    <main class="proj-content">
+    <div class="proj-content">
       <article class="proj-story-section proj-animate">
         <div class="proj-story-section__label">
           <span class="proj-story-section__tag" style={`color: ${accentColor};`}
@@ -202,6 +212,7 @@ const {
           </section>
         )
       }
+    </div>
     </main>
 
     <!-- Footer -->
@@ -286,7 +297,7 @@ const {
     font-family: var(--font-family-fraktion), monospace;
     font-size: 0.75rem;
     letter-spacing: 0.2em;
-    color: rgba(255, 255, 255, 0.25);
+    color: rgba(255, 255, 255, 0.62);
     text-transform: uppercase;
   }
 
@@ -349,7 +360,7 @@ const {
     font-size: clamp(0.7rem, 1vw, 0.85rem);
     letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.35);
+    color: rgba(255, 255, 255, 0.62);
     margin-bottom: 1rem;
   }
 

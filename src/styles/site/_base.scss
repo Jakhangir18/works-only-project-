@@ -17,6 +17,13 @@
   box-sizing: border-box;
 }
 
+/* The reset above removes every focus indicator, so keyboard users had none.
+   :focus-visible restores one without showing a ring on mouse clicks. */
+:focus-visible {
+  outline: 2px solid color(primary);
+  outline-offset: 3px;
+}
+
 html {
   @include t(base);
 
