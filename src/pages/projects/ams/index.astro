@@ -85,7 +85,7 @@
           <div class="hero__meta-item">
             <span class="hero__meta-label">Status</span>
             <span class="hero__meta-value hero__meta-value--live"
-              >Live · 10+ Deployments</span
+              >Live</span
             >
           </div>
         </div>
@@ -344,8 +344,8 @@
 
       <div class="traction__stats">
         <div class="traction__stat">
-          <span class="traction__stat-num">10+</span>
-          <span class="traction__stat-label">Active Deployments</span>
+          <span class="traction__stat-num">5</span>
+          <span class="traction__stat-label">Deployment sites photographed</span>
         </div>
         <div class="traction__stat">
           <span class="traction__stat-num">Gov</span>
@@ -444,53 +444,10 @@
 
     <div class="divider"></div>
 
-    <!-- ─── S6 · MARKET ───────────────────────────────────────── -->
-    <section class="section market ams-animate">
-      <div class="section__header">
-        <span class="tag">05</span>
-        <h2 class="section__title">Market</h2>
-      </div>
-
-      <p class="market__context">
-        Kazakhstan industrial & ERP market — workforce compliance software
-        segment.
-      </p>
-
-      <div class="market__grid">
-        <div class="market__block">
-          <span class="market__acronym">TAM</span>
-          <span class="market__desc">Total Addressable Market</span>
-          <span class="market__value">~$420M</span>
-          <p class="market__note">
-            All KZ enterprises subject to pre-shift health screening regulations
-          </p>
-        </div>
-        <div class="market__block">
-          <span class="market__acronym">SAM</span>
-          <span class="market__desc">Serviceable Addressable Market</span>
-          <span class="market__value">~$85M</span>
-          <p class="market__note">
-            Industrial, gov, construction &amp; transport sectors with 50+
-            employees
-          </p>
-        </div>
-        <div class="market__block">
-          <span class="market__acronym">SOM</span>
-          <span class="market__desc">Serviceable Obtainable Market</span>
-          <span class="market__value">~$12M</span>
-          <p class="market__note">
-            Reachable within 3 years via direct sales &amp; ERP partner channels
-          </p>
-        </div>
-      </div>
-    </section>
-
-    <div class="divider"></div>
-
     <!-- ─── S7 · LICENSING ────────────────────────────────────── -->
     <section class="section licensing ams-animate">
       <div class="section__header">
-        <span class="tag">06</span>
+        <span class="tag">05</span>
         <h2 class="section__title">Licensing &amp; Certification</h2>
       </div>
 
@@ -565,7 +522,7 @@
     <!-- ─── S8 · MY ROLE ──────────────────────────────────────── -->
     <section class="section role ams-animate">
       <div class="section__header">
-        <span class="tag">07</span>
+        <span class="tag">06</span>
         <h2 class="section__title">My Role in AMS</h2>
       </div>
 
@@ -1242,74 +1199,6 @@
   }
 
   /* ─── MARKET ───────────────────────────────────────────────── */
-  .market__context {
-    font-family: var(--font-mono);
-    font-size: 0.82rem;
-    letter-spacing: 0.08em;
-    color: var(--text-muted);
-    margin-bottom: clamp(2rem, 4vh, 3rem);
-  }
-
-  .market__grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1px;
-    background: var(--border);
-  }
-
-  @media (max-width: 640px) {
-    .market__grid {
-      grid-template-columns: 1fr;
-    }
-  }
-
-  .market__block {
-    background: var(--bg);
-    padding: clamp(1.75rem, 3.5vw, 2.5rem);
-    display: flex;
-    flex-direction: column;
-    gap: 0.6rem;
-    transition: background 0.22s;
-  }
-
-  .market__block:hover {
-    background: var(--surface);
-  }
-
-  .market__acronym {
-    font-family: var(--font-editorial);
-    font-size: clamp(2rem, 5vw, 4rem);
-    font-weight: 700;
-    letter-spacing: -0.03em;
-    color: var(--accent);
-    line-height: 1;
-  }
-
-  .market__desc {
-    font-family: var(--font-mono);
-    font-size: 0.68rem;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--text-dim);
-  }
-
-  .market__value {
-    font-family: var(--font-mono);
-    font-size: clamp(1rem, 2vw, 1.5rem);
-    letter-spacing: 0.04em;
-    color: var(--text);
-    margin-top: 0.75rem;
-  }
-
-  .market__note {
-    font-family: var(--font-mono);
-    font-size: 0.75rem;
-    line-height: 1.7;
-    color: var(--text-muted);
-    letter-spacing: 0.02em;
-  }
-
-  /* ─── LICENSING ────────────────────────────────────────────── */
   .licensing__grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);

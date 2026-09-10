@@ -47,7 +47,11 @@ Guessed dates come from when files were saved on the Mac, which is not when the 
   Answer: ________
 - One photo shows an "IDEA BATTLE 500 000 ₸" cheque with Mangystau Hub and Aralteс branding. What was that, and did you win it?
   Answer: ________
-- The current page claims traction, market size and licensing figures. Which of those numbers are real?
+- The page used to claim a market size — TAM ~$420M, SAM ~$85M, SOM ~$12M — and
+  "10+ active deployments". Nothing supports any of those, so the market
+  section is gone and the deployment figure now says what the photographs
+  show: five sites. Give me the real numbers and I will put them back with
+  their source named.
   Answer: ________
 
 ## 5. Engineering Rocket
