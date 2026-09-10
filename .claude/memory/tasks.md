@@ -15,3 +15,8 @@
 - git: feat/work-content@24dac7d
 - next: Owner answers Q1-Q10 (dates, roles, prizes), runs the Safari gate on the iPhone, decides on the 4s loader + morphing title; then merge to main
 
+## 2026-09-10 23:36 | Overnight: 63-agent adversarial review plus eleven /code-review rounds on feat/work-content; fixed the invisible dive, the erased tunnel letter shadows, the snapped rocket pose, the 18s-late rocket frame, the off-screen hero roller, the emptied hero after Back, share cards pointing at localhost, and card+dive text that was unreadable on its own cover; suite 843 -> 961 checks, branch pushed
+- files: docs/night-report.md, src/components/AWork.astro, src/utils/DiveTransition.ts, src/components/RocketBackground.astro, tests/t-a11y.mjs, tests/t-dive.mjs
+- git: feat/work-content@8fcb8cc
+- next: Owner answers docs/facts-to-confirm.md (11 sections incl. the iPhone gate), then merge to main and deploy
+

@@ -1,4 +1,4 @@
 # Project state
-Updated: 2026-09-10 07:10
+Updated: 2026-09-10 23:36
 
-works-only-project: feat/work-content pushed (9 commits over main), preview https://vps-worker.taild24189.ts.net:8447; open: owner facts Q1-Q10, Safari gate, home LCP decision; redesign/minimal parked
+works-only-project: feat/work-content 60 commits over main, pushed, 961 checks green, preview https://vps-worker.taild24189.ts.net:8447; blocked on owner facts + Safari gate; nothing merged, nothing deployed
