@@ -1,0 +1,10 @@
+
+=== feat/work-content (branch off main 3f6e954), 2026-09-10 ===
+BASELINE on main, production build, host idle (load 0.2):
+- Lighthouse home: mobile perf 64 / a11y 94 / BP 96 / SEO 60, LCP 11.9s, TBT 80ms; desktop perf 56 / a11y 89.
+- Lighthouse /projects/ams/: mobile perf 75, LCP 29.3s (render delay 28.9s waiting on 11 MB of eager JPEG). Opportunities: next-gen formats 19.6s, efficiently encode 18.3s, defer offscreen 11.7s, properly size 6.75s.
+- QA harness (chromium+webkit, 1440x900 + 390x844, 5 routes): 14 route-checks failing.
+  * home: 2 <h1> (hero + contact); cover.jpg has no width/height; 6 zero-area focusables (burger + all 5 work links, zero until the tunnel animates in); axe serious aria-hidden-focus on .nav-overlay; focus ring missing on all 14 focusables.
+  * /projects/ams/: 9 images without width/height; axe serious color-contrast (20 nodes), serious scrollable-region-focusable (.gallery-scroll), moderate heading-order (h4 after h2).
+  * /work/*: axe serious color-contrast on .proj-nav__num (3 nodes).
+  * all pages: no <main> landmark (axe moderate landmark-one-main + region).

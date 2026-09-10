@@ -46,7 +46,7 @@ export const works = [
     palette: { background: "#080f1a", accent: "#60a5fa" },
     poster: { mark: "AMS", motif: "crosshair" },
     cover: {
-      src: "/projects/ams/images/cover.jpg",
+      src: "/projects/ams/images/cover.webp",
       alt: "AMS tablet interface at an industrial inspection checkpoint",
       focalPoint: { x: "50%", y: "44%" },
     },
