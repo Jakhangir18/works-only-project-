@@ -16,7 +16,7 @@ page.on('request', (r) => { if (r.resourceType() === 'other' && /\/work\/|\/proj
 await page.goto(BASE + '/', { waitUntil: 'load' });
 await page.waitForTimeout(6000);
 const box = await workBox(page);
-const href = await findCardInView(page, box, 900);
+const href = await findCardInView(page, box);
 results.push(check('dive: a card is reachable in the tunnel', !!href, href || 'none found'));
 
 if (href) {
@@ -71,7 +71,7 @@ if (href) {
 
   // Three more cycles: node count must not grow.
   for (let i = 0; i < 3; i++) {
-    const h2 = await findCardInView(page, box, 900);
+    const h2 = await findCardInView(page, box);
     if (!h2) break;
     await page.evaluate(() => window.__card.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true })));
     await page.waitForTimeout(2000);

@@ -40,14 +40,14 @@ const { className = "" } = Astro.props;
 
   class DottedSurfaceAnimation {
     container: HTMLElement;
-    scene!: THREE.Scene;
-    camera!: THREE.PerspectiveCamera;
-    renderer!: THREE.WebGLRenderer;
+    scene!: THREEType.Scene;
+    camera!: THREEType.PerspectiveCamera;
+    renderer!: THREEType.WebGLRenderer;
     /** False when WebGL is unavailable; every entry point then does nothing. */
     supported = false;
-    points!: THREE.Points;
-    geometry!: THREE.BufferGeometry;
-    material!: THREE.PointsMaterial;
+    points!: THREEType.Points;
+    geometry!: THREEType.BufferGeometry;
+    material!: THREEType.PointsMaterial;
     animationId: number;
     count: number;
     frameCount: number;
@@ -213,11 +213,11 @@ const { className = "" } = Astro.props;
       window.removeEventListener("resize", this.handleResize);
       cancelAnimationFrame(this.animationId);
 
-      this.scene.traverse((object: THREE.Object3D) => {
+      this.scene.traverse((object: THREEType.Object3D) => {
         if (object instanceof THREE.Points) {
           object.geometry.dispose();
           if (Array.isArray(object.material)) {
-            object.material.forEach((mat: THREE.Material) => mat.dispose());
+            object.material.forEach((mat: THREEType.Material) => mat.dispose());
           } else {
             object.material.dispose();
           }

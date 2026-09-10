@@ -15,7 +15,7 @@ const browser = await chromium.launch();
   await page.goto(BASE + '/', { waitUntil: 'load' });
   await page.waitForTimeout(6500);
   const box = await workBox(page);
-  const href = await findCardInView(page, box, 844);
+  const href = await findCardInView(page, box);
   results.push(check('touch: a card is reachable on a phone', !!href, href || 'none'));
   if (href) {
     await page.evaluate(() => window.__card.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true })));
@@ -47,7 +47,6 @@ const browser = await chromium.launch();
   const box = await workBox(page);
   await page.evaluate((y) => window.scrollTo({ top: y, behavior: 'instant' }), box.top + 1200);
   await page.waitForTimeout(600);
-  const left = await page.evaluate(() => window.scrollY);
 
   await page.goto(BASE + '/work/touchpoint/', { waitUntil: 'load' });
   await page.waitForTimeout(1200);

@@ -56,8 +56,14 @@ class Section {
   pointsProgress: number;
   /** Horizontal drift of the whole point field; one scalar, not per point. */
   flowX: number = 0;
-  /** ScrollTrigger's own scroll getter: no layout read. */
-  getScroll: () => number = ScrollTrigger.getScrollFunc(window);
+  /**
+   * The scroll position as of the last scroll event, published by
+   * SiteController. tick() runs on the GSAP ticker, after ScrollTrigger's
+   * scrub has already written styles, so reading window.scrollY there forced
+   * a style and layout pass on 0.54 of every frame — invariant 3, read before
+   * you write. The scroll listener reads it before anything is written.
+   */
+  scrollY = 0;
   last: {
     animationProgress: number;
     pointsProgress: number;
@@ -170,6 +176,7 @@ class Section {
   bindEvents() {
     Emitter.on("contrastchange", this.setCtxStyle, this);
     Emitter.on("resize", this.onResize, this);
+    Emitter.on("scroll", this.onScroll, this);
 
     this.el.addEventListener("intersect", this.onIntersect.bind(this), {
       passive: true,
@@ -194,6 +201,10 @@ class Section {
     } else {
       Emitter.on("tick", this.tick, this);
     }
+  }
+
+  onScroll(y: number) {
+    this.scrollY = y;
   }
 
   resizeTimer: ReturnType<typeof setTimeout> | null = null;
@@ -252,9 +263,13 @@ class Section {
     };
 
     // Cache the section's absolute position so tick() can derive scroll
-    // progress from window.scrollY alone, without per-frame rect reads.
+    // progress from the scroll position alone, without per-frame rect reads.
+    // Seed the scroll position here too: a visitor who has not scrolled since
+    // load has never produced a scroll event, and this measurement pass is
+    // already reading geometry, so the read costs nothing extra.
     const elRect = this.el.getBoundingClientRect();
-    this.elAbsTop = elRect.top + window.scrollY;
+    this.scrollY = window.scrollY;
+    this.elAbsTop = elRect.top + this.scrollY;
     this.elHeight = elRect.height;
 
     this.canvas.width = this.bounding.width;
@@ -695,11 +710,7 @@ class Section {
     // but from cached geometry — the rect reads landed right after GSAP's
     // scrub writes and forced a reflow every frame.
     const vh = this.bounding.height;
-    // ScrollTrigger's scroll getter returns the position it already tracks,
-    // without asking the layout engine. Reading window.scrollY here read the
-    // live value after GSAP's scrub had written styles, which forced a
-    // style+layout pass on 0.54 of every frame — invariant 3, read then write.
-    const scrollY = this.getScroll();
+    const scrollY = this.scrollY;
     const topInVp = (this.elAbsTop - scrollY) / vh;
     const bottomInVp = (this.elAbsTop + this.elHeight - scrollY) / vh;
     this.scrollProgress =

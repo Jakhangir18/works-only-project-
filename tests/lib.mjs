@@ -75,7 +75,7 @@ export async function workBox(page) {
 }
 
 /** Scroll into the pinned tunnel until a card link is fully on screen. */
-export async function findCardInView(page, box, vh) {
+export async function findCardInView(page, box) {
   for (let step = 200; step <= 5000; step += 200) {
     await page.evaluate((y) => window.scrollTo({ top: y, behavior: 'instant' }), box.top + step);
     await page.waitForTimeout(320);

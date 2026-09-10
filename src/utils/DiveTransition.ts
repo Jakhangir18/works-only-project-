@@ -667,7 +667,7 @@ class DiveTransition {
   }
 
   playFull(reading: CardReading) {
-    const { flip, camera, backdrop, teaser, closeButton, layers, cover } = this;
+    const { flip, camera, backdrop, teaser, closeButton, layers } = this;
 
     // will-change goes on only while the dive runs; the layers that stay at
     // constant opacity never get it.
@@ -815,7 +815,7 @@ class DiveTransition {
   }
 
   buildOnClosed() {
-    const { flip, camera, backdrop, teaser, closeButton, layers } = this;
+    const { flip, camera, backdrop, layers } = this;
     const card = this.sourceCard;
 
     return () => {
