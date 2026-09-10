@@ -70,11 +70,22 @@ const { texts = [], className = "" } = Astro.props;
       window.clearInterval(timer);
     };
 
+    // The two pause conditions are independent: off screen, and tab hidden.
+    // Keeping the observer's own answer in a variable is what stops the two
+    // paths from disagreeing. The visibilitychange handler used to re-derive
+    // visibility from `bottom > 0` alone, which is only half the test — at a
+    // landscape-phone viewport (measured 844x340: box top 386.9, innerHeight
+    // 340) the line sits entirely below the fold with a positive bottom, so
+    // returning to the tab restarted the roller off screen and the observer,
+    // whose intersection state never changed, never fired again to stop it.
+    let visible = !("IntersectionObserver" in window);
+
     if ("IntersectionObserver" in window) {
       const io = new IntersectionObserver(
         (entries) => {
           for (const entry of entries) {
-            if (entry.isIntersecting && !document.hidden) start();
+            visible = entry.isIntersecting;
+            if (visible && !document.hidden) start();
             else stop();
           }
         },
@@ -87,7 +98,7 @@ const { texts = [], className = "" } = Astro.props;
 
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) stop();
-      else if (root.getBoundingClientRect().bottom > 0) start();
+      else if (visible) start();
     });
   });
 </script>

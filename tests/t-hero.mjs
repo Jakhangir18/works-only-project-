@@ -62,6 +62,53 @@ const browser = await chromium.launch();
   await ctx.close();
 }
 
+// 3b. Returning to the tab must not start the roller while it is off screen.
+//     At a landscape-phone viewport the hero pushes the line below the fold at
+//     scroll 0: the observer correctly never starts it, and the visibilitychange
+//     handler used to restart it anyway from half the observer's test.
+{
+  const ctx = await browser.newContext({ viewport: { width: 844, height: 340 } });
+  const page = await ctx.newPage();
+  await page.goto(BASE + '/', { waitUntil: 'load' });
+  await page.waitForTimeout(5200);
+  const geom = await page.evaluate(() => {
+    const r = document.querySelector('.rolling-text').getBoundingClientRect();
+    return { top: r.top, bottom: r.bottom, ih: window.innerHeight };
+  });
+  const belowFold = geom.top >= geom.ih && geom.bottom > 0;
+  results.push(check('hero: the landscape-phone case still puts the line below the fold', belowFold, JSON.stringify(geom)));
+  if (belowFold) {
+    // Count class changes rather than reading a title: a swap the visitor
+    // cannot see is still work, and work is what must not happen.
+    await page.evaluate(() => {
+      window.__swaps = 0;
+      new MutationObserver((ms) => { window.__swaps += ms.length; })
+        .observe(document.querySelector('.rolling-text__viewport'), { attributes: true, attributeFilter: ['class'], subtree: true });
+    });
+    await page.waitForTimeout(6000);
+    const idle = await page.evaluate(() => window.__swaps);
+    // Playwright cannot drive real tab visibility headlessly, so override the
+    // two properties the handler reads and dispatch the event it listens for.
+    await page.evaluate(() => {
+      Object.defineProperty(document, 'hidden', { configurable: true, get: () => true });
+      Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'hidden' });
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    await page.waitForTimeout(400);
+    await page.evaluate(() => {
+      delete document.hidden;
+      delete document.visibilityState;
+      document.dispatchEvent(new Event('visibilitychange'));
+      window.__swaps = 0;
+    });
+    await page.waitForTimeout(9000);
+    const afterReturn = await page.evaluate(() => ({ swaps: window.__swaps, top: document.querySelector('.rolling-text').getBoundingClientRect().top, ih: window.innerHeight, sy: window.scrollY }));
+    results.push(check('hero: idle off screen does nothing', idle === 0, `${idle} class changes in 6 s`));
+    results.push(check('hero: returning to the tab does not start it off screen', afterReturn.swaps === 0, `${afterReturn.swaps} class changes in 9 s, top ${Math.round(afterReturn.top)} vs innerHeight ${afterReturn.ih}, scrollY ${afterReturn.sy}`));
+  }
+  await ctx.close();
+}
+
 // 4. The longest title fits the mask at every width.
 for (const [w, h, name] of VIEWPORTS) {
   const ctx = await browser.newContext({ viewport: { width: w, height: h } });
