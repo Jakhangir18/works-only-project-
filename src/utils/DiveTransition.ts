@@ -163,6 +163,7 @@ class DiveTransition {
   state: DiveState = "closed";
   sourceCard: HTMLElement | null = null;
   prefetchLink: HTMLLinkElement | null = null;
+  prefetchAbort: AbortController | null = null;
   sectionWasPaused = false;
   lockedScrollY = 0;
 
@@ -362,15 +363,24 @@ class DiveTransition {
    */
   onWindowResize = () => {
     this.resizedWhileOpen = true;
-    if (this.state === "open") {
-      gsap.set(this.flip, {
-        scale: this.endScale(this.cardBoxWidth, this.cardBoxHeight),
-      });
-      // endScale moved, so the image plane's layout/static-scale split has to
-      // move with it or the plane stops resolving to 1.0 at rest.
-      this.layoutPlanes(this.cardBoxWidth, this.cardBoxHeight);
-    }
+    if (this.state === "open") this.settleToViewport();
   };
+
+  /**
+   * Re-derive the two things a viewport change invalidates while the dive is
+   * up: the flip plane's resting scale, and the depth planes' layout. Called
+   * from the resize handler when the dive is already open, and from each
+   * entry timeline's onComplete when the resize arrived mid-entry and the
+   * handler had to refuse it.
+   */
+  settleToViewport() {
+    gsap.set(this.flip, {
+      scale: this.endScale(this.cardBoxWidth, this.cardBoxHeight),
+    });
+    // endScale moved, so the image plane's layout/static-scale split has to
+    // move with it or the plane stops resolving to 1.0 at rest.
+    this.layoutPlanes(this.cardBoxWidth, this.cardBoxHeight);
+  }
 
   /* ----------------------------------------------------------------- read */
 
@@ -628,6 +638,15 @@ class DiveTransition {
         this.glow.style.willChange = "";
         this.vignette.style.willChange = "";
         this.state = "open";
+        // onWindowResize only re-settles while state === "open", so a resize
+        // that lands during the 1.15 s entry sets the flag and returns. The
+        // entry's own end value was computed for the old viewport: measured
+        // 1440x900 -> 900x700 mid-entry left flip at scale 3.2727 against a
+        // correct 2.0455, and a landscape-to-portrait rotation left 3.2727
+        // against 0.8864 with the far plane painting 1613x1008 px inside a
+        // 390 px viewport. Settling once here is the same work the handler
+        // would have done, at the first moment it is allowed to run.
+        if (this.resizedWhileOpen) this.settleToViewport();
       },
     });
 
@@ -656,6 +675,15 @@ class DiveTransition {
       y: reading.centerY - window.innerHeight / 2,
       scale: reading.scale,
       rotationY: reading.rotationY,
+      // closeReduced() tweens this plane to opacity 0 and nothing else ever
+      // puts it back. Without this line, one dive taken with reduced motion on
+      // leaves every later full-motion dive invisible for the rest of the
+      // session: backdrop, teaser and close button appear over a black
+      // rectangle where the photo, plate, grid and title should be. Measured
+      // over three consecutive dives after the switch — inline opacity "0"
+      // every time. primeFull is the full path's rest state, so it has to
+      // write every property the reduced path writes.
+      opacity: 1,
     });
     gsap.set(camera, { xPercent: -50, yPercent: -50, z: 0 });
     gsap.set([layers.far, layers.mid, layers.near, layers.fore], { opacity: 1 });
@@ -699,6 +727,9 @@ class DiveTransition {
         this.glow.style.willChange = "";
         this.vignette.style.willChange = "";
         this.state = "open";
+        // See playReduced's onComplete: a resize during the entry is recorded
+        // and, until the state flips to "open", refused. This is that moment.
+        if (this.resizedWhileOpen) this.settleToViewport();
       },
     });
 
@@ -788,31 +819,58 @@ class DiveTransition {
   }
 
   /**
+   * Warm the destination while the dive plays. One request per dive, replaced
+   * rather than accumulated, and dropped when the dive closes without
+   * navigating so a browsed-and-backed-out card leaves nothing behind.
+   *
+   * Two mechanisms because <link rel="prefetch"> has never shipped in WebKit:
+   * measured on click, Chromium and Firefox each issue a document request for
+   * /work/touchpoint/ while the dive runs and Safari issues none — so on the
+   * one platform where the dive is slowest, the 1.15 s of animation bought no
+   * head start at all. relList.supports is the honest test (Safari answers
+   * false), and the fallback is a same-origin fetch at low priority, aborted
+   * on close exactly like the link element is removed.
+   */
+  prefetchDestination(href: string) {
+    if (!href || href.startsWith("http")) return;
+    this.dropPrefetch();
+
+    const link = document.createElement("link");
+    if (link.relList?.supports?.("prefetch")) {
+      link.rel = "prefetch";
+      link.href = href;
+      document.head.appendChild(link);
+      this.prefetchLink = link;
+      return;
+    }
+
+    const controller = new AbortController();
+    this.prefetchAbort = controller;
+    // The response body is never read: the point is the HTTP cache entry the
+    // navigation will hit a moment later.
+    fetch(href, {
+      credentials: "same-origin",
+      signal: controller.signal,
+      priority: "low",
+    } as RequestInit).catch(() => {
+      /* aborted, offline, or 404 — the navigation will handle it */
+    });
+  }
+
+  dropPrefetch() {
+    this.prefetchLink?.remove();
+    this.prefetchLink = null;
+    this.prefetchAbort?.abort();
+    this.prefetchAbort = null;
+  }
+
+  /**
    * Shared teardown, identical regardless of which exit animation ran: the
    * whole point of routing both paths through one closure is that Step 3's
    * teardown guarantees (will-change cleared, card restored, scroll
    * unlocked, section resumed, state back to 'closed') can't drift apart
    * between the two.
    */
-  /**
-   * Warm the destination while the dive plays. One <link rel="prefetch"> per
-   * dive, replaced rather than accumulated, and dropped when the dive closes
-   * without navigating so a browsed-and-backed-out card leaves nothing behind.
-   */
-  prefetchDestination(href: string) {
-    if (!href || href.startsWith("http")) return;
-    this.dropPrefetch();
-    const link = document.createElement("link");
-    link.rel = "prefetch";
-    link.href = href;
-    document.head.appendChild(link);
-    this.prefetchLink = link;
-  }
-
-  dropPrefetch() {
-    this.prefetchLink?.remove();
-    this.prefetchLink = null;
-  }
 
   buildOnClosed() {
     const { flip, camera, backdrop, layers } = this;
@@ -898,6 +956,13 @@ class DiveTransition {
     layers.fore.style.willChange = "opacity";
     layers.near.style.willChange = "opacity";
     layers.mid.style.willChange = "opacity";
+    // The exit tweens the same two full-viewport gradients the entry does, so
+    // it pays the same raster cost without the same hint: measured at 390x844
+    // DPR 2, 97.5 ms of RasterTask per close unhinted against 31.6 ms hinted,
+    // 7 of 7 pairs, ranges non-overlapping. buildOnClosed() already clears
+    // both, so this adds no new teardown path.
+    this.glow.style.willChange = "opacity";
+    this.vignette.style.willChange = "opacity";
 
     const tl = gsap.timeline({ onComplete });
 

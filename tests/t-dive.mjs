@@ -1,6 +1,6 @@
 // The dive: it opens from a card, shows the teaser and the close control,
 // prefetches the destination, closes cleanly, and leaks nothing over cycles.
-import { chromium } from 'playwright';
+import { chromium, webkit } from 'playwright';
 import { BASE, check, summarize, workBox, findCardInView } from './lib.mjs';
 
 const results = [];
@@ -83,8 +83,85 @@ if (href) {
   results.push(check('dive: no prefetch links accumulate', after.links === 0, `${after.links} left`));
 }
 
+// A dive taken with reduced motion on fades the flip plane to opacity 0 on the
+// way out. If the full-motion path does not put it back, every later dive in
+// the session renders as a black rectangle: backdrop, teaser and close button
+// over nothing. The OS setting can change mid-session, so this is reachable.
+{
+  const rctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' });
+  const rpage = await rctx.newPage();
+  await rpage.goto(BASE + '/', { waitUntil: 'load' });
+  await rpage.waitForTimeout(6000);
+  const rbox = await workBox(rpage);
+  const rhref = rbox ? await findCardInView(rpage, rbox) : null;
+  if (rhref) {
+    await rpage.evaluate(() => window.__card.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true })));
+    await rpage.waitForTimeout(1200);
+    await rpage.keyboard.press('Escape');
+    await rpage.waitForTimeout(1200);
+    const parked = await rpage.evaluate(() => getComputedStyle(document.querySelector('.dive__flip')).opacity);
+
+    await rpage.emulateMedia({ reducedMotion: 'no-preference' });
+    const again = await findCardInView(rpage, rbox);
+    if (again) {
+      await rpage.evaluate(() => window.__card.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true })));
+      await rpage.waitForTimeout(2600);
+      const shown = await rpage.evaluate(() => ({
+        flip: getComputedStyle(document.querySelector('.dive__flip')).opacity,
+        open: document.querySelector('.dive')?.classList.contains('is-open'),
+      }));
+      results.push(check('dive: the reduced exit parks the flip plane at 0', Number(parked) < 0.1, `opacity ${parked}`));
+      results.push(check('dive: a full dive after a reduced one is visible', shown.open === true && Number(shown.flip) > 0.9, `is-open=${shown.open} flip opacity ${shown.flip}`));
+    }
+  }
+  await rctx.close();
+}
+
 results.push(check('dive: no runtime errors', errors.length === 0, errors.slice(0, 2).join(' | ')));
 await browser.close();
+
+// WebKit has never implemented <link rel=prefetch>, so the same code that warms
+// the destination in Chromium fetched nothing in Safari — on the one engine
+// where the dive is slowest. The fallback is a same-origin fetch.
+{
+  const wb = await webkit.launch();
+  const wctx = await wb.newContext({ viewport: { width: 1440, height: 900 } });
+  const wpage = await wctx.newPage();
+  const werrors = [];
+  wpage.on('pageerror', (e) => werrors.push(String(e).slice(0, 140)));
+  const warmed = [];
+  wpage.on('request', (r) => { if (/\/work\/[a-z-]+\/?$/.test(r.url())) warmed.push(r.url()); });
+  await wpage.goto(BASE + '/', { waitUntil: 'load' });
+  await wpage.waitForTimeout(6000);
+  const wbox = await workBox(wpage);
+  const whref = wbox ? await findCardInView(wpage, wbox) : null;
+  results.push(check('dive/webkit: a card is reachable', !!whref, whref || 'none'));
+  if (whref) {
+    await wpage.evaluate(() => window.__card.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true })));
+    await wpage.waitForTimeout(2600);
+    const wopen = await wpage.evaluate(() => {
+      const d = document.querySelector('.dive');
+      return {
+        isOpen: d?.classList.contains('is-open'),
+        teaser: getComputedStyle(document.querySelector('.dive__teaser')).opacity,
+        flip: getComputedStyle(document.querySelector('.dive__flip')).opacity,
+      };
+    });
+    results.push(check('dive/webkit: opens', wopen.isOpen === true, `is-open=${wopen.isOpen}`));
+    results.push(check('dive/webkit: the composition is visible', Number(wopen.flip) > 0.9, `flip opacity ${wopen.flip}`));
+    results.push(check('dive/webkit: teaser is shown', Number(wopen.teaser) === 1, `opacity ${wopen.teaser}`));
+    results.push(check('dive/webkit: the destination is warmed during the dive', warmed.some((u) => u.includes(whref.replace(/^\//, ''))), warmed.slice(0, 2).join(' ') || 'nothing requested'));
+    await wpage.keyboard.press('Escape');
+    await wpage.waitForTimeout(1600);
+    const wclosed = await wpage.evaluate(() => ({
+      isOpen: document.querySelector('.dive')?.classList.contains('is-open'),
+      locked: document.documentElement.style.overflow === 'hidden',
+    }));
+    results.push(check('dive/webkit: closes and unlocks scroll', wclosed.isOpen === false && !wclosed.locked, `is-open=${wclosed.isOpen} locked=${wclosed.locked}`));
+  }
+  results.push(check('dive/webkit: no runtime errors', werrors.length === 0, werrors.slice(0, 2).join(' | ')));
+  await wb.close();
+}
 
 const s = summarize(results);
 console.log(JSON.stringify({ suite: 'dive', ...s }, null, 1));
