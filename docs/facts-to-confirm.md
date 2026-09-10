@@ -60,7 +60,9 @@ Guessed dates come from when files were saved on the Mac, which is not when the 
   Answer: ________
 - What did you design yourself, as opposed to the club collectively?
   Answer: ________
-- The certificates say "Алғыс" — what were they awarded for?
+- The certificates say "Алғыс" — what were they awarded for? The one on the
+  page is made out to Тыңшымов Джахангир, dated 2024, and mentions the
+  Mangystau region, which is the only hard date I have for this project.
   Answer: ________
 - How many people were in the club?
   Answer: ________

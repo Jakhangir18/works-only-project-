@@ -33,7 +33,10 @@ const SELECTION = {
   },
   "engineering-rocket": {
     cover: { file: "engineering-rocket-07.webp" },
-    gallery: ["engineering-rocket-19.webp", "engineering-rocket-06.webp", "engineering-rocket-09.webp", "engineering-rocket-05.webp", "engineering-rocket-20.webp", "engineering-rocket-31-poster.webp"],
+    // Photographs of the work, not photographs of a laptop screen: the slicer
+    // shots (10-19) are all pictures taken of a monitor and read as blurry
+    // filler next to the hardware.
+    gallery: ["engineering-rocket-09.webp", "engineering-rocket-24.webp", "engineering-rocket-05.webp", "engineering-rocket-30-poster.webp", "engineering-rocket-20.webp", "engineering-rocket-31-poster.webp"],
   },
 };
 
