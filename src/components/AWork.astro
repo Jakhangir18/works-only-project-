@@ -16,6 +16,12 @@ interface Props {
 const { caption, cssClass, index, site, total, size, palette, poster, cover } =
   Astro.props;
 
+// The cover has no src at parse time and no loading="lazy". The card holds
+// its URL in data-src and WorkSection.prepareCoverWindow assigns it a few
+// cards ahead of the scrub. Adding lazy loading on top deferred that
+// assignment a second time: the cards sit under content-visibility: hidden,
+// so the browser never considered them near the viewport, and the bytes
+// landed one per ~1.8 s during the scrub instead of before it.
 const key = `${index}/${total}`;
 const isInternal = site.startsWith("/");
 const motifClass = `a__card__poster--${poster.motif}`;
@@ -51,7 +57,6 @@ const motifClass = `a__card__poster--${poster.motif}`;
               width={cover.width}
               height={cover.height}
               class="a__card__cover"
-              loading="lazy"
               decoding="async"
               style={`object-position:${cover.focalPoint.x} ${cover.focalPoint.y};`}
             />
