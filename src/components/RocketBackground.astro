@@ -99,6 +99,9 @@
     window.updateRocketFrame = function (progress: number) {
       const frameIdx = Math.min(TOTAL - 1, Math.round(progress * (TOTAL - 1)));
       if (frameIdx !== lastFrameIdx) {
+        // lastFrameIdx is the frame the scroll position wants. If its image is
+        // still in flight, the onload handler in loadFrame draws it on arrival;
+        // a frame crossed before its bytes landed is never lost.
         lastFrameIdx = frameIdx;
         const img = images[frameIdx];
         if (img?.complete && img.naturalWidth) drawFrame(img);
@@ -121,17 +124,26 @@
        rocket section is already close. */
     let preloadStarted = false;
 
+    const loadFrame = (i: number) => {
+      if (images[i]) return;
+      const img = new Image();
+      img.decoding = "async";
+      img.onload = () => {
+        if (i === lastFrameIdx) drawFrame(img);
+      };
+      img.src = `${PATH}${String(i + 1).padStart(3, "0")}${EXT}`;
+      images[i] = img;
+    };
+
     const preloadFrames = () => {
       if (preloadStarted) return;
       preloadStarted = true;
-
-      for (let i = 0; i < TOTAL; i++) {
-        const img = new Image();
-        img.decoding = "async";
-        img.src = `${PATH}${String(i + 1).padStart(3, "0")}${EXT}`;
-        images[i] = img;
-      }
+      for (let i = 0; i < TOTAL; i++) loadFrame(i);
     };
+
+    // The first frame is one small request and is what the section shows the
+    // moment it appears, so it does not wait for idle.
+    loadFrame(0);
 
     // Whichever comes first: the browser goes idle, or the section approaches.
     const startWhenIdle = () => {

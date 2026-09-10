@@ -40,12 +40,14 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const ROUTES = [
   "/",
-  "/work/gochain/",
-  "/work/private-clinic/",
-  "/work/ams-device/",
-  "/work/engineering-rocket/",
-  "/work/portfolio-rocket/",
+  "/work/touchpoint/",
+  "/work/spoot/",
   "/projects/ams/",
+  "/work/remote-lab-vision/",
+  "/work/engineering-rocket/",
+  "/work/private-clinic/",
+  "/work/portfolio-rocket/",
+  "/work/ams-device/",
 ];
 
 async function newPage(context) {

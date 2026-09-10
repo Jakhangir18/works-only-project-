@@ -19,7 +19,7 @@ import { works } from "../data/works";
           (content-visibility) until the tunnel opens, so they are not a reliable
           tab stop. This list is the keyboard and screen-reader route to the same
           projects, and it is always present. */}
-      <nav class="s__index u-sr-only" aria-label="Projects">
+      <nav class="s__index js-work-index" aria-label="Projects">
         <ul>
           {
             works.map((work) => (
@@ -331,6 +331,49 @@ import { works } from "../data/works";
 
       /* transform is written inline from WorkSection.tick(); phone stays
          static there (iOS jitter) */
+    }
+  }
+
+  /* Keyboard and screen-reader route to the projects. Visually hidden until a
+     link inside it takes focus, so a sighted keyboard user sees what the ring
+     is on instead of seven invisible stops. */
+  .s__index {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 30;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+
+    &:focus-within {
+      width: auto;
+      height: auto;
+      margin: 0;
+      padding: 1rem 1.25rem;
+      overflow: visible;
+      clip-path: none;
+      white-space: normal;
+      background: #000;
+      color: #fff2ed;
+      font: 400 0.8125rem / 1.6 var(--font-family-fraktion), monospace;
+      letter-spacing: 0.06em;
+    }
+
+    ul {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: underline;
+      text-underline-offset: 0.2em;
     }
   }
 </style>

@@ -4,7 +4,7 @@ import { timeline, monthSpan, type TimelineEntry } from "../data/timeline";
 const entries = timeline
   .filter((entry) => !entry.draft)
   .slice()
-  .sort((a, b) => (a.start < b.start ? 1 : -1));
+  .sort((a, b) => b.start.localeCompare(a.start));
 
 const MONTHS = [
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -67,6 +67,7 @@ const groups = entries.reduce<{ year: string; items: TimelineEntry[] }[]>(
                   class="s-timeline__entry js-timeline-entry"
                   style={`--months: ${Math.min(months, 36)};`}
                   data-kind={entry.kind}
+                  data-start={entry.end ? undefined : entry.start}
                 >
                   <span class="s-timeline__bar" aria-hidden="true" />
                   <Tag
@@ -76,7 +77,7 @@ const groups = entries.reduce<{ year: string; items: TimelineEntry[] }[]>(
                     <span class="s-timeline__meta">
                       <time datetime={entry.start}>{range(entry)}</time>
                       {duration(months) && (
-                        <span class="s-timeline__duration">
+                        <span class="s-timeline__duration js-timeline-duration">
                           {duration(months)}
                         </span>
                       )}
@@ -104,6 +105,27 @@ const groups = entries.reduce<{ year: string; items: TimelineEntry[] }[]>(
   // classified synchronously so nothing above the fold waits for a callback.
   // Reduced motion: everything is visible immediately and no observer runs.
   const entries = document.querySelectorAll<HTMLElement>(".js-timeline-entry");
+
+  // An entry with no end date had its span computed at build time, which goes
+  // stale between deploys. Recompute it from today's date for those entries.
+  entries.forEach((el) => {
+    const start = el.dataset.start;
+    if (!start) return;
+    const [y, m] = start.split("-").map(Number);
+    const now = new Date();
+    const months = Math.max(1, (now.getFullYear() - y) * 12 + (now.getMonth() + 1 - m) + 1);
+    el.style.setProperty("--months", String(Math.min(months, 36)));
+    const label = el.querySelector<HTMLElement>(".js-timeline-duration");
+    if (!label) return;
+    if (months < 2) label.textContent = "";
+    else if (months < 12) label.textContent = `${months} months`;
+    else {
+      const years = Math.floor(months / 12);
+      const rest = months % 12;
+      const y2 = `${years} ${years === 1 ? "year" : "years"}`;
+      label.textContent = rest === 0 ? y2 : `${y2} ${rest} mo`;
+    }
+  });
 
   if (entries.length > 0) {
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;

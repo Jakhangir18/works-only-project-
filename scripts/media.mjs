@@ -1,6 +1,6 @@
 // Media pipeline: converts the selected images from the owner's converted
 // library (../in/my_work_experience/_web/<slug>/) into public/projects/<slug>/.
-//   cover.webp  1600 wide    thumb.webp 480x300 (16:10, cover crop)
+//   cover.webp  1600 wide
 //   gallery/NN.webp 1200 wide
 // Prints one JSON line per output (paste width/height into the content entry).
 // Refuses to finish if public/projects would exceed 15 MB.
@@ -77,7 +77,6 @@ for (const slug of slugs) {
 
   const coverSrc = join(src, sel.cover.file);
   await write(await base(coverSrc, sel.cover.crop), join(dst, "cover.webp"), { width: 1600, withoutEnlargement: true });
-  await write(await base(coverSrc, sel.cover.crop), join(dst, "thumb.webp"), { width: 480, height: 300, fit: "cover", position: "attention" });
 
   let n = 0;
   for (const file of sel.gallery) {
