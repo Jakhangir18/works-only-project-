@@ -1,0 +1,111 @@
+// Journeys a visitor actually makes: tapping a card on a phone, following a
+// project link and coming back, and moving through the site by keyboard only.
+import { chromium, devices } from 'playwright';
+import { BASE, check, summarize, workBox, findCardInView } from './lib.mjs';
+
+const results = [];
+const browser = await chromium.launch();
+
+// 1. Touch: tapping a card in the tunnel must reach the project.
+{
+  const ctx = await browser.newContext({ ...devices['iPhone 13'] });
+  const page = await ctx.newPage();
+  const errors = [];
+  page.on('pageerror', (e) => errors.push(String(e).slice(0, 120)));
+  await page.goto(BASE + '/', { waitUntil: 'load' });
+  await page.waitForTimeout(6500);
+  const box = await workBox(page);
+  const href = await findCardInView(page, box, 844);
+  results.push(check('touch: a card is reachable on a phone', !!href, href || 'none'));
+  if (href) {
+    await page.evaluate(() => window.__card.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true })));
+    await page.waitForTimeout(2600);
+    const state = await page.evaluate(() => ({
+      dive: document.querySelector('.dive')?.classList.contains('is-open'),
+      url: location.pathname,
+    }));
+    // Either the dive opened or the browser navigated; both are a working tap.
+    results.push(check('touch: tapping a card does something', state.dive === true || state.url === href, JSON.stringify(state)));
+    if (state.dive) {
+      const cta = await page.evaluate(() => {
+        const a = document.querySelector('.dive__teaser a[href], .dive a[href]');
+        return a ? a.getAttribute('href') : null;
+      });
+      results.push(check('touch: the open dive offers a way into the project', !!cta, String(cta)));
+    }
+  }
+  results.push(check('touch: no runtime errors', errors.length === 0, errors.slice(0, 2).join(' | ')));
+  await ctx.close();
+}
+
+// 2. Going to a project and coming back must land where you left.
+{
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const page = await ctx.newPage();
+  await page.goto(BASE + '/', { waitUntil: 'load' });
+  await page.waitForTimeout(6500);
+  const box = await workBox(page);
+  await page.evaluate((y) => window.scrollTo({ top: y, behavior: 'instant' }), box.top + 1200);
+  await page.waitForTimeout(600);
+  const left = await page.evaluate(() => window.scrollY);
+
+  await page.goto(BASE + '/work/touchpoint/', { waitUntil: 'load' });
+  await page.waitForTimeout(1200);
+  const back = await page.evaluate(() => {
+    const a = document.getElementById('js-back-to-works');
+    if (!a) return null;
+    a.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    return true;
+  });
+  results.push(check('return: the project page has a way back', back === true, 'no back control'));
+  if (back) {
+    await page.waitForURL(BASE + '/', { timeout: 20000 }).catch(() => {});
+    await page.waitForTimeout(4000);
+    const landed = await page.evaluate(() => ({
+      y: window.scrollY,
+      inWork: (() => {
+        const s = document.querySelector('.s-work');
+        if (!s) return false;
+        const r = s.getBoundingClientRect();
+        return r.top < window.innerHeight && r.bottom > 0;
+      })(),
+      loaderGone: !document.querySelector('.js-site-loader'),
+      visible: getComputedStyle(document.querySelector('.js-site-wrapper')).opacity === '1',
+    }));
+    results.push(check('return: lands in the Work section, not at the top', landed.inWork, `scrollY ${landed.y}`));
+    results.push(check('return: the loader does not play again', landed.loaderGone, 'loader still present'));
+    results.push(check('return: the page is visible', landed.visible, 'wrapper still transparent'));
+  }
+  await ctx.close();
+}
+
+// 3. Keyboard only: reach a project from the home page and come back.
+{
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const page = await ctx.newPage();
+  await page.goto(BASE + '/', { waitUntil: 'load' });
+  await page.waitForTimeout(6500);
+  let reachedProject = null;
+  for (let i = 0; i < 30 && !reachedProject; i++) {
+    await page.keyboard.press('Tab');
+    const href = await page.evaluate(() => document.activeElement?.getAttribute('href') || null);
+    if (href && /^\/(work|projects)\//.test(href)) reachedProject = href;
+  }
+  results.push(check('keyboard: a project link is reachable by tabbing', !!reachedProject, reachedProject || 'not reached in 30 tabs'));
+  if (reachedProject) {
+    await page.keyboard.press('Enter');
+    await page.waitForTimeout(2500);
+    const url = await page.evaluate(() => location.pathname);
+    // Compare without the trailing slash: the served page is canonical with
+    // one, and a link may be written either way.
+    const norm = (u) => u.replace(/\/$/, '');
+    const arrived = norm(url) === norm(reachedProject) || (await page.evaluate(() => document.querySelector('.dive')?.classList.contains('is-open'))) === true;
+    results.push(check('keyboard: Enter follows the project link', arrived, `at ${url}`));
+  }
+  await ctx.close();
+}
+
+await browser.close();
+const s = summarize(results);
+console.log(JSON.stringify({ suite: 'journey', ...s }, null, 1));
+process.exit(s.failed ? 1 : 0);

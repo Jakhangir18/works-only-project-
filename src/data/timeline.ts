@@ -39,7 +39,7 @@ export const timeline: readonly TimelineEntry[] = [
     end: "2026-05",
     summary:
       "A haptic glove for deafblind web browsing. 2nd overall, and the Google track.",
-    href: "/work/touchpoint",
+    href: "/work/touchpoint/",
     thumb: "/projects/touchpoint/thumb.webp",
   },
   {
@@ -50,7 +50,7 @@ export const timeline: readonly TimelineEntry[] = [
     end: "2026-04",
     summary:
       "Glasses that show where a sound came from. 3rd in the Google track.",
-    href: "/work/spoot",
+    href: "/work/spoot/",
     thumb: "/projects/spoot/thumb.webp",
   },
   {
@@ -61,7 +61,7 @@ export const timeline: readonly TimelineEntry[] = [
     end: "2026-01",
     summary:
       "The clinic's booking channel: doctor search, patient accounts, three languages.",
-    href: "/work/private-clinic",
+    href: "/work/private-clinic/",
     thumb: "/projects/private-clinic/thumb.webp",
   },
   {
@@ -72,7 +72,7 @@ export const timeline: readonly TimelineEntry[] = [
     end: "2026-04",
     summary:
       "Which camera can hold a readable feed inside LabVIEW, answered with histograms.",
-    href: "/work/remote-lab-vision",
+    href: "/work/remote-lab-vision/",
     thumb: "/projects/remote-lab-vision/thumb.webp",
   },
   {
@@ -83,7 +83,7 @@ export const timeline: readonly TimelineEntry[] = [
     end: "2026-04",
     summary:
       "Pre-shift inspection and workforce verification at industrial checkpoints.",
-    href: "/projects/ams",
+    href: "/projects/ams/",
     thumb: "/projects/ams/images/thumb.webp",
   },
   {
@@ -94,7 +94,7 @@ export const timeline: readonly TimelineEntry[] = [
     end: "2025-04",
     summary:
       "Printed airframes, avionics on the bench, and a design loop a beginner could join.",
-    href: "/work/engineering-rocket",
+    href: "/work/engineering-rocket/",
     thumb: "/projects/engineering-rocket/thumb.webp",
   },
   {

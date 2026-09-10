@@ -22,6 +22,7 @@ missing, or the route suite reports a launch failure instead of skipping.
 | `t-hero` | The rolling titles cycle, never show two current items, pause off screen, resume, stay still under reduced motion, and fit the mask from 320 px to 2560 px |
 | `t-work` | The tunnel pins, seven cards render, the keyboard project list is complete, the point grid draws through the scrub, and covers arrive **before** the scrub rather than during it |
 | `t-dive` | A card opens the dive, the teaser and close control appear, compositing hints are released, exactly one prefetch goes out and is dropped on close, scroll is locked then restored, and four cycles add no nodes |
+| `t-journey` | Journeys a visitor makes: tapping a card on an iPhone profile, following a project link and coming back to the same place with no second loader, and reaching a project by keyboard alone |
 | `t-rocket` | Only the first frame is on the critical path, the rest arrive on idle or first scroll, the sequence scrubs through distinct frames, and the canvas never goes blank on a 400 KB/s link |
 | `t-timeline` | Seven live entries and no drafts, machine-readable dates, years newest first, the sticky year survives its ancestors and holds while its group scrolls, every link resolves, reduced motion shows everything, and nothing overflows at six widths |
 

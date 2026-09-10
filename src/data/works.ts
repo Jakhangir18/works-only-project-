@@ -42,7 +42,7 @@ export type ProjectInfo = {
 export const works = [
   {
     title: "TouchPoint",
-    site: "/work/touchpoint",
+    site: "/work/touchpoint/",
     blurb:
       "A haptic glove that lets a deafblind user browse the web by feel — built in 24 hours.",
     size: "hero",
@@ -58,7 +58,7 @@ export const works = [
   },
   {
     title: "SPOOT",
-    site: "/work/spoot",
+    site: "/work/spoot/",
     blurb:
       "AR glasses that show where a sound came from — and whether it is worth turning for.",
     size: "feature",
@@ -74,7 +74,7 @@ export const works = [
   },
   {
     title: "AMS Tablet",
-    site: "/projects/ams",
+    site: "/projects/ams/",
     blurb:
       "Automated pre-shift inspection and workforce verification at industrial checkpoints.",
     size: "feature",
@@ -90,7 +90,7 @@ export const works = [
   },
   {
     title: "Remote Lab Vision",
-    site: "/work/remote-lab-vision",
+    site: "/work/remote-lab-vision/",
     blurb:
       "The camera system that lets students run a real chemistry lab from a browser.",
     size: "standard",
@@ -106,7 +106,7 @@ export const works = [
   },
   {
     title: "Engineering Rocket",
-    site: "/work/engineering-rocket",
+    site: "/work/engineering-rocket/",
     blurb:
       "A student rocket club in Kazakhstan: 3D-printed airframes, Arduino avionics, launches.",
     size: "standard",
@@ -122,7 +122,7 @@ export const works = [
   },
   {
     title: "Sadap Clinic",
-    site: "/work/private-clinic",
+    site: "/work/private-clinic/",
     blurb:
       "A multi-speciality clinic online: doctor search, booking and a corporate portal.",
     size: "standard",
@@ -138,7 +138,7 @@ export const works = [
   },
   {
     title: "Portfolio Rocket",
-    site: "/work/portfolio-rocket",
+    site: "/work/portfolio-rocket/",
     blurb:
       "This site: a 240-frame scroll sequence, GSAP, and the performance work behind it.",
     size: "standard",
