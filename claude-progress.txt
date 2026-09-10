@@ -8,3 +8,13 @@ BASELINE on main, production build, host idle (load 0.2):
   * /projects/ams/: 9 images without width/height; axe serious color-contrast (20 nodes), serious scrollable-region-focusable (.gallery-scroll), moderate heading-order (h4 after h2).
   * /work/*: axe serious color-contrast on .proj-nav__num (3 nodes).
   * all pages: no <main> landmark (axe moderate landmark-one-main + region).
+
+2026-09-10 06:30-07:40Z feat/work-content, 7 commits on main 3f6e954. Measured on the production build over python3 http.server (no gzip, so LCP/FCP read pessimistic against Vercel).
+- AMS images 10.9 MB JPEG -> 0.4 MB webp, every img sized: /projects/ams/ mobile perf 75 -> 100, LCP 29.3s -> 1.3s.
+- works.ts: 7 real projects with real covers; GoChain deleted. New pages touchpoint/spoot/remote-lab-vision from the owner's approved texts; ProjectLayout gains gallery + downloads.
+- Engineering Rocket, Sadap Clinic, Portfolio Rocket rewritten from photographs, the live sadapclinic.kz and this repo's own perf notes. Bento copy and hero titles rewritten. Name typo Jackhangir -> Jakhangir.
+- New Timeline section (src/components/STimeline.astro + src/data/timeline.ts): 7 entries live, 3 draft pending the owner's facts. Sticky year markers, month-span row heights, kind colours, IO reveal, reduced-motion off-state. No pin, no horizontal scroll.
+- a11y: focus ring restored (the reset killed every outline), duplicate h1, nav-overlay aria-hidden-focus -> inert, main landmarks, contrast tokens on AMS + ProjectLayout, AMS gallery keyboard reach and heading order, sr-only project index in the Work tunnel. Home accessibility 94 -> 100 mobile, 89 -> 95 desktop; /work/* and /projects/ams/ serious violations -> 0.
+- Rocket frames: 240 requests moved off the critical path (idle-after-load or first scroll). Load event 979ms -> 296ms, requests at load 250 -> 10, scrub verified at 5 scroll positions.
+- QA harness refined: focusable check now uses checkVisibility, image check scoped to the viewport. Full sweep across 8 routes, 2 engines, 2 viewports: 0 failures.
+OPEN: home Lighthouse perf 61/56, LCP 11.9s. Cause is not the frames — the LCP element is the hero's morphing text (render delay 11.4s) behind a 4-second cosmetic loader. Both are design choices; owner decides. SEO 60 is the deliberate robots noindex.

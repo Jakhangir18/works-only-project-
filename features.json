@@ -1,0 +1,68 @@
+[
+  {
+    "id": "F1",
+    "title": "AMS page images are webp and sized",
+    "done_when": "public/projects/ams/images has no jpg; every img has width/height; /projects/ams/ mobile LCP < 3s",
+    "passes": true
+  },
+  {
+    "id": "F2",
+    "title": "Work section lists seven real projects",
+    "done_when": "works.ts has 7 entries, each with a real cover; GoChain gone; every card links to a page that exists",
+    "passes": true
+  },
+  {
+    "id": "F3",
+    "title": "TouchPoint, SPOOT and Remote Lab Vision pages",
+    "done_when": "pages render the owner-approved texts verbatim with galleries; build emits all three",
+    "passes": true
+  },
+  {
+    "id": "F4",
+    "title": "Invented copy replaced",
+    "done_when": "Engineering Rocket, Sadap Clinic, Portfolio Rocket and the bento carry only claims backed by photographs, the live site or repo docs",
+    "passes": true
+  },
+  {
+    "id": "F5",
+    "title": "Timeline section",
+    "done_when": "7 entries render grouped by year with sticky markers, month-span heights and kind colours; drafts excluded; reduced-motion static",
+    "passes": true
+  },
+  {
+    "id": "F6",
+    "title": "Accessibility",
+    "done_when": "axe 0 serious/critical on all 8 routes; visible focus ring; one h1 and one main per page; keyboard reaches every project",
+    "passes": true
+  },
+  {
+    "id": "F7",
+    "title": "Frames off the critical path",
+    "done_when": "0 frame requests before the load event; scrub still renders at 5 scroll positions; load event under 400ms locally",
+    "passes": true
+  },
+  {
+    "id": "F8",
+    "title": "QA sweep clean",
+    "done_when": "run.mjs across 8 routes, chromium+webkit, 1440x900 and 390x844: 0 console errors, 0 failed requests, 0 image or focus failures",
+    "passes": true
+  },
+  {
+    "id": "F9",
+    "title": "Owner facts applied",
+    "done_when": "the 10 open questions are answered and the draft timeline entries and thin pages are completed",
+    "passes": false
+  },
+  {
+    "id": "F10",
+    "title": "Home page performance decision",
+    "done_when": "the owner has chosen what to do about the 4s loader and the continuous hero morph, and the choice is measured",
+    "passes": false
+  },
+  {
+    "id": "F11",
+    "title": "Safari gate",
+    "done_when": "the owner has run the checklist on a real iPhone and reported per item",
+    "passes": false
+  }
+]
