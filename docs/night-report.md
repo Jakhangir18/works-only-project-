@@ -1,6 +1,6 @@
 # What happened overnight, 9–10 September 2026
 
-Branch `feat/work-content`, 52 commits over `main`, pushed. Nothing merged,
+Branch `feat/work-content`, 53 commits over `main`, pushed. Nothing merged,
 nothing deployed. The preview is the tailnet link; the live Vercel site is
 untouched.
 
@@ -110,7 +110,7 @@ rather than something I did.
 The home page's 2.5 s is the four-second loader you decided to keep. It is a
 deliberate cost and the only thing holding that number down.
 
-The regression suite is 937 checks across eight files, in Chromium, WebKit and
+The regression suite is 953 checks across eight files, in Chromium, WebKit and
 Firefox. For every visitor-facing defect above I put the bug back, watched the
 new check go red, and took it out again — the invisible dive, the erased letter
 shadows, the snapped rocket pose, the frame that arrived eighteen seconds

@@ -38,7 +38,8 @@ const { texts = [], className = "" } = Astro.props;
     const items = [...root.querySelectorAll<HTMLElement>(".rolling-text__item")];
     if (items.length < 2) return;
 
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (typeof window.matchMedia === "function" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     let index = 0;
     let timer = 0;
@@ -85,12 +86,14 @@ const { texts = [], className = "" } = Astro.props;
     // Read into a boolean rather than branching on `in`: TypeScript narrows
     // `window` to never in the else arm of the operator form.
     const hasObserver = typeof IntersectionObserver === "function";
+    let visible = false;
 
     if (hasObserver) {
       const io = new IntersectionObserver(
         (entries) => {
           for (const entry of entries) {
-            if (entry.isIntersecting && !document.hidden) start();
+            visible = entry.isIntersecting;
+            if (visible && !document.hidden) start();
             else stop();
           }
         },
@@ -113,12 +116,14 @@ const { texts = [], className = "" } = Astro.props;
 
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) stop();
-      // The observer's threshold is 0, so its answer and this rect test are
-      // the same question. Measuring it here rather than caching an answer is
-      // what keeps the two paths from disagreeing — the disagreement being the
-      // defect: a cached "yes" from before a font reflowed the hero restarted
-      // the roller on a line that had since gone below the fold.
-      else if (inView()) start();
+      // With an observer, its answer is the one that counts: it accounts for
+      // horizontal overlap and for clipping by ancestors that this vertical
+      // rect test does not, so re-deriving here could start the roller on a
+      // line the observer has already called hidden — and the observer, whose
+      // state never changed, would never fire again to stop it. Without an
+      // observer the rect is all there is, and it is measured fresh, because
+      // nothing refreshes it between a scroll and a font reflowing the hero.
+      else if (hasObserver ? visible : inView()) start();
     });
   });
 </script>

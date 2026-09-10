@@ -31,21 +31,16 @@ for (const [w, h, size] of [[1440, 900, 'desktop'], [390, 844, 'phone']]) {
       // report a clean pass on the one route it was written for, so wait for
       // the page to be shown and assert afterwards that it actually looked at
       // something.
-      await page
+      const shown = await page
         .waitForFunction(() => {
           const w = document.querySelector('.js-site-wrapper');
           return !w || Number(getComputedStyle(w).opacity) > 0.95;
         }, null, { timeout: 15000 })
-        .catch(() => {});
+        .then(() => true)
+        .catch(() => false);
+      results.push(check(`${tag} the page is actually shown before it is graded`, shown, 'wrapper still transparent after 15 s'));
 
       const contrast = await page.evaluate(() => {
-        // content-visibility: hidden implies size containment, so a contained
-        // subtree measures as empty and its text would be skipped by the size
-        // test below. Forced visible for the duration of the measurement.
-        const relax = document.createElement('style');
-        relax.textContent = '*{content-visibility:visible !important}';
-        document.head.appendChild(relax);
-
         const lum = (c) => {
           const v = c.map((n) => { const s = n / 255; return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4); });
           return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2];
@@ -70,24 +65,39 @@ for (const [w, h, size] of [[1440, 900, 'desktop'], [390, 844, 'phone']]) {
         // first opaque one is composited rather than skipped.
         const resolve = (el) => {
           let opacity = 1;
+          let bg = null;
+          let unreadable = false;
           const layers = [];
+          // One walk to the root, always: opacity has to keep multiplying past
+          // the first opaque background, or an ancestor holding the whole page
+          // at opacity 0 — which this site does for four seconds behind its
+          // loader — is invisible to the check and every element grades as
+          // visible text.
           for (let n = el; n; n = n.parentElement) {
             const cs = getComputedStyle(n);
             opacity *= Number(cs.opacity);
-            if (cs.backgroundImage && cs.backgroundImage !== 'none') return null;
+            if (bg !== null) continue;
+            if (cs.backgroundImage && cs.backgroundImage !== 'none') { unreadable = true; bg = undefined; continue; }
             const c = parse(cs.backgroundColor);
-            if (!c) return null;
+            if (!c) { unreadable = true; continue; }
             const alpha = c.length > 3 ? c[3] : 1;
             if (alpha === 0) continue;
             layers.push(c);
             if (alpha === 1) {
-              let bg = layers.pop().slice(0, 3);
-              while (layers.length) bg = over(layers.pop(), bg);
-              return { bg, opacity };
+              let resolved = layers.pop().slice(0, 3);
+              while (layers.length) resolved = over(layers.pop(), resolved);
+              bg = resolved;
             }
           }
-          let bg = [0, 0, 0];
-          while (layers.length) bg = over(layers.pop(), bg);
+          // A gradient or a colour this cannot read sits between the text and
+          // anything it could compare against, so it declines rather than
+          // inventing an answer — but only after the opacity walk has run.
+          if (unreadable || bg === undefined) return { bg: null, opacity };
+          if (bg === null) {
+            let resolved = [0, 0, 0];
+            while (layers.length) resolved = over(layers.pop(), resolved);
+            bg = resolved;
+          }
           return { bg, opacity };
         };
 
@@ -101,12 +111,17 @@ for (const [w, h, size] of [[1440, 900, 'desktop'], [390, 844, 'phone']]) {
           if (el.closest('[aria-hidden="true"]')) continue;
           const text = [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim());
           if (!text) continue;
+          // content-visibility: auto skips rendering off-screen content, and a
+          // skipped subtree measures as empty — checkVisibility with
+          // contentVisibilityAuto counts that as visible, while
+          // content-visibility: hidden, which is a deliberate not-rendered
+          // state, still counts as hidden. The tunnel's cards use both.
+          if (typeof el.checkVisibility === 'function' &&
+              !el.checkVisibility({ checkVisibilityCSS: true, contentVisibilityAuto: true })) continue;
           const r = el.getBoundingClientRect();
           if (r.width < 4 || r.height < 4) continue;
           const resolved = resolve(el);
-          // A gradient, an unparsed colour, or mid-transition text: decline
-          // rather than invent an answer.
-          if (!resolved || resolved.opacity < 0.95) continue;
+          if (!resolved.bg || resolved.opacity < 0.95) continue;
           const fgColor = parse(cs.color);
           if (!fgColor) continue;
           examined++;
@@ -118,7 +133,6 @@ for (const [w, h, size] of [[1440, 900, 'desktop'], [390, 844, 'phone']]) {
           const ratio = (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
           if (ratio + 0.01 < need) bad.push(`${el.tagName}.${el.className || '-'} ${ratio.toFixed(2)}:1 needs ${need}`);
         }
-        relax.remove();
         return { bad, examined };
       });
       results.push(check(`${tag} the contrast check looked at real text`, contrast.examined >= 5, `${contrast.examined} elements graded`));

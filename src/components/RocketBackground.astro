@@ -111,7 +111,15 @@
         // shut: a visitor who arrived by anchor or a restored scroll offset
         // must not wait on idle for the frame in front of them.
         else {
-          if (!preloadStarted) loadFrame(frameIdx);
+          // Once the bulk gate is open the pump asks for exactly this frame —
+          // its search is anchored on the index just set — so the only case
+          // needing a direct request is the gate still being shut: a visitor
+          // who arrived by anchor or a restored scroll offset must not wait on
+          // idle for the frame in front of them. Still inside the window,
+          // because updateRocketFrame is driven from four places besides
+          // scroll and an uncapped direct path is the index-order loader's
+          // bandwidth split by another route.
+          if (!preloadStarted && inFlight < WINDOW) loadFrame(frameIdx);
           pump();
         }
       }

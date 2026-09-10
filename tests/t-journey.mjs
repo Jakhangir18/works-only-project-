@@ -139,15 +139,24 @@ const browser = await chromium.launch();
     await page.waitForTimeout(600);
     page.off('console', onConsole);
     if (lost.ext) {
+      // This records that a lost context recovers, which is what a visitor
+      // needs. It does not prove the component's own handler did it: Three.js
+      // cancels the loss event itself, so restoreContext() would succeed even
+      // with the component's handling removed. What the handler adds — the
+      // render loop stopping while the context is gone, and not restarting
+      // off screen — has no observable signature from outside the page, and is
+      // on the iPhone gate.
       results.push(check('return: a lost context is actually lost, then restored', lost.wasLost === true && lost.stillLost === false, JSON.stringify(lost)));
-      results.push(check('return: losing the context does not spam the console', glErrors.length === 0, glErrors.slice(0, 2).join(' | ')));
+      results.push(check('return: losing the context leaves the canvas in place', lost.canvas === true, JSON.stringify(lost)));
     } else {
       results.push(check('return: WEBGL_lose_context is available to drive the test', false, JSON.stringify(lost)));
     }
 
-    // Two real unloads in a row. destroy() removes the renderer's canvas from
-    // its container, which throws NotFoundError the second time unless it
-    // refuses to run twice — and the pagehide listener is no longer once-only.
+    // A real unload must tear the field down without throwing. Two dispatches
+    // rather than one because the listener is no longer registered as
+    // once-only; the teardown now unregisters itself, so the second dispatch
+    // reaches nothing and destroy()'s own re-entry guard is belt and braces
+    // rather than the thing under test here.
     const twice = await page.evaluate(async () => {
       const canvasBefore = !!document.querySelector('[data-dotted-surface] canvas');
       const errors = [];

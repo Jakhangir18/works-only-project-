@@ -87,10 +87,13 @@ const shareCard = heroImage?.replace(/\/[^/]+$/, "/og.jpg");
   </head>
 
   <body>
-    <!-- Navigation -->
-    <nav class="proj-nav">
+    {/* Not navigation: it holds no links, only the project's number pinned in
+        the corner. As a nav landmark it announced itself as "navigation" and
+        then read out a bare numeral, which is worse than saying nothing. It is
+        a decorative marker until it has something to navigate to. */}
+    <div class="proj-nav" aria-hidden="true">
       <span class="proj-nav__num">{number}</span>
-    </nav>
+    </div>
 
     <main>
     <!-- Hero -->
@@ -114,9 +117,7 @@ const shareCard = heroImage?.replace(/\/[^/]+$/, "/og.jpg");
           {/* A watermark, not a label: 7% white at 22rem behind the hero
               image, and the kicker below it already reads the number out as
               "Project 04". Marked decorative so a screen reader is not handed
-              a bare numeral it cannot place. The same numeral in the prev/next
-              nav is left announced, because there it is the only thing
-              distinguishing one link from the other. */}
+              a bare numeral it cannot place. */}
           <span class="proj-hero__placeholder-num" aria-hidden="true">{number}</span>
         </div>
       </div>
