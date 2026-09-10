@@ -22,13 +22,22 @@ const { caption, cssClass, index, site, total, size, palette, poster, cover } =
  * back to Safari 15; color-mix, which would take the hex directly, is 16.2.
  */
 function toRgbChannels(hex: string): string {
-  const value = hex.trim().replace("#", "");
+  const value = hex.trim().replace(/^#/, "");
+  // Validated rather than parsed leniently: parseInt stops at the first
+  // non-hex character, so "#ff00zz" would come back bright green, and a
+  // four-digit or rgb() value would come back black — a plate in a colour the
+  // card is not, over the project's own photograph, with nothing failing.
+  if (!/^([0-9a-f]{3}|[0-9a-f]{6})$/i.test(value)) {
+    throw new Error(
+      `works.ts palette.background must be a 3- or 6-digit hex colour; got "${hex}". ` +
+        "The card's text plate and edge scrim are built from its channels.",
+    );
+  }
   const full =
     value.length === 3
       ? value.split("").map((c) => c + c).join("")
-      : value.slice(0, 6);
+      : value;
   const n = Number.parseInt(full, 16);
-  if (!Number.isFinite(n) || full.length !== 6) return "0, 0, 0";
   return `${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}`;
 }
 
@@ -83,14 +92,18 @@ const motifClass = `a__card__poster--${poster.motif}`;
             />
           )
         }
-        <div class="a__card__index">
-          <span style={`color:${palette.accent};`}>{index}</span>
+        {/* The colour stays on the block, not the span: DiveTransition.readCard
+            takes the project's accent from this element's inline style to paint
+            the overlay, and moving it inside took the accent off every dive.
+            The span inherits it and exists only to carry the plate. */}
+        <div class="a__card__index" style={`color:${palette.accent};`}>
+          <span>{index}</span>
         </div>
-        <div class="a__card__title">
-          <span style={`color:#fff;`}>{caption}</span>
+        <div class="a__card__title" style={`color:#fff;`}>
+          <span>{caption}</span>
         </div>
-        <div class="a__card__cta">
-          <span style={`color:${palette.accent};`}>View project →</span>
+        <div class="a__card__cta" style={`color:${palette.accent};`}>
+          <span>View project →</span>
         </div>
         <div class="a__card__grid"></div>
       </div>
@@ -452,20 +465,38 @@ const motifClass = `a__card__poster--${poster.motif}`;
       background: rgba(var(--card-bg-rgb, 0, 0, 0), 0.88);
       box-decoration-break: clone;
       -webkit-box-decoration-break: clone;
-      padding: 0.1em 0.34em;
-      // The strips sit on the baseline grid, so a little negative margin keeps
-      // the block the same size it was before they existed.
+      // No vertical padding. A strip taller than its own line box overlaps the
+      // strip above it on a wrapped title, and two 0.88 plates composite to
+      // 0.986 — measured as a hard dark stripe across the width of the shorter
+      // line on three of the seven titles.
+      padding: 0 0.34em;
       margin: 0 -0.34em;
+    }
+
+    // letter-spacing puts its space after the last character too, inside the
+    // box the plate paints, so a strip on letter-spaced text is inset further
+    // on the right than on the left. Taken back off.
+    .a__card__index span {
+      margin-right: calc(-0.34em - 0.2em);
+    }
+
+    .a__card__cta span {
+      margin-right: calc(-0.34em - 0.15em);
     }
 
     /* A light edge scrim still, because a plate the width of the words leaves
        the corners of a busy photograph fighting the card's own frame. Shallow
        enough that the middle of every cover is untouched at any scale. */
-    .a__card::after {
+    // Only once the cover is actually showing. The poster motif is the visual
+    // for a card with no cover and the fallback while one loads, and it runs to
+    // the card's edges — washing it 55% at both ends leaves it looking
+    // half-erased. z-index 1 rather than 2 puts the scrim above the cover and
+    // below the dot grid, which is meant to read evenly across the whole card.
+    &.is-cover-ready .a__card::after {
       content: "";
       position: absolute;
       inset: 0;
-      z-index: 2;
+      z-index: 1;
       pointer-events: none;
       background:
         linear-gradient(

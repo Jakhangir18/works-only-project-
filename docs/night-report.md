@@ -1,6 +1,6 @@
 # What happened overnight, 9–10 September 2026
 
-Branch `feat/work-content`, 56 commits over `main`, pushed. Nothing merged,
+Branch `feat/work-content`, 57 commits over `main`, pushed. Nothing merged,
 nothing deployed. The preview is the tailnet link; the live Vercel site is
 untouched.
 
@@ -89,6 +89,12 @@ shrink as they recede, so a gradient deep enough to sit behind the title on a
 small card swallows the whole photograph. The plate is the same size relative
 to the words at every scale. Every string now reads between 4.8 and 18.
 
+The same thing was true one click later. The dive opens the cover to full
+screen and writes the project's name over it, and the wash behind that text
+had almost run out by the time it reached the small number at the top: 1.3:1
+on the clinic cover. The wash reaches further now and the number has the same
+plate the card's does. Every string in that panel reads between 6.9 and 15.8.
+
 This is a visible change to something you said you liked, so look at it first.
 It was the only way to make the words legible without hiding the work behind
 them.
@@ -129,7 +135,7 @@ rather than something I did.
 The home page's 2.5 s is the four-second loader you decided to keep. It is a
 deliberate cost and the only thing holding that number down.
 
-The regression suite is 957 checks across eight files, in Chromium, WebKit and
+The regression suite is 959 checks across eight files, in Chromium, WebKit and
 Firefox. For every visitor-facing defect above I put the bug back, watched the
 new check go red, and took it out again — the invisible dive, the erased letter
 shadows, the snapped rocket pose, the frame that arrived eighteen seconds

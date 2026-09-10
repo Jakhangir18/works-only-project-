@@ -53,6 +53,63 @@ if (href) {
   results.push(check('dive: prefetch points at the clicked project', open.links[0] === href, `${open.links[0]} vs ${href}`));
   results.push(check('dive: the destination was requested during the dive', prefetched.some((u) => u.includes(href.replace(/^\//, ''))), prefetched.slice(0, 2).join(' ')));
 
+  // The teaser sits over the project's cover at full bleed, and a cover can be
+  // a screenshot of a white web page. Same method as the tunnel cards: hide the
+  // glyphs, screenshot, average what is behind each string, put the string's
+  // own colour over it. Without the teaser's wash and the eyebrow's plate this
+  // reports 1.28:1.
+  {
+    const targets = await page.evaluate(() => {
+      const out = [];
+      document.querySelectorAll('.dive__teaser *').forEach((el) => {
+        if (![...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim())) return;
+        const r = el.getBoundingClientRect();
+        const cs = getComputedStyle(el);
+        if (r.width < 4 || r.height < 4) return;
+        const x = Math.max(0, Math.round(r.x));
+        const y = Math.max(0, Math.round(r.y));
+        out.push({ cls: String(el.className || el.tagName).slice(0, 30),
+          rect: { x, y, w: Math.min(Math.round(r.width), innerWidth - x), h: Math.min(Math.round(r.height), innerHeight - y) },
+          color: cs.color, op: Number(cs.opacity), size: parseFloat(cs.fontSize), weight: cs.fontWeight });
+      });
+      return out;
+    });
+    await page.evaluate(() => {
+      const st = document.createElement('style');
+      st.className = 'hide-teaser-text';
+      st.textContent = '.dive__teaser *{color:transparent !important}';
+      document.head.appendChild(st);
+    });
+    await page.waitForTimeout(250);
+    const png = (await page.screenshot()).toString('base64');
+    await page.evaluate(() => document.querySelectorAll('style.hide-teaser-text').forEach((e) => e.remove()));
+    const measured = await page.evaluate(async ({ png, targets }) => {
+      const img = new Image();
+      img.src = 'data:image/png;base64,' + png;
+      await img.decode();
+      const c = document.createElement('canvas');
+      c.width = img.width; c.height = img.height;
+      const g = c.getContext('2d');
+      g.drawImage(img, 0, 0);
+      const lum = (v) => { const a = v.map((n) => { const s = n / 255; return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4); }); return 0.2126 * a[0] + 0.7152 * a[1] + 0.0722 * a[2]; };
+      const parse = (v) => (v.match(/[\d.]+/g) || []).map(Number);
+      return targets.map((t) => {
+        const d = g.getImageData(t.rect.x, t.rect.y, Math.max(1, t.rect.w), Math.max(1, t.rect.h)).data;
+        let r = 0, gg = 0, b = 0, n = 0;
+        for (let k = 0; k < d.length; k += 4) { r += d[k]; gg += d[k + 1]; b += d[k + 2]; n++; }
+        const bg = [r / n, gg / n, b / n];
+        const col = parse(t.color);
+        const fg = [0, 1, 2].map((i) => col[i] * t.op + bg[i] * (1 - t.op));
+        const l1 = lum(fg), l2 = lum(bg);
+        const large = t.size >= 24 || (t.size >= 18.66 && Number(t.weight) >= 700);
+        return { cls: t.cls, ratio: Number(((Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05)).toFixed(2)), need: large ? 3 : 4.5 };
+      });
+    }, { png, targets });
+    const bad = measured.filter((m) => m.ratio + 0.01 < m.need).map((m) => `${m.cls} ${m.ratio}:1 needs ${m.need}`);
+    results.push(check('dive: the teaser pixel check found its strings', measured.length >= 3, `${measured.length} strings measured`));
+    results.push(check('dive: teaser text is legible on the cover', bad.length === 0, bad.slice(0, 3).join(' | ')));
+  }
+
   // Close and check the page is restored.
   await page.keyboard.press('Escape');
   await page.waitForTimeout(1600);

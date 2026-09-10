@@ -121,6 +121,8 @@ type CardReading = {
   boxWidth: number;
   boxHeight: number;
   background: string;
+  /** The same colour as bare "r, g, b", for the text plate's rgba(). */
+  backgroundChannels: string;
   accent: string;
   coverSrc: string;
   coverPosition: string;
@@ -178,6 +180,9 @@ class DiveTransition {
   glow!: HTMLElement;
   vignette!: HTMLElement;
   indexEl!: HTMLElement;
+  indexText!: HTMLElement;
+  titleText!: HTMLElement;
+  ctaText!: HTMLElement;
   titleEl!: HTMLElement;
   ctaEl!: HTMLElement;
   frameEl!: HTMLElement;
@@ -241,11 +246,11 @@ class DiveTransition {
               <div class="dive__grid"></div>
             </div>
             <div class="dive__layer dive__layer--near">
-              <div class="dive__title"></div>
+              <div class="dive__title"><span></span></div>
             </div>
             <div class="dive__layer dive__layer--fore">
-              <div class="dive__index"></div>
-              <div class="dive__cta"></div>
+              <div class="dive__index"><span></span></div>
+              <div class="dive__cta"><span></span></div>
               <div class="dive__frame"></div>
             </div>
           </div>
@@ -280,6 +285,11 @@ class DiveTransition {
     this.indexEl = q(".dive__index");
     this.titleEl = q(".dive__title");
     this.ctaEl = q(".dive__cta");
+    // The text lives in a span so it can carry the same plate the card's text
+    // carries. The colour stays on the block, as it does on the card.
+    this.indexText = q(".dive__index span");
+    this.titleText = q(".dive__title span");
+    this.ctaText = q(".dive__cta span");
     this.frameEl = q(".dive__frame");
     this.teaser = q(".dive__teaser");
     this.teaserEyebrow = q(".dive__teaser__eyebrow");
@@ -446,6 +456,8 @@ class DiveTransition {
       // The card writes its palette inline, so this needs no getComputedStyle
       // and no second copy of the colour map.
       background: card.style.background || "#111111",
+      backgroundChannels:
+        card.style.getPropertyValue("--card-bg-rgb").trim() || "17, 17, 17",
       accent: indexEl?.style.color || "#ffffff",
       coverSrc:
         work.dataset.coverState === "ready"
@@ -550,11 +562,18 @@ class DiveTransition {
     this.glow.style.display = reading.coverSrc ? "none" : "";
     this.glow.style.setProperty("--dive-accent", reading.accent);
 
-    this.indexEl.textContent = reading.indexText;
+    this.indexText.textContent = reading.indexText;
     this.indexEl.style.color = reading.accent;
-    this.titleEl.textContent = reading.titleText;
-    this.ctaEl.textContent = reading.ctaText;
+    this.titleText.textContent = reading.titleText;
+    this.ctaText.textContent = reading.ctaText;
     this.ctaEl.style.color = reading.accent;
+
+    // The overlay is the card at full bleed, so it needs the card's own plate
+    // colour and, when a cover is showing, the card's edge scrim. Without them
+    // the white-on-white the card was just fixed for comes straight back the
+    // moment the visitor clicks: measured 1.06:1 on the clinic cover.
+    this.root.style.setProperty("--card-bg-rgb", reading.backgroundChannels);
+    this.root.classList.toggle("is-cover-ready", !!reading.coverSrc);
 
     const project = projects.find((p) => p.site === reading.href);
     this.teaserEyebrow.textContent = reading.indexText;

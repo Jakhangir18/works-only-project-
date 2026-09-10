@@ -318,6 +318,50 @@
   text-transform: uppercase;
 }
 
+/* The same plate the card's text carries, for the same reason: the overlay is
+   the card at full bleed, and a project's cover can be anything — the clinic's
+   is a screenshot of a white web page. One strip per line, in the card's own
+   colour, carried in on --card-bg-rgb by fill(). */
+.dive__index span,
+.dive__title span,
+.dive__cta span {
+  background: rgba(var(--card-bg-rgb, 17, 17, 17), 0.88);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  padding: 0 0.34em;
+  margin: 0 -0.34em;
+}
+
+.dive__index span {
+  margin-right: calc(-0.34em - 0.2em);
+}
+
+.dive__cta span {
+  margin-right: calc(-0.34em - 0.15em);
+}
+
+/* And the card's edge scrim, only where there is a cover to darken. It goes on
+   the far layer rather than the plate, because the plate is a sibling that
+   paints below the cover; the layer's own ::after comes after every child. */
+.dive.is-cover-ready .dive__layer--far::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(var(--card-bg-rgb, 17, 17, 17), 0.55) 0%,
+      rgba(var(--card-bg-rgb, 17, 17, 17), 0) 22%
+    ),
+    linear-gradient(
+      to top,
+      rgba(var(--card-bg-rgb, 17, 17, 17), 0.55) 0%,
+      rgba(var(--card-bg-rgb, 17, 17, 17), 0) 26%
+    );
+}
+
 .dive__index {
   letter-spacing: 0.2em;
   // Matches .a__card__index. The overlay replaces the card at full strength on
@@ -347,10 +391,17 @@
 
   padding: 4rem 3rem 3rem;
 
+  // The teaser sits over the project's own cover at full bleed, and a cover can
+  // be a screenshot of a white web page. The old ramp reached almost nothing by
+  // the top of the block, which is where the eyebrow numeral lives: measured
+  // 1.28:1 over the clinic cover. Carrying the wash further up puts every
+  // string in the block above its threshold without hiding the picture, which
+  // still has the top two thirds of the screen to itself.
   background: linear-gradient(
     to top,
-    rgba(0, 0, 0, 0.92) 0%,
-    rgba(0, 0, 0, 0.72) 45%,
+    rgba(0, 0, 0, 0.94) 0%,
+    rgba(0, 0, 0, 0.88) 50%,
+    rgba(0, 0, 0, 0.62) 78%,
     rgba(0, 0, 0, 0) 100%
   );
 
@@ -373,7 +424,14 @@
 }
 
 .dive__teaser__eyebrow {
+  // Sits at the top of the teaser block, where the wash below has almost run
+  // out, so it gets the same plate the card's numeral gets: measured 1.28:1
+  // over the clinic cover with no plate, 2.26:1 with the deeper wash alone.
+  // inline-block so the plate is the width of the numeral, not the screen.
+  display: inline-block;
   margin: 0 0 0.75rem;
+  padding: 0.25em 0.5em;
+  background: rgba(0, 0, 0, 0.82);
 
   font: 700 11px / 1 font-family(fraktion);
   letter-spacing: 0.2em;
