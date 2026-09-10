@@ -90,10 +90,15 @@ if (href) {
 {
   const rctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' });
   const rpage = await rctx.newPage();
+  rpage.on('pageerror', (e) => errors.push(String(e).slice(0, 140)));
+  rpage.on('console', (m) => { if (m.type() === 'error' && !/favicon/.test(m.text())) errors.push(m.text().slice(0, 140)); });
   await rpage.goto(BASE + '/', { waitUntil: 'load' });
   await rpage.waitForTimeout(6000);
   const rbox = await workBox(rpage);
   const rhref = rbox ? await findCardInView(rpage, rbox) : null;
+  // Guard the premise: without these, a card that stops being reachable makes
+  // the whole regression silently vanish while the suite still reports green.
+  results.push(check('dive/reduced: a card is reachable', !!rhref, rhref || 'none'));
   if (rhref) {
     await rpage.evaluate(() => window.__card.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true })));
     await rpage.waitForTimeout(1200);
@@ -103,6 +108,7 @@ if (href) {
 
     await rpage.emulateMedia({ reducedMotion: 'no-preference' });
     const again = await findCardInView(rpage, rbox);
+    results.push(check('dive/reduced: a card is reachable again after the switch', !!again, again || 'none'));
     if (again) {
       await rpage.evaluate(() => window.__card.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true })));
       await rpage.waitForTimeout(2600);

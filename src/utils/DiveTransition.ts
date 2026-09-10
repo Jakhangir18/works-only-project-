@@ -132,6 +132,35 @@ type CardReading = {
   href: string;
 };
 
+/**
+ * Whether this engine implements <link rel="prefetch">. WebKit does not, and
+ * the answer cannot change during a session, so it is worked out once rather
+ * than allocating a throwaway element per dive.
+ */
+let prefetchLinkSupported: boolean | null = null;
+function supportsPrefetchLink(): boolean {
+  if (prefetchLinkSupported === null) {
+    prefetchLinkSupported = !!document
+      .createElement("link")
+      .relList?.supports?.("prefetch");
+  }
+  return prefetchLinkSupported;
+}
+
+/**
+ * A same-origin test that is actually a same-origin test. `startsWith("/")`
+ * lets a protocol-relative //host/path through, and `!startsWith("http")`
+ * lets it through too.
+ */
+function isSameOrigin(href: string): boolean {
+  if (!href) return false;
+  try {
+    return new URL(href, location.href).origin === location.origin;
+  } catch {
+    return false;
+  }
+}
+
 class DiveTransition {
   scene: HTMLElement | null = null;
   section: PausableSection | null = null;
@@ -364,6 +393,11 @@ class DiveTransition {
   onWindowResize = () => {
     this.resizedWhileOpen = true;
     if (this.state === "open") this.settleToViewport();
+    // Mid-exit there is nothing to re-target: the destination was read from
+    // the card before the viewport moved. Finishing the timeline immediately
+    // puts the overlay away and hands the page back at the size it now is,
+    // which is the only correct end state available.
+    else if (this.state === "closing" && this.tl) this.tl.progress(1);
   };
 
   /**
@@ -811,7 +845,14 @@ class DiveTransition {
     if (this.tl) this.tl.kill();
 
     document.removeEventListener("keydown", this.onKeyDown);
-    window.removeEventListener("resize", this.onWindowResize);
+    // The resize listener stays until teardown. The exit bakes the card's
+    // rect, scale and rotation at the moment Escape is pressed and then flies
+    // to them for 700 ms; a resize inside that window moves the card and
+    // leaves the composition flying to a position the card no longer
+    // occupies, snapping visibly when the card is made visible again. It also
+    // used to leave resizedWhileOpen false, so the ScrollTrigger refresh that
+    // exists for exactly this case was skipped too. buildOnClosed() removes
+    // the listener.
 
     const onDone = this.buildOnClosed();
 
@@ -832,11 +873,11 @@ class DiveTransition {
    * on close exactly like the link element is removed.
    */
   prefetchDestination(href: string) {
-    if (!href || href.startsWith("http")) return;
+    if (!isSameOrigin(href)) return;
     this.dropPrefetch();
 
-    const link = document.createElement("link");
-    if (link.relList?.supports?.("prefetch")) {
+    if (supportsPrefetchLink()) {
+      const link = document.createElement("link");
       link.rel = "prefetch";
       link.href = href;
       document.head.appendChild(link);
@@ -846,15 +887,22 @@ class DiveTransition {
 
     const controller = new AbortController();
     this.prefetchAbort = controller;
-    // The response body is never read: the point is the HTTP cache entry the
-    // navigation will hit a moment later.
+    // Best effort, and honestly so. The Accept header is set to match the
+    // navigation that follows, because an edge that varies on it would
+    // otherwise store an entry the navigation never matches; Sec-Fetch-Dest
+    // cannot be set from script, so a Vary on that defeats this and the dive
+    // is simply back where it started. The body is read and discarded, since
+    // an unread stream can stall on backpressure and an incomplete body is
+    // not guaranteed to reach the cache at all.
     fetch(href, {
       credentials: "same-origin",
       signal: controller.signal,
-      priority: "low",
-    } as RequestInit).catch(() => {
-      /* aborted, offline, or 404 — the navigation will handle it */
-    });
+      headers: { Accept: "text/html,application/xhtml+xml" },
+    })
+      .then((response) => response.arrayBuffer())
+      .catch(() => {
+        /* aborted, offline, or 404 — the navigation will handle it */
+      });
   }
 
   dropPrefetch() {
@@ -871,7 +919,6 @@ class DiveTransition {
    * unlocked, section resumed, state back to 'closed') can't drift apart
    * between the two.
    */
-
   buildOnClosed() {
     const { flip, camera, backdrop, layers } = this;
     const card = this.sourceCard;
@@ -899,6 +946,10 @@ class DiveTransition {
       this.vignette.style.willChange = "";
 
       this.dropPrefetch();
+      // Removed here rather than in close(), so a resize that lands during the
+      // 700 ms exit is still seen: it finishes the timeline and it sets the
+      // flag the ScrollTrigger refresh below reads.
+      window.removeEventListener("resize", this.onWindowResize);
 
       if (card) card.style.visibility = "";
       this.sourceCard = null;
