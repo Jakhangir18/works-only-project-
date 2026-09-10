@@ -325,25 +325,34 @@
 .dive__index span,
 .dive__title span,
 .dive__cta span {
-  background: rgba(var(--card-bg-rgb, 17, 17, 17), 0.88);
+  // Opaque for the same reason as the card's: overlapping strips on a wrapped
+  // title would otherwise composite into a visible band.
+  background: rgb(var(--card-bg-rgb, 17, 17, 17));
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
   padding: 0 0.34em;
   margin: 0 -0.34em;
 }
 
+// See AWork: letter-spacing's trailing space is inside the painted box, so the
+// right padding is reduced rather than the margin pulled back.
 .dive__index span {
-  margin-right: calc(-0.34em - 0.2em);
+  padding-right: calc(0.34em - 0.2em);
 }
 
 .dive__cta span {
-  margin-right: calc(-0.34em - 0.15em);
+  padding-right: calc(0.34em - 0.15em);
 }
 
 /* And the card's edge scrim, only where there is a cover to darken. It goes on
    the far layer rather than the plate, because the plate is a sibling that
-   paints below the cover; the layer's own ::after comes after every child. */
-.dive.is-cover-ready .dive__layer--far::after {
+   paints below the cover; the layer's own ::after comes after every child.
+
+   The stops are deeper than the card's because the far plane settles 12%
+   larger than the viewport, so its own edges are off screen: with the card's
+   0.55 at 22% the visible top edge would only reach 0.42. 0.72 at 24% and 28%
+   puts the visible edges back at the card's 0.56 and 0.58. */
+.dive__camera.is-cover-ready .dive__layer--far::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -352,13 +361,13 @@
   background:
     linear-gradient(
       to bottom,
-      rgba(var(--card-bg-rgb, 17, 17, 17), 0.55) 0%,
-      rgba(var(--card-bg-rgb, 17, 17, 17), 0) 22%
+      rgba(var(--card-bg-rgb, 17, 17, 17), 0.72) 0%,
+      rgba(var(--card-bg-rgb, 17, 17, 17), 0) 24%
     ),
     linear-gradient(
       to top,
-      rgba(var(--card-bg-rgb, 17, 17, 17), 0.55) 0%,
-      rgba(var(--card-bg-rgb, 17, 17, 17), 0) 26%
+      rgba(var(--card-bg-rgb, 17, 17, 17), 0.72) 0%,
+      rgba(var(--card-bg-rgb, 17, 17, 17), 0) 28%
     );
 }
 
@@ -402,6 +411,7 @@
     rgba(0, 0, 0, 0.94) 0%,
     rgba(0, 0, 0, 0.88) 50%,
     rgba(0, 0, 0, 0.62) 78%,
+    rgba(0, 0, 0, 0.28) 90%,
     rgba(0, 0, 0, 0) 100%
   );
 
@@ -429,9 +439,12 @@
   // over the clinic cover with no plate, 2.26:1 with the deeper wash alone.
   // inline-block so the plate is the width of the numeral, not the screen.
   display: inline-block;
-  margin: 0 0 0.75rem;
+  vertical-align: top;
+  // The negative left margin keeps the numeral flush with the title and blurb
+  // below it; the plate's own padding would otherwise indent it half an em.
+  margin: 0 0 0.75rem -0.5em;
   padding: 0.25em 0.5em;
-  background: rgba(0, 0, 0, 0.82);
+  background: rgb(var(--card-bg-rgb, 17, 17, 17));
 
   font: 700 11px / 1 font-family(fraktion);
   letter-spacing: 0.2em;

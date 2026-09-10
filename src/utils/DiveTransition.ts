@@ -572,8 +572,13 @@ class DiveTransition {
     // colour and, when a cover is showing, the card's edge scrim. Without them
     // the white-on-white the card was just fixed for comes straight back the
     // moment the visitor clicks: measured 1.06:1 on the clinic cover.
-    this.root.style.setProperty("--card-bg-rgb", reading.backgroundChannels);
-    this.root.classList.toggle("is-cover-ready", !!reading.coverSrc);
+    // On the camera, not the root: a custom property inherits, so writing it
+    // on the overlay's outermost element invalidates the style of everything
+    // beneath it, and this write lands inside the click task alongside the
+    // rest of fill(). The camera is the nearest ancestor of all five consumers
+    // — the three text spans and the far layer's scrim.
+    this.camera.style.setProperty("--card-bg-rgb", reading.backgroundChannels);
+    this.camera.classList.toggle("is-cover-ready", !!reading.coverSrc);
 
     const project = projects.find((p) => p.site === reading.href);
     this.teaserEyebrow.textContent = reading.indexText;

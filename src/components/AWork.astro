@@ -27,16 +27,17 @@ function toRgbChannels(hex: string): string {
   // non-hex character, so "#ff00zz" would come back bright green, and a
   // four-digit or rgb() value would come back black — a plate in a colour the
   // card is not, over the project's own photograph, with nothing failing.
-  if (!/^([0-9a-f]{3}|[0-9a-f]{6})$/i.test(value)) {
+  if (!/^([0-9a-f]{3,4}|[0-9a-f]{6,8})$/i.test(value)) {
     throw new Error(
-      `works.ts palette.background must be a 3- or 6-digit hex colour; got "${hex}". ` +
+      `works.ts palette.background must be a hex colour; got "${hex}". ` +
         "The card's text plate and edge scrim are built from its channels.",
     );
   }
+  // Alpha, where present, is dropped: the plate applies its own.
   const full =
-    value.length === 3
-      ? value.split("").map((c) => c + c).join("")
-      : value;
+    value.length <= 4
+      ? value.slice(0, 3).split("").map((c) => c + c).join("")
+      : value.slice(0, 6);
   const n = Number.parseInt(full, 16);
   return `${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}`;
 }
@@ -462,7 +463,15 @@ const motifClass = `a__card__poster--${poster.motif}`;
     .a__card__index span,
     .a__card__title span,
     .a__card__cta span {
-      background: rgba(var(--card-bg-rgb, 0, 0, 0), 0.88);
+      // Opaque, not 88%. Two translucent strips that overlap composite to a
+      // darker band, and they do overlap: the strip covers the font's content
+      // area, which for this display face runs past the 1.1 line box by about
+      // a quarter of its height — measured 7 to 24 px of overlap on the three
+      // titles that wrap. Raising the leading enough to clear it needs 1.51,
+      // which is airy for a display face; an opaque plate makes the overlap
+      // invisible instead, and costs 12% of a photograph that is already
+      // mostly hidden behind the words.
+      background: rgb(var(--card-bg-rgb, 17, 17, 17));
       box-decoration-break: clone;
       -webkit-box-decoration-break: clone;
       // No vertical padding. A strip taller than its own line box overlaps the
@@ -473,15 +482,17 @@ const motifClass = `a__card__poster--${poster.motif}`;
       margin: 0 -0.34em;
     }
 
-    // letter-spacing puts its space after the last character too, inside the
-    // box the plate paints, so a strip on letter-spaced text is inset further
-    // on the right than on the left. Taken back off.
+    // letter-spacing emits its space after the last glyph too, inside the box
+    // the plate paints, so the strip ends further past the last letter than it
+    // starts before the first. The right padding is reduced by that much: a
+    // negative margin cannot fix it, because margins do not move an inline
+    // element's background box — they only move the line.
     .a__card__index span {
-      margin-right: calc(-0.34em - 0.2em);
+      padding-right: calc(0.34em - 0.2em);
     }
 
     .a__card__cta span {
-      margin-right: calc(-0.34em - 0.15em);
+      padding-right: calc(0.34em - 0.15em);
     }
 
     /* A light edge scrim still, because a plate the width of the words leaves
@@ -492,23 +503,32 @@ const motifClass = `a__card__poster--${poster.motif}`;
     // the card's edges — washing it 55% at both ends leaves it looking
     // half-erased. z-index 1 rather than 2 puts the scrim above the cover and
     // below the dot grid, which is meant to read evenly across the whole card.
-    &.is-cover-ready .a__card::after {
+    // It fades in on the same 0.3s as the cover, because the class that reveals
+    // the cover is the class that reveals this: switching it on instantly put
+    // the wash on the poster for the 300 ms the photograph was still fading up.
+    .a__card::after {
       content: "";
       position: absolute;
       inset: 0;
       z-index: 1;
       pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s ease;
       background:
         linear-gradient(
           to bottom,
-          rgba(var(--card-bg-rgb, 0, 0, 0), 0.55) 0%,
-          rgba(var(--card-bg-rgb, 0, 0, 0), 0) 22%
+          rgba(var(--card-bg-rgb, 17, 17, 17), 0.55) 0%,
+          rgba(var(--card-bg-rgb, 17, 17, 17), 0) 22%
         ),
         linear-gradient(
           to top,
-          rgba(var(--card-bg-rgb, 0, 0, 0), 0.55) 0%,
-          rgba(var(--card-bg-rgb, 0, 0, 0), 0) 26%
+          rgba(var(--card-bg-rgb, 17, 17, 17), 0.55) 0%,
+          rgba(var(--card-bg-rgb, 17, 17, 17), 0) 26%
         );
+    }
+
+    &.is-cover-ready .a__card::after {
+      opacity: 1;
     }
 
     .a__card__grid {
