@@ -423,6 +423,15 @@ const {
     top: 6rem;
   }
 
+  /* One column means the label sits directly above its own paragraph, so a
+     sticky label pins itself over the text it introduces. It only makes sense
+     beside the text, never above it. */
+  @media (max-width: 768px) {
+    .proj-story-section__label {
+      position: static;
+    }
+  }
+
   .proj-story-section__tag {
     font-family: var(--font-family-fraktion), monospace;
     font-size: 0.75rem;

@@ -61,6 +61,21 @@ for (const [ename, engine] of Object.entries(ENGINES)) {
       results.push(check(`${tag} images sized`, dom.imgsUnsized.length === 0, dom.imgsUnsized.slice(0, 2).join(', ')));
       results.push(check(`${tag} images have alt`, dom.imgsNoAlt.length === 0, dom.imgsNoAlt.slice(0, 2).join(', ')));
 
+      // A section label must never sit on top of the text it introduces.
+      // At one column a sticky label pins itself over its own paragraph.
+      const overlaps = await page.evaluate(() => {
+        const bad = [];
+        document.querySelectorAll('.proj-story-section').forEach((sec) => {
+          const l = sec.querySelector('.proj-story-section__label')?.getBoundingClientRect();
+          const b = sec.querySelector('.proj-story-section__body')?.getBoundingClientRect();
+          if (!l || !b) return;
+          const clash = !(l.bottom <= b.top + 1 || b.bottom <= l.top + 1 || l.right <= b.left + 1 || b.right <= l.left + 1);
+          if (clash) bad.push(sec.querySelector('.proj-story-section__heading')?.textContent.trim());
+        });
+        return bad;
+      });
+      results.push(check(`${tag} section labels do not overlap their text`, overlaps.length === 0, overlaps.join(', ')));
+
       // Critical-path budget. Everything decorative — the Three.js field, the
       // 240 rocket frames, the card covers — is meant to arrive after the page
       // is usable. A breach means something moved back in front of the reader.
