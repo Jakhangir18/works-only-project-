@@ -47,6 +47,8 @@ const LAYERS = [
   { name: "fore", growth: 8.0 }, // index, cta and the card frame
 ] as const;
 
+type LayerName = (typeof LAYERS)[number]["name"];
+
 const depthOf = (growth: number) =>
   (growth * DOLLY) / (growth - 1) - PERSPECTIVE;
 
@@ -160,6 +162,7 @@ class DiveTransition {
   tl: gsap.core.Timeline | null = null;
   state: DiveState = "closed";
   sourceCard: HTMLElement | null = null;
+  prefetchLink: HTMLLinkElement | null = null;
   sectionWasPaused = false;
   lockedScrollY = 0;
 
@@ -266,7 +269,16 @@ class DiveTransition {
       ) as HTMLElement;
       this.layers[layer.name] = el;
 
-      // The image plane is laid out per dive instead — see layoutFarPlane().
+      // The image plane is laid out per dive instead — see layoutPlane().
+      //
+      // The other three are deliberately NOT laid out that way. Applying the
+      // same end-size layout to them was measured and rejected: their growth
+      // factors (2.6, 4.5, 8.0) turn the layout box into 3744, 6480 and 11520
+      // px wide, and rastering layers that size stalls the dive outright —
+      // the timeline had not reached onComplete 2.6 s after the click, so the
+      // teaser and the close button never faded in. Their contents are
+      // magnified (mid 8.5x, near 14.7x, fore 26.2x accumulated at dive end)
+      // and that softness is the accepted cost.
       if (layer.name === "far") continue;
 
       // A layer sits at -depth: positive depth is behind the camera plane,
@@ -356,7 +368,7 @@ class DiveTransition {
       });
       // endScale moved, so the image plane's layout/static-scale split has to
       // move with it or the plane stops resolving to 1.0 at rest.
-      this.layoutFarPlane(this.cardBoxWidth, this.cardBoxHeight);
+      this.layoutPlanes(this.cardBoxWidth, this.cardBoxHeight);
     }
   };
 
@@ -428,6 +440,14 @@ class DiveTransition {
     sessionStorage.removeItem("returnScrollY");
 
     this.fill(reading);
+
+    // Both of these belong to the click's own task: priming keeps the eight
+    // gsap.set writes out of a second task after the decode await, and the
+    // prefetch turns the dive's 1.15 s of animation into network time for the
+    // page it is about to open. Without it nothing was requested during the
+    // dive at all, and the destination load only began on the second click.
+    if (!prefersReducedMotion()) this.primeFull(reading);
+    this.prefetchDestination(reading.href);
 
     if (reading.coverSrc) {
       // Free in practice — Step 0 measured 0.1-0.2 ms once the card has been
@@ -508,7 +528,7 @@ class DiveTransition {
     this.cardBoxWidth = reading.boxWidth;
     this.cardBoxHeight = reading.boxHeight;
 
-    this.layoutFarPlane(reading.boxWidth, reading.boxHeight);
+    this.layoutPlanes(reading.boxWidth, reading.boxHeight);
   }
 
   /**
@@ -542,8 +562,7 @@ class DiveTransition {
    * split between them moves. On-screen size at z=0 still lands exactly on
    * the card, which is what keeps frame one a match.
    */
-  layoutFarPlane(boxWidth: number, boxHeight: number) {
-    const growth = LAYERS[0].growth;
+  layoutPlane(name: LayerName, growth: number, boxWidth: number, boxHeight: number) {
     const e = this.endScale(boxWidth, boxHeight);
     const w = boxWidth * e * growth;
     const h = boxHeight * e * growth;
@@ -552,15 +571,20 @@ class DiveTransition {
     // z = 0, and resolves to an accumulated scale of exactly 1 at z = DOLLY.
     const s = compensationOf(growth) / (e * growth);
 
-    const far = this.layers.far;
-    far.style.width = `${w.toFixed(1)}px`;
-    far.style.height = `${h.toFixed(1)}px`;
+    const el = this.layers[name];
+    el.style.width = `${w.toFixed(1)}px`;
+    el.style.height = `${h.toFixed(1)}px`;
     // Centred by box geometry rather than a percentage translate, because a
     // percentage translate resolves against the unscaled border box and would
     // drift once the static scale is applied.
-    far.style.left = `${((boxWidth - w) / 2).toFixed(1)}px`;
-    far.style.top = `${((boxHeight - h) / 2).toFixed(1)}px`;
-    far.style.transform = `translateZ(${(-depthOf(growth)).toFixed(2)}px) scale(${s.toFixed(5)})`;
+    el.style.left = `${((boxWidth - w) / 2).toFixed(1)}px`;
+    el.style.top = `${((boxHeight - h) / 2).toFixed(1)}px`;
+    el.style.transform = `translateZ(${(-depthOf(growth)).toFixed(2)}px) scale(${s.toFixed(5)})`;
+  }
+
+  /** Only the image plane; see the note in build() for why. */
+  layoutPlanes(boxWidth: number, boxHeight: number) {
+    this.layoutPlane(LAYERS[0].name, LAYERS[0].growth, boxWidth, boxHeight);
   }
 
   play(reading: CardReading) {
@@ -601,6 +625,8 @@ class DiveTransition {
       onComplete: () => {
         flip.style.willChange = "";
         backdrop.style.willChange = "";
+        this.glow.style.willChange = "";
+        this.vignette.style.willChange = "";
         this.state = "open";
       },
     });
@@ -615,17 +641,15 @@ class DiveTransition {
     return tl;
   }
 
-  playFull(reading: CardReading) {
+  /**
+   * Every starting value the dive needs, written in one go. Split out of
+   * playFull so open() can run it in the same task as the geometry reads:
+   * left after `await cover.decode()` these eight gsap.set calls landed in a
+   * second main-thread task (measured 67 ms, 26.4 ms of it style recalc)
+   * between the click and the first dive frame.
+   */
+  primeFull(reading: CardReading) {
     const { flip, camera, backdrop, teaser, closeButton, layers, cover } = this;
-
-    // will-change goes on only while the dive runs; the layers that stay at
-    // constant opacity never get it.
-    flip.style.willChange = "transform";
-    camera.style.willChange = "transform";
-    backdrop.style.willChange = "opacity";
-    layers.fore.style.willChange = "opacity";
-    layers.near.style.willChange = "opacity";
-    layers.mid.style.willChange = "opacity";
 
     gsap.set(flip, {
       x: reading.centerX - window.innerWidth / 2,
@@ -640,6 +664,29 @@ class DiveTransition {
     gsap.set(backdrop, { opacity: 0 });
     gsap.set(teaser, { opacity: 0, y: 24 });
     gsap.set(closeButton, { opacity: 0 });
+  }
+
+  playFull(reading: CardReading) {
+    const { flip, camera, backdrop, teaser, closeButton, layers, cover } = this;
+
+    // will-change goes on only while the dive runs; the layers that stay at
+    // constant opacity never get it.
+    flip.style.willChange = "transform";
+    camera.style.willChange = "transform";
+    backdrop.style.willChange = "opacity";
+    layers.fore.style.willChange = "opacity";
+    layers.near.style.willChange = "opacity";
+    layers.mid.style.willChange = "opacity";
+    // The glow and the vignette are full-viewport gradients tweened on
+    // opacity, and they were the only tweened layers without a hint: raster
+    // measured 1242 ms with them unhinted and 836 ms with them hinted at
+    // 1440x900 (-33%), 415 ms -> 118 ms at 390x844 (-72%).
+    this.glow.style.willChange = "opacity";
+    this.vignette.style.willChange = "opacity";
+
+    // open() already primed in the click's task; this covers every other
+    // caller (resize replay, keyboard entry) and is idempotent.
+    this.primeFull(reading);
 
     const tl = gsap.timeline({
       onComplete: () => {
@@ -649,6 +696,8 @@ class DiveTransition {
         layers.mid.style.willChange = "";
         flip.style.willChange = "";
         backdrop.style.willChange = "";
+        this.glow.style.willChange = "";
+        this.vignette.style.willChange = "";
         this.state = "open";
       },
     });
@@ -745,6 +794,26 @@ class DiveTransition {
    * unlocked, section resumed, state back to 'closed') can't drift apart
    * between the two.
    */
+  /**
+   * Warm the destination while the dive plays. One <link rel="prefetch"> per
+   * dive, replaced rather than accumulated, and dropped when the dive closes
+   * without navigating so a browsed-and-backed-out card leaves nothing behind.
+   */
+  prefetchDestination(href: string) {
+    if (!href || href.startsWith("http")) return;
+    this.dropPrefetch();
+    const link = document.createElement("link");
+    link.rel = "prefetch";
+    link.href = href;
+    document.head.appendChild(link);
+    this.prefetchLink = link;
+  }
+
+  dropPrefetch() {
+    this.prefetchLink?.remove();
+    this.prefetchLink = null;
+  }
+
   buildOnClosed() {
     const { flip, camera, backdrop, teaser, closeButton, layers } = this;
     const card = this.sourceCard;
@@ -768,6 +837,10 @@ class DiveTransition {
       layers.fore.style.willChange = "";
       layers.near.style.willChange = "";
       layers.mid.style.willChange = "";
+      this.glow.style.willChange = "";
+      this.vignette.style.willChange = "";
+
+      this.dropPrefetch();
 
       if (card) card.style.visibility = "";
       this.sourceCard = null;
