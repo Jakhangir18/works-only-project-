@@ -406,6 +406,13 @@ class Section {
         shadow.classList.add("s__scene__letter__shadow");
         shadow.setAttribute("aria-hidden", "true");
         shadow.innerText = letter.el.innerText;
+        // Born with the opacity the current state implies. The per-frame write
+        // only runs when the state changed, and inside the works region the
+        // state is held at exactly 1, so a ghost created here would otherwise
+        // never be given one and would keep the stylesheet's 0 until the
+        // visitor scrolled back to the intro. On iOS the address bar
+        // collapsing rebuilds these on every scroll-direction change.
+        shadow.style.opacity = String(Math.min(this.state * 2, 1));
         el.appendChild(shadow);
 
         scene.appendChild(el);
@@ -434,15 +441,6 @@ class Section {
       }
     });
 
-    // Every ghost above is brand new and carries no inline opacity, while the
-    // stylesheet starts its shadow at 0. moveLetters() only writes opacity
-    // when the tunnel state changed, and anywhere inside the works region the
-    // state is held at exactly 1 — so without this line a rebuild leaves all
-    // 54-58 shadows invisible until the visitor scrolls back to the intro and
-    // in again. On iOS the address bar collapsing is exactly this event.
-    // Invalidating the cache the way setSize() already does for
-    // last.scrollProgress costs one extra opacity pass on the next frame.
-    this.last.state = -1;
   }
 
   setWorks() {

@@ -68,10 +68,24 @@ for (const [ename, engine] of Object.entries({ chromium, webkit })) {
     });
     await page.evaluate((y) => window.scrollTo({ top: y, behavior: 'instant' }), box.top + (box.height - h) * 0.5);
     await page.waitForTimeout(500);
+    const canvasLit = () => page.evaluate(() => {
+      const c = document.querySelector('.js-canvas');
+      if (!c || !c.width) return -1;
+      const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+      let n = 0;
+      for (let k = 0; k < d.length; k += 4 * 211) if (d[k] + d[k + 1] + d[k + 2] > 20) n++;
+      return n;
+    });
     const before = await litShadows();
+    const beforeCanvas = await canvasLit();
     await page.setViewportSize({ width: w, height: h - 40 });
     await page.waitForTimeout(1200);
     const after = await litShadows();
+    // setSize() clears the bitmap and setPoints() rebuilds the field. The draw
+    // loop early-exits on unchanged progress, so a bad frame here is never
+    // repainted (CLAUDE.md invariant 8) — assert the grid comes back.
+    const afterCanvas = await canvasLit();
+    results.push(check(`${tag} the point grid survives a resize inside the tunnel`, beforeCanvas > 0 && afterCanvas > 0, `${beforeCanvas} -> ${afterCanvas} lit`));
     await page.setViewportSize({ width: w, height: h });
     await page.waitForTimeout(600);
     results.push(check(`${tag} letter shadows are lit inside the tunnel`, before.total > 0 && before.lit === before.total, `${before.lit}/${before.total}`));
