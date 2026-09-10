@@ -10,3 +10,8 @@
 - git: redesign/minimal@f1fd767
 - next: Rerun QA + Lighthouse (F10) once the ffmpeg job ends; owner answers Q1-Q10; Task 14 pages for AMS, Rocket, Clinic
 
+## 2026-09-10 07:10 | Real content into the live site on feat/work-content: 7 real projects with photos in Work, 3 new project pages from approved texts, 3 invented pages rewritten from facts, new Timeline section, a11y to 0 serious violations, AMS LCP 29.3s->1.3s, rocket frames off the critical path; code-review 10 findings fixed; branch pushed, preview on :8447
+- files: src/data/works.ts, src/data/timeline.ts, src/components/STimeline.astro, src/components/RocketBackground.astro, src/components/ProjectLayout.astro, src/pages/work/touchpoint.astro
+- git: feat/work-content@24dac7d
+- next: Owner answers Q1-Q10 (dates, roles, prizes), runs the Safari gate on the iPhone, decides on the 4s loader + morphing title; then merge to main
+
