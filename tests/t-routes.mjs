@@ -60,6 +60,29 @@ for (const [ename, engine] of Object.entries(ENGINES)) {
       results.push(check(`${tag} images decoded`, dom.imgsBroken.length === 0, dom.imgsBroken.slice(0, 2).join(', ')));
       results.push(check(`${tag} images sized`, dom.imgsUnsized.length === 0, dom.imgsUnsized.slice(0, 2).join(', ')));
       results.push(check(`${tag} images have alt`, dom.imgsNoAlt.length === 0, dom.imgsNoAlt.slice(0, 2).join(', ')));
+
+      // Critical-path budget. Everything decorative — the Three.js field, the
+      // 240 rocket frames, the card covers — is meant to arrive after the page
+      // is usable. A breach means something moved back in front of the reader.
+      if (ename === 'chromium') {
+        const budget = await page.evaluate(() => {
+          const nav = performance.getEntriesByType('navigation')[0];
+          const upToLoad = performance
+            .getEntriesByType('resource')
+            .filter((r) => r.responseEnd <= nav.loadEventEnd);
+          return {
+            count: upToLoad.length,
+            kb: Math.round(upToLoad.reduce((n, r) => n + (r.transferSize || 0), 0) / 1024),
+            heavy: upToLoad
+              .filter((r) => (r.transferSize || 0) > 150 * 1024)
+              .map((r) => `${Math.round(r.transferSize / 1024)}KB ${r.name.split('/').pop()}`),
+          };
+        });
+        results.push(check(`${tag} critical path under 40 resources`, budget.count <= 40, `${budget.count} resources`));
+        results.push(check(`${tag} critical path under 600 KB`, budget.kb <= 600, `${budget.kb} KB`));
+        results.push(check(`${tag} nothing over 150 KB blocks the page`, budget.heavy.length === 0, budget.heavy.join(', ')));
+      }
+
       await ctx.close();
     }
   }
