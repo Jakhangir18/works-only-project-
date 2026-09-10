@@ -77,16 +77,38 @@ const browser = await chromium.launch();
 
     // The hero field is torn down on pagehide. Whether the browser reloads the
     // page or restores it from the back/forward cache, the visitor must come
-    // back to a hero that still has one. Automation reports persisted=false in
-    // every engine here, so this covers the reload path only; the bfcache path
-    // is on the owner's Safari gate.
+    // back to a hero that still has one.
     await page.waitForTimeout(3500);
     const field = await page.evaluate(() => {
       const host = document.querySelector('[data-dotted-surface]');
       const canvas = host?.querySelector('canvas');
-      return { host: !!host, canvas: !!canvas, w: canvas?.width || 0, persisted: window.__persisted };
+      return { host: !!host, canvas: !!canvas, w: canvas?.width || 0 };
     });
     results.push(check('return: the hero field is back after a back navigation', field.host && field.canvas && field.w > 0, JSON.stringify(field)));
+
+    // No engine here produces a real back/forward restore — all three report
+    // persisted false — so the freeze branch is driven directly. A frozen page
+    // must keep its canvas, and a restore must put it back on screen; the old
+    // teardown destroyed the renderer on both kinds of pagehide and left the
+    // hero empty for the rest of the visit.
+    await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+    await page.waitForTimeout(600);
+    const frozen = await page.evaluate(() => {
+      window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true }));
+      const canvas = document.querySelector('[data-dotted-surface] canvas');
+      return { canvas: !!canvas, w: canvas?.width || 0 };
+    });
+    results.push(check('return: a freeze keeps the hero field', frozen.canvas && frozen.w > 0, JSON.stringify(frozen)));
+
+    await page.evaluate(() => window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true })));
+    await page.waitForTimeout(1200);
+    const restored = await page.evaluate(() => {
+      const canvas = document.querySelector('[data-dotted-surface] canvas');
+      if (!canvas) return { canvas: false, moving: false };
+      const ctx = canvas.getContext('webgl') || canvas.getContext('webgl2');
+      return { canvas: true, w: canvas.width, lost: ctx ? ctx.isContextLost() : null };
+    });
+    results.push(check('return: a restore leaves the hero field usable', restored.canvas && restored.w > 0 && restored.lost !== true, JSON.stringify(restored)));
   }
   await ctx.close();
 }

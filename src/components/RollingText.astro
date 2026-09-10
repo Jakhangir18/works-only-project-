@@ -98,15 +98,26 @@ const { texts = [], className = "" } = Astro.props;
       );
       io.observe(root);
     } else {
-      start();
+      // No observer: the rect is the only signal, so it has to be consulted
+      // on the events that can change it. Without this the roller ran from
+      // load on a viewport where the line is below the fold, which is the
+      // invariant this whole block exists to hold.
+      const evaluate = () => {
+        visible = inView();
+        if (visible && !document.hidden) start();
+        else stop();
+      };
+      evaluate();
+      window.addEventListener("scroll", evaluate, { passive: true });
+      window.addEventListener("resize", evaluate);
     }
 
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) stop();
-      // With an observer, its answer is the only answer. Without one, nothing
-      // updates `visible`, so the rect is all there is — and it has to be the
-      // whole rect test, not half of it.
-      else if (hasObserver ? visible : inView()) start();
+      // Both paths keep `visible` current now: the observer writes it from its
+      // own callback, the fallback writes it from the rect on scroll and
+      // resize. One answer, read in one place.
+      else if (visible) start();
     });
   });
 </script>

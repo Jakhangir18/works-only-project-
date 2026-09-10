@@ -43,6 +43,8 @@ const { className = "" } = Astro.props;
     scene!: THREEType.Scene;
     camera!: THREEType.PerspectiveCamera;
     renderer!: THREEType.WebGLRenderer;
+    destroyed = false;
+    contextLost = false;
     /** False when WebGL is unavailable; every entry point then does nothing. */
     supported = false;
     points!: THREEType.Points;
@@ -112,6 +114,7 @@ const { className = "" } = Astro.props;
       this.renderer.setClearColor(0x000000, 0);
 
       this.container.appendChild(this.renderer.domElement);
+      this.watchContext();
       return true;
     }
 
@@ -161,9 +164,29 @@ const { className = "" } = Astro.props;
     }
 
     resume() {
-      if (!this.supported || !this.paused) return;
+      if (!this.supported || this.destroyed || this.contextLost) return;
+      if (!this.paused) return;
       this.paused = false;
       this.animate();
+    }
+
+    /**
+     * A frozen page can have its GPU context reclaimed — iOS Safari does this
+     * routinely — and rendering into a lost context produces a warning every
+     * frame and no pixels. preventDefault on the loss is what makes a restore
+     * possible at all; until it arrives there is nothing to draw.
+     */
+    watchContext() {
+      const canvas = this.renderer.domElement;
+      canvas.addEventListener("webglcontextlost", (event) => {
+        event.preventDefault();
+        this.contextLost = true;
+        this.pause();
+      });
+      canvas.addEventListener("webglcontextrestored", () => {
+        this.contextLost = false;
+        this.resume();
+      });
     }
 
     animate = () => {
@@ -208,7 +231,14 @@ const { className = "" } = Astro.props;
     destroy() {
       // Nothing was ever created when WebGL is unavailable, so there is
       // nothing to tear down and no renderer to dispose.
-      if (!this.supported) return;
+      if (!this.supported || this.destroyed) return;
+      // The pagehide listener is no longer once-only, because it now has to
+      // tell a freeze from an unload. A second unload — a cache eviction
+      // followed by a real one — would otherwise re-enter here, dispose what
+      // is already disposed and throw NotFoundError out of removeChild,
+      // aborting the rest of the teardown.
+      this.destroyed = true;
+      this.paused = true;
 
       window.removeEventListener("resize", this.handleResize);
       cancelAnimationFrame(this.animationId);
