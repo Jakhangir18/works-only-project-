@@ -21,7 +21,20 @@ gsap.registerPlugin();
  */
 let lastProgress = 0;
 
+let motionQueryBound = false;
+
 export function initRocketMotionController(): void {
+  // Reduce Motion can be turned on with the page already open, and nothing
+  // else re-runs this: the only other caller is a 200 ms resize debounce, and
+  // changing the OS setting fires no resize. Bound once, because this function
+  // runs again on every resize.
+  if (!motionQueryBound && typeof window !== "undefined") {
+    motionQueryBound = true;
+    window
+      .matchMedia("(prefers-reduced-motion: reduce)")
+      .addEventListener("change", () => initRocketMotionController());
+  }
+
   const rocketContainer = document.querySelector(
     ".js-rocket-container",
   ) as HTMLElement;

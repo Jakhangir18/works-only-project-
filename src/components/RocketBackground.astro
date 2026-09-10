@@ -105,11 +105,14 @@
         lastFrameIdx = frameIdx;
         const img = images[frameIdx];
         if (img?.complete && img.naturalWidth) drawFrame(img);
-        // Not here yet. The loader picks its next request from wherever the
-        // visitor is, so telling it the position moved is enough — there is
-        // nothing to re-prioritize, because the frames behind this one have
-        // not been requested yet.
-        else pump();
+        // Not here yet. Ask for this one directly — the bulk gate may not have
+        // opened, and a visitor who arrived at the rocket section by anchor or
+        // a restored scroll offset must not wait on idle for the frame in
+        // front of them. Then let the window carry on from the new position.
+        else {
+          loadFrame(frameIdx);
+          pump();
+        }
       }
 
       // Toggle background visibility based on progress
@@ -141,7 +144,17 @@
        Same bytes, same completeness; what changes is the order, and the order
        is what was wrong. */
     const WINDOW = 6;
+    /* How far either side of the visitor the nearest-first search looks before
+       falling back to the sweep. Bounded because this runs from a scroll
+       handler and an unbounded outward search is O(TOTAL) per free slot. */
+    const NEAR = 24;
+    const RETRY_LIMIT = 2;
     let inFlight = 0;
+    /* A monotone fill cursor for everything outside the near window. It only
+       ever advances, so filling the whole set costs O(TOTAL) once rather than
+       O(TOTAL) per request. */
+    let sweep = 0;
+    const attempts: number[] = [];
 
     const loadFrame = (i: number) => {
       if (images[i]) return;
@@ -151,27 +164,41 @@
       img.decoding = "async";
       const settle = () => {
         inFlight--;
-        if (preloadStarted) pump();
+        pump();
       };
       img.onload = () => {
         if (i === lastFrameIdx) drawFrame(img);
         settle();
       };
-      img.onerror = settle;
+      img.onerror = () => {
+        // A slot holding a broken image reads as present forever: the search
+        // skips it, the draw refuses it, and nothing ever asks again. Free it
+        // so the window can heal a dropped connection, but not indefinitely —
+        // a frame that is genuinely missing must not become a request loop.
+        attempts[i] = (attempts[i] || 0) + 1;
+        if (attempts[i] <= RETRY_LIMIT) {
+          images[i] = undefined as unknown as HTMLImageElement;
+          if (i < sweep) sweep = i;
+        }
+        settle();
+      };
       img.src = `${PATH}${String(i + 1).padStart(3, "0")}${EXT}`;
     };
 
     /* The missing frame closest to the one on screen, searched outward so a
        visitor scrolling either direction is served before the far end of the
-       sequence. */
+       sequence, then the sweep for the rest. */
     const nextWanted = () => {
-      for (let d = 0; d < TOTAL; d++) {
-        const ahead = lastFrameIdx + d;
+      const anchor = lastFrameIdx < 0 ? 0 : lastFrameIdx;
+      for (let d = 0; d <= NEAR; d++) {
+        const ahead = anchor + d;
         if (ahead < TOTAL && !images[ahead]) return ahead;
-        const behind = lastFrameIdx - d;
+        if (d === 0) continue;
+        const behind = anchor - d;
         if (behind >= 0 && !images[behind]) return behind;
       }
-      return -1;
+      while (sweep < TOTAL && images[sweep]) sweep++;
+      return sweep < TOTAL ? sweep : -1;
     };
 
     function pump() {
