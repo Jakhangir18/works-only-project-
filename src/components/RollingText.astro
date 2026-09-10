@@ -78,9 +78,14 @@ const { texts = [], className = "" } = Astro.props;
     // 340) the line sits entirely below the fold with a positive bottom, so
     // returning to the tab restarted the roller off screen and the observer,
     // whose intersection state never changed, never fired again to stop it.
-    let visible = !("IntersectionObserver" in window);
+    const inView = () => {
+      const r = root.getBoundingClientRect();
+      return r.bottom > 0 && r.top < window.innerHeight;
+    };
+    const hasObserver = "IntersectionObserver" in window;
+    let visible = hasObserver ? false : inView();
 
-    if ("IntersectionObserver" in window) {
+    if (hasObserver) {
       const io = new IntersectionObserver(
         (entries) => {
           for (const entry of entries) {
@@ -98,7 +103,10 @@ const { texts = [], className = "" } = Astro.props;
 
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) stop();
-      else if (visible) start();
+      // With an observer, its answer is the only answer. Without one, nothing
+      // updates `visible`, so the rect is all there is — and it has to be the
+      // whole rect test, not half of it.
+      else if (hasObserver ? visible : inView()) start();
     });
   });
 </script>
