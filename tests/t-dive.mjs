@@ -4,6 +4,34 @@ import { chromium, webkit } from 'playwright';
 import { BASE, check, summarize, workBox, findCardInView } from './lib.mjs';
 
 const results = [];
+
+/**
+ * Wait for the entry timeline to actually finish, and say so if it does not.
+ * A fixed sleep reported a slow machine as a defect; a gate that resolves a
+ * frame early does the same in the other direction, so this waits for the two
+ * things the timeline's last beat sets — the teaser and the close control both
+ * fully on — and then gives the layers a moment to re-raster, because clearing
+ * will-change at onComplete is itself a repaint and the pixel checks below read
+ * the screen. Failures are reported rather than swallowed: a missing overlay
+ * node would otherwise collapse every wait to nothing and let the checks that
+ * follow measure a dive that never played.
+ */
+async function settle(page, results, tag) {
+  const ok = await page
+    .waitForFunction(() => {
+      const teaser = document.querySelector('.dive__teaser');
+      const close = document.querySelector('.dive__close');
+      if (!teaser || !close) return false;
+      return Number(getComputedStyle(teaser).opacity) >= 0.999 &&
+        Number(getComputedStyle(close).opacity) >= 0.999;
+    }, null, { timeout: 15000 })
+    .then(() => true)
+    .catch(() => false);
+  results.push(check(`${tag} the entry timeline finishes`, ok, 'teaser or close control never reached full opacity in 15 s'));
+  await page.waitForTimeout(700);
+  return ok;
+}
+
 const browser = await chromium.launch();
 const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
 const page = await ctx.newPage();
@@ -27,15 +55,7 @@ if (href) {
   }));
 
   await page.evaluate(() => window.__card.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true })));
-  // Wait for the entry to land rather than guessing at its duration: under
-  // load a fixed 2.6 s is sometimes short in WebKit, and a check that reports
-  // a slow machine as a defect is worse than no check. The signal is the
-  // timeline's own last act — clearing the compositing hints it set — not the
-  // teaser's opacity, which arrives before the rest of the timeline finishes.
-  const settled = () =>
-    getComputedStyle(document.querySelector('.dive__glow')).willChange === 'auto' &&
-    Number(getComputedStyle(document.querySelector('.dive__teaser')).opacity) > 0.99;
-  await page.waitForFunction(settled, null, { timeout: 15000 }).catch(() => {});
+  await settle(page, results, 'dive');
 
   const open = await page.evaluate(() => {
     const d = document.querySelector('.dive');
@@ -209,12 +229,7 @@ await browser.close();
   results.push(check('dive/webkit: a card is reachable', !!whref, whref || 'none'));
   if (whref) {
     await wpage.evaluate(() => window.__card.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true })));
-    await wpage.waitForFunction(
-      () =>
-        getComputedStyle(document.querySelector('.dive__glow')).willChange === 'auto' &&
-        Number(getComputedStyle(document.querySelector('.dive__teaser')).opacity) > 0.99,
-      null, { timeout: 15000 },
-    ).catch(() => {});
+    await settle(wpage, results, 'dive/webkit');
     const wopen = await wpage.evaluate(() => {
       const d = document.querySelector('.dive');
       return {
