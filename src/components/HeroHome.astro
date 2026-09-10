@@ -171,7 +171,11 @@ const titles = [
 
     p {
       margin: 0;
-      color: rgba(255, 255, 255, 0.4);
+      // 0.4 over the black page resolves to #666, which is 3.65:1 against a
+      // 4.5:1 requirement for 16px text. 0.48 resolves to #7a7a7a, 4.89:1.
+      // axe misses this because the hero sits over a canvas and it declines to
+      // guess the background; Lighthouse resolves it and fails it.
+      color: rgba(255, 255, 255, 0.48);
       font: 400 1rem / 1.5 font-family(fraktion);
       letter-spacing: 0.01em;
       transition: color 0.3s ease;

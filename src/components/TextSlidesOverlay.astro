@@ -199,7 +199,9 @@
     font-family: font-family(fraktion);
     font-size: clamp(0.875rem, 1.2vw, 1.0625rem);
     line-height: 1.7;
-    color: rgba(255, 255, 255, 0.45);
+    // 0.45 over black is 4.41:1 and the text is below the large-text
+    // threshold, so it needs 4.5:1. 0.48 gives 4.89:1.
+    color: rgba(255, 255, 255, 0.48);
     max-width: 42ch;
   }
 
