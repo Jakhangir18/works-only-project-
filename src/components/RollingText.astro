@@ -82,15 +82,15 @@ const { texts = [], className = "" } = Astro.props;
       const r = root.getBoundingClientRect();
       return r.bottom > 0 && r.top < window.innerHeight;
     };
-    const hasObserver = "IntersectionObserver" in window;
-    let visible = hasObserver ? false : inView();
+    // Read into a boolean rather than branching on `in`: TypeScript narrows
+    // `window` to never in the else arm of the operator form.
+    const hasObserver = typeof IntersectionObserver === "function";
 
     if (hasObserver) {
       const io = new IntersectionObserver(
         (entries) => {
           for (const entry of entries) {
-            visible = entry.isIntersecting;
-            if (visible && !document.hidden) start();
+            if (entry.isIntersecting && !document.hidden) start();
             else stop();
           }
         },
@@ -103,8 +103,7 @@ const { texts = [], className = "" } = Astro.props;
       // load on a viewport where the line is below the fold, which is the
       // invariant this whole block exists to hold.
       const evaluate = () => {
-        visible = inView();
-        if (visible && !document.hidden) start();
+        if (inView() && !document.hidden) start();
         else stop();
       };
       evaluate();
@@ -114,11 +113,12 @@ const { texts = [], className = "" } = Astro.props;
 
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) stop();
-      // With an observer, its answer is authoritative and always current.
-      // Without one, `visible` is only as fresh as the last scroll or resize —
-      // a font swapping in and reflowing the hero fires neither — so that path
-      // measures again at the moment it matters.
-      else if (hasObserver ? visible : inView()) start();
+      // The observer's threshold is 0, so its answer and this rect test are
+      // the same question. Measuring it here rather than caching an answer is
+      // what keeps the two paths from disagreeing — the disagreement being the
+      // defect: a cached "yes" from before a font reflowed the hero restarted
+      // the roller on a line that had since gone below the fold.
+      else if (inView()) start();
     });
   });
 </script>

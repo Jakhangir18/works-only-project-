@@ -105,17 +105,13 @@
         lastFrameIdx = frameIdx;
         const img = images[frameIdx];
         if (img?.complete && img.naturalWidth) drawFrame(img);
-        // Not here yet. Ask for this one directly — the bulk gate may not have
-        // opened, and a visitor who arrived at the rocket section by anchor or
-        // a restored scroll offset must not wait on idle for the frame in
-        // front of them. Then let the window carry on from the new position.
+        // Not here yet. Once the bulk gate is open the pump asks for exactly
+        // this frame — its search is anchored on the index that was just set —
+        // so the only case needing a direct request is the gate still being
+        // shut: a visitor who arrived by anchor or a restored scroll offset
+        // must not wait on idle for the frame in front of them.
         else {
-          // Directly, because the bulk gate may not have opened yet and the
-          // pump does nothing before it does — but still inside the window,
-          // or a fling through the section would put one request on the wire
-          // per frame crossed and split the bandwidth exactly the way the
-          // index-order loader did.
-          if (inFlight < WINDOW) loadFrame(frameIdx);
+          if (!preloadStarted) loadFrame(frameIdx);
           pump();
         }
       }

@@ -21,6 +21,16 @@ gsap.registerPlugin();
  */
 let lastProgress = 0;
 
+/**
+ * One MediaQueryList for the whole module. matchMedia itself is missing in
+ * jsdom and in stripped WebViews, and addEventListener on the result is
+ * missing in older WebKit — both are tested here rather than at each use, so a
+ * missing API costs the rocket its live reduce-motion update and nothing else.
+ */
+const motionQuery =
+  typeof window !== "undefined" && typeof window.matchMedia === "function"
+    ? window.matchMedia("(prefers-reduced-motion: reduce)")
+    : null;
 let motionQueryBound = false;
 
 export function initRocketMotionController(): void {
@@ -28,14 +38,6 @@ export function initRocketMotionController(): void {
   // else re-runs this: the only other caller is a 200 ms resize debounce, and
   // changing the OS setting fires no resize. Bound once, because this function
   // runs again on every resize.
-  const motionQuery =
-    typeof window !== "undefined"
-      ? window.matchMedia("(prefers-reduced-motion: reduce)")
-      : null;
-  // addEventListener on a MediaQueryList is not universal — older WebKit only
-  // has addListener — and this runs before any other guard, so an unguarded
-  // call would throw here and leave window.updateRocketMotion unassigned,
-  // which the scroll handler calls without optional chaining on every frame.
   if (!motionQueryBound && motionQuery?.addEventListener) {
     motionQueryBound = true;
     motionQuery.addEventListener("change", () => initRocketMotionController());

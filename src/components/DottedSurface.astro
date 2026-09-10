@@ -194,10 +194,14 @@ const { className = "" } = Astro.props;
       // the visitor is down in the Work section would otherwise start a
       // full-viewport render loop nobody can see, and the observer will not
       // fire again to stop it — its intersection state never changed.
-      const rect = this.container.getBoundingClientRect();
-      if (!document.hidden && rect.bottom > 0 && rect.top < window.innerHeight)
-        this.resume();
+      if (!document.hidden && this.isOnScreen()) this.resume();
     };
+
+    /** The one on-screen test, so the three callers cannot drift apart. */
+    isOnScreen() {
+      const rect = this.container.getBoundingClientRect();
+      return rect.bottom > 0 && rect.top < window.innerHeight;
+    }
 
     animate = () => {
       if (this.paused) return;
@@ -303,15 +307,27 @@ const { className = "" } = Astro.props;
     });
     observer.observe(container);
 
-    document.addEventListener("visibilitychange", () => {
-      if (document.hidden) {
-        animation.pause();
-      } else {
-        const rect = container.getBoundingClientRect();
-        if (rect.bottom > 0 && rect.top < window.innerHeight)
-          animation.resume();
-      }
-    });
+    const onVisibilityChange = () => {
+      if (document.hidden) animation.pause();
+      else if (animation.isOnScreen()) animation.resume();
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    const onPageShow = (event: Event) => {
+      if (!(event as PageTransitionEvent).persisted) return;
+      if (!document.hidden && animation.isOnScreen()) animation.resume();
+    };
+    window.addEventListener("pageshow", onPageShow);
+
+    // Everything this closure attached, taken back off in one place, so the
+    // two callers below cannot get it half right.
+    const teardown = () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("pageshow", onPageShow);
+      window.removeEventListener("pagehide", onPageHide);
+      observer.disconnect();
+      animation.destroy();
+    };
 
     // pagehide fires both when the page is really going away and when it is
     // being frozen into the back/forward cache. Tearing down on both meant a
@@ -319,25 +335,16 @@ const { className = "" } = Astro.props;
     // dive is built for, and the default on iOS Safari — came back to a hero
     // with no field and nothing left to rebuild it. Destroy only on a real
     // unload; a frozen page runs no rAF anyway, so pausing is enough.
-    window.addEventListener("pagehide", (event) => {
+    function onPageHide(event: Event) {
       if ((event as PageTransitionEvent).persisted) {
         animation.pause();
         return;
       }
-      observer.disconnect();
-      animation.destroy();
-    });
+      teardown();
+    }
+    window.addEventListener("pagehide", onPageHide);
 
-    window.addEventListener("pageshow", (event) => {
-      if (!(event as PageTransitionEvent).persisted) return;
-      const rect = container.getBoundingClientRect();
-      if (!document.hidden && rect.bottom > 0 && rect.top < window.innerHeight)
-        animation.resume();
-    });
-
-    return () => {
-      animation.destroy();
-    };
+    return teardown;
   };
 
   // Mount once the page has settled: the field is decoration, and fetching

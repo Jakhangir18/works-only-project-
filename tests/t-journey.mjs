@@ -116,19 +116,55 @@ const browser = await chromium.launch();
     });
     results.push(check('return: a restore leaves a live context on the hero field', restored.canvas && restored.w > 0 && restored.lost === false, JSON.stringify(restored)));
 
+    // A lost GPU context is what a freeze most often costs on iOS. Rendering
+    // into one produces a warning every frame and no pixels, so the loss has
+    // to be caught and the loop stopped; preventDefault on it is also what
+    // makes a restore possible at all. Driven here with WEBGL_lose_context.
+    const glErrors = [];
+    const onConsole = (m) => { if (m.type() === 'error' || m.type() === 'warning') glErrors.push(m.text().slice(0, 120)); };
+    page.on('console', onConsole);
+    const lost = await page.evaluate(async () => {
+      const canvas = document.querySelector('[data-dotted-surface] canvas');
+      if (!canvas) return { canvas: false };
+      const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+      const ext = gl && gl.getExtension('WEBGL_lose_context');
+      if (!ext) return { canvas: true, ext: false };
+      ext.loseContext();
+      await new Promise((r) => setTimeout(r, 600));
+      const wasLost = gl.isContextLost();
+      ext.restoreContext();
+      await new Promise((r) => setTimeout(r, 900));
+      return { canvas: true, ext: true, wasLost, stillLost: gl.isContextLost() };
+    });
+    await page.waitForTimeout(600);
+    page.off('console', onConsole);
+    if (lost.ext) {
+      results.push(check('return: a lost context is actually lost, then restored', lost.wasLost === true && lost.stillLost === false, JSON.stringify(lost)));
+      results.push(check('return: losing the context does not spam the console', glErrors.length === 0, glErrors.slice(0, 2).join(' | ')));
+    } else {
+      results.push(check('return: WEBGL_lose_context is available to drive the test', false, JSON.stringify(lost)));
+    }
+
     // Two real unloads in a row. destroy() removes the renderer's canvas from
     // its container, which throws NotFoundError the second time unless it
     // refuses to run twice — and the pagehide listener is no longer once-only.
-    const twice = await page.evaluate(() => {
+    const twice = await page.evaluate(async () => {
+      const canvasBefore = !!document.querySelector('[data-dotted-surface] canvas');
       const errors = [];
       const onError = (e) => errors.push(String(e.message || e.error));
       window.addEventListener('error', onError);
       window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: false }));
       window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: false }));
+      // An engine that reports a listener exception on a queued task rather
+      // than synchronously would otherwise be read before it had spoken.
+      await new Promise((r) => setTimeout(r, 0));
       window.removeEventListener('error', onError);
-      return errors;
+      return { canvasBefore, errors };
     });
-    results.push(check('return: a second unload does not throw out of the teardown', twice.length === 0, twice.join(' | ')));
+    // Without this the check passes vacuously wherever WebGL is unavailable:
+    // mount() returns before building anything and destroy() never runs.
+    results.push(check('return: the field was mounted before the unload test', twice.canvasBefore, 'no canvas to tear down'));
+    results.push(check('return: a second unload does not throw out of the teardown', twice.errors.length === 0, twice.errors.join(' | ')));
   }
   await ctx.close();
 }

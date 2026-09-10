@@ -1,6 +1,6 @@
 # What happened overnight, 9–10 September 2026
 
-Branch `feat/work-content`, 50 commits over `main`, pushed. Nothing merged,
+Branch `feat/work-content`, 52 commits over `main`, pushed. Nothing merged,
 nothing deployed. The preview is the tailnet link; the live Vercel site is
 untouched.
 
@@ -110,9 +110,15 @@ rather than something I did.
 The home page's 2.5 s is the four-second loader you decided to keep. It is a
 deliberate cost and the only thing holding that number down.
 
-The regression suite is 918 checks across eight files, in Chromium, WebKit and
-Firefox. Every fix above has a check in it that fails without the fix; I
-verified that by breaking each one again and watching the check go red.
+The regression suite is 937 checks across eight files, in Chromium, WebKit and
+Firefox. For every visitor-facing defect above I put the bug back, watched the
+new check go red, and took it out again — the invisible dive, the erased letter
+shadows, the snapped rocket pose, the frame that arrived eighteen seconds
+late, the roller that ran off screen, the emptied hero. Some of the later,
+smaller fixes are covered by tests that exercise the code without being able
+to fail on its absence, because the failure needs a real GPU context loss or a
+real back/forward restore; those are named as such in the test files and they
+are on the iPhone gate.
 
 ## What I removed, and why
 
@@ -136,9 +142,14 @@ way, and only the rocket now notices when you change it mid-visit. Making that
 one shared mechanism is the right change and touches four files; it is worth
 doing deliberately, not at the end of a long night.
 
-Some listeners are added and never removed. In a site like this one there is
-no unmount and no route change — every navigation is a fresh document — so
-nothing accumulates. The repository's own notes say as much.
+A few listeners are still added and never removed. The hero field's are gone —
+it hands back one teardown that takes off everything it attached — but the
+rolling title still leaves a scroll and a resize handler behind on the browsers
+that have no IntersectionObserver, and the rocket leaves its reduce-motion
+listener. The repository's rules ask for better than that, and they ask for it
+because an un-killed listener set once leaked a hundred and sixty listeners per
+resize here. Nothing accumulates today, because every navigation on this site
+is a fresh document, but it is a deviation and not a sanctioned one.
 
 One commit carries four related fixes rather than four commits carrying one
 each, which the repository's rules ask for. It is a bisect cost, not a
