@@ -98,6 +98,15 @@ Every page, mobile, measured against a compressing server:
 SEO reads 63 everywhere because the site tells search engines not to index it.
 That is a switch waiting for your answer, not a defect.
 
+The home page's accessibility score reads 100 most runs and 95 occasionally.
+The cause is known and it is the rolling title: as one line slides out it dims
+on its way, so for about 400 ms of every 2.6 s it is dark grey on black, and
+an audit that samples exactly then calls it a contrast failure. Nobody is
+actually shut out — the titles are read out separately for screen readers —
+but the score moves. Dropping just the fade would settle it, and that is a
+change to an effect you said you liked, so it is a question in the fact list
+rather than something I did.
+
 The home page's 2.5 s is the four-second loader you decided to keep. It is a
 deliberate cost and the only thing holding that number down.
 

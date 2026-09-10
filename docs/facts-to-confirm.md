@@ -138,6 +138,8 @@ Anything else that belongs on the timeline? ACM, Microsoft Ambassador and Mangis
   **Answered 2026-09-10: keep it.** The home page's largest contentful paint therefore stays around 3.8 s on mobile with compression, and that is a deliberate cost, not a defect. Nothing further to do here.
 - In the Work tunnel each letter's shadow shifts by about 1.6 px per frame. Freezing it would cut more per-frame work; it would also make the tunnel very slightly stiller. Freeze it?
   Answer: ________
+- The rolling hero title cross-fades as it slides: the outgoing line dims while it leaves. For about 400 ms of every 2.6 s cycle it is therefore a dark grey on black, and an accessibility audit that happens to sample that instant reports a contrast failure and scores the home page 95 instead of 100. The line itself is decorative — the full list of titles is read out separately for screen readers — so nobody is actually shut out; the score is what suffers. Dropping just the fade (the line would slide in and out of its mask at full strength, a crisper roll) removes it. Keep the fade, or drop it?
+  Answer: ________
 
 ## 11. The iPhone gate — three things only a real device can settle
 
