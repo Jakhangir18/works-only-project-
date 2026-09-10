@@ -1,0 +1,328 @@
+---
+import { timeline, monthSpan, type TimelineEntry } from "../data/timeline";
+
+const entries = timeline
+  .filter((entry) => !entry.draft)
+  .slice()
+  .sort((a, b) => (a.start < b.start ? 1 : -1));
+
+const MONTHS = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+];
+
+function label(value: string): string {
+  const [year, month] = value.split("-").map(Number);
+  return `${MONTHS[month - 1]} ${year}`;
+}
+
+function range(entry: TimelineEntry): string {
+  const from = label(entry.start);
+  if (!entry.end) return `${from} — now`;
+  return entry.end === entry.start ? from : `${from} — ${label(entry.end)}`;
+}
+
+function duration(months: number): string {
+  if (months < 2) return "";
+  if (months < 12) return `${months} months`;
+  const years = Math.floor(months / 12);
+  const rest = months % 12;
+  const y = `${years} ${years === 1 ? "year" : "years"}`;
+  return rest === 0 ? y : `${y} ${rest} mo`;
+}
+
+/** Group by the year an entry started, newest first. */
+const groups = entries.reduce<{ year: string; items: TimelineEntry[] }[]>(
+  (acc, entry) => {
+    const year = entry.start.slice(0, 4);
+    const last = acc[acc.length - 1];
+    if (last && last.year === year) last.items.push(entry);
+    else acc.push({ year, items: [entry] });
+    return acc;
+  },
+  [],
+);
+---
+
+<section id="timeline" class="s-timeline" data-intersect>
+  <div class="s-timeline__inner">
+    <header class="s-timeline__head">
+      <h2 class="s-timeline__title">Timeline</h2>
+      <p class="s-timeline__lead">
+        Where the work above sits in time. Bars run for as long as the work did.
+      </p>
+    </header>
+
+    {
+      groups.map((group) => (
+        <section class="s-timeline__group" aria-label={group.year}>
+          <h3 class="s-timeline__year">{group.year}</h3>
+
+          <ol class="s-timeline__list">
+            {group.items.map((entry) => {
+              const months = monthSpan(entry);
+              const Tag = entry.href ? "a" : "div";
+              return (
+                <li
+                  class="s-timeline__entry js-timeline-entry"
+                  style={`--months: ${Math.min(months, 36)};`}
+                  data-kind={entry.kind}
+                >
+                  <span class="s-timeline__bar" aria-hidden="true" />
+                  <Tag
+                    class="s-timeline__body"
+                    {...(entry.href ? { href: entry.href } : {})}
+                  >
+                    <span class="s-timeline__meta">
+                      <time datetime={entry.start}>{range(entry)}</time>
+                      {duration(months) && (
+                        <span class="s-timeline__duration">
+                          {duration(months)}
+                        </span>
+                      )}
+                      <span class="s-timeline__kind">{entry.kind}</span>
+                    </span>
+                    <span class="s-timeline__name">
+                      {entry.title}
+                      {entry.href && <span class="s-timeline__arrow"> →</span>}
+                    </span>
+                    <span class="s-timeline__org">{entry.org}</span>
+                    <span class="s-timeline__summary">{entry.summary}</span>
+                  </Tag>
+                </li>
+              );
+            })}
+          </ol>
+        </section>
+      ))
+    }
+  </div>
+</section>
+
+<script>
+  // Reveal entries as they enter the viewport. Entries already in view are
+  // classified synchronously so nothing above the fold waits for a callback.
+  // Reduced motion: everything is visible immediately and no observer runs.
+  const entries = document.querySelectorAll<HTMLElement>(".js-timeline-entry");
+
+  if (entries.length > 0) {
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    if (reduce || !("IntersectionObserver" in window)) {
+      entries.forEach((el) => el.classList.add("is-in"));
+    } else {
+      const vh = window.innerHeight;
+      const pending: HTMLElement[] = [];
+
+      entries.forEach((el) => {
+        if (el.getBoundingClientRect().top < vh) el.classList.add("is-in");
+        else pending.push(el);
+      });
+
+      if (pending.length > 0) {
+        const io = new IntersectionObserver(
+          (records, observer) => {
+            for (const record of records) {
+              if (!record.isIntersecting) continue;
+              record.target.classList.add("is-in");
+              observer.unobserve(record.target);
+            }
+          },
+          { threshold: 0, rootMargin: "0px 0px -12% 0px" },
+        );
+        pending.forEach((el) => io.observe(el));
+      }
+    }
+  }
+</script>
+
+<style lang="scss">
+  @use "../styles/helpers/fonts" as *;
+  @use "../styles/helpers/responsive" as *;
+
+  .s-timeline {
+    position: relative;
+    z-index: 20;
+    background: #000;
+    color: #fff2ed;
+    padding: clamp(5rem, 14vh, 10rem) 0;
+  }
+
+  .s-timeline__inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 clamp(1.5rem, 5vw, 5rem);
+  }
+
+  .s-timeline__head {
+    margin-bottom: clamp(3rem, 8vh, 6rem);
+  }
+
+  .s-timeline__title {
+    margin: 0;
+    font: 400 clamp(2.5rem, 6vw, 5rem) / 1 font-family(editorial);
+    letter-spacing: -0.02em;
+  }
+
+  .s-timeline__lead {
+    margin: 1rem 0 0;
+    max-width: 34em;
+    font: 400 0.9375rem / 1.5 font-family(editorial);
+    color: rgba(255, 242, 237, 0.6);
+  }
+
+  .s-timeline__group {
+    display: grid;
+    grid-template-columns: 5rem minmax(0, 1fr);
+    column-gap: clamp(1rem, 3vw, 2.5rem);
+
+    @include mq(tablet-sm) {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  .s-timeline__year {
+    position: sticky;
+    top: 1.5rem;
+    align-self: start;
+    margin: 0;
+    padding-top: 1.25rem;
+    font: 400 0.8125rem / 1 font-family(fraktion);
+    letter-spacing: 0.14em;
+    color: rgba(255, 242, 237, 0.45);
+
+    @include mq(tablet-sm) {
+      position: static;
+      padding-top: 2rem;
+      padding-bottom: 0.5rem;
+    }
+  }
+
+  .s-timeline__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .s-timeline__entry {
+    display: grid;
+    grid-template-columns: 3px minmax(0, 1fr);
+    column-gap: clamp(1rem, 2vw, 1.75rem);
+    /* One row per entry; its height carries the duration, capped at 36 months
+       so a three-year run reads longer than a one-day hackathon without the
+       page turning into a scale drawing. */
+    min-height: calc(5.5rem + var(--months, 1) * 0.3rem);
+    padding: 1.25rem 0 2rem;
+    border-top: 1px solid rgba(255, 242, 237, 0.12);
+
+    opacity: 0;
+    transform: translateY(0.75rem);
+    transition:
+      opacity 420ms cubic-bezier(0.2, 0.7, 0.2, 1),
+      transform 420ms cubic-bezier(0.2, 0.7, 0.2, 1);
+
+    &.is-in {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  .s-timeline__bar {
+    display: block;
+    width: 3px;
+    height: 100%;
+    border-radius: 2px;
+    background: rgba(255, 242, 237, 0.22);
+  }
+
+  .s-timeline__entry[data-kind="work"] .s-timeline__bar {
+    background: #60a5fa;
+  }
+
+  .s-timeline__entry[data-kind="research"] .s-timeline__bar {
+    background: #34d399;
+  }
+
+  .s-timeline__entry[data-kind="competition"] .s-timeline__bar {
+    background: #fbbf24;
+  }
+
+  .s-timeline__entry[data-kind="club"] .s-timeline__bar {
+    background: #fb923c;
+  }
+
+  .s-timeline__body {
+    display: grid;
+    gap: 0.4rem;
+    align-content: start;
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .s-timeline__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1rem;
+    font: 400 0.6875rem / 1.4 font-family(fraktion);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(255, 242, 237, 0.5);
+  }
+
+  .s-timeline__duration::before {
+    content: "·";
+    margin-right: 1rem;
+  }
+
+  .s-timeline__kind {
+    padding: 0.2rem 0.5rem;
+    border: 1px solid rgba(255, 242, 237, 0.2);
+    border-radius: 2px;
+    font-size: 0.625rem;
+  }
+
+  .s-timeline__name {
+    font: 400 clamp(1.5rem, 3vw, 2.25rem) / 1.1 font-family(editorial);
+    letter-spacing: -0.01em;
+  }
+
+  .s-timeline__arrow {
+    display: inline-block;
+    transition: transform 320ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+
+  .s-timeline__org {
+    font: 400 0.8125rem / 1.4 font-family(fraktion);
+    letter-spacing: 0.04em;
+    color: rgba(255, 242, 237, 0.55);
+  }
+
+  .s-timeline__summary {
+    max-width: 46em;
+    font: 400 1rem / 1.5 font-family(editorial);
+    color: rgba(255, 242, 237, 0.75);
+  }
+
+  a.s-timeline__body:hover .s-timeline__arrow,
+  a.s-timeline__body:focus-visible .s-timeline__arrow {
+    transform: translateX(0.35rem);
+  }
+
+  a.s-timeline__body:focus-visible {
+    outline: 2px solid #fff2ed;
+    outline-offset: 6px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .s-timeline__entry {
+      opacity: 1;
+      transform: none;
+      transition: none;
+    }
+
+    .s-timeline__arrow {
+      transition: none;
+    }
+  }
+</style>
