@@ -138,3 +138,29 @@ Anything else that belongs on the timeline? ACM, Microsoft Ambassador and Mangis
   **Answered 2026-09-10: keep it.** The home page's largest contentful paint therefore stays around 3.8 s on mobile with compression, and that is a deliberate cost, not a defect. Nothing further to do here.
 - In the Work tunnel each letter's shadow shifts by about 1.6 px per frame. Freezing it would cut more per-frame work; it would also make the tunnel very slightly stiller. Freeze it?
   Answer: ________
+
+## 11. The iPhone gate — three things only a real device can settle
+
+Everything else in this branch is measured. These three are not, because the
+automation cannot produce the input that triggers them.
+
+1. **The letter shadows in the Work tunnel, while the address bar moves.**
+   Scroll down into the tunnel, then back up, several times, so Safari's
+   address bar collapses and returns. Every letter should keep its drop
+   shadow throughout. This was broken until this morning and is now covered by
+   a test at two viewports in two engines, but a desktop resize and an iOS
+   address-bar collapse are not literally the same event.
+
+2. **A dive taken while the address bar is moving.** Tap a card, and while the
+   dive plays, scroll-flick so the bar changes height. The photo should end up
+   filling the screen at the right size, not oversized or shrunken.
+
+3. **The hero field after the Back button.** Open a project from the tunnel,
+   then press Back. The dotted surface behind the hero should still be there
+   and still moving. Safari restores pages from its back/forward cache far
+   more often than Chrome does, and no browser automation on this host would
+   produce that restore, so it is untested. The teardown now distinguishes a
+   real unload from a freeze, which is the fix; the device is the proof.
+
+If any of the three misbehaves, a short screen recording is worth more than a
+description.

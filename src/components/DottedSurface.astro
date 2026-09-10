@@ -271,14 +271,27 @@ const { className = "" } = Astro.props;
       }
     });
 
-    window.addEventListener(
-      "pagehide",
-      () => {
-        observer.disconnect();
-        animation.destroy();
-      },
-      { once: true },
-    );
+    // pagehide fires both when the page is really going away and when it is
+    // being frozen into the back/forward cache. Tearing down on both meant a
+    // visitor who opened a project and pressed Back — the exact journey the
+    // dive is built for, and the default on iOS Safari — came back to a hero
+    // with no field and nothing left to rebuild it. Destroy only on a real
+    // unload; a frozen page runs no rAF anyway, so pausing is enough.
+    window.addEventListener("pagehide", (event) => {
+      if ((event as PageTransitionEvent).persisted) {
+        animation.pause();
+        return;
+      }
+      observer.disconnect();
+      animation.destroy();
+    });
+
+    window.addEventListener("pageshow", (event) => {
+      if (!(event as PageTransitionEvent).persisted) return;
+      const rect = container.getBoundingClientRect();
+      if (!document.hidden && rect.bottom > 0 && rect.top < window.innerHeight)
+        animation.resume();
+    });
 
     return () => {
       animation.destroy();

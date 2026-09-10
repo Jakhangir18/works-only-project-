@@ -74,6 +74,19 @@ const browser = await chromium.launch();
     results.push(check('return: lands in the Work section, not at the top', landed.inWork, `scrollY ${landed.y}`));
     results.push(check('return: the loader does not play again', landed.loaderGone, 'loader still present'));
     results.push(check('return: the page is visible', landed.visible, 'wrapper still transparent'));
+
+    // The hero field is torn down on pagehide. Whether the browser reloads the
+    // page or restores it from the back/forward cache, the visitor must come
+    // back to a hero that still has one. Automation reports persisted=false in
+    // every engine here, so this covers the reload path only; the bfcache path
+    // is on the owner's Safari gate.
+    await page.waitForTimeout(3500);
+    const field = await page.evaluate(() => {
+      const host = document.querySelector('[data-dotted-surface]');
+      const canvas = host?.querySelector('canvas');
+      return { host: !!host, canvas: !!canvas, w: canvas?.width || 0, persisted: window.__persisted };
+    });
+    results.push(check('return: the hero field is back after a back navigation', field.host && field.canvas && field.w > 0, JSON.stringify(field)));
   }
   await ctx.close();
 }
