@@ -320,7 +320,10 @@
 
 .dive__index {
   letter-spacing: 0.2em;
-  opacity: 0.7;
+  // Matches .a__card__index. The overlay replaces the card at full strength on
+  // frame one, so a different opacity here is a visible dim on click — and it
+  // would keep the 4.0:1 and 4.2:1 numerals the card just stopped rendering.
+  opacity: 1;
 }
 
 .dive__cta {

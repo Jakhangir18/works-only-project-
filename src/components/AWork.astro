@@ -16,6 +16,24 @@ interface Props {
 const { caption, cssClass, index, site, total, size, palette, poster, cover } =
   Astro.props;
 
+/**
+ * The palette background as bare "r, g, b", so the scrim can fade the card's
+ * own colour to nothing in a gradient. rgba() with custom properties works
+ * back to Safari 15; color-mix, which would take the hex directly, is 16.2.
+ */
+function toRgbChannels(hex: string): string {
+  const value = hex.trim().replace("#", "");
+  const full =
+    value.length === 3
+      ? value.split("").map((c) => c + c).join("")
+      : value.slice(0, 6);
+  const n = Number.parseInt(full, 16);
+  if (!Number.isFinite(n) || full.length !== 6) return "0, 0, 0";
+  return `${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}`;
+}
+
+const cardBgChannels = toRgbChannels(palette.background);
+
 // The cover has no src at parse time and no loading="lazy". The card holds
 // its URL in data-src and WorkSection.prepareCoverWindow assigns it a few
 // cards ahead of the scrub. Adding lazy loading on top deferred that
@@ -41,7 +59,10 @@ const motifClass = `a__card__poster--${poster.motif}`;
       target={isInternal ? "_self" : "_blank"}
       rel={isInternal ? undefined : "noopener noreferrer"}
     >
-      <div class="a__card" style={`background:${palette.background};`}>
+      <div
+        class="a__card"
+        style={`background:${palette.background};--card-bg-rgb:${cardBgChannels};`}
+      >
         <div
           class:list={["a__card__poster", motifClass]}
           style={`color:${palette.accent};`}
@@ -62,12 +83,14 @@ const motifClass = `a__card__poster--${poster.motif}`;
             />
           )
         }
-        <div class="a__card__index" style={`color:${palette.accent};`}>
-          {index}
+        <div class="a__card__index">
+          <span style={`color:${palette.accent};`}>{index}</span>
         </div>
-        <div class="a__card__title" style={`color:#fff;`}>{caption}</div>
-        <div class="a__card__cta" style={`color:${palette.accent};`}>
-          View project →
+        <div class="a__card__title">
+          <span style={`color:#fff;`}>{caption}</span>
+        </div>
+        <div class="a__card__cta">
+          <span style={`color:${palette.accent};`}>View project →</span>
         </div>
         <div class="a__card__grid"></div>
       </div>
@@ -408,6 +431,53 @@ const motifClass = `a__card__poster--${poster.motif}`;
     &.is-cover-ready .a__card:hover .a__card__cover {
       opacity: 1;
       transform: scale(1.03);
+    }
+
+    /* The card's text sits on the project's own photograph, and a photograph is
+       whatever it is: measured over the covers as shipped, the title read
+       between 2.0:1 and 4.8:1 and the index numeral between 1.2:1 and 9.7:1,
+       against the 3:1 and 4.5:1 those sizes need — the clinic cover is a white
+       web page and its title was white on white.
+
+       A scrim at the card's edges was the first attempt and it does not
+       survive the tunnel: cards are scaled down as they recede, so a gradient
+       deep enough to sit behind the title on a small card covers the whole
+       photograph. The plate goes behind the glyphs instead, one strip per line
+       of text, so it is the same size relative to the words at every scale and
+       the rest of the image is untouched. box-decoration-break is what makes a
+       wrapped title get one strip per line rather than one box around both. */
+    .a__card__index span,
+    .a__card__title span,
+    .a__card__cta span {
+      background: rgba(var(--card-bg-rgb, 0, 0, 0), 0.88);
+      box-decoration-break: clone;
+      -webkit-box-decoration-break: clone;
+      padding: 0.1em 0.34em;
+      // The strips sit on the baseline grid, so a little negative margin keeps
+      // the block the same size it was before they existed.
+      margin: 0 -0.34em;
+    }
+
+    /* A light edge scrim still, because a plate the width of the words leaves
+       the corners of a busy photograph fighting the card's own frame. Shallow
+       enough that the middle of every cover is untouched at any scale. */
+    .a__card::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+      background:
+        linear-gradient(
+          to bottom,
+          rgba(var(--card-bg-rgb, 0, 0, 0), 0.55) 0%,
+          rgba(var(--card-bg-rgb, 0, 0, 0), 0) 22%
+        ),
+        linear-gradient(
+          to top,
+          rgba(var(--card-bg-rgb, 0, 0, 0), 0.55) 0%,
+          rgba(var(--card-bg-rgb, 0, 0, 0), 0) 26%
+        );
     }
 
     .a__card__grid {
