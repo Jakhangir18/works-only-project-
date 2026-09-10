@@ -27,7 +27,15 @@ if (href) {
   }));
 
   await page.evaluate(() => window.__card.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true })));
-  await page.waitForTimeout(2600);
+  // Wait for the entry to land rather than guessing at its duration: under
+  // load a fixed 2.6 s is sometimes short in WebKit, and a check that reports
+  // a slow machine as a defect is worse than no check. The signal is the
+  // timeline's own last act — clearing the compositing hints it set — not the
+  // teaser's opacity, which arrives before the rest of the timeline finishes.
+  const settled = () =>
+    getComputedStyle(document.querySelector('.dive__glow')).willChange === 'auto' &&
+    Number(getComputedStyle(document.querySelector('.dive__teaser')).opacity) > 0.99;
+  await page.waitForFunction(settled, null, { timeout: 15000 }).catch(() => {});
 
   const open = await page.evaluate(() => {
     const d = document.querySelector('.dive');
@@ -201,7 +209,12 @@ await browser.close();
   results.push(check('dive/webkit: a card is reachable', !!whref, whref || 'none'));
   if (whref) {
     await wpage.evaluate(() => window.__card.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true })));
-    await wpage.waitForTimeout(2600);
+    await wpage.waitForFunction(
+      () =>
+        getComputedStyle(document.querySelector('.dive__glow')).willChange === 'auto' &&
+        Number(getComputedStyle(document.querySelector('.dive__teaser')).opacity) > 0.99,
+      null, { timeout: 15000 },
+    ).catch(() => {});
     const wopen = await wpage.evaluate(() => {
       const d = document.querySelector('.dive');
       return {

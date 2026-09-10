@@ -1,6 +1,6 @@
 # What happened overnight, 9–10 September 2026
 
-Branch `feat/work-content`, 58 commits over `main`, pushed. Nothing merged,
+Branch `feat/work-content`, 59 commits over `main`, pushed. Nothing merged,
 nothing deployed. The preview is the tailnet link; the live Vercel site is
 untouched.
 

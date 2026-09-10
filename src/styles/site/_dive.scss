@@ -348,10 +348,13 @@
    the far layer rather than the plate, because the plate is a sibling that
    paints below the cover; the layer's own ::after comes after every child.
 
-   The stops are deeper than the card's because the far plane settles 12%
-   larger than the viewport, so its own edges are off screen: with the card's
-   0.55 at 22% the visible top edge would only reach 0.42. 0.72 at 24% and 28%
-   puts the visible edges back at the card's 0.56 and 0.58. */
+   The stops are the card's exactly. At frame one the far plane is laid out at
+   the card's own size, so any difference here is a visible step the moment the
+   visitor clicks — and frame one matching the card is the invariant the whole
+   rig is built on. The plane settles 12% oversize, which does put its own
+   edges off screen and leaves the wash a little shallower at rest than on the
+   card; that is the lesser of the two, and fixing it properly needs the stops
+   to move with the timeline rather than being deeper throughout. */
 .dive__camera.is-cover-ready .dive__layer--far::after {
   content: "";
   position: absolute;
@@ -361,13 +364,13 @@
   background:
     linear-gradient(
       to bottom,
-      rgba(var(--card-bg-rgb, 17, 17, 17), 0.72) 0%,
-      rgba(var(--card-bg-rgb, 17, 17, 17), 0) 24%
+      rgba(var(--card-bg-rgb, 17, 17, 17), 0.55) 0%,
+      rgba(var(--card-bg-rgb, 17, 17, 17), 0) 22%
     ),
     linear-gradient(
       to top,
-      rgba(var(--card-bg-rgb, 17, 17, 17), 0.72) 0%,
-      rgba(var(--card-bg-rgb, 17, 17, 17), 0) 28%
+      rgba(var(--card-bg-rgb, 17, 17, 17), 0.55) 0%,
+      rgba(var(--card-bg-rgb, 17, 17, 17), 0) 26%
     );
 }
 
@@ -411,7 +414,11 @@
     rgba(0, 0, 0, 0.94) 0%,
     rgba(0, 0, 0, 0.88) 50%,
     rgba(0, 0, 0, 0.62) 78%,
-    rgba(0, 0, 0, 0.28) 90%,
+    // Above the interpolation line the neighbouring stops would draw, so the
+    // ramp actually softens here rather than stepping: linear between 0.62 and
+    // 0 puts 0.28 at this point, which would have been a stop that changed
+    // nothing.
+    rgba(0, 0, 0, 0.4) 90%,
     rgba(0, 0, 0, 0) 100%
   );
 
@@ -424,6 +431,15 @@
 
 .dive__teaser__inner {
   max-width: 46rem;
+
+  // Centred on a phone, so the eyebrow's hanging indent has to go: a negative
+  // margin is counted by line-box centring and would shift the numeral off the
+  // axis of the title beneath it.
+  @include mq(phone) {
+    .dive__teaser__eyebrow {
+      margin-left: 0;
+    }
+  }
   margin: 0 auto;
 
   text-align: left;
@@ -442,8 +458,12 @@
   vertical-align: top;
   // The negative left margin keeps the numeral flush with the title and blurb
   // below it; the plate's own padding would otherwise indent it half an em.
+  // Only while the block is left-aligned — on a phone it is centred, and a
+  // negative margin there shifts the numeral off the axis of the title.
   margin: 0 0 0.75rem -0.5em;
-  padding: 0.25em 0.5em;
+  // letter-spacing's trailing space is inside the painted box, as on every
+  // other plate here.
+  padding: 0.25em calc(0.5em - 0.2em) 0.25em 0.5em;
   background: rgb(var(--card-bg-rgb, 17, 17, 17));
 
   font: 700 11px / 1 font-family(fraktion);

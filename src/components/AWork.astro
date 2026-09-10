@@ -27,7 +27,10 @@ function toRgbChannels(hex: string): string {
   // non-hex character, so "#ff00zz" would come back bright green, and a
   // four-digit or rgb() value would come back black — a plate in a colour the
   // card is not, over the project's own photograph, with nothing failing.
-  if (!/^([0-9a-f]{3,4}|[0-9a-f]{6,8})$/i.test(value)) {
+  // Not {6,8}: that range also matches seven characters, which slice(0, 6)
+  // would then silently truncate — a plate in a colour nobody wrote, with
+  // nothing failing, which is the case this guard exists for.
+  if (!/^([0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(value)) {
     throw new Error(
       `works.ts palette.background must be a hex colour; got "${hex}". ` +
         "The card's text plate and edge scrim are built from its channels.",
