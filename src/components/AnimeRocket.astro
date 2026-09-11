@@ -1,0 +1,342 @@
+---
+/**
+ * The rocket flight, and the wipe into space.
+ *
+ * zainabkabira.com does this with a paper plane riding a dashed path that
+ * threads between its work cards, and it does it with flat SVG and no
+ * animation library at all — which is the whole reason that site is rich and
+ * still does not stutter. This is the same trick with a rocket.
+ *
+ * The rocket rides an `offset-path`. One property, `offset-distance`, is
+ * animated; the browser composites it and nothing in the document lays out
+ * again. The flame is four hand-drawn shapes on a short CSS loop, no canvas.
+ * As the rocket leaves to the right the flame grows into a wipe that takes the
+ * page from white to the dark section below it.
+ */
+---
+
+<section class="rocket-flight" aria-label="Engineering rocket">
+  <div class="rocket-flight__sky" aria-hidden="true">
+    {/* The path the rocket rides and the trail it leaves. One SVG, drawn once,
+        never touched after that: the rocket is a separate element so the path
+        itself never has to re-render. */}
+    <svg
+      class="rocket-flight__path"
+      viewBox="0 0 1000 700"
+      preserveAspectRatio="none"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path
+        class="rocket-flight__trail js-rocket-trail"
+        d="M 60 640 C 240 560 300 300 520 260 C 720 224 800 150 1040 40"
+        fill="none"
+      ></path>
+    </svg>
+
+    <div class="rocket-flight__craft js-rocket-craft">
+      <div class="rocket-flight__flame" aria-hidden="true">
+        <span class="rocket-flight__flame__tongue"></span>
+        <span class="rocket-flight__flame__tongue"></span>
+        <span class="rocket-flight__flame__tongue"></span>
+      </div>
+
+      {/* Flat, three colours, no gradient — the anime read comes from the hard
+          edges and the single highlight, not from rendering. */}
+      <svg
+        class="rocket-flight__body"
+        viewBox="0 0 64 128"
+        aria-hidden="true"
+        focusable="false"
+      >
+        <path
+          class="rocket-flight__hull"
+          d="M32 2c12 14 18 32 18 52v34H14V54C14 34 20 16 32 2Z"></path>
+        <path class="rocket-flight__fin" d="M14 66 2 104l12-6V66Z"></path>
+        <path class="rocket-flight__fin" d="M50 66l12 38-12-6V66Z"></path>
+        <circle class="rocket-flight__port" cx="32" cy="48" r="10"></circle>
+        <path
+          class="rocket-flight__shine"
+          d="M26 20c-3 8-4 17-4 26h5c0-9 1-18 3-26Z"></path>
+        <path class="rocket-flight__skirt" d="M14 88h36v10H14Z"></path>
+      </svg>
+    </div>
+
+    {/* The wipe. It is the flame's colour, grows from the rocket's exit corner
+        and hands the screen to the section below. */}
+    <div class="rocket-flight__wipe js-rocket-wipe" aria-hidden="true"></div>
+  </div>
+
+  <div class="rocket-flight__copy">
+    <p class="rocket-flight__kicker">Engineering Rocket</p>
+    <h2 class="rocket-flight__title">Three years of a rocket club</h2>
+    <p class="rocket-flight__blurb">
+      Model rockets designed, printed and flown in Mangystau — and the club that
+      built them.
+    </p>
+    <a class="rocket-flight__link" href="/work/engineering-rocket/">
+      Deep dive
+      <span aria-hidden="true">→</span>
+    </a>
+  </div>
+</section>
+
+<script>
+  import { initRocketFlight } from "../utils/RocketFlight";
+  initRocketFlight();
+</script>
+
+<style lang="scss">
+  @use "../styles/helpers/colors" as *;
+  @use "../styles/helpers/fonts" as *;
+  @use "../styles/helpers/responsive" as *;
+
+  .rocket-flight {
+    position: relative;
+    min-height: 150svh;
+    padding: 6rem 1.5rem;
+    background: color(secondary);
+    overflow: hidden;
+  }
+
+  .rocket-flight__sky {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .rocket-flight__path {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .rocket-flight__trail {
+    stroke: color(rule);
+    stroke-width: 2;
+    stroke-dasharray: 7 9;
+    stroke-linecap: round;
+    /* The whole route is visible the whole time, the way the paper plane's
+       path is on zainabkabira.com: it reads as where the rocket is going
+       rather than as a tail it drags. Nothing animates on this element, so it
+       paints once. */
+    vector-effect: non-scaling-stroke;
+  }
+
+  .rocket-flight__craft {
+    position: absolute;
+    top: 0;
+    left: 0;
+    /* The transform below positions it; these keep its own box out of the way
+       so the translate is measured from the section's top-left corner. */
+    margin-left: calc(clamp(34px, 4.4vw, 62px) / -2);
+    margin-top: calc(clamp(34px, 4.4vw, 62px) * -1.2);
+    width: clamp(34px, 4.4vw, 62px);
+
+    /* Not `offset-path`. That resolves its coordinates in CSS pixels against
+       this element's containing block, while the trail above is an SVG
+       stretched to the section with preserveAspectRatio="none" — the two
+       spaces cannot be made to agree, and the rocket flies somewhere the trail
+       is not. The controller samples the real path once per resize and writes
+       a transform here instead, which is the same cost to composite and is
+       guaranteed to sit on the line. */
+    transform: translate3d(var(--x, 0px), var(--y, 0px), 0)
+      rotate(var(--a, 0deg));
+    transform-origin: 50% 50%;
+    will-change: transform;
+  }
+
+  .rocket-flight__body {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .rocket-flight__hull {
+    fill: color(secondary);
+    stroke: color(primary);
+    stroke-width: 3.5;
+    stroke-linejoin: round;
+  }
+
+  .rocket-flight__fin {
+    fill: color(accent);
+    stroke: color(primary);
+    stroke-width: 3.5;
+    stroke-linejoin: round;
+  }
+
+  .rocket-flight__port {
+    fill: color(secondary);
+    stroke: color(primary);
+    stroke-width: 3.5;
+  }
+
+  .rocket-flight__shine {
+    fill: color(primary);
+    opacity: 0.14;
+  }
+
+  .rocket-flight__skirt {
+    fill: color(primary);
+  }
+
+  .rocket-flight__flame {
+    position: absolute;
+    top: 96%;
+    left: 50%;
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    transform: translateX(-50%);
+  }
+
+  .rocket-flight__flame__tongue {
+    width: 26%;
+    height: 0;
+    margin: 0 2%;
+    /* A tongue of flame is a triangle with a rounded base; three of them at
+       different phases read as one flickering exhaust. */
+    border-left: 0.22em solid transparent;
+    border-right: 0.22em solid transparent;
+    border-top: 1.1em solid color(accent);
+    border-radius: 0 0 40% 40%;
+    animation: rocket-flame 420ms steps(3, end) infinite;
+
+    &:nth-child(2) {
+      border-top-width: 1.8em;
+      border-top-color: #ff8a3d;
+      animation-duration: 300ms;
+    }
+
+    &:nth-child(3) {
+      animation-delay: 150ms;
+    }
+  }
+
+  @keyframes rocket-flame {
+    0% {
+      transform: scaleY(1);
+      opacity: 1;
+    }
+    50% {
+      transform: scaleY(0.62);
+      opacity: 0.82;
+    }
+    100% {
+      transform: scaleY(1);
+      opacity: 1;
+    }
+  }
+
+  .rocket-flight__wipe {
+    position: absolute;
+    z-index: 1;
+    top: 0;
+    right: 0;
+    /* Centred on the corner the rocket leaves through, and big enough that at
+       full scale its radius clears the viewport diagonal — otherwise the far
+       corner of the section stays white while the rest has already gone. */
+    width: 300vmax;
+    height: 300vmax;
+    transform: translate(50%, -50%) scale(var(--wipe, 0));
+    transform-origin: center;
+
+    border-radius: 50%;
+    /* Flame at the leading edge, the space section's own colour behind it, so
+       the hand-off has no seam: what the wipe leaves behind is exactly what
+       the next section paints. */
+    background: radial-gradient(
+      circle at 50% 50%,
+      #120b2a 0%,
+      #120b2a 62%,
+      color(accent) 78%,
+      #ff8a3d 92%,
+      #ffd9a8 100%
+    );
+    /* Scale is the only thing that changes, so the wipe is a single composited
+       layer rather than a repaint of the section under it. */
+    will-change: transform;
+  }
+
+  .rocket-flight__copy {
+    position: relative;
+    /* Above the wipe: the reader has to be able to finish the sentence while
+       the flame is already climbing. It fades only at the very end. */
+    z-index: 2;
+    max-width: 30rem;
+    margin-left: auto;
+    padding-top: 26svh;
+    color: color(primary);
+    opacity: var(--copy, 1);
+  }
+
+  .rocket-flight__kicker {
+    margin: 0 0 1rem;
+    font: 700 0.6875rem / 1 font-family(fraktion);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: color(accent);
+  }
+
+  .rocket-flight__title {
+    margin: 0 0 1rem;
+    font: 400 clamp(2rem, 4.4vw, 3.5rem) / 1.05 font-family(editorial);
+    letter-spacing: -0.02em;
+  }
+
+  .rocket-flight__blurb {
+    margin: 0 0 1.75rem;
+    font: 400 clamp(0.9375rem, 1.2vw, 1.0625rem) / 1.6 font-family(fraktion);
+    color: color(ink-soft);
+  }
+
+  .rocket-flight__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
+
+    border: 1px solid color(primary);
+    border-radius: 999px;
+
+    font: 700 0.6875rem / 1 font-family(fraktion);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    text-decoration: none;
+    color: color(primary);
+
+    transition: background-color 240ms ease, color 240ms ease;
+
+    &:hover,
+    &:focus-visible {
+      background: color(primary);
+      color: color(secondary);
+    }
+  }
+
+  @include mq(phone) {
+    .rocket-flight__copy {
+      margin-left: 0;
+      padding-top: 20svh;
+    }
+  }
+
+  /* Stillness, not absence: the rocket sits where its path starts, the flame
+     holds one shape, and the wipe never runs — the section below simply
+     follows this one. */
+  @media (prefers-reduced-motion: reduce) {
+    .rocket-flight__craft {
+      offset-distance: 0%;
+    }
+
+    .rocket-flight__flame__tongue {
+      animation: none;
+    }
+
+    .rocket-flight__wipe {
+      display: none;
+    }
+  }
+</style>
