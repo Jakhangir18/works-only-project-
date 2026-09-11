@@ -1,0 +1,233 @@
+---
+import { works } from "../data/works";
+import { timeline } from "../data/timeline";
+
+/**
+ * The work, as the reference lays it out: one bordered panel per project, a
+ * corner label, a very large title, a couple of tags, a way in, and the
+ * project's own photograph large and tilted.
+ *
+ * No pinning and no scrub. Each panel is an ordinary full-height section,
+ * which is exactly why the reference scrolls as smoothly as it does — the
+ * browser is doing nothing but scrolling.
+ *
+ * The tags are not invented. Each one is the kind and the year already
+ * confirmed for that project in the timeline, matched by route; a project with
+ * no timeline entry simply shows fewer tags rather than a guess.
+ */
+
+const KIND_LABEL: Record<string, string> = {
+  work: "Work",
+  research: "Research",
+  competition: "Competition",
+  club: "Club",
+};
+
+function tagsFor(site: string): string[] {
+  const entry = timeline.find((item) => item.href === site);
+  if (!entry) return [];
+  const year = entry.start.slice(0, 4);
+  return [KIND_LABEL[entry.kind] ?? entry.kind, year];
+}
+
+const panels = works.map((work, index) => ({
+  ...work,
+  index: String(index + 1).padStart(2, "0"),
+  tags: tagsFor(work.site),
+}));
+---
+
+<section class="anime-work" id="work" aria-label="Work">
+  {
+    panels.map((panel) => (
+      <article class="anime-work__panel">
+        <p class="anime-work__label">Case {panel.index}</p>
+
+        <div class="anime-work__inner">
+          <div class="anime-work__media">
+            {panel.cover ? (
+              <img
+                src={panel.cover.src}
+                alt={panel.cover.alt}
+                width={panel.cover.width}
+                height={panel.cover.height}
+                loading="lazy"
+                decoding="async"
+                style={`object-position:${panel.cover.focalPoint.x} ${panel.cover.focalPoint.y};`}
+              />
+            ) : (
+              <div class="anime-work__poster" aria-hidden="true">
+                <span>{panel.poster.mark}</span>
+              </div>
+            )}
+          </div>
+
+          <div class="anime-work__copy">
+            <h2 class="anime-work__title">{panel.title}</h2>
+            <p class="anime-work__blurb">{panel.blurb}</p>
+
+            {panel.tags.length > 0 && (
+              <ul class="anime-work__tags">
+                {panel.tags.map((tag) => (
+                  <li>#{tag}</li>
+                ))}
+              </ul>
+            )}
+
+            <a class="anime-work__link" href={panel.site}>
+              Deep dive
+              <span aria-hidden="true">→</span>
+            </a>
+          </div>
+        </div>
+      </article>
+    ))
+  }
+</section>
+
+<style lang="scss">
+  @use "../styles/helpers/colors" as *;
+  @use "../styles/helpers/fonts" as *;
+  @use "../styles/helpers/responsive" as *;
+
+  .anime-work {
+    background: color(secondary);
+    color: color(primary);
+  }
+
+  .anime-work__panel {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+
+    min-height: 100svh;
+    padding: 5rem clamp(1.5rem, 5vw, 5rem) 4rem;
+
+    /* One hairline between panels rather than a box around each: the reference
+       reads as a single ruled sheet, not as a stack of cards. */
+    border-top: 1px solid color(rule);
+  }
+
+  .anime-work__label {
+    position: absolute;
+    top: 2rem;
+    left: clamp(1.5rem, 5vw, 5rem);
+    margin: 0;
+
+    font: 400 0.6875rem / 1 font-family(fraktion);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: color(ink-soft);
+  }
+
+  .anime-work__inner {
+    display: grid;
+    grid-template-columns: 1.15fr 1fr;
+    gap: clamp(2rem, 5vw, 5rem);
+    align-items: center;
+    width: 100%;
+    max-width: 1180px;
+    margin: 0 auto;
+  }
+
+  .anime-work__media {
+    position: relative;
+
+    img {
+      display: block;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 4 / 3;
+      object-fit: cover;
+
+      border-radius: 18px;
+      /* The reference tilts its device mockups a few degrees. One static
+         transform, so the image is rastered once at its final size and never
+         scaled up inside a promoted layer. */
+      transform: rotate(-2.2deg);
+      box-shadow: 0 24px 60px rgba(11, 11, 12, 0.16);
+    }
+  }
+
+  .anime-work__poster {
+    display: grid;
+    place-items: center;
+    aspect-ratio: 4 / 3;
+    border-radius: 18px;
+    background: color(rule);
+
+    span {
+      font: 400 clamp(3rem, 8vw, 6rem) / 1 font-family(bigger);
+      color: color(ink-soft);
+    }
+  }
+
+  .anime-work__title {
+    margin: 0 0 1rem;
+    font: 400 clamp(2.25rem, 5.2vw, 4.25rem) / 1.02 font-family(editorial);
+    letter-spacing: -0.025em;
+  }
+
+  .anime-work__blurb {
+    margin: 0 0 1.5rem;
+    max-width: 34ch;
+    font: 400 clamp(0.9375rem, 1.2vw, 1.0625rem) / 1.65 font-family(fraktion);
+    color: color(ink-soft);
+  }
+
+  .anime-work__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+    margin: 0 0 1.75rem;
+    padding: 0;
+    list-style: none;
+
+    li {
+      font: 400 0.6875rem / 1 font-family(fraktion);
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: color(ink-soft);
+    }
+  }
+
+  .anime-work__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.8125rem 1.375rem;
+
+    border: 1px solid color(primary);
+    border-radius: 999px;
+
+    font: 700 0.6875rem / 1 font-family(fraktion);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    text-decoration: none;
+    color: color(primary);
+
+    transition: background-color 240ms ease, color 240ms ease;
+
+    &:hover,
+    &:focus-visible {
+      background: color(primary);
+      color: color(secondary);
+    }
+  }
+
+  @include mq(tablet-sm) {
+    .anime-work__inner {
+      grid-template-columns: 1fr;
+      gap: 2rem;
+    }
+
+    .anime-work__media img {
+      transform: none;
+    }
+
+    .anime-work__blurb {
+      max-width: none;
+    }
+  }
+</style>
