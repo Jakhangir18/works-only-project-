@@ -22,7 +22,14 @@ const browser = await chromium.launch();
       kb: Math.round(res.reduce((n, r) => n + (r.transferSize || 0), 0) / 1024),
     };
   });
-  await page.waitForTimeout(4000);
+  // Wait for the set to finish rather than for a stopwatch. The loader fetches
+  // through a window of six now instead of putting all 240 on the wire at
+  // once, so a fixed four seconds catches it mid-way — 186 of 240 on this host
+  // — and reads pacing as a broken preload. What matters is that the whole set
+  // arrives, not how much of it arrived by an arbitrary instant.
+  for (let waited = 0; waited < 30000 && frames.length < 240; waited += 500) {
+    await page.waitForTimeout(500);
+  }
   // Frame 001 is deliberately fetched at once so the section is never blank
   // when it first appears; the other 239 must wait for idle or a scroll.
   results.push(check('rocket: only the first frame is on the critical path', atLoad <= 1 && onlyFirst, `${atLoad} frames at load: ${frames.map((u) => u.split('/').pop()).join(',')}`));
@@ -31,7 +38,7 @@ const browser = await chromium.launch();
   // deferral broke.
   results.push(check('rocket: the set is not on the critical path', atLoadStats.frames <= 6, `${atLoadStats.frames} frames by load`));
   results.push(check('rocket: critical path stays under 1 MB', atLoadStats.kb < 1024, `${atLoadStats.kb} KB by load`));
-  results.push(check('rocket: the set does load once idle', frames.length >= 200, `${frames.length} frames after idle`));
+  results.push(check('rocket: the whole set loads once idle', frames.length >= 238, `${frames.length} of 240 frames`));
   await ctx.close();
 }
 

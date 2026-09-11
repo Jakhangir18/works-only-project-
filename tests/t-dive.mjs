@@ -19,16 +19,28 @@ const results = [];
 async function settle(page, results, tag) {
   const ok = await page
     .waitForFunction(() => {
+      const glow = document.querySelector('.dive__glow');
+      const vignette = document.querySelector('.dive__vignette');
       const teaser = document.querySelector('.dive__teaser');
       const close = document.querySelector('.dive__close');
-      if (!teaser || !close) return false;
-      return Number(getComputedStyle(teaser).opacity) >= 0.999 &&
+      if (!glow || !vignette || !teaser || !close) return false;
+      // The timeline's own last act. A display:none element still reports the
+      // will-change it was given — measured in both engines — so this flips
+      // only when onComplete clears it, which is the completion signal itself
+      // rather than a proxy for it.
+      const hintsCleared =
+        getComputedStyle(glow).willChange === 'auto' &&
+        getComputedStyle(vignette).willChange === 'auto';
+      return hintsCleared &&
+        Number(getComputedStyle(teaser).opacity) >= 0.999 &&
         Number(getComputedStyle(close).opacity) >= 0.999;
     }, null, { timeout: 15000 })
     .then(() => true)
     .catch(() => false);
-  results.push(check(`${tag} the entry timeline finishes`, ok, 'teaser or close control never reached full opacity in 15 s'));
-  await page.waitForTimeout(700);
+  results.push(check(`${tag} the entry timeline finishes`, ok, 'the entry never cleared its compositing hints in 15 s'));
+  // Only a raster margin now, not a bridge: clearing will-change repaints the
+  // layers, and the pixel checks below read the screen.
+  await page.waitForTimeout(250);
   return ok;
 }
 
@@ -55,9 +67,16 @@ if (href) {
   }));
 
   await page.evaluate(() => window.__card.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true })));
-  await settle(page, results, 'dive');
+  // The return matters: without an overlay every read below is against null,
+  // and an unhandled throw here loses the whole suite's results rather than
+  // naming the one thing that went wrong.
+  const opened = await settle(page, results, 'dive');
 
   const open = await page.evaluate(() => {
+    const hint = (sel) => {
+      const el = document.querySelector(sel);
+      return el ? getComputedStyle(el).willChange : null;
+    };
     const d = document.querySelector('.dive');
     const t = document.querySelector('.dive__teaser');
     const c = document.querySelector('.dive__close');
@@ -66,12 +85,21 @@ if (href) {
       hidden: d?.getAttribute('aria-hidden'),
       teaser: t ? getComputedStyle(t).opacity : null,
       close: c ? getComputedStyle(c).opacity : null,
-      glowHint: getComputedStyle(document.querySelector('.dive__glow')).willChange,
-      vignetteHint: getComputedStyle(document.querySelector('.dive__vignette')).willChange,
+      glowHint: hint('.dive__glow'),
+      vignetteHint: hint('.dive__vignette'),
       scrollLocked: document.documentElement.style.overflow === 'hidden',
       links: [...document.querySelectorAll('link[rel=prefetch]')].map((l) => l.getAttribute('href')),
     };
   });
+  if (!opened) {
+    // Everything below describes a dive that is on screen. Reporting each of
+    // them against an overlay that never appeared turns one failure into nine.
+    results.push(check('dive: no runtime errors', errors.length === 0, errors.slice(0, 2).join(' | ')));
+    await browser.close();
+    const s = summarize(results);
+    console.log(JSON.stringify({ suite: 'dive', ...s }, null, 1));
+    process.exit(s.failed ? 1 : 0);
+  }
   results.push(check('dive: opens', open.isOpen === true, `is-open=${open.isOpen}`));
   results.push(check('dive: teaser is shown once settled', Number(open.teaser) === 1, `opacity ${open.teaser}`));
   results.push(check('dive: close control is shown', Number(open.close) === 1, `opacity ${open.close}`));
@@ -227,9 +255,14 @@ await browser.close();
   const wbox = await workBox(wpage);
   const whref = wbox ? await findCardInView(wpage, wbox) : null;
   results.push(check('dive/webkit: a card is reachable', !!whref, whref || 'none'));
+  let wopened = false;
   if (whref) {
     await wpage.evaluate(() => window.__card.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true })));
-    await settle(wpage, results, 'dive/webkit');
+    wopened = await settle(wpage, results, 'dive/webkit');
+  }
+  // Same reason as the Chromium block: the reads below are against an overlay
+  // that has to be on screen, and one clear failure beats five derived ones.
+  if (wopened) {
     const wopen = await wpage.evaluate(() => {
       const d = document.querySelector('.dive');
       return {
