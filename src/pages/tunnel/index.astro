@@ -1,0 +1,107 @@
+---
+import Navigation from "../../components/Navigation.astro";
+import HeroHome from "../../components/HeroHome.astro";
+import TransitionVideo from "../../components/TransitionVideo.astro";
+import WhyWorkWithMe from "../../components/WhyWorkWithMe.astro";
+import SWork from "../../components/SWork.astro";
+import STimeline from "../../components/STimeline.astro";
+import ContactSection from "../../components/ContactSection.astro";
+import "../../styles/global.scss";
+---
+
+<html lang="en" class="is-scroll-blocked theme-contrasted">
+  <head>
+    <meta charset="utf-8" />
+
+    <title>Jakhangir — the tunnel version</title>
+
+    <meta
+      name="description"
+      content="Jakhangir Tynshimov — computer science and physics at Oregon State. Haptic hardware, sound-locating glasses, camera research for remote chemistry labs, and an industrial inspection tablet."
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+
+    <meta name="robots" content="noindex, nofollow" />
+
+    <link rel="icon" type="image/svg+xml" href="/icons/favicon.svg" />
+    <link rel="apple-touch-icon" href="/icons/favicon.svg" />
+
+    <!-- Link previews. The card image is a capture of this page's own hero, so
+         what someone sees in a message is what they land on. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Jakhangir Tynshimov" />
+    <meta
+      property="og:description"
+      content="Computer science and physics at Oregon State. Haptic hardware, sound-locating glasses, camera research for remote chemistry labs, and an industrial inspection tablet."
+    />
+    <meta property="og:image" content={new URL("/og-home.jpg", Astro.site)} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:url" content={new URL("/tunnel/", Astro.site)} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Jakhangir Tynshimov" />
+    <meta
+      name="twitter:description"
+      content="Computer science and physics at Oregon State. Haptic hardware, sound-locating glasses, camera research for remote chemistry labs, and an industrial inspection tablet."
+    />
+    <meta name="twitter:image" content={new URL("/og-home.jpg", Astro.site)} />
+
+    <meta name="theme-color" content="#160000" />
+    <meta name="msapplication-navbutton-color" content="#160000" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="#160000" />
+
+    <link rel="preload" href="/fonts/PPEditorialNew-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous" />
+    <!-- PPEditorialNew-Ultralight.woff2 (weight 200) is not preloaded: no rule
+         anywhere sets font-weight: 200, so the browser never requests it and
+         preloading it only ever produced an unused-preload warning. -->
+    <link rel="preload" href="/fonts/PPFraktionMono-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous" />
+    <link rel="preload" href="/fonts/PPFraktionMono-Bold.woff2" as="font" type="font/woff2" crossorigin="anonymous" />
+    <link rel="preload" href="/fonts/Bigger-Display.woff2" as="font" type="font/woff2" crossorigin="anonymous" />
+  </head>
+
+  <body>
+    <div class="site-loader js-site-loader" aria-hidden="true">
+      <div class="site-loader__inner">
+        <div class="site-loader__logo">
+          <span class="site-loader__logo__letter site-loader__logo__letter--j">J</span>
+          <span class="site-loader__logo__letter site-loader__logo__letter--t">T</span>
+        </div>
+        <div class="site-loader__progress">
+          <div class="site-loader__progress__bar js-loader-progress"></div>
+        </div>
+        <div class="site-loader__text">Loading Experience</div>
+      </div>
+    </div>
+
+    <div class="site-wrapper js-site-wrapper" style="opacity: 0;">
+      <Navigation />
+      <main>
+      <HeroHome />
+      <TransitionVideo />
+      <WhyWorkWithMe />
+
+      <div class="works-layer">
+        <SWork />
+      </div>
+
+      <STimeline />
+
+      <ContactSection />
+      </main>
+    </div>
+  </body>
+
+  <script>
+    import { initSite } from "../../utils/SiteController";
+    initSite();
+  </script>
+
+  <style lang="scss">
+    .works-layer {
+      position: relative;
+      z-index: 40;
+      background: #000000;
+    }
+  </style>
+</html>

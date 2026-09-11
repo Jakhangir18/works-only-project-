@@ -1,15 +1,12 @@
 ---
-import Navigation from "../components/Navigation.astro";
-import HeroHome from "../components/HeroHome.astro";
-import TransitionVideo from "../components/TransitionVideo.astro";
-import WhyWorkWithMe from "../components/WhyWorkWithMe.astro";
-import SWork from "../components/SWork.astro";
+import AnimeIntro from "../components/AnimeIntro.astro";
+import AnimeHero from "../components/AnimeHero.astro";
 import STimeline from "../components/STimeline.astro";
 import ContactSection from "../components/ContactSection.astro";
 import "../styles/global.scss";
 ---
 
-<html lang="en" class="is-scroll-blocked theme-contrasted">
+<html lang="en" class="is-scroll-blocked theme-anime">
   <head>
     <meta charset="utf-8" />
 
@@ -27,8 +24,6 @@ import "../styles/global.scss";
     <link rel="icon" type="image/svg+xml" href="/icons/favicon.svg" />
     <link rel="apple-touch-icon" href="/icons/favicon.svg" />
 
-    <!-- Link previews. The card image is a capture of this page's own hero, so
-         what someone sees in a message is what they land on. -->
     <meta property="og:type" content="website" />
     <meta property="og:title" content="Jakhangir Tynshimov" />
     <meta
@@ -47,61 +42,29 @@ import "../styles/global.scss";
     />
     <meta name="twitter:image" content={new URL("/og-home.jpg", Astro.site)} />
 
-    <meta name="theme-color" content="#160000" />
-    <meta name="msapplication-navbutton-color" content="#160000" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="#160000" />
+    <!-- The light theme's ground. The browser chrome on a phone matches the
+         page rather than the old near-black. -->
+    <meta name="theme-color" content="#ffffff" />
 
-    <link rel="preload" href="/fonts/PPEditorialNew-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous" />
-    <!-- PPEditorialNew-Ultralight.woff2 (weight 200) is not preloaded: no rule
-         anywhere sets font-weight: 200, so the browser never requests it and
-         preloading it only ever produced an unused-preload warning. -->
-    <link rel="preload" href="/fonts/PPFraktionMono-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous" />
-    <link rel="preload" href="/fonts/PPFraktionMono-Bold.woff2" as="font" type="font/woff2" crossorigin="anonymous" />
     <link rel="preload" href="/fonts/Bigger-Display.woff2" as="font" type="font/woff2" crossorigin="anonymous" />
+    <link rel="preload" href="/fonts/PPFraktionMono-Regular.woff2" as="font" type="font/woff2" crossorigin="anonymous" />
+    <!-- Editorial New is not preloaded here: nothing above the fold uses it on
+         this page, and a preload the first screen does not need is bandwidth
+         taken from the one it does. -->
   </head>
 
   <body>
-    <div class="site-loader js-site-loader" aria-hidden="true">
-      <div class="site-loader__inner">
-        <div class="site-loader__logo">
-          <span class="site-loader__logo__letter site-loader__logo__letter--j">J</span>
-          <span class="site-loader__logo__letter site-loader__logo__letter--t">T</span>
-        </div>
-        <div class="site-loader__progress">
-          <div class="site-loader__progress__bar js-loader-progress"></div>
-        </div>
-        <div class="site-loader__text">Loading Experience</div>
-      </div>
-    </div>
+    <AnimeIntro />
 
-    <div class="site-wrapper js-site-wrapper" style="opacity: 0;">
-      <Navigation />
-      <main>
-      <HeroHome />
-      <TransitionVideo />
-      <WhyWorkWithMe />
-
-      <div class="works-layer">
-        <SWork />
-      </div>
-
+    <main>
+      <AnimeHero />
       <STimeline />
-
       <ContactSection />
-      </main>
-    </div>
+    </main>
   </body>
 
   <script>
-    import { initSite } from "../utils/SiteController";
-    initSite();
+    import { initAnimeSite } from "../utils/AnimeSite";
+    initAnimeSite();
   </script>
-
-  <style lang="scss">
-    .works-layer {
-      position: relative;
-      z-index: 40;
-      background: #000000;
-    }
-  </style>
 </html>

@@ -17,3 +17,11 @@
     --color-#{"" + $variable}: #{$color};
   }
 }
+
+.theme-anime {
+  @each $variable, $color in map.get($theme-colors, "anime") {
+    --color-#{"" + $variable}: #{$color};
+  }
+
+  color-scheme: light;
+}

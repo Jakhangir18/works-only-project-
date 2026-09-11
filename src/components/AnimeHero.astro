@@ -1,0 +1,299 @@
+---
+import { works } from "../data/works";
+
+/**
+ * The light hero: one huge headline bent along a shallow arc, a slow wheel of
+ * project covers turning behind it, and a slot where the drawn figure will go.
+ *
+ * The reference draws all of this inside a single WebGL canvas. This does not,
+ * deliberately. The headline is SVG text on a path — real glyphs, crisp at any
+ * size, no font atlas to build and no shader to keep in budget — and the wheel
+ * is CSS 3D, which is the same technique the letter tunnel in this repository
+ * already uses. Same picture, a fraction of the cost, and the text stays text.
+ *
+ * HEADLINE is one constant. It is the owner's name because that is the one
+ * thing on this page that needs no argument; a discipline line would be a
+ * claim, and claims on this site come from the fact list.
+ */
+
+const HEADLINE = "JAKHANGIR";
+
+const LINES = [
+  "Computer science & physics, Oregon State",
+  "Hardware, research, interfaces",
+];
+
+/* Covers turn on the wheel. Seven is enough to read as a ring and few enough
+   that each is large; the data is the same array the Work section uses, so a
+   new project joins the wheel by existing. */
+const wheel = works.filter((work) => work.cover).slice(0, 7);
+const step = 360 / Math.max(wheel.length, 1);
+---
+
+<section class="anime-hero" id="home" aria-label="Introduction">
+  <h1 class="u-sr-only">Jakhangir Tynshimov</h1>
+  <p class="u-sr-only">{LINES.join(". ")}</p>
+
+  <div class="anime-hero__stage js-anime-hero">
+    <div class="anime-hero__wheel js-anime-wheel" aria-hidden="true">
+      {
+        wheel.map((work, index) => (
+          <div
+            class="anime-hero__screen"
+            style={`--angle:${index * step}; --turn:${index * step}deg;`}
+          >
+            <img
+              src={work.cover!.src}
+              alt=""
+              width={work.cover!.width}
+              height={work.cover!.height}
+              loading="lazy"
+              decoding="async"
+            />
+          </div>
+        ))
+      }
+    </div>
+
+    {/* The drawn figure goes here. Until it exists the slot holds nothing and
+        occupies no space, so the headline and the wheel compose on their own
+        rather than around a gap. Dropping it in is one <img> and one rule. */}
+    <div class="anime-hero__figure" aria-hidden="true"></div>
+
+    <svg
+      class="anime-hero__headline"
+      viewBox="0 0 1000 260"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <defs>
+        <path id="anime-hero-arc" d="M 40 210 Q 500 40 960 210" fill="none" />
+      </defs>
+      <text>
+        <textPath href="#anime-hero-arc" startOffset="50%" text-anchor="middle">
+          {HEADLINE}
+        </textPath>
+      </text>
+    </svg>
+
+    {/* Two soft edges rather than one vignette: the reference blurs only the
+        left and right, so the wheel reads as passing behind a lens while the
+        top and bottom of the frame stay sharp. */}
+    <div class="anime-hero__lens anime-hero__lens--left" aria-hidden="true"></div>
+    <div class="anime-hero__lens anime-hero__lens--right" aria-hidden="true"></div>
+  </div>
+
+  <div class="anime-hero__lines" aria-hidden="true">
+    <p>{LINES[0]}</p>
+    <p>{LINES[1]}</p>
+  </div>
+
+  <a class="anime-hero__explore" href="#work">
+    Explore
+    <span aria-hidden="true">↓</span>
+  </a>
+</section>
+
+<script>
+  import { initAnimeHero } from "../utils/AnimeHero";
+  initAnimeHero();
+</script>
+
+<style lang="scss">
+  @use "../styles/helpers/colors" as *;
+  @use "../styles/helpers/fonts" as *;
+  @use "../styles/helpers/responsive" as *;
+
+  .anime-hero {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    /* Small viewport units: the address bar on a phone must not be able to
+       push the Explore link off the bottom of the first screen. */
+    min-height: 100svh;
+    padding: 6rem 1.5rem 3rem;
+
+    background: color(secondary);
+    color: color(primary);
+    overflow: hidden;
+  }
+
+  .anime-hero__stage {
+    position: relative;
+    width: 100%;
+    max-width: 1100px;
+    /* Wider than tall: the ring is a shallow ellipse on screen, so a squarer
+       stage only adds empty ground under it. */
+    aspect-ratio: 1000 / 480;
+
+    /* The wheel's children are laid out in 3D against this. */
+    perspective: 1400px;
+  }
+
+  .anime-hero__wheel {
+    position: absolute;
+    inset: 0;
+    transform-style: preserve-3d;
+
+    /* Only the tilt lives here, and it is a transform rather than a custom
+       property: a property set on an ancestor invalidates the style of every
+       node beneath it, which is the most expensive mistake this repository has
+       made. A transform does not. The turn itself is written on each card.
+       The base of -9 degrees lays the ring slightly away from the viewer so it
+       reads as a wheel rather than a flat circle of cards. */
+    /* The controller replaces this whole declaration each frame. The resting
+       value has to match its BASE_TILT or the first written frame jumps. */
+    transform: rotateX(-9deg);
+    will-change: transform;
+  }
+
+  .anime-hero__screen {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: clamp(88px, 11vw, 156px);
+    /* Half the width, so the card's own centre sits on the ring's axis. The
+       three clamp bounds have to stay in step with the width above. */
+    margin-left: clamp(-78px, -5.5vw, -44px);
+
+    /* Turn to this card's place on the ring, push out along the new z, then
+       turn back by the same amount so the card faces the viewer wherever it
+       is. That last rotation is what makes all seven readable at once — tangent
+       to the ring, the far half shows as mirrored photographs and has to be
+       hidden, which leaves three cards on screen out of seven.
+       `--turn` is the card's own angle plus the wheel's rotation, and the
+       controller writes it here, on the leaf that consumes it. */
+    transform: translateY(-50%) rotateY(var(--turn, 0deg))
+      translateZ(clamp(230px, 29vw, 400px)) rotateY(calc(-1 * var(--turn, 0deg)));
+    transform-style: preserve-3d;
+
+    border-radius: 12px;
+    overflow: hidden;
+    background: color(secondary);
+    box-shadow:
+      0 1px 2px rgba(11, 11, 12, 0.05),
+      0 14px 30px rgba(11, 11, 12, 0.08);
+
+    img {
+      display: block;
+      width: 100%;
+      height: auto;
+      /* Scenery, not the subject. These are documentary photographs rather
+         than the reference's pale app mockups, so they need lifting as well as
+         draining or the ring reads as a band of dark blocks. */
+      filter: grayscale(1) brightness(1.18) contrast(0.82);
+      opacity: 0.55;
+    }
+  }
+
+  .anime-hero__figure {
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    width: clamp(200px, 24vw, 340px);
+    transform: translateX(-50%);
+    /* Empty until the illustration arrives; it must not reserve a hole. */
+    min-height: 0;
+  }
+
+  .anime-hero__headline {
+    position: absolute;
+    inset: auto 0 auto 0;
+    top: 6%;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+
+    text {
+      font-family: font-family(bigger);
+      font-size: 150px;
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      fill: color(primary);
+    }
+  }
+
+  .anime-hero__lens {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: clamp(40px, 8vw, 130px);
+    pointer-events: none;
+
+    backdrop-filter: blur(9px);
+    -webkit-backdrop-filter: blur(9px);
+    /* The mask is what keeps the blur from having a visible edge: it fades to
+       nothing before it reaches the middle of the frame. */
+    mask-image: linear-gradient(to var(--to), #000, transparent);
+    -webkit-mask-image: linear-gradient(to var(--to), #000, transparent);
+  }
+
+  .anime-hero__lens--left {
+    left: 0;
+    --to: right;
+  }
+
+  .anime-hero__lens--right {
+    right: 0;
+    --to: left;
+  }
+
+  .anime-hero__lines {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 3rem;
+    justify-content: center;
+    margin-top: 1.5rem;
+
+    p {
+      margin: 0;
+      font: 400 clamp(0.75rem, 1vw, 0.875rem) / 1.4 font-family(fraktion);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: color(ink-soft);
+    }
+  }
+
+  .anime-hero__explore {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 2rem;
+    padding: 0.75rem 1.25rem;
+
+    border: 1px solid color(primary);
+    border-radius: 999px;
+
+    font: 700 0.6875rem / 1 font-family(fraktion);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    text-decoration: none;
+    color: color(primary);
+
+    transition: background-color 240ms ease, color 240ms ease;
+
+    &:hover,
+    &:focus-visible {
+      background: color(primary);
+      color: color(secondary);
+    }
+  }
+
+  @include mq(phone) {
+    .anime-hero {
+      padding-top: 5rem;
+    }
+
+    .anime-hero__stage {
+      aspect-ratio: 1 / 1.05;
+    }
+
+    .anime-hero__headline text {
+      font-size: 190px;
+    }
+  }
+</style>
