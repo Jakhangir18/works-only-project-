@@ -1,7 +1,7 @@
 // The rocket sequence: its 240 frames stay off the critical path, it still
 // scrubs, and it never shows a blank canvas — including on a slow link.
 import { chromium } from 'playwright';
-import { BASE, check, summarize } from './lib.mjs';
+import { BASE, check, summarize, TUNNEL } from './lib.mjs';
 
 const results = [];
 const browser = await chromium.launch();
@@ -12,7 +12,7 @@ const browser = await chromium.launch();
   const page = await ctx.newPage();
   const frames = [];
   page.on('request', (r) => { if (/ezgif-frame/.test(r.url())) frames.push(r.url()); });
-  await page.goto(BASE + '/', { waitUntil: 'load' });
+  await page.goto(BASE + TUNNEL, { waitUntil: 'load' });
   const atLoad = frames.length;
   const onlyFirst = frames.every((u) => /frame-001\./.test(u));
   const atLoadStats = await page.evaluate(() => {
@@ -46,7 +46,7 @@ const browser = await chromium.launch();
 {
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   const page = await ctx.newPage();
-  await page.goto(BASE + '/', { waitUntil: 'load' });
+  await page.goto(BASE + TUNNEL, { waitUntil: 'load' });
   await page.waitForTimeout(6000);
   const story = await page.evaluate(() => {
     const s = document.querySelector('.js-rocket-story');
@@ -86,7 +86,7 @@ const browser = await chromium.launch();
   await cdp.send('Network.emulateNetworkConditions', {
     offline: false, latency: 150, downloadThroughput: 400 * 1024, uploadThroughput: 200 * 1024,
   });
-  await page.goto(BASE + '/', { waitUntil: 'load', timeout: 120000 });
+  await page.goto(BASE + TUNNEL, { waitUntil: 'load', timeout: 120000 });
   await page.waitForTimeout(5500);
   const story = await page.evaluate(() => {
     const s = document.querySelector('.js-rocket-story');
@@ -120,7 +120,7 @@ const browser = await chromium.launch();
 {
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
   const page = await ctx.newPage();
-  await page.goto(BASE + '/', { waitUntil: 'load' });
+  await page.goto(BASE + TUNNEL, { waitUntil: 'load' });
   await page.waitForTimeout(6000);
   const story = await page.evaluate(() => {
     const s = document.querySelector('.js-rocket-story');
@@ -179,7 +179,7 @@ const browser = await chromium.launch();
       return orig.call(this, img, ...rest);
     };
   });
-  await page.goto(BASE + '/', { waitUntil: 'load', timeout: 120000 });
+  await page.goto(BASE + TUNNEL, { waitUntil: 'load', timeout: 120000 });
   await page.waitForTimeout(3000);
   const story = await page.evaluate(() => {
     const s = document.querySelector('.js-rocket-story');

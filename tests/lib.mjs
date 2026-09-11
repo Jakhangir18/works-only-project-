@@ -1,8 +1,17 @@
 // Shared helpers for the regression suite.
 export const BASE = process.env.SITE || 'http://127.0.0.1:4347';
 
+/**
+ * The tunnel-era home page. It did not go away when the light home page took
+ * over `/`: it is still built and still shipped, so the suites that test the
+ * letter tunnel, the dive, the rocket sequence and the old hero point here
+ * rather than being retired. When it is finally deleted they go with it.
+ */
+export const TUNNEL = '/tunnel/';
+
 export const ROUTES = [
   '/',
+  '/tunnel/',
   '/projects/ams/',
   '/work/touchpoint/',
   '/work/spoot/',

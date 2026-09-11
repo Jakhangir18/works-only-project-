@@ -1,7 +1,7 @@
 // The Work tunnel: it pins, the cards render, the covers arrive before the
 // scrub, the canvas draws, and the keyboard route to the projects exists.
 import { chromium, webkit } from 'playwright';
-import { BASE, check, summarize, workBox } from './lib.mjs';
+import { BASE, check, summarize, workBox, TUNNEL } from './lib.mjs';
 
 const results = [];
 
@@ -13,7 +13,7 @@ for (const [ename, engine] of Object.entries({ chromium, webkit })) {
     const page = await ctx.newPage();
     const covers = [];
     page.on('response', (r) => { if (/cover\.webp/.test(r.url())) covers.push(r.url().split('/').slice(-2)[0]); });
-    await page.goto(BASE + '/', { waitUntil: 'load' });
+    await page.goto(BASE + TUNNEL, { waitUntil: 'load' });
     await page.waitForTimeout(6000);
 
     const box = await workBox(page);

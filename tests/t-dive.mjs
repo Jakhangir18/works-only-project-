@@ -1,7 +1,7 @@
 // The dive: it opens from a card, shows the teaser and the close control,
 // prefetches the destination, closes cleanly, and leaks nothing over cycles.
 import { chromium, webkit } from 'playwright';
-import { BASE, check, summarize, workBox, findCardInView } from './lib.mjs';
+import { BASE, check, summarize, workBox, findCardInView, TUNNEL } from './lib.mjs';
 
 const results = [];
 
@@ -53,7 +53,7 @@ page.on('console', (m) => { if (m.type() === 'error' && !/favicon/.test(m.text()
 const prefetched = [];
 page.on('request', (r) => { if (r.resourceType() === 'other' && /\/work\/|\/projects\//.test(r.url())) prefetched.push(r.url()); });
 
-await page.goto(BASE + '/', { waitUntil: 'load' });
+await page.goto(BASE + TUNNEL, { waitUntil: 'load' });
 await page.waitForTimeout(6000);
 const box = await workBox(page);
 const href = await findCardInView(page, box);
@@ -205,7 +205,7 @@ if (href) {
   const rpage = await rctx.newPage();
   rpage.on('pageerror', (e) => errors.push(String(e).slice(0, 140)));
   rpage.on('console', (m) => { if (m.type() === 'error' && !/favicon/.test(m.text())) errors.push(m.text().slice(0, 140)); });
-  await rpage.goto(BASE + '/', { waitUntil: 'load' });
+  await rpage.goto(BASE + TUNNEL, { waitUntil: 'load' });
   await rpage.waitForTimeout(6000);
   const rbox = await workBox(rpage);
   const rhref = rbox ? await findCardInView(rpage, rbox) : null;
@@ -250,7 +250,7 @@ await browser.close();
   wpage.on('pageerror', (e) => werrors.push(String(e).slice(0, 140)));
   const warmed = [];
   wpage.on('request', (r) => { if (/\/work\/[a-z-]+\/?$/.test(r.url())) warmed.push(r.url()); });
-  await wpage.goto(BASE + '/', { waitUntil: 'load' });
+  await wpage.goto(BASE + TUNNEL, { waitUntil: 'load' });
   await wpage.waitForTimeout(6000);
   const wbox = await workBox(wpage);
   const whref = wbox ? await findCardInView(wpage, wbox) : null;

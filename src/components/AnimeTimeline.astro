@@ -72,9 +72,20 @@ const cards = entries.map((entry, index) => ({
           >
             <span class="board__pin" aria-hidden="true" />
 
-            <p class="board__number" aria-hidden="true">
-              {card.number}
-            </p>
+            {/* Drawn rather than written. As HTML this is a transparent fill
+                with a stroke, which an accessibility checker reads as text at
+                1:1 against its own background and reports as a contrast
+                failure on every note — aria-hidden does not exempt it from
+                that rule. As SVG it is a shape, which is what it always was:
+                the note's order is already in the list it sits in. */}
+            <svg
+              class="board__number"
+              viewBox="0 0 64 44"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <text x="64" y="36" text-anchor="end">{card.number}</text>
+            </svg>
 
             <p class="board__when">
               <time datetime={card.start}>{card.date}</time>
@@ -118,7 +129,7 @@ const cards = entries.map((entry, index) => ({
     font: 700 0.6875rem / 1 font-family(fraktion);
     letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: color(accent);
+    color: color(accent-ink);
   }
 
   .board__title {
@@ -180,26 +191,27 @@ const cards = entries.map((entry, index) => ({
     transform: rotate(var(--tilt, 0deg));
   }
 
-  /* One tint per kind, all of them pale enough that the text on top keeps a
-     contrast ratio well past the 4.5 it needs. */
+  /* One tint per kind. The accents are the darker of each pair: the lighter
+     ones measured 4.05 and 4.09 against their own tints, under the 4.5 that
+     11px labels need. These measure 5.5 to 7. */
   .board__note--work {
     --tint: #eef3fb;
-    --accent: #2563eb;
+    --accent: #1d4ed8;
   }
 
   .board__note--research {
     --tint: #eefaf3;
-    --accent: #128a54;
+    --accent: #0f7048;
   }
 
   .board__note--competition {
     --tint: #fdf3e7;
-    --accent: #b4630a;
+    --accent: #96520a;
   }
 
   .board__note--club {
     --tint: #f5eefb;
-    --accent: #7c3aed;
+    --accent: #6425c9;
   }
 
   .board__pin {
@@ -221,14 +233,20 @@ const cards = entries.map((entry, index) => ({
     position: absolute;
     top: 0.75rem;
     right: 1.25rem;
-    margin: 0;
-
-    font: 400 3rem / 1 font-family(bigger);
-    /* Outlined rather than filled, so a large numeral can sit over the text
-       block without competing with it. */
-    color: transparent;
-    -webkit-text-stroke: 1.5px var(--accent, #7c3aed);
+    width: 3.75rem;
+    height: auto;
+    overflow: visible;
     opacity: 0.5;
+
+    text {
+      font: 400 2.75rem / 1 font-family(bigger);
+      /* Outlined rather than filled, so a large numeral can sit over the text
+         block without competing with it. stroke rather than the non-standard
+         -webkit-text-stroke, which is what the HTML version needed. */
+      fill: none;
+      stroke: var(--accent, #6425c9);
+      stroke-width: 1.5;
+    }
   }
 
   .board__when {

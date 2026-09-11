@@ -31,6 +31,9 @@ $theme-colors: (
     shadow: #d8d8d8,
     white: #0b0b0c,
     accent: #f40c3f,
+    // The same red is 4.22:1 on white — fine for a heading, short of the 4.5
+    // that 11px labels need. Small type uses this one, measured at 4.94:1.
+    accent-ink: #e00538,
     ink-soft: #5b5b60,
     rule: #e2e2e4,
   ),

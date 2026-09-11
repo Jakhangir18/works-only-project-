@@ -1,7 +1,7 @@
 // Hero rolling titles: cycles, pauses when it cannot be seen, off under
 // reduced motion, and the longest title fits the mask at every width.
 import { chromium } from 'playwright';
-import { BASE, VIEWPORTS, check, summarize } from './lib.mjs';
+import { BASE, VIEWPORTS, check, summarize, TUNNEL } from './lib.mjs';
 
 const results = [];
 const browser = await chromium.launch();
@@ -10,7 +10,7 @@ const browser = await chromium.launch();
 {
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   const page = await ctx.newPage();
-  await page.goto(BASE + '/', { waitUntil: 'load' });
+  await page.goto(BASE + TUNNEL, { waitUntil: 'load' });
   await page.waitForTimeout(5200);
   const seen = [];
   const currents = [];
@@ -33,7 +33,7 @@ const browser = await chromium.launch();
 {
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   const page = await ctx.newPage();
-  await page.goto(BASE + '/', { waitUntil: 'load' });
+  await page.goto(BASE + TUNNEL, { waitUntil: 'load' });
   await page.waitForTimeout(5200);
   await page.evaluate(() => window.scrollTo({ top: window.innerHeight * 4, behavior: 'instant' }));
   await page.waitForTimeout(900);
@@ -53,7 +53,7 @@ const browser = await chromium.launch();
 {
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' });
   const page = await ctx.newPage();
-  await page.goto(BASE + '/', { waitUntil: 'load' });
+  await page.goto(BASE + TUNNEL, { waitUntil: 'load' });
   await page.waitForTimeout(5200);
   const first = await page.evaluate(() => document.querySelector('.rolling-text__item.is-current')?.textContent.trim());
   await page.waitForTimeout(6000);
@@ -69,7 +69,7 @@ const browser = await chromium.launch();
 {
   const ctx = await browser.newContext({ viewport: { width: 844, height: 340 } });
   const page = await ctx.newPage();
-  await page.goto(BASE + '/', { waitUntil: 'load' });
+  await page.goto(BASE + TUNNEL, { waitUntil: 'load' });
   await page.waitForTimeout(5200);
   const geom = await page.evaluate(() => {
     const r = document.querySelector('.rolling-text').getBoundingClientRect();
@@ -113,7 +113,7 @@ const browser = await chromium.launch();
 for (const [w, h, name] of VIEWPORTS) {
   const ctx = await browser.newContext({ viewport: { width: w, height: h } });
   const page = await ctx.newPage();
-  await page.goto(BASE + '/', { waitUntil: 'load' });
+  await page.goto(BASE + TUNNEL, { waitUntil: 'load' });
   await page.waitForTimeout(5200);
   const fit = await page.evaluate(() => {
     const vp = document.querySelector('.rolling-text__viewport');

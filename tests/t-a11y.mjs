@@ -24,18 +24,25 @@ for (const [w, h, size] of [[1440, 900, 'desktop'], [390, 844, 'phone']]) {
     // selector ever drifts the check has to go red rather than quietly stop
     // existing, which is the failure it was written to prevent in the first
     // place. On a route with no wrapper the predicate is true immediately.
+    // Two homes, two openings. The tunnel page fades a wrapper in; the light
+    // page has no wrapper at all and simply unlocks the document. Either way
+    // what has to be true before anything is graded is that the opening has
+    // finished — and on a route that has neither, immediately.
     const wrapperState = await page
       .waitForFunction(() => {
+        const blocked = document.documentElement.classList.contains('is-scroll-blocked');
         const w = document.querySelector('.js-site-wrapper');
+        if (blocked) return false;
         if (!w) return 'none';
         return Number(getComputedStyle(w).opacity) > 0.95 ? 'shown' : false;
       }, null, { timeout: 15000 })
       .then((handle) => handle.jsonValue())
       .catch(() => 'stuck');
-    if (route === '/') {
-      results.push(check(`${tag} the loader hands the page over`, wrapperState === 'shown', `wrapper state: ${wrapperState}`));
+    const isHome = route === '/' || route === '/tunnel/';
+    if (isHome) {
+      results.push(check(`${tag} the opening hands the page over`, wrapperState !== 'stuck', `state: ${wrapperState}`));
     } else {
-      results.push(check(`${tag} the page is shown before it is graded`, wrapperState !== 'stuck', `wrapper state: ${wrapperState}`));
+      results.push(check(`${tag} the page is shown before it is graded`, wrapperState !== 'stuck', `state: ${wrapperState}`));
     }
 
     const res = await new AxeBuilder({ page }).analyze();

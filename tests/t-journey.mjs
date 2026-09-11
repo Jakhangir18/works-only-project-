@@ -1,7 +1,7 @@
 // Journeys a visitor actually makes: tapping a card on a phone, following a
 // project link and coming back, and moving through the site by keyboard only.
 import { chromium, devices } from 'playwright';
-import { BASE, check, summarize, workBox, findCardInView } from './lib.mjs';
+import { BASE, check, summarize, workBox, findCardInView, TUNNEL } from './lib.mjs';
 
 const results = [];
 const browser = await chromium.launch();
@@ -12,7 +12,7 @@ const browser = await chromium.launch();
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e).slice(0, 120)));
-  await page.goto(BASE + '/', { waitUntil: 'load' });
+  await page.goto(BASE + TUNNEL, { waitUntil: 'load' });
   await page.waitForTimeout(6500);
   const box = await workBox(page);
   const href = await findCardInView(page, box);
@@ -42,7 +42,7 @@ const browser = await chromium.launch();
 {
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   const page = await ctx.newPage();
-  await page.goto(BASE + '/', { waitUntil: 'load' });
+  await page.goto(BASE + TUNNEL, { waitUntil: 'load' });
   await page.waitForTimeout(6500);
   const box = await workBox(page);
   await page.evaluate((y) => window.scrollTo({ top: y, behavior: 'instant' }), box.top + 1200);
@@ -58,33 +58,41 @@ const browser = await chromium.launch();
   });
   results.push(check('return: the project page has a way back', back === true, 'no back control'));
   if (back) {
-    await page.waitForURL(BASE + '/', { timeout: 20000 }).catch(() => {});
+    // The back control goes to the site's home, which is the light page now
+    // rather than the tunnel this journey started on. What has to hold is the
+    // same either way: the visitor lands on a home page that is actually
+    // showing, and the opening does not play a second time.
+    await page.waitForURL((url) => /\/(tunnel\/)?$/.test(new URL(url).pathname), { timeout: 20000 }).catch(() => {});
     await page.waitForTimeout(4000);
-    const landed = await page.evaluate(() => ({
-      y: window.scrollY,
-      inWork: (() => {
-        const s = document.querySelector('.s-work');
-        if (!s) return false;
-        const r = s.getBoundingClientRect();
-        return r.top < window.innerHeight && r.bottom > 0;
-      })(),
-      loaderGone: !document.querySelector('.js-site-loader'),
-      visible: getComputedStyle(document.querySelector('.js-site-wrapper')).opacity === '1',
-    }));
-    results.push(check('return: lands in the Work section, not at the top', landed.inWork, `scrollY ${landed.y}`));
-    results.push(check('return: the loader does not play again', landed.loaderGone, 'loader still present'));
-    results.push(check('return: the page is visible', landed.visible, 'wrapper still transparent'));
+    const landed = await page.evaluate(() => {
+      const wrapper = document.querySelector('.js-site-wrapper');
+      const hero = document.querySelector('.anime-hero, .hero-home');
+      return {
+        path: location.pathname,
+        y: window.scrollY,
+        hasHero: !!hero,
+        loaderGone: !document.querySelector('.js-site-loader') && !document.querySelector('.js-anime-intro'),
+        // Whichever home it landed on: the tunnel page fades a wrapper in, the
+        // light page has no wrapper at all and is simply visible.
+        visible: wrapper ? getComputedStyle(wrapper).opacity === '1' : !!hero,
+      };
+    });
+    results.push(check('return: lands on a home page', landed.hasHero, `${landed.path}, scrollY ${landed.y}`));
+    results.push(check('return: the loader does not play again', landed.loaderGone, 'an opening is still on screen'));
+    results.push(check('return: the page is visible', landed.visible, 'nothing visible on the home page'));
 
-    // The hero field is torn down on pagehide. Whether the browser reloads the
-    // page or restores it from the back/forward cache, the visitor must come
-    // back to a hero that still has one.
+    // The dotted field is the tunnel page's hero, and the back control lands
+    // on the light one, so the rest of this block goes there on its own. The
+    // field's teardown is what is under test, not which page the back button
+    // reaches.
+    await page.goto(BASE + TUNNEL, { waitUntil: 'load' });
     await page.waitForTimeout(3500);
     const field = await page.evaluate(() => {
       const host = document.querySelector('[data-dotted-surface]');
       const canvas = host?.querySelector('canvas');
       return { host: !!host, canvas: !!canvas, w: canvas?.width || 0 };
     });
-    results.push(check('return: the hero field is back after a back navigation', field.host && field.canvas && field.w > 0, JSON.stringify(field)));
+    results.push(check('return: the tunnel page still builds its hero field', field.host && field.canvas && field.w > 0, JSON.stringify(field)));
 
     // No engine here produces a real back/forward restore — all three report
     // persisted false — so the freeze branch is driven directly. A frozen page
@@ -198,7 +206,7 @@ const browser = await chromium.launch();
 {
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   const page = await ctx.newPage();
-  await page.goto(BASE + '/', { waitUntil: 'load' });
+  await page.goto(BASE + TUNNEL, { waitUntil: 'load' });
   await page.waitForTimeout(6500);
   let reachedProject = null;
   for (let i = 0; i < 30 && !reachedProject; i++) {

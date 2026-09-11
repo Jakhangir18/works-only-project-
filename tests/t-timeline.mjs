@@ -1,7 +1,7 @@
 // The Timeline: entries reveal, the year marker sticks, durations are right,
 // links reach the project pages, and reduced motion shows everything at once.
 import { chromium, webkit } from 'playwright';
-import { BASE, VIEWPORTS, check, summarize } from './lib.mjs';
+import { BASE, VIEWPORTS, check, summarize, TUNNEL } from './lib.mjs';
 
 const results = [];
 
@@ -9,7 +9,7 @@ for (const [ename, engine] of Object.entries({ chromium, webkit })) {
   const browser = await engine.launch();
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   const page = await ctx.newPage();
-  await page.goto(BASE + '/', { waitUntil: 'load' });
+  await page.goto(BASE + TUNNEL, { waitUntil: 'load' });
   await page.waitForTimeout(6000);
   await page.evaluate(() => document.querySelector('#timeline')?.scrollIntoView());
   await page.waitForTimeout(1200);
@@ -92,7 +92,7 @@ for (const [ename, engine] of Object.entries({ chromium, webkit })) {
   const browser = await chromium.launch();
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' });
   const page = await ctx.newPage();
-  await page.goto(BASE + '/', { waitUntil: 'load' });
+  await page.goto(BASE + TUNNEL, { waitUntil: 'load' });
   await page.waitForTimeout(6000);
   const r = await page.evaluate(() => {
     const entries = [...document.querySelectorAll('.s-timeline__entry')];
@@ -113,7 +113,7 @@ for (const [ename, engine] of Object.entries({ chromium, webkit })) {
   for (const [w, h, name] of VIEWPORTS) {
     const ctx = await browser.newContext({ viewport: { width: w, height: h } });
     const page = await ctx.newPage();
-    await page.goto(BASE + '/', { waitUntil: 'load' });
+    await page.goto(BASE + TUNNEL, { waitUntil: 'load' });
     await page.waitForTimeout(5500);
     await page.evaluate(() => document.querySelector('#timeline')?.scrollIntoView());
     await page.waitForTimeout(600);
