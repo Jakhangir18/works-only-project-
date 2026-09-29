@@ -234,7 +234,7 @@ const shareCard = heroImage?.replace(/\/[^/]+$/, "/og.jpg");
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    {link.label} ↗
+                    {link.label} <span aria-hidden="true">↗</span><span class="u-sr-only"> (opens in a new tab)</span>
                   </a>
                 </li>
               ))}
