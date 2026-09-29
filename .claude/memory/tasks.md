@@ -25,3 +25,8 @@
 - git: night/restore-2026-09-30@832a12c
 - next: Owner: settle TouchPoint prize + Sadap identity, run the iPhone gate (report section 9), decide figure slot/nav/contact; then push the branch
 
+## 2026-09-29 11:56 | Night fixes on the restored anime branch: TouchPoint prize corrected to 2nd place overall of 71 teams in five places, SPOOT dated May 2026 with Google's Best Use of Gemini; GitHub/LinkedIn/Devpost in the contact section plus a resume slot; og-home.jpg recaptured from the anime home; CLAUDE.md, claude-progress.txt and features.json describe the anime home. Build rc 0 (9 pages), suite 1120/1120 at 76c0b77, /code-review no findings. Report: ~/work/works-only/docs/night-2026-09-30/fixes-report.md
+- files: src/pages/work/touchpoint.astro, src/pages/work/spoot.astro, src/data/timeline.ts, src/data/works.ts, src/components/WhyWorkWithMe.astro, src/components/ContactSection.astro, public/og-home.jpg, CLAUDE.md, claude-progress.txt, features.json
+- git: night/restore-2026-09-30@76c0b77
+- next: Owner: settle Sadap Clinic identity (fixes-report owner question 1), supply resume PDF, run the iPhone gate (restore-report section 9); then push the branch
+
