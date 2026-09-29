@@ -35,3 +35,8 @@
 - git: night/restore-2026-09-30@33efd95
 - next: Owner: approve the combined resume variant (or pick another; ai-ml and swe still say "top prize"), settle Sadap Clinic identity, run the iPhone gate (restore-report section 9); then push the branch
 
+## 2026-09-29 13:03 | Final review nits and a follow-up fix: contact comments match the rendered new-tab cue; project links hide the arrow from screen readers and announce new tabs with a scoped visually-hidden rule (project pages do not load u-sr-only); Remote Lab Vision photo shows two columns; build 9 pages, 1120/1120
+- files: src/components/ContactSection.astro, src/components/ProjectLayout.astro, src/pages/work/remote-lab-vision.astro
+- git: night/restore-2026-09-30@305dd8b
+- next: Owner: pick hero figure (docs/night-2026-09-30/hero-figure), settle Sadap and TouchPoint framing, approve the combined resume and a push of night/restore-2026-09-30, run the iPhone gate S1-S11
+
