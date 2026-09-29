@@ -20,3 +20,8 @@
 - git: feat/work-content@8fcb8cc
 - next: Owner answers docs/facts-to-confirm.md (11 sections incl. the iPhone gate), then merge to main and deploy
 
+## 2026-09-29 11:28 | Night restore of the anime+rocket home (feat/anime 425f3e0): npm ci + build clean with no env fixes, 1120/1120 checks before and after, 22 screenshots, 3 content commits from mac-desktop/feat/work-card-covers (TouchPoint schematic+repo, SPOOT repo, RLV camera photo), restore report in ~/work/works-only/docs/night-2026-09-30/
+- files: src/pages/work/touchpoint.astro, src/pages/work/spoot.astro, src/pages/work/remote-lab-vision.astro, public/projects/touchpoint/docs/driver-board-schematic.pdf, public/projects/remote-lab-vision/gallery/06.webp
+- git: night/restore-2026-09-30@832a12c
+- next: Owner: settle TouchPoint prize + Sadap identity, run the iPhone gate (report section 9), decide figure slot/nav/contact; then push the branch
+
