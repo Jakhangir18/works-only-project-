@@ -30,3 +30,8 @@
 - git: night/restore-2026-09-30@76c0b77
 - next: Owner: settle Sadap Clinic identity (fixes-report owner question 1), supply resume PDF, run the iPhone gate (restore-report section 9); then push the branch
 
+## 2026-09-29 11:57 | Resume linked: /resume.pdf is the combined variant, byte-identical to ~/work/school/out/career/resume-combined.pdf built 2026-09-29; the contact link reads "Resume (PDF)". The PDF uses the official placements (TouchPoint 2nd Place Overall at QuackHacks 3, SPOOT 3rd Place in Google's Best Use of Gemini at BeaverHacks 2026)
+- files: public/resume.pdf, src/components/ContactSection.astro
+- git: night/restore-2026-09-30@33efd95
+- next: Owner: approve the combined resume variant (or pick another; ai-ml and swe still say "top prize"), settle Sadap Clinic identity, run the iPhone gate (restore-report section 9); then push the branch
+
