@@ -1,6 +1,17 @@
 ---
 // ContactSection.astro
 // Final contact section with "Let's Work Together"
+
+/* Public profiles, each rendered exactly like the email link above them.
+   URLs confirmed 2026-09-29 against the owner's project inventory. */
+const profiles = [
+  { href: "https://github.com/Jakhangir18", label: "github.com/Jakhangir18" },
+  { href: "https://linkedin.com/in/tynshimov", label: "linkedin.com/in/tynshimov" },
+  { href: "https://devpost.com/tynshimj", label: "devpost.com/tynshimj" },
+  // TODO(owner): RESUME SLOT. When public/resume.pdf exists, add
+  //   { href: "/resume.pdf", label: "Resume" },
+  // here. No PDF ships until the owner supplies one.
+];
 ---
 
 <section class="contact-section">
@@ -13,6 +24,18 @@
       <a href="mailto:tynshimj@oregonstate.edu" class="contact-section__email">
         tynshimj@oregonstate.edu
       </a>
+      {
+        profiles.map((profile) => (
+          <a
+            href={profile.href}
+            class="contact-section__email"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {profile.label}
+          </a>
+        ))
+      }
     </div>
   </div>
 </section>
