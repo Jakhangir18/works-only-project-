@@ -45,6 +45,17 @@ const gallery = [
     caption: "QuackHacks 3.0, University of Oregon",
   },
 ];
+
+const downloads = [
+  {
+    href: "/projects/touchpoint/docs/driver-board-schematic.pdf",
+    label: "Driver board schematic (PDF)",
+  },
+  {
+    href: "https://github.com/Jakhangir18/Quackhack3.0",
+    label: "Source on GitHub",
+  },
+];
 ---
 
 <ProjectLayout
@@ -61,4 +72,5 @@ const gallery = [
   solution="A Google-backed parser fetches a page, strips it to its semantic skeleton and summarizes each branch, so the user is never handed raw markup. That tree is streamed to the Pi, which renders the current node as a vibration pattern across the fingertips while the thumb joystick moves the cursor through the structure. Everything runs on commodity parts — a Raspberry Pi, coin vibration motors, a hand-soldered driver board and a glove — which is what pulls the cost down by roughly two orders of magnitude against a commercial braille display."
   outcome="TouchPoint won the Google track at QuackHacks 3.0 and placed 2nd overall against every team at the event, a 24-hour hackathon at the University of Oregon in May 2026 sponsored by Google, MongoDB, MLH, Base44 and Emberex. Engineers visiting from Google stopped at our table to work through the interaction model with us. The honest limitation: this is a 24-hour prototype that proves the navigation model is learnable, not a product — the next question is whether the tree metaphor still holds on a page with a thousand nodes."
   gallery={gallery}
+  downloads={downloads}
 />
