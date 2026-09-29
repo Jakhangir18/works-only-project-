@@ -234,7 +234,7 @@ const shareCard = heroImage?.replace(/\/[^/]+$/, "/og.jpg");
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    {link.label} <span aria-hidden="true">↗</span><span class="u-sr-only"> (opens in a new tab)</span>
+                    {link.label} <span aria-hidden="true">↗</span><span class="proj-links__sr"> (opens in a new tab)</span>
                   </a>
                 </li>
               ))}
@@ -591,6 +591,19 @@ const shareCard = heroImage?.replace(/\/[^/]+$/, "/og.jpg");
     text-transform: uppercase;
     text-decoration: underline;
     text-underline-offset: 0.2em;
+  }
+
+  /* Project pages do not load the global utilities, so the visually hidden
+     new-tab text carries its own rule (same values as .u-sr-only). */
+  .proj-links__sr {
+    position: absolute;
+    margin: -1px;
+    padding: 0;
+    width: 1px;
+    height: 1px;
+    border: 0;
+    clip-path: rect(0, 0, 0, 0);
+    overflow: hidden;
   }
 
   @media (max-width: 768px) {
