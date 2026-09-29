@@ -33,7 +33,7 @@ export const timeline: readonly TimelineEntry[] = [
   },
   {
     title: "TouchPoint",
-    org: "QuackHacks 3.0, University of Oregon",
+    org: "QuackHacks 3, University of Oregon",
     kind: "competition",
     start: "2026-05",
     end: "2026-05",
