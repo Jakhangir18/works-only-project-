@@ -261,9 +261,9 @@ The measurement harness lives in `perf/` (`harness.mjs`, `regression.mjs`,
   track; SPOOT placed 3rd in Google's Best Use of Gemini at BeaverHacks 2026
   (May 2-3, 2026). `/resume.pdf` links the combined resume variant (built
   2026-09-29, commit 33efd95, awaiting owner approval), which uses these
-  official placements. The LinkedIn drafts and the ai-ml and swe resume
-  variants in `~/work/school/out/career` still say "top prize"; fix that
-  wording before linking one of them.
+  official placements. All four resume variants and the LinkedIn drafts in
+  `~/work/school/out/career` use the same official wording (checked with
+  pdftotext on 2026-09-29).
 - Branch history: `night/restore-2026-09-30` is `feat/anime` (425f3e0,
   recovered from the Mac archive, never pushed) plus content commits. The
   restore report, the fixes report and the open owner questions are in
