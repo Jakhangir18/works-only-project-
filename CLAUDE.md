@@ -4,12 +4,23 @@ Read this before doing anything in this repository.
 
 ## What this project is
 
-A personal portfolio site built with **Astro**. It is animation-heavy: a Three.js
-hero background, a scroll-driven 240-frame JPG sequence, and a pinned "Work"
-section that expands and rotates to reveal project cards.
+A personal portfolio site built with **Astro**, animation-heavy. Two homes ship:
+
+- `/` is the **anime home** (white ground, near-black ink, one red accent):
+  `AnimeIntro` (~1 s opening cover), `AnimeHero` (the name on an SVG arc over a
+  CSS 3D wheel of project-page shots, turned by GSAP's ticker), `AnimeRocket`
+  (an SVG rocket riding a dashed path on ScrollTrigger, whose flame wipes into)
+  `AnimeSpace` (star field), `AnimeWork` (one panel per project),
+  `AnimeTimeline` (pinned-note board), `ContactSection`. Lenis smooth scroll,
+  off on touch and under reduced motion.
+- `/tunnel/` is the previous home, kept until the owner decides its fate: a
+  Three.js hero background, a scroll-driven 240-frame JPG sequence, and a
+  pinned "Work" letter tunnel that expands and rotates to reveal project cards.
+  Most invariants below were found on this page.
 
 Stack: Astro components (`.astro`) + TypeScript controllers, **Three.js**
-(`DottedSurface`), **GSAP + ScrollTrigger**. Deployed on Vercel.
+(`DottedSurface`, `/tunnel/` only), **GSAP + ScrollTrigger**, **Lenis**.
+Deployed on Vercel from `main`, which does not have the anime home yet.
 
 The animation systems were built separately and later composed onto the same page.
 That composition is where every performance bug in this project has come from, and
@@ -23,8 +34,9 @@ it is why the invariants below exist.
 |---|---|
 | `npm run dev` | Dev server on **:4321**. `astro.config.mjs` sets `server.host: true`, so it also binds to the LAN address |
 | `npm start` | Identical to `npm run dev` — same server, same port |
-| `npm run build` | Production build into `dist/`. Astro reports **8 pages**; `dist/` ends up with 9 `.html` files because `public/nasa-nns.html` is copied verbatim |
+| `npm run build` | Production build into `dist/`. Astro reports **9 pages** (`/`, `/tunnel/`, `/projects/ams/`, six `/work/*`); `dist/` ends up with 10 `.html` files because the empty `public/nasa-nns.html` is copied verbatim |
 | `npm run preview` | Serves the built `dist/` on **:4321** |
+| `npm test` | Nine Playwright suites (`tests/run.mjs`, see `tests/README.md`) against a served production build at `SITE` (default `http://127.0.0.1:4347`). Needs `PLAYWRIGHT_HOME` pointing at a `node_modules` with chromium, webkit and firefox; on this host that is `/home/ubuntu/work/landing-page/repo/node_modules` (the built-in default path does not exist here) |
 | `npm run astro` | Astro CLI passthrough (e.g. `npm run astro -- --version`). With no arguments it prints CLI help |
 | `npm run perf:harness` | Frame timing, long tasks, forced reflows, heap/listener deltas. Add `-- --cpu=4`, `-- --mobile`, `-- --trace`, `-- --label=<name>`, `-- --dive-only`, `-- --browser=chromium\|firefox\|webkit` |
 | `npm run perf:regression` | Functional sweep: routes, open/close/reopen, resize teardown, keyboard focus, reduced motion, first-load LCP/TBT |
@@ -43,9 +55,10 @@ Verified behaviours — do not re-test these, they are confirmed:
 - `dev`, `start`, and `preview` all default to **:4321** and will collide. Use an
   explicit port when running two at once.
 
-Environment note: this is **macOS**. `timeout` does not exist here — use a
-background process and poll instead. A `timeout`-based test returns 127
-(command not found) and proves nothing.
+Environment note: the repository now lives on the Linux VPS (`vps-worker`,
+4 cores, 7.6 GB, no GPU), not on the Mac. Run every build, test suite and
+headless browser through `heavy` (`heavy npm run build`, `heavy npm test`):
+it serialises heavy jobs, and two at once make the host swap.
 
 ---
 
@@ -173,6 +186,8 @@ number against a budget:** runs here have read 13.3 ms (75 Hz) and, since
 2026-07-27, 8.3 ms (120 Hz) in Chromium. A clean frame is whatever that floor is —
 do not misreport it as a missed budget, and do not compare runs taken at different
 floors. Budgets stay at 60 fps because that is what most visitors have.
+Those floors were read on the Mac. The Linux host rasterises in software, so
+read its floor fresh and never compare its numbers with a Mac run.
 
 Cross-engine runs (`--browser=webkit|firefox`) report **frame timing only** — no CDP,
 so no heap, listener, node or long-task numbers, no CPU throttling, no `--mobile`.
@@ -235,3 +250,19 @@ The measurement harness lives in `perf/` (`harness.mjs`, `regression.mjs`,
   has a fix applied but **unverified on iOS**.
 - Running notes and rejected hypotheses live in `PERF-NOTES.md`. Read it before
   re-proposing something that was already tried.
+- **The anime home has never been measured against the budgets above.**
+  `perf/harness.mjs` waits for the tunnel's `is-works-ready` class and `.s-work`
+  section, so it measures `/tunnel/` only; adapt it before judging `/`.
+- The hero wheel shows `public/shots/*.webp`, pictures of each project page's
+  first screen. Re-run `scripts/shots.mjs` after changing a project page's
+  first screen, or the wheel shows the old page.
+- **Prizes are settled against the official pages** (2026-09-29): TouchPoint
+  placed 2nd overall of 71 teams at QuackHacks 3 and did not win the Google
+  track; SPOOT placed 3rd in Google's Best Use of Gemini at BeaverHacks 2026
+  (May 2-3, 2026). Resume and LinkedIn drafts say "top prize" for both; the
+  site keeps the official wording.
+- Branch history: `night/restore-2026-09-30` is `feat/anime` (425f3e0,
+  recovered from the Mac archive, never pushed) plus content commits. The
+  restore report, the fixes report and the open owner questions are in
+  `~/work/works-only/docs/night-2026-09-30/`; the owner's questionnaire is
+  `docs/facts-to-confirm.md`.

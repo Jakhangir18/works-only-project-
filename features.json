@@ -88,5 +88,47 @@
     "title": "Adversarial review of the perf branch",
     "done_when": "5 dimensions reviewed, every finding refuted by 3 lenses, survivors fixed",
     "passes": false
+  },
+  {
+    "id": "F16",
+    "title": "Anime home on /",
+    "done_when": "/ renders AnimeIntro, AnimeHero, AnimeRocket, AnimeSpace, AnimeWork, AnimeTimeline and ContactSection; the previous home builds at /tunnel/; the build reports 9 pages",
+    "passes": true
+  },
+  {
+    "id": "F17",
+    "title": "Hackathon prizes match the official records",
+    "done_when": "no page says TouchPoint won the Google track; TouchPoint reads 2nd place overall of 71 teams at QuackHacks 3; SPOOT reads 3rd in Google's Best Use of Gemini at BeaverHacks 2026, dated May 2026",
+    "passes": true
+  },
+  {
+    "id": "F18",
+    "title": "Contact links the public profiles",
+    "done_when": "the contact section links the email, GitHub, LinkedIn and Devpost in its existing link style",
+    "passes": true
+  },
+  {
+    "id": "F19",
+    "title": "Resume linked",
+    "done_when": "the owner has supplied public/resume.pdf and it is linked from the contact section's resume slot",
+    "passes": false
+  },
+  {
+    "id": "F20",
+    "title": "Home link preview matches the home",
+    "done_when": "public/og-home.jpg is a 1200x630 capture of the anime home's top",
+    "passes": true
+  },
+  {
+    "id": "F21",
+    "title": "Anime home measured against the performance budgets",
+    "done_when": "perf/harness.mjs adapted to /; Chromium at 1440x900 and 390x844, with and without 4x CPU throttle, refresh floor read first; every budget in CLAUDE.md met or the trade-off presented",
+    "passes": false
+  },
+  {
+    "id": "F22",
+    "title": "Safari gate on the anime home",
+    "done_when": "the owner has run restore-report section 9 (S1-S11) on a real iPhone and reported YES or NO per item",
+    "passes": false
   }
 ]
