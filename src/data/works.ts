@@ -68,7 +68,7 @@ export const works = [
       src: "/projects/spoot/cover.webp",
       width: 1152,
       height: 1200,
-      alt: "The SPOOT team on stage receiving the Google track award at BeaverHacks 2026",
+      alt: "The SPOOT team on stage receiving third place in Google's Best Use of Gemini track at BeaverHacks 2026",
       focalPoint: { x: "45%", y: "40%" },
     },
   },

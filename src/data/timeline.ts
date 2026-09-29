@@ -38,7 +38,7 @@ export const timeline: readonly TimelineEntry[] = [
     start: "2026-05",
     end: "2026-05",
     summary:
-      "A haptic glove for deafblind web browsing. 2nd overall, and the Google track.",
+      "A haptic glove for deafblind web browsing. 2nd place overall of 71 teams, QuackHacks 3.",
     href: "/work/touchpoint/",
     thumb: "/projects/touchpoint/thumb.webp",
   },
@@ -46,10 +46,10 @@ export const timeline: readonly TimelineEntry[] = [
     title: "SPOOT",
     org: "BeaverHacks 2026, Oregon State",
     kind: "competition",
-    start: "2026-04",
-    end: "2026-04",
+    start: "2026-05",
+    end: "2026-05",
     summary:
-      "Glasses that show where a sound came from. 3rd in the Google track.",
+      "Glasses that show where a sound came from. 3rd in Google's Best Use of Gemini track.",
     href: "/work/spoot/",
     thumb: "/projects/spoot/thumb.webp",
   },
