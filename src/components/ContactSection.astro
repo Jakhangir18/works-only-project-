@@ -2,16 +2,16 @@
 // ContactSection.astro
 // Final contact section with "Let's Work Together"
 
-/* Public profiles, each rendered exactly like the email link above them.
+/* Public profiles, styled like the email link above them.
    URLs confirmed 2026-09-29 against the owner's project inventory.
-   External profiles open in a new tab and carry the same cue as the project
-   page links (visible ↗ plus hidden text); the same-origin resume does not. */
+   External profiles open in a new tab with a visible ↗ (hidden from screen
+   readers) and hidden "(opens in a new tab)" text; the same-origin resume does not. */
 const isExternal = (href: string) => /^https?:\/\//.test(href);
 const profiles = [
   { href: "https://github.com/Jakhangir18", label: "github.com/Jakhangir18" },
   { href: "https://linkedin.com/in/tynshimov", label: "linkedin.com/in/tynshimov" },
   { href: "https://devpost.com/tynshimj", label: "devpost.com/tynshimj" },
-  // Resume: the "combined" variant built 2026-09-30 from ~/work/school/out/career.
+  // Resume: the "combined" variant built 2026-09-29 from ~/work/school/out/career.
   // Swap the PDF when the owner picks a different variant.
   { href: "/resume.pdf", label: "Resume (PDF)" },
 ];
