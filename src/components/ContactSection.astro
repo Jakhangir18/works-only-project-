@@ -3,7 +3,10 @@
 // Final contact section with "Let's Work Together"
 
 /* Public profiles, each rendered exactly like the email link above them.
-   URLs confirmed 2026-09-29 against the owner's project inventory. */
+   URLs confirmed 2026-09-29 against the owner's project inventory.
+   External profiles open in a new tab and carry the same cue as the project
+   page links (visible ↗ plus hidden text); the same-origin resume does not. */
+const isExternal = (href: string) => /^https?:\/\//.test(href);
 const profiles = [
   { href: "https://github.com/Jakhangir18", label: "github.com/Jakhangir18" },
   { href: "https://linkedin.com/in/tynshimov", label: "linkedin.com/in/tynshimov" },
@@ -25,16 +28,23 @@ const profiles = [
         tynshimj@oregonstate.edu
       </a>
       {
-        profiles.map((profile) => (
-          <a
-            href={profile.href}
-            class="contact-section__email"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {profile.label}
-          </a>
-        ))
+        profiles.map((profile) =>
+          isExternal(profile.href) ? (
+            <a
+              href={profile.href}
+              class="contact-section__email"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {profile.label} <span aria-hidden="true">↗</span>
+              <span class="u-sr-only">(opens in a new tab)</span>
+            </a>
+          ) : (
+            <a href={profile.href} class="contact-section__email">
+              {profile.label}
+            </a>
+          )
+        )
       }
     </div>
   </div>
