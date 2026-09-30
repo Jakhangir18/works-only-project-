@@ -40,3 +40,8 @@
 - git: night/restore-2026-09-30@305dd8b
 - next: Owner: pick hero figure (docs/night-2026-09-30/hero-figure), settle Sadap and TouchPoint framing, approve the combined resume and a push of night/restore-2026-09-30, run the iPhone gate S1-S11
 
+## 2026-09-30 00:01 | Knowledge moved into the site repo: the anime branch is checked out here, the building session fa68cc50 resumes from here, claude-progress.txt records the recovered hero-portrait plan (from IMG_3384) and the owner's open questions, init.sh builds and runs the suite and fails loudly (1120/1120)
+- files: claude-progress.txt, init.sh
+- git: night/restore-2026-09-30@22ccf7e
+- next: Run ./init.sh first; owner: approve pushing night/restore-2026-09-30, pick the hero approach (anime portrait from IMG_3384 via agy-image -r), settle Sadap and TouchPoint framing, iPhone gate S1-S11
+
