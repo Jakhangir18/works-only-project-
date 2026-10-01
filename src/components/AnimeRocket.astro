@@ -7,9 +7,11 @@
  * animation library at all — which is the whole reason that site is rich and
  * still does not stutter. This is the same trick with a rocket.
  *
- * The rocket rides an `offset-path`. One property, `offset-distance`, is
- * animated; the browser composites it and nothing in the document lays out
- * again. The flame is four hand-drawn shapes on a short CSS loop, no canvas.
+ * The rocket rides a transform. The controller samples the trail once per
+ * resize and writes `--x`, `--y` and `--a`, which feed one `translate3d` plus
+ * a rotate; the browser composites them and nothing in the document lays out
+ * again. The CSS note further down says why this is not `offset-path`.
+ * The flame is four hand-drawn shapes on a short CSS loop, no canvas.
  * As the rocket leaves to the right the flame grows into a wipe that takes the
  * page from white to the dark section below it.
  */
@@ -325,12 +327,10 @@
 
   /* Stillness, not absence: the rocket sits where its path starts, the flame
      holds one shape, and the wipe never runs — the section below simply
-     follows this one. */
+     follows this one. The resting position is written by the controller, which
+     measures the path once and stops; a rule here could not know where the
+     path begins. */
   @media (prefers-reduced-motion: reduce) {
-    .rocket-flight__craft {
-      offset-distance: 0%;
-    }
-
     .rocket-flight__flame__tongue {
       animation: none;
     }

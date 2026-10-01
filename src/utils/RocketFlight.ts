@@ -5,9 +5,10 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
  * Drives the rocket along its path from the section's own scroll progress.
  *
  * Three values, all of them written on the leaf that reads them and all of
- * them cheap for the browser: `offset-distance` on the rocket, which is
- * composited; `stroke-dashoffset` on the trail, which is paint-only; and a
- * scale on the wipe, which is a single layer. Nothing here causes layout.
+ * them cheap for the browser: `--x`, `--y` and `--a` on the rocket, which feed
+ * one transform and are composited; `stroke-dashoffset` on the trail, which is
+ * paint-only; and a scale on the wipe, which is a single layer. Nothing here
+ * causes layout.
  *
  * The trail is measured once, on init and on resize, and never inside the
  * scroll callback — reading geometry while the page is being written to is the
@@ -21,6 +22,9 @@ const COPY_FADES = 0.9;
 /* How many points to sample off the path. Two hundred is finer than a pixel at
    any viewport this page runs at, and it is sampled once per resize. */
 const SAMPLES = 200;
+/* How long a resize has to be quiet before the resting pose is re-measured.
+   Same value as `SiteController.resizeThrottle`. */
+const RESIZE_SETTLE = 200;
 
 let trigger: ScrollTrigger | null = null;
 let section: HTMLElement | null = null;
@@ -28,6 +32,13 @@ let craft: HTMLElement | null = null;
 let copy: HTMLElement | null = null;
 let trail: SVGPathElement | null = null;
 let wipe: HTMLElement | null = null;
+/* Only set on the reduced-motion path, where there is no ScrollTrigger to
+   refresh the geometry after a resize. */
+let onResize: (() => void) | null = null;
+let resizeTimer: ReturnType<typeof setTimeout> | null = null;
+/* The section box the resting pose was measured against, rounded to whole
+   pixels. */
+let restBox = { w: 0, h: 0 };
 let trailLength = 0;
 /* The path, resampled into screen pixels: x, y and the tangent angle at each
    step. Built once per resize so the scroll callback never touches geometry —
@@ -82,6 +93,23 @@ function apply(progress: number): void {
   }
 }
 
+/* Put the rocket at the start of its trail, and do it only when that can have
+   moved. The section is sized in `svh`, so iOS Safari fires `resize` as the URL
+   bar collapses while the box stays the same; without this guard a reduced-
+   motion phone would pay 402 `getPointAtLength` calls per scroll gesture for a
+   pose that does not change. The 200 ms settle is the one `SiteController`
+   uses. */
+function restAtStart(): void {
+  if (!section) return;
+  const box = section.getBoundingClientRect();
+  const w = Math.round(box.width);
+  const h = Math.round(box.height);
+  if (w === restBox.w && h === restBox.h) return;
+  restBox = { w, h };
+  measure();
+  apply(0);
+}
+
 export function initRocketFlight(): void {
   if (typeof window === "undefined") return;
 
@@ -92,9 +120,28 @@ export function initRocketFlight(): void {
   wipe = document.querySelector<HTMLElement>(".js-rocket-wipe");
   if (!section || !craft) return;
 
-  // The stylesheet already parks everything at its resting value, and under
-  // reduced motion that is where it stays.
-  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  // Under reduced motion the rocket does not fly, but it still has to sit on
+  // its trail. The stylesheet cannot put it there: the craft is placed by the
+  // transform this controller writes, so with no write at all it parks at the
+  // section's top-left corner — measured at (0, -12) inside the section while
+  // the trail starts at (86, 1234), 1,236 px away.
+  //
+  // Without the trail there is nothing to sample, `apply` writes nothing, and
+  // the craft would sit in that corner anyway — so leave rather than install a
+  // listener that can never place it.
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    if (!trail) return;
+    restAtStart();
+    // A second init without a destroy would otherwise leave the first listener
+    // subscribed, and every stale copy would resample the path on resize.
+    if (onResize) window.removeEventListener("resize", onResize);
+    onResize = () => {
+      if (resizeTimer) clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(restAtStart, RESIZE_SETTLE);
+    };
+    window.addEventListener("resize", onResize, { passive: true });
+    return;
+  }
 
   gsap.registerPlugin(ScrollTrigger);
   measure();
@@ -118,6 +165,15 @@ export function initRocketFlight(): void {
 export function destroyRocketFlight(): void {
   trigger?.kill();
   trigger = null;
+  if (onResize) {
+    window.removeEventListener("resize", onResize);
+    onResize = null;
+  }
+  if (resizeTimer) {
+    clearTimeout(resizeTimer);
+    resizeTimer = null;
+  }
+  restBox = { w: 0, h: 0 };
   section = null;
   craft = null;
   copy = null;
