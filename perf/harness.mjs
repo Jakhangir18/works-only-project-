@@ -47,7 +47,7 @@
  */
 
 import { chromium, firefox, webkit } from "playwright-core";
-import { mkdirSync, writeFileSync, rmSync } from "node:fs";
+import { mkdirSync, writeFileSync, rmSync, existsSync } from "node:fs";
 import path from "node:path";
 import { chromeTreeRss } from "./rss.mjs";
 
@@ -73,6 +73,48 @@ if (!BROWSER) {
   process.exit(1);
 }
 const IS_CHROMIUM = BROWSER_NAME === "chromium";
+/* Two homes ship, and they signal readiness and hold their sections under
+   different names. The route decides which; `--route=` overrides the guess the
+   URL makes, for a page served from somewhere unusual. */
+// `URL` here is this file's own const, the address being measured, so the
+// parser has to be reached through globalThis.
+const ROUTE = String(
+  args.route ||
+    (new globalThis.URL(URL).pathname.startsWith("/tunnel") ? "tunnel" : "anime"),
+);
+if (ROUTE !== "tunnel" && ROUTE !== "anime") {
+  console.error(`unknown --route=${ROUTE} (want anime|tunnel)`);
+  process.exit(1);
+}
+/* The two sections every phase below is written against. Swapping the
+   selectors keeps the phase program, the scroll assertions and the result
+   shape identical across the two homes, so their numbers stay comparable. */
+const SECTIONS =
+  ROUTE === "tunnel"
+    ? { work: ".s-work", rocket: ".js-rocket-story" }
+    : { work: ".anime-work", rocket: ".rocket-flight" };
+
+/* This harness was written on a Mac with Google Chrome and a display. The VPS
+   has neither, so it falls back to Playwright's own Chromium and runs headless
+   — both change the numbers, so both are written into the result and must be
+   read before any run is compared with another. */
+const CHROME_CHANNEL_BINARY = "/opt/google/chrome/chrome";
+const HAS_CHROME = existsSync(CHROME_CHANNEL_BINARY);
+const CHROMIUM_PATH = String(args.chromium || process.env.PERF_CHROMIUM || "");
+if (IS_CHROMIUM && !HAS_CHROME && !CHROMIUM_PATH) {
+  console.error(
+    "no Chrome at /opt/google/chrome/chrome and no fallback given.\n" +
+      "Pass --chromium=<path to a chromium binary> or set PERF_CHROMIUM.",
+  );
+  process.exit(1);
+}
+if (IS_CHROMIUM && CHROMIUM_PATH && !existsSync(CHROMIUM_PATH)) {
+  console.error(`--chromium=${CHROMIUM_PATH} does not exist`);
+  process.exit(1);
+}
+/* A headful run needs an X display. Without one the browser never starts, so
+   headless is the default here; `--headful` forces the Mac behaviour back. */
+const HEADLESS = args.headful ? false : !process.env.DISPLAY;
 if (MOBILE && !IS_CHROMIUM) {
   console.error(`--mobile requested but ignored: mobile viewport emulation is Chromium-only.`);
 }
@@ -250,12 +292,19 @@ const INSTRUMENTATION = `(() => {
 })();`;
 
 const DISABLE_HERO_SCRIPT = `(() => {
-  // Diagnostic only: make MorphingText and DottedSurface mounts find no
-  // container so their rAF loops never start. Runtime injection — no repo
+  // Diagnostic only: make the hero's animated mounts find no container so
+  // their rAF loops never start. The tunnel's are MorphingText and
+  // DottedSurface; the anime home's is the 3D wheel, whose controller also
+  // returns early when its element is missing. Runtime injection — no repo
   // code is modified.
   const origQS = Document.prototype.querySelector;
   Document.prototype.querySelector = function (sel) {
-    if (sel === "[data-morphing-text]" || sel === "[data-dotted-surface]") return null;
+    if (
+      sel === "[data-morphing-text]" ||
+      sel === "[data-dotted-surface]" ||
+      sel === ".js-anime-wheel"
+    )
+      return null;
     return origQS.apply(this, arguments);
   };
 })();`;
@@ -338,8 +387,13 @@ async function main() {
     label: LABEL,
     timestamp: STAMP,
     url: URL,
+    route: ROUTE,
     config: {
       browser: BROWSER_NAME,
+      route: ROUTE,
+      sections: SECTIONS,
+      binary: IS_CHROMIUM ? (HAS_CHROME ? "chrome (channel)" : CHROMIUM_PATH) : BROWSER_NAME,
+      headless: IS_CHROMIUM ? HEADLESS : true,
       cpuThrottle: IS_CHROMIUM ? CPU_RATE : null,
       mobile: IS_CHROMIUM && MOBILE,
       viewport: IS_CHROMIUM && MOBILE ? "390x844@3x" : "1440x900@2x",
@@ -357,8 +411,8 @@ async function main() {
 
   const launchOpts = IS_CHROMIUM
     ? {
-        channel: "chrome",
-        headless: false,
+        ...(HAS_CHROME ? { channel: "chrome" } : { executablePath: CHROMIUM_PATH }),
+        headless: HEADLESS,
         viewport: MOBILE ? { width: 390, height: 844 } : { width: 1440, height: 900 },
         deviceScaleFactor: MOBILE ? 3 : 2,
         isMobile: MOBILE,
@@ -469,12 +523,20 @@ async function main() {
       };
     }
 
-    // ---- Wait for site ready (loader gone, works initialized)
+    // ---- Wait for site ready
+    // The tunnel reports itself with a loader element and `is-works-ready`.
+    // The anime home has neither: its intro cover takes the class `is-gone`
+    // and `AnimeSite` drops `is-scroll-blocked` in the same step, so scroll
+    // being released is the signal that the page is ready to be measured.
     await page.waitForFunction(
-      () =>
-        !document.querySelector(".js-site-loader") &&
-        document.documentElement.classList.contains("is-works-ready") &&
-        !document.documentElement.classList.contains("is-scroll-blocked"),
+      (route) =>
+        route === "tunnel"
+          ? !document.querySelector(".js-site-loader") &&
+            document.documentElement.classList.contains("is-works-ready") &&
+            !document.documentElement.classList.contains("is-scroll-blocked")
+          : !document.documentElement.classList.contains("is-scroll-blocked") &&
+            !document.querySelector(".js-anime-intro:not(.is-gone)"),
+      ROUTE,
       { timeout: 60000, polling: 250 },
     );
     await sleep(500);
@@ -506,10 +568,16 @@ async function main() {
       { timeout: 45000, polling: 300 },
     );
 
-    const geomFn = () => {
+    const geomFn = (sel) => {
       const abs = (el) => el.getBoundingClientRect().top + window.scrollY;
-      const w = document.querySelector(".s-work");
-      const r = document.querySelector(".js-rocket-story");
+      const w = document.querySelector(sel.work);
+      const r = document.querySelector(sel.rocket);
+      if (!w || !r) {
+        throw new Error(
+          `geometry anchors missing: ${sel.work} ${w ? "found" : "MISSING"}, ` +
+            `${sel.rocket} ${r ? "found" : "MISSING"} — wrong --route for this page?`,
+        );
+      }
       return {
         vh: window.innerHeight,
         workTop: Math.round(abs(w)),
@@ -520,7 +588,7 @@ async function main() {
         dpr: window.devicePixelRatio,
       };
     };
-    const geom = await page.evaluate(geomFn);
+    const geom = await page.evaluate(geomFn, SECTIONS);
     result.geometry = geom;
 
     // Park the pointer near the left edge so hover states on cards don't
@@ -529,6 +597,9 @@ async function main() {
 
     const PX_PER_STEP = 40;
     const STEP_MS = 12;
+    /* Measured once per run by `calibrateWheel` below, because a wheel step
+       does not always move the page by its own number of pixels. */
+    let WHEEL_SCALE = 1;
 
     const jumpTo = async (y) => {
       await page.evaluate(
@@ -537,14 +608,43 @@ async function main() {
       );
       await sleep(1500); // scrub:1 catch-up
     };
+    /* Wait for the page to stop moving instead of guessing how long it takes.
+       Lenis runs a 1.05 s eased catch-up and restarts it on every wheel event,
+       so the old fixed 600 ms left the anime home half way to its target and
+       failed every scroll assertion. These frames are real work — Lenis is
+       still scrolling — so they belong inside the phase being measured. */
+    const settleScroll = async (quietMs = 350, timeoutMs = 6000) => {
+      await page
+        .waitForFunction(
+          (q) => {
+            const y = window.scrollY;
+            const t = Date.now();
+            if (!window.__settle) window.__settle = { y, t };
+            const s = window.__settle;
+            if (Math.abs(s.y - y) > 1) {
+              s.y = y;
+              s.t = t;
+              return false;
+            }
+            return t - s.t > q;
+          },
+          quietMs,
+          { timeout: timeoutMs, polling: 50 },
+        )
+        .catch(() => {});
+      await page.evaluate(() => {
+        delete window.__settle;
+      });
+    };
+
     const wheelBy = async (distance) => {
       const steps = Math.max(1, Math.round(Math.abs(distance) / PX_PER_STEP));
       const dir = Math.sign(distance);
       for (let i = 0; i < steps; i++) {
-        await page.mouse.wheel(0, dir * PX_PER_STEP);
+        await page.mouse.wheel(0, dir * PX_PER_STEP * WHEEL_SCALE);
         await sleep(STEP_MS);
       }
-      await sleep(600); // settle
+      await settleScroll();
     };
 
     const phases = [];
@@ -605,6 +705,36 @@ async function main() {
       Object.assign(collected, chunk);
     };
 
+    /* A wheel step does not always move the page by its own number of pixels:
+       measured on this host, Playwright delivers the delta in device pixels,
+       so at deviceScaleFactor 2 a 40 px step scrolled 20 CSS px and every
+       scroll phase stopped half way. Rather than hard-code a factor that is
+       right on one machine and wrong on the next, wheel a known distance once
+       and scale the rest of the run by what the page actually did. */
+    const calibrateWheel = async () => {
+      await jumpTo(0);
+      const probeSteps = 10;
+      const asked = probeSteps * PX_PER_STEP;
+      for (let i = 0; i < probeSteps; i++) {
+        await page.mouse.wheel(0, PX_PER_STEP);
+        await sleep(STEP_MS);
+      }
+      await settleScroll();
+      const moved = await getScrollY();
+      await jumpTo(0);
+      if (moved < 1) return 1;
+      // Quarter steps: enough for the 1x, 2x and 3x cases without turning
+      // ordinary scroll noise into a correction.
+      return Math.min(4, Math.max(1, Math.round((asked / moved) * 4) / 4));
+    };
+    WHEEL_SCALE = await calibrateWheel();
+    result.config.wheelScale = WHEEL_SCALE;
+    if (WHEEL_SCALE !== 1) {
+      result.notes.push(
+        `wheel deltas scaled by ${WHEEL_SCALE} — a ${PX_PER_STEP}px step moved the page ${Math.round(PX_PER_STEP / WHEEL_SCALE)}px before correction.`,
+      );
+    }
+
     // ---- Idle controls: display cadence at top, tick() cost parked in Work
     await jumpTo(0);
     await runPhase("idle-top", () => sleep(2500), { from: 0, to: 0 });
@@ -661,7 +791,13 @@ async function main() {
     }
 
     // ---- Dive transition: open/close a project card's dive 5x
-    const diveGeom = await findRenderedCard(page, geom);
+    // Only the tunnel has `a-work` cards to dive into. On the anime home the
+    // sweep would scroll through seventeen positions over twenty seconds and
+    // find nothing, so it is skipped outright rather than failed slowly.
+    const diveGeom = ROUTE === "tunnel" ? await findRenderedCard(page, geom) : null;
+    if (ROUTE !== "tunnel") {
+      result.notes.push("dive phase skipped: the anime home has no dive cards.");
+    }
     result.dive = { found: !!diveGeom };
     if (diveGeom) {
       await jumpTo(diveGeom.scrollY);
@@ -699,7 +835,7 @@ async function main() {
         nodes: IS_CHROMIUM ? { before: diveDomBefore.Nodes, after: diveDomAfter.Nodes } : null,
         listeners: IS_CHROMIUM ? { before: diveDomBefore.JSEventListeners, after: diveDomAfter.JSEventListeners } : null,
       };
-    } else {
+    } else if (ROUTE === "tunnel") {
       result.notes.push("dive phase skipped: no rendered card found near the sampled scroll position.");
     }
 
@@ -767,7 +903,7 @@ async function main() {
     result.scrollAssertions = scrollAssertions;
     // Geometry must not have shifted during the run, or every phase target
     // was wrong.
-    const geomEnd = await page.evaluate(geomFn);
+    const geomEnd = await page.evaluate(geomFn, SECTIONS);
     result.geometryEnd = geomEnd;
     const geomStable =
       Math.abs(geomEnd.workTop - geom.workTop) <= 8 &&
