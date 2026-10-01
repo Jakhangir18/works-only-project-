@@ -250,9 +250,24 @@ The measurement harness lives in `perf/` (`harness.mjs`, `regression.mjs`,
   has a fix applied but **unverified on iOS**.
 - Running notes and rejected hypotheses live in `PERF-NOTES.md`. Read it before
   re-proposing something that was already tried.
-- **The anime home has never been measured against the budgets above.**
-  `perf/harness.mjs` waits for the tunnel's `is-works-ready` class and `.s-work`
-  section, so it measures `/tunnel/` only; adapt it before judging `/`.
+- **The anime home is measured** (2026-10-01, `--route=anime`, which the harness
+  guesses from the URL). On this host — chromium headless, software raster, no
+  GPU — every phase holds a 16.7 ms median except `idle-top` at **33.2 ms**, and
+  stubbing the wheel with `--disable-hero-loops` returns it to 16.7 ms. So the
+  hero wheel halves the frame rate on the first screen at rest, at 1440x900. At
+  390x844 with 4x CPU throttling `idle-top` is 16.7 ms: the wheel covers a third
+  of the area there. No long tasks, no forced reflows, heap and listeners flat.
+  A GPU may absorb this entirely — the verdict needs the owner's own machine,
+  and the decision about the wheel is F10, his to make.
+- **Three harness assumptions were Mac-only** and are fixed: it launched
+  `channel: "chrome"` headful (neither exists here — pass `--chromium=` or
+  `PERF_CHROMIUM`, and it goes headless without `DISPLAY`); it settled a wheel
+  burst with a fixed 600 ms while Lenis eases for 1.05 s; and it assumed a wheel
+  step moves the page by its own pixel count, while here the delta arrives in
+  device pixels, so at `deviceScaleFactor: 2` every phase travelled half as far
+  and every scroll assertion failed. The run now calibrates the wheel and
+  records `config.wheelScale`, `config.binary` and `config.headless`, which have
+  to match before two runs are compared.
 - The hero wheel shows `public/shots/*.webp`, pictures of each project page's
   first screen. Re-run `scripts/shots.mjs` after changing a project page's
   first screen, or the wheel shows the old page.

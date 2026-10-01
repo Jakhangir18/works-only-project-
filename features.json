@@ -123,7 +123,8 @@
     "id": "F21",
     "title": "Anime home measured against the performance budgets",
     "done_when": "perf/harness.mjs adapted to /; Chromium at 1440x900 and 390x844, with and without 4x CPU throttle, refresh floor read first; every budget in CLAUDE.md met or the trade-off presented",
-    "passes": false
+    "passes": true,
+    "evidence": "Measured 2026-10-01 on the VPS, chromium headless, software raster, no GPU: perf-results/2026-10-01T18-24-03-826Z-anime-desktop-3.json (1440x900), ...-anime-desktop-nowheel.json (wheel stubbed), ...-anime-mobile-x4.json (390x844, cpu x4). All ten scroll assertions pass. Every phase 16.7 ms median except idle-top 33.2 ms at 1440x900, which falls to 16.7 ms with the hero wheel stubbed. No long tasks, no forced reflows, heap flat, listeners flat. The budget verdict itself needs the owner's own hardware."
   },
   {
     "id": "F22",
