@@ -12,6 +12,20 @@
  *   node perf/harness.mjs --label=mobile-390x844 --mobile
  *   node perf/harness.mjs --label=dive-only --dive-only
  *   node perf/harness.mjs --label=dive-firefox --dive-only --browser=firefox
+ *   node perf/harness.mjs --label=anime --url=http://host:4400/   (route guessed)
+ *   node perf/harness.mjs --label=tunnel --route=tunnel
+ *
+ * Flags beyond the examples:
+ *   --route=anime|tunnel   which home is being measured. Guessed from the URL
+ *                          and then corrected by what the page actually holds,
+ *                          because `/` is the tunnel on main and the anime home
+ *                          on this branch.
+ *   --chromium=<path>      binary to use instead of the `chrome` channel, which
+ *                          is the default so Mac baselines stay reproducible.
+ *                          PERF_CHROMIUM does the same.
+ *   --headful / --headless override the default, which is headful on macOS and
+ *                          headless where there is no DISPLAY. It changes the
+ *                          numbers; `config.headless` records what ran.
  *
  * What it does, in order:
  *   1. Fresh Chrome profile, open the page, sample process-tree RSS from ps
@@ -78,7 +92,7 @@ const IS_CHROMIUM = BROWSER_NAME === "chromium";
    URL makes, for a page served from somewhere unusual. */
 // `URL` here is this file's own const, the address being measured, so the
 // parser has to be reached through globalThis.
-const ROUTE = String(
+let ROUTE = String(
   args.route ||
     (new globalThis.URL(URL).pathname.startsWith("/tunnel") ? "tunnel" : "anime"),
 );
@@ -89,32 +103,30 @@ if (ROUTE !== "tunnel" && ROUTE !== "anime") {
 /* The two sections every phase below is written against. Swapping the
    selectors keeps the phase program, the scroll assertions and the result
    shape identical across the two homes, so their numbers stay comparable. */
-const SECTIONS =
+let SECTIONS =
   ROUTE === "tunnel"
     ? { work: ".s-work", rocket: ".js-rocket-story" }
     : { work: ".anime-work", rocket: ".rocket-flight" };
 
-/* This harness was written on a Mac with Google Chrome and a display. The VPS
-   has neither, so it falls back to Playwright's own Chromium and runs headless
-   — both change the numbers, so both are written into the result and must be
-   read before any run is compared with another. */
-const CHROME_CHANNEL_BINARY = "/opt/google/chrome/chrome";
-const HAS_CHROME = existsSync(CHROME_CHANNEL_BINARY);
+/* This harness was written on a Mac with Google Chrome and a display; the VPS
+   has neither. Chrome stays the default wherever Playwright can resolve the
+   channel, so every Mac baseline remains reproducible; `--chromium=<path>` or
+   PERF_CHROMIUM names a binary to use instead, and the launch falls back to it
+   if the channel is not installed. Whichever is used lands in the result,
+   because it changes the numbers. */
 const CHROMIUM_PATH = String(args.chromium || process.env.PERF_CHROMIUM || "");
-if (IS_CHROMIUM && !HAS_CHROME && !CHROMIUM_PATH) {
-  console.error(
-    "no Chrome at /opt/google/chrome/chrome and no fallback given.\n" +
-      "Pass --chromium=<path to a chromium binary> or set PERF_CHROMIUM.",
-  );
-  process.exit(1);
-}
 if (IS_CHROMIUM && CHROMIUM_PATH && !existsSync(CHROMIUM_PATH)) {
   console.error(`--chromium=${CHROMIUM_PATH} does not exist`);
   process.exit(1);
 }
-/* A headful run needs an X display. Without one the browser never starts, so
-   headless is the default here; `--headful` forces the Mac behaviour back. */
-const HEADLESS = args.headful ? false : !process.env.DISPLAY;
+/* A headful run needs a window server. macOS always has one and never sets
+   DISPLAY, so asking DISPLAY there would silently go headless and break
+   comparison with every earlier Mac run. `--headless` and `--headful` override. */
+const HEADLESS = args.headful
+  ? false
+  : args.headless
+    ? true
+    : process.platform !== "darwin" && !process.env.DISPLAY;
 if (MOBILE && !IS_CHROMIUM) {
   console.error(`--mobile requested but ignored: mobile viewport emulation is Chromium-only.`);
 }
@@ -392,8 +404,9 @@ async function main() {
       browser: BROWSER_NAME,
       route: ROUTE,
       sections: SECTIONS,
-      binary: IS_CHROMIUM ? (HAS_CHROME ? "chrome (channel)" : CHROMIUM_PATH) : BROWSER_NAME,
-      headless: IS_CHROMIUM ? HEADLESS : true,
+      // `binary` is overwritten with what actually launched, below.
+      binary: CHROMIUM_PATH || (IS_CHROMIUM ? "chrome (channel)" : BROWSER_NAME),
+      headless: HEADLESS,
       cpuThrottle: IS_CHROMIUM ? CPU_RATE : null,
       mobile: IS_CHROMIUM && MOBILE,
       viewport: IS_CHROMIUM && MOBILE ? "390x844@3x" : "1440x900@2x",
@@ -411,7 +424,10 @@ async function main() {
 
   const launchOpts = IS_CHROMIUM
     ? {
-        ...(HAS_CHROME ? { channel: "chrome" } : { executablePath: CHROMIUM_PATH }),
+        // Chrome unless a binary was named: the channel is what every earlier
+        // Mac baseline ran on. If it is not installed the launch below retries
+        // with the named binary rather than refusing outright.
+        ...(CHROMIUM_PATH ? { executablePath: CHROMIUM_PATH } : { channel: "chrome" }),
         headless: HEADLESS,
         viewport: MOBILE ? { width: 390, height: 844 } : { width: 1440, height: 900 },
         deviceScaleFactor: MOBILE ? 3 : 2,
@@ -429,11 +445,30 @@ async function main() {
     : {
         // Firefox/WebKit: no channel concept, no Chromium CLI flags, and
         // isMobile/hasTouch are Chromium-only viewport emulation — mobile
-        // dive numbers on these engines are out of scope here.
-        headless: false,
+        // dive numbers on these engines are out of scope here. Headless
+        // follows the same rule as Chromium, or these engines cannot start on
+        // a machine with no window server either.
+        headless: HEADLESS,
         viewport: { width: 1440, height: 900 },
       };
-  const context = await BROWSER.launchPersistentContext(USER_DATA_DIR, launchOpts);
+  let launchedWith = CHROMIUM_PATH || (IS_CHROMIUM ? "chrome (channel)" : BROWSER_NAME);
+  let context;
+  try {
+    context = await BROWSER.launchPersistentContext(USER_DATA_DIR, launchOpts);
+  } catch (err) {
+    // Chrome is not installed here. Name the flag rather than leave the raw
+    // Playwright error, which says only that a distribution was not found.
+    if (IS_CHROMIUM && !CHROMIUM_PATH) {
+      console.error(
+        `${String(err).split("\n")[0]}\n` +
+          "Chrome is not installed on this machine. Pass --chromium=<path to a " +
+          "chromium binary> or set PERF_CHROMIUM.",
+      );
+      process.exit(1);
+    }
+    throw err;
+  }
+  result.config.binary = launchedWith;
 
   try {
     await context.addInitScript(INSTRUMENTATION);
@@ -478,9 +513,42 @@ async function main() {
     const t0 = Date.now();
     await page.goto(URL, { waitUntil: "domcontentloaded" });
 
+    /* The URL is a poor guess for the route: on `main`, `/` is the tunnel, and
+       on this branch `/` is the anime home. When the route was not stated,
+       ask the page which it is — the two homes have no section in common. */
+    if (!args.route) {
+      const detected = await page.evaluate(
+        (sel) =>
+          document.querySelector(sel.tunnelWork)
+            ? "tunnel"
+            : document.querySelector(sel.animeWork)
+              ? "anime"
+              : null,
+        { tunnelWork: ".s-work", animeWork: ".anime-work" },
+      );
+      if (detected && detected !== ROUTE) {
+        result.notes.push(`route corrected from the URL guess "${ROUTE}" to "${detected}" by what the page holds.`);
+        ROUTE = detected;
+        SECTIONS =
+          ROUTE === "tunnel"
+            ? { work: ".s-work", rocket: ".js-rocket-story" }
+            : { work: ".anime-work", rocket: ".rocket-flight" };
+      }
+      result.route = ROUTE;
+      result.config.route = ROUTE;
+      result.config.sections = SECTIONS;
+    }
+
+
     // ---- Preload of the 240-frame rocket sequence
     if (DIVE_ONLY) {
       result.preload = { skipped: "dive-only run" };
+      await sleep(500);
+    } else if (ROUTE !== "tunnel") {
+      // Only the tunnel preloads the JPG sequence. Waiting for 240 frames on
+      // the anime home spent two minutes per run and wrote a timeout into the
+      // result that read like a page failure.
+      result.preload = { skipped: "the anime home has no frame sequence to preload" };
       await sleep(500);
     } else {
       let preloadTimings = null;
@@ -722,16 +790,29 @@ async function main() {
       await settleScroll();
       const moved = await getScrollY();
       await jumpTo(0);
-      if (moved < 1) return 1;
-      // Quarter steps: enough for the 1x, 2x and 3x cases without turning
-      // ordinary scroll noise into a correction.
-      return Math.min(4, Math.max(1, Math.round((asked / moved) * 4) / 4));
+      // A probe that moved nothing is not a 1:1 host; it is a page that did
+      // not take the wheel at all, and the run that follows will be nonsense.
+      if (moved < 1) return { scale: 1, moved: 0, asked };
+      // Quarter steps, correcting in both directions: a step can move the page
+      // less than its delta (a smooth-scroll layer easing a burst) or more (a
+      // line-mode delta, or a wheel multiplier above one).
+      const scale = Math.min(4, Math.max(0.25, Math.round((asked / moved) * 4) / 4));
+      return { scale, moved: Math.round(moved), asked };
     };
-    WHEEL_SCALE = await calibrateWheel();
+    const calibration = await calibrateWheel();
+    WHEEL_SCALE = calibration.scale;
     result.config.wheelScale = WHEEL_SCALE;
-    if (WHEEL_SCALE !== 1) {
+    result.config.wheelProbe = calibration;
+    if (!calibration.moved) {
       result.notes.push(
-        `wheel deltas scaled by ${WHEEL_SCALE} — a ${PX_PER_STEP}px step moved the page ${Math.round(PX_PER_STEP / WHEEL_SCALE)}px before correction.`,
+        `wheel calibration moved the page 0px of ${calibration.asked}px asked — the page did not take the wheel, so every scroll phase below is suspect.`,
+      );
+      console.error(
+        `WHEEL CALIBRATION: the page did not move at all (asked ${calibration.asked}px).`,
+      );
+    } else if (WHEEL_SCALE !== 1) {
+      result.notes.push(
+        `wheel deltas scaled by ${WHEEL_SCALE} — ${calibration.asked}px asked moved the page ${calibration.moved}px before correction.`,
       );
     }
 
@@ -903,15 +984,26 @@ async function main() {
     result.scrollAssertions = scrollAssertions;
     // Geometry must not have shifted during the run, or every phase target
     // was wrong.
-    const geomEnd = await page.evaluate(geomFn, SECTIONS);
+    // An anchor that disappears mid-run invalidates the geometry, but the
+    // phases already measured are still worth keeping: record the failure and
+    // let the run be written out rather than thrown away at the last step.
+    let geomEnd = null;
+    let geomStable = false;
+    try {
+      geomEnd = await page.evaluate(geomFn, SECTIONS);
+      geomStable =
+        Math.abs(geomEnd.workTop - geom.workTop) <= 8 &&
+        Math.abs(geomEnd.maxScroll - geom.maxScroll) <= 8;
+      if (!geomStable)
+        console.error(
+          `GEOMETRY SHIFTED DURING RUN: workTop ${geom.workTop}->${geomEnd.workTop}, maxScroll ${geom.maxScroll}->${geomEnd.maxScroll}`,
+        );
+    } catch (err) {
+      const why = String(err).split("\n")[0];
+      result.notes.push(`end-of-run geometry could not be read: ${why}`);
+      console.error(`END GEOMETRY FAILED: ${why}`);
+    }
     result.geometryEnd = geomEnd;
-    const geomStable =
-      Math.abs(geomEnd.workTop - geom.workTop) <= 8 &&
-      Math.abs(geomEnd.maxScroll - geom.maxScroll) <= 8;
-    if (!geomStable)
-      console.error(
-        `GEOMETRY SHIFTED DURING RUN: workTop ${geom.workTop}->${geomEnd.workTop}, maxScroll ${geom.maxScroll}->${geomEnd.maxScroll}`,
-      );
     // Idle-phase drift is logged (with scroll-API attribution) but only a
     // failed *scroll* phase or shifted geometry invalidates the run — the
     // scroll phases are the metrics that matter.
@@ -953,6 +1045,15 @@ async function main() {
     });
     result.slowEvents = pageData.__events.slice(0, 50);
     result.rssFinal = chromeTreeRss(USER_DATA_DIR);
+    /* `chromeTreeRss` matches macOS process names ("Chrome", "Helper
+       (Renderer)"), so on Linux it finds nothing and returns null. Memory was
+       then not measured at all, and a run that says nothing about that reads
+       as if memory were fine. */
+    if (!result.rssFinal) {
+      result.notes.push(
+        "renderer RSS not measured: perf/rss.mjs matches macOS process names, so it finds nothing on this platform.",
+      );
+    }
   } finally {
     await context.close().catch(() => {});
     rmSync(USER_DATA_DIR, { recursive: true, force: true });

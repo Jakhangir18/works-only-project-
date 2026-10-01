@@ -250,24 +250,53 @@ The measurement harness lives in `perf/` (`harness.mjs`, `regression.mjs`,
   has a fix applied but **unverified on iOS**.
 - Running notes and rejected hypotheses live in `PERF-NOTES.md`. Read it before
   re-proposing something that was already tried.
-- **The anime home is measured** (2026-10-01, `--route=anime`, which the harness
-  guesses from the URL). On this host — chromium headless, software raster, no
-  GPU — every phase holds a 16.7 ms median except `idle-top` at **33.2 ms**, and
-  stubbing the wheel with `--disable-hero-loops` returns it to 16.7 ms. So the
-  hero wheel halves the frame rate on the first screen at rest, at 1440x900. At
-  390x844 with 4x CPU throttling `idle-top` is 16.7 ms: the wheel covers a third
-  of the area there. No long tasks, no forced reflows, heap and listeners flat.
-  A GPU may absorb this entirely — the verdict needs the owner's own machine,
-  and the decision about the wheel is F10, his to make.
-- **Three harness assumptions were Mac-only** and are fixed: it launched
-  `channel: "chrome"` headful (neither exists here — pass `--chromium=` or
-  `PERF_CHROMIUM`, and it goes headless without `DISPLAY`); it settled a wheel
-  burst with a fixed 600 ms while Lenis eases for 1.05 s; and it assumed a wheel
-  step moves the page by its own pixel count, while here the delta arrives in
-  device pixels, so at `deviceScaleFactor: 2` every phase travelled half as far
-  and every scroll assertion failed. The run now calibrates the wheel and
-  records `config.wheelScale`, `config.binary` and `config.headless`, which have
-  to match before two runs are compared.
+- **The anime home is measured** (2026-10-01, four configurations, every scroll
+  assertion passing). Read these numbers with the platform attached: chromium
+  headless on the VPS, software raster, **no GPU**. They are not a Mac.
+
+  | 1440x900 | idle-top med / p95 / worst | work + rocket med | >50 ms frames |
+  |---|---|---|---|
+  | cpu x1 | 33.2 / 33.4 / 33.4 | 16.7 | 0 |
+  | cpu x1, wheel stubbed | **16.7** / 16.8 / 16.8 | 16.7 | 0 |
+  | cpu x4 | 33.3 / **50.0** / 50.1 | 16.7 | **3** |
+
+  | 390x844 | idle-top med / p95 / worst | work + rocket med | >50 ms frames |
+  |---|---|---|---|
+  | cpu x1 | 16.7 / 16.7 / 16.8 | 16.7 | 0 |
+  | cpu x4 | 16.7 / 16.7 / 16.8 | 16.7 | 0 |
+
+  The hero wheel halves the frame rate on the first screen at rest at 1440x900,
+  proven by the stubbed control; at 390x844 it covers about a third of the area
+  and costs nothing measurable. **Budgets not met, and not only at the median:**
+  `p95 <= 25 ms` is missed by `idle-top` everywhere it runs at 33+ and by the
+  rocket phases at 33.3-33.4, and the `0 long frames` budget is missed by three
+  frames at cpu x4. Heap 2.0 -> 2.1 MB over three cycles, nodes 931 -> 931,
+  listeners flat, no forced reflows, no console errors. A GPU may absorb all of
+  this; the verdict needs the owner's own machine, and what to do about the
+  wheel is F10, his to make.
+- **Several harness assumptions were Mac-only.** Fixed: it launched
+  `channel: "chrome"` (still the default, so Mac baselines reproduce; pass
+  `--chromium=`/`PERF_CHROMIUM` elsewhere) and forced headful (now headful on
+  macOS, headless where there is no `DISPLAY`, `--headful`/`--headless` to
+  override); it settled a wheel burst with a fixed 600 ms while Lenis eases for
+  1.05 s, so phases ended mid-flight; it waited for the tunnel's 240-frame
+  preload on a page that has no sequence, spending 120 s and recording a
+  timeout that read like a page failure; and it assumed a wheel step moves the
+  page by its own pixel count. **Still Mac-only and unfixed:** `perf/rss.mjs`
+  matches macOS process names, so renderer RSS is not measured here at all (the
+  result says so in its notes), and `perf/regression.mjs` still hard-codes the
+  Chrome channel, headful, `.s-work` and `is-works-ready` — `npm run
+  perf:regression` neither runs on this host nor sees the anime home.
+- **A wheel step does not always move the page by its own pixel count**, so each
+  run calibrates: wheel a known distance, scale the rest by what the page did,
+  record `config.wheelScale`. Measured here: **2 at 1440x900, 1 at 390x844.**
+  An earlier note in this file blamed `deviceScaleFactor`; the phone runs refute
+  it, since they scale 1 at `deviceScaleFactor: 3`. What the factor tracks is
+  Lenis, which runs on a fine pointer and is switched off by `pointer: coarse`
+  (`src/utils/SmoothScroll.ts`). The mechanism is not established beyond that
+  correlation, and the calibration makes it moot. `config.wheelScale`,
+  `config.binary` and `config.headless` all have to match before two runs are
+  compared.
 - The hero wheel shows `public/shots/*.webp`, pictures of each project page's
   first screen. Re-run `scripts/shots.mjs` after changing a project page's
   first screen, or the wheel shows the old page.
