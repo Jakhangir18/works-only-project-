@@ -73,7 +73,7 @@ const near = field(46, 7734121);
        with the wipe and the work panels, so the hand-off has no seam. A soft
        glow at the top is where the burst was. */
     background:
-      radial-gradient(ellipse 70% 45% at 50% 0%, rgba(106, 44, 240, 0.35), transparent 70%),
+      radial-gradient(ellipse 70% 45% at 50% 0%, color-mix(in srgb, var(--color-space-glow) 35%, transparent), transparent 70%),
       color(space);
     color: #fff;
     overflow: hidden;
@@ -128,8 +128,8 @@ const near = field(46, 7734121);
   .space__blurb {
     margin: 0;
     font: 400 clamp(0.9375rem, 1.2vw, 1.0625rem) / 1.65 font-family(fraktion);
-    /* 0.78 of white on #120b2a is 9.4:1 — well clear of the 4.5 this size
-       needs, and it keeps the paragraph behind the heading. */
+    /* 0.78 of white on #1b0f3f is above 9:1 — well clear of the 4.5 this
+       size needs, and it keeps the paragraph behind the heading. */
     color: rgba(255, 255, 255, 0.78);
   }
 

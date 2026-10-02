@@ -109,12 +109,33 @@ const panels = works.map((work, index) => ({
     /* One hairline between panels rather than a box around each: the reference
        reads as a single ruled sheet, not as a stack of cards. */
     border-top: 1px solid rgba(255, 255, 255, 0.12);
-    /* The light the work sits in: a violet glow behind each panel, painted once
-       as a static background, alternating sides with the media. */
-    background: radial-gradient(ellipse 55% 60% at 30% 50%, rgba(106, 44, 240, 0.28), transparent 70%);
+    /* The light the work sits in: a violet glow behind each panel's media,
+       painted once as a static background. Even panels put the media on the
+       right, as the reference alternates its cases, and the glow follows. */
+    background: radial-gradient(
+      ellipse 55% 60% at 30% 50%,
+      color-mix(in srgb, var(--color-space-glow) 28%, transparent),
+      transparent 70%
+    );
 
     &:nth-child(even) {
-      background: radial-gradient(ellipse 55% 60% at 70% 50%, rgba(106, 44, 240, 0.28), transparent 70%);
+      background: radial-gradient(
+        ellipse 55% 60% at 70% 50%,
+        color-mix(in srgb, var(--color-space-glow) 28%, transparent),
+        transparent 70%
+      );
+
+      .anime-work__inner {
+        grid-template-columns: 1fr 1.15fr;
+      }
+
+      .anime-work__media {
+        order: 2;
+      }
+
+      .anime-work__media img {
+        transform: rotate(2.2deg);
+      }
     }
   }
 
@@ -228,12 +249,21 @@ const panels = works.map((work, index) => ({
   }
 
   @include mq(tablet-sm) {
-    .anime-work__inner {
+    /* Written at the even-panel selector's specificity too, or the alternate
+       two-column grid above would survive into one-column widths and split a
+       390px panel into two narrow tracks. */
+    .anime-work__inner,
+    .anime-work__panel:nth-child(even) .anime-work__inner {
       grid-template-columns: 1fr;
       gap: 2rem;
     }
 
-    .anime-work__media img {
+    .anime-work__panel:nth-child(even) .anime-work__media {
+      order: 0;
+    }
+
+    .anime-work__media img,
+    .anime-work__panel:nth-child(even) .anime-work__media img {
       transform: none;
     }
 
