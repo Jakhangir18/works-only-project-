@@ -1,54 +1,122 @@
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { WIPE_STARTS } from "./RocketFlight";
 
 /**
- * Two star layers drifting at different speeds as the section passes.
+ * Two star layers sliding in from the corner the rocket left through.
  *
- * One transform per layer, written on the layer itself. The values come from
- * ScrollTrigger's own progress, so there is no scroll listener of our own and
- * no geometry read per frame.
+ * The section begins one viewport early, over the flight, and is two
+ * viewports tall; its stage is sticky for the second. So the rocket's own
+ * progress is twice this section's over the first half: the wipe starts at
+ * rocket .84, which is .42 here, and the rocket is gone at .5. The layers are
+ * invisible until the wipe has painted black under them, travel along one
+ * line — right to left, ten degrees down, away from the top-right exit — at
+ * two speeds, and dim over the last tenth to meet the work section's static
+ * tail.
+ *
+ * One transform and one opacity per layer, written as concrete values on the
+ * layer itself from ScrollTrigger's progress: no scroll listener of our own,
+ * no geometry read per frame (the stage width is read on refresh), and no
+ * write that repeats the value already there.
  */
 
-const FAR_DRIFT = 40; // px across the whole section
-const NEAR_DRIFT = 120;
+/* Right to left, ten degrees below horizontal: a unit vector. */
+const DIR = { x: -0.985, y: 0.174 };
+/* Travel over the whole run, as a fraction of the stage width. The near field
+   moves three times as far as the far one, the same ratio the vertical drift
+   had. The layers are laid out wider than the stage by exactly these amounts
+   (see AnimeSpace.astro), so the field is full at both ends. */
+const NEAR_TRAVEL = 0.45;
+const FAR_TRAVEL = 0.15;
+/* The layers start moving when the wipe starts, in this section's progress. */
+const MOVE_FROM = WIPE_STARTS / 2;
+/* Where the layers come in: only once the wipe is well past the middle of the
+   screen, so no star sits on white — the far ones first, the near ones last,
+   both fully there when the rocket's section is gone. */
+const FAR_IN = [0.45, 0.5] as const;
+const NEAR_IN = [0.475, 0.5] as const;
+/* The hand-off: over the last tenth both layers settle to the brightness of
+   the static tail the work section paints at its top. */
+const SETTLE_FROM = 0.9;
+const SETTLED = 0.4;
 
 let trigger: ScrollTrigger | null = null;
+let stage: HTMLElement | null = null;
 let far: HTMLElement | null = null;
 let near: HTMLElement | null = null;
+let width = 0;
+
+/* A linear 0..1 ramp between two progress values, clamped at both ends. */
+function ramp(progress: number, from: number, to: number): number {
+  return Math.min(1, Math.max(0, (progress - from) / (to - from)));
+}
+
+/* The last string written to each leaf, so a frame that lands on the same
+   value writes nothing. */
+const last = new Map<HTMLElement, { transform: string; opacity: string }>();
+function place(el: HTMLElement, travel: number, opacity: number): void {
+  const x = (DIR.x * travel * width).toFixed(1);
+  const y = (DIR.y * travel * width).toFixed(1);
+  const next = { transform: `translate3d(${x}px, ${y}px, 0)`, opacity: opacity.toFixed(3) };
+  const prev = last.get(el);
+  if (prev?.transform !== next.transform) el.style.transform = next.transform;
+  if (prev?.opacity !== next.opacity) el.style.opacity = next.opacity;
+  last.set(el, next);
+}
+
+function measure(): void {
+  if (stage) width = stage.clientWidth;
+}
 
 function apply(progress: number): void {
-  // Centred on the middle of the section, so the field is level when the
-  // heading is on screen rather than at one end of its travel.
-  const t = progress - 0.5;
-  if (far) far.style.setProperty("--drift", `${(t * -FAR_DRIFT).toFixed(1)}px`);
-  if (near) near.style.setProperty("--drift", `${(t * -NEAR_DRIFT).toFixed(1)}px`);
+  const moved = ramp(progress, MOVE_FROM, 1);
+  const dim = 1 - (1 - SETTLED) * ramp(progress, SETTLE_FROM, 1);
+  if (far) place(far, FAR_TRAVEL * moved, ramp(progress, FAR_IN[0], FAR_IN[1]) * dim);
+  if (near) place(near, NEAR_TRAVEL * moved, ramp(progress, NEAR_IN[0], NEAR_IN[1]) * dim);
 }
 
 export function initSpace(): void {
   if (typeof window === "undefined") return;
 
   const section = document.querySelector<HTMLElement>(".space");
+  stage = document.querySelector<HTMLElement>(".space__stage");
   far = document.querySelector<HTMLElement>(".js-space-far");
   near = document.querySelector<HTMLElement>(".js-space-near");
-  if (!section || !far || !near) return;
+  if (!section || !stage || !far || !near) return;
 
+  // Stillness, not absence: the stylesheet lays the section out as one plain
+  // screen with the field at rest and fully there, and nothing here runs.
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
   gsap.registerPlugin(ScrollTrigger);
+  measure();
 
   trigger = ScrollTrigger.create({
     trigger: section,
     start: "top bottom",
-    end: "bottom top",
+    end: "bottom bottom",
     onUpdate: (self) => apply(self.progress),
+    onRefresh: () => {
+      measure();
+      apply(trigger ? trigger.progress : 0);
+    },
   });
 
-  apply(0.5);
+  // A reload inside the range lands on the right frame, not on the rest pose.
+  apply(trigger.progress);
 }
 
 export function destroySpace(): void {
   trigger?.kill();
   trigger = null;
+  for (const el of [far, near]) {
+    if (!el) continue;
+    el.style.transform = "";
+    el.style.opacity = "";
+  }
+  last.clear();
+  stage = null;
   far = null;
   near = null;
+  width = 0;
 }

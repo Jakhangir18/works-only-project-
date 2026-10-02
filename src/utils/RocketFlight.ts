@@ -15,9 +15,9 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
  * forced reflow this repository has paid for twice.
  */
 
-/* The flame only takes the screen at the very end, so the section's own copy
-   has been readable for the whole climb. */
-const WIPE_STARTS = 0.84;
+/* The flame only takes the screen at the very end. Exported: the star field
+   starts moving on the same mark. */
+export const WIPE_STARTS = 0.84;
 /* The copy lets go as the burst is born, not after: it is ink, and once the
    black is under it there is nothing left to read. */
 const COPY_FADES = 0.8;
