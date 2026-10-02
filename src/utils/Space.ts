@@ -1,6 +1,7 @@
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { WIPE_STARTS } from "./RocketFlight";
+import { writeIfChanged, forgetLeaf } from "./leafWrite";
 
 /**
  * Two star layers sliding in from the corner the rocket left through.
@@ -51,17 +52,13 @@ function ramp(progress: number, from: number, to: number): number {
   return Math.min(1, Math.max(0, (progress - from) / (to - from)));
 }
 
-/* The last string written to each leaf, so a frame that lands on the same
-   value writes nothing. */
-const last = new Map<HTMLElement, { transform: string; opacity: string }>();
+/* Through writeIfChanged, so a frame that lands on the same value writes
+   nothing. */
 function place(el: HTMLElement, travel: number, opacity: number): void {
   const x = (DIR.x * travel * width).toFixed(1);
   const y = (DIR.y * travel * width).toFixed(1);
-  const next = { transform: `translate3d(${x}px, ${y}px, 0)`, opacity: opacity.toFixed(3) };
-  const prev = last.get(el);
-  if (prev?.transform !== next.transform) el.style.transform = next.transform;
-  if (prev?.opacity !== next.opacity) el.style.opacity = next.opacity;
-  last.set(el, next);
+  writeIfChanged(el, "transform", `translate3d(${x}px, ${y}px, 0)`);
+  writeIfChanged(el, "opacity", opacity.toFixed(3));
 }
 
 function measure(): void {
@@ -113,8 +110,8 @@ export function destroySpace(): void {
     if (!el) continue;
     el.style.transform = "";
     el.style.opacity = "";
+    forgetLeaf(el);
   }
-  last.clear();
   stage = null;
   far = null;
   near = null;

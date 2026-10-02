@@ -1,5 +1,6 @@
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { writeIfChanged, forgetLeaf } from "./leafWrite";
 
 /**
  * Drives the rocket along its path from the section's own scroll progress.
@@ -86,17 +87,6 @@ function ramp(progress: number, from: number, to: number): number {
   return Math.min(1, Math.max(0, (progress - from) / (to - from)));
 }
 
-/* The last string written to each leaf. ScrollTrigger calls apply() on every
-   scroll frame across the whole section, and for most of it the wipe and the
-   burst hold a constant; writing the same value again is the rewrite this
-   repository already paid for once on this very driver. */
-const last = new Map<HTMLElement, string>();
-function write(el: HTMLElement, prop: string, value: string): void {
-  if (last.get(el) === value) return;
-  last.set(el, value);
-  el.style.setProperty(prop, value);
-}
-
 /* The resting pose under reduced motion: the craft at the start of its trail.
    Measured against the section's box and only re-measured when that box has
    changed by a whole pixel, so a phone's address bar coming and going does
@@ -120,10 +110,12 @@ function apply(progress: number): void {
     craft.style.setProperty("--y", `${p.y.toFixed(1)}px`);
     craft.style.setProperty("--a", `${p.a.toFixed(1)}deg`);
   }
-  if (wipe) write(wipe, "--wipe", ramp(progress, WIPE_STARTS, 1).toFixed(3));
+  // Through writeIfChanged: for most of the section the wipe and the burst
+  // hold a constant, and the same value again would be a needless write.
+  if (wipe) writeIfChanged(wipe, "--wipe", ramp(progress, WIPE_STARTS, 1).toFixed(3));
   if (burst) {
     const b = ramp(progress, BURST_STARTS, BURST_ENDS);
-    write(burst, "--burst", b.toFixed(3));
+    writeIfChanged(burst, "--burst", b.toFixed(3));
     // Promoted only while it is actually moving. A standing will-change on a
     // 180vmax box is a layer the whole page carries; here it exists for the
     // twelve percent of the section where the ring is on screen.
@@ -199,8 +191,8 @@ export function destroyRocketFlight(): void {
   section = null;
   craft = null;
   trail = null;
+  points = [];
+  for (const el of [wipe, burst]) if (el) forgetLeaf(el);
   wipe = null;
   burst = null;
-  points = [];
-  last.clear();
 }
