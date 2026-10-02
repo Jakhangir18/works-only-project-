@@ -60,12 +60,16 @@ const cards = [
 </section>
 
 <style lang="scss">
+  @use "../styles/helpers/colors" as *;
   @use "../styles/helpers/fonts" as *;
   @use "../styles/helpers/responsive" as *;
 
   .bento-section {
     position: relative;
-    background: #fff2ed;
+    /* The anime home's own ground, so the section reads as part of the opening
+       rather than as the tunnel page it came from. */
+    background: color(secondary);
+    color: color(primary);
     padding: 0;
     min-height: 100vh;
     z-index: 20;
@@ -102,7 +106,7 @@ const cards = [
     font-size: clamp(2.5rem, 6vw, 5rem);
     font-weight: 400;
     line-height: 1.1;
-    color: #000;
+    color: color(primary);
     margin: 0;
     text-transform: lowercase;
   }
@@ -134,7 +138,7 @@ const cards = [
     border: 1px dashed rgba(255, 255, 255, 0.3);
     border-radius: 0.75rem;
     padding: clamp(1.5rem, 3vw, 2.5rem);
-    background: #000;
+    background: color(primary);
     min-height: 200px;
     display: flex;
     flex-direction: column;
@@ -242,7 +246,7 @@ const cards = [
     font-size: clamp(2rem, 5vw, 3.75rem);
     font-weight: 400;
     line-height: 1.15;
-    color: #000;
+    color: color(primary);
     margin: 0 0 1.5rem 0;
     text-transform: lowercase;
   }
@@ -251,7 +255,7 @@ const cards = [
     font-family: font-family(fraktion);
     font-size: clamp(1rem, 1.2vw, 1.125rem);
     line-height: 1.7;
-    color: rgba(0, 0, 0, 0.7);
+    color: color(ink-soft);
     margin: 0;
   }
 </style>
