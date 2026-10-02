@@ -119,7 +119,7 @@ export const projects: readonly Project[] = [
     when: "2026 — now",
     where: "Google Developer Group on Campus, Oregon State",
     result: "200+ students registered",
-    line: "President of Oregon State's Google Developer Group chapter: workshops, events and a room full of builders.",
+    line: "President of Oregon State's Google Developer Group chapter, where 200+ registered students build with Google technology.",
     cover: {
       ...picture("gdg", "cover", 640),
       alt: "Presenting Google Developer Group on Campus Oregon State from the stage",
