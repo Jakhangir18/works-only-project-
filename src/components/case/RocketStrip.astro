@@ -133,6 +133,7 @@ const first = tiles[0];
     const html = document.documentElement;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
     let open: HTMLAnchorElement | null = null; // the frame on show
+    let openedAt = 0;
     let at: Box | null = null; // where its image is laid out
     let closing = false;
     let running: Animation[] = [];
@@ -166,6 +167,7 @@ const first = tiles[0];
       place(to);
       a.classList.add("is-lifted");
       box.showModal();
+      openedAt = performance.now();
       open = a;
       at = to;
       closing = false;
@@ -237,7 +239,12 @@ const first = tiles[0];
       e.preventDefault();
       hide();
     });
-    box.addEventListener("click", hide);
+    // The second click of a double click lands on the dialog it just opened;
+    // a click within 350 ms of opening is that, not a request to close.
+    box.addEventListener("click", (e) => {
+      if (e.detail > 1 || performance.now() - openedAt < 350) return;
+      hide();
+    });
     // The modal dialog makes the page inert, but Tab would still leave for
     // the browser's own controls. Close is the one control here: Tab stays.
     box.addEventListener("keydown", (e) => {

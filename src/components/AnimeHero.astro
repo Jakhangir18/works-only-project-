@@ -34,10 +34,7 @@ const PLACE = "Corvallis, Oregon";
    does. The slug is derived from the route, so a new project joins the wheel
    by existing — and the last segment of `site` is exactly what shots.mjs
    names its output. */
-const shots = projects.map((project) => ({
-  title: project.title,
-  slug: project.href.replace(/\/$/, "").split("/").pop() || "",
-}));
+const shots = projects.map((project) => ({ title: project.title, slug: project.slug }));
 /* Each project sits on the ring twice. The ring is concave, so only its far
    half is ever on screen — seven cards on a full circle would show three at a
    time, and the reference wraps the figure in six. Fourteen slots keep the

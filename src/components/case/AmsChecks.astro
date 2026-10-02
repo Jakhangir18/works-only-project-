@@ -227,9 +227,10 @@ const nn = (i: number) => String(i + 1).padStart(2, "0");
     color: var(--case-soft);
   }
 
-  /* The reading line takes over only where the plate is sticky and the
-     script runs: one pin and one note up, the rest stepped back. */
-  @media (min-width: 56.0625em) {
+  /* The reading line takes over only where the plate is sticky, the script
+     runs and motion is welcome: one pin and one note up, the rest stepped
+     back. Under reduced motion every pin and note stays up. */
+  @media (min-width: 56.0625em) and (prefers-reduced-motion: no-preference) {
     :global(.js-case) .ams-pin {
       opacity: 0.4;
     }
