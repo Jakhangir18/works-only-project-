@@ -1,5 +1,5 @@
 ---
-import { video } from "../../data/media";
+import { video, clipLength } from "../../data/media";
 
 /**
  * A clip from the project's imported media. Nothing downloads until it is
@@ -21,10 +21,7 @@ interface Props {
 }
 const { slug, id, label, caption, n, loop = false, class: className } = Astro.props;
 const v = video(slug, id);
-// Round the whole length once, then split it, so 59.6 s reads 1:00, not 0:60.
-const total = Math.round(v.duration);
-const mins = Math.floor(total / 60);
-const secs = String(total % 60).padStart(2, "0");
+const length = clipLength(v.duration);
 ---
 
 <figure class:list={["case-clip", className]} data-reveal>
@@ -39,7 +36,7 @@ const secs = String(total % 60).padStart(2, "0");
     <figcaption>
       {n !== undefined && <span class="case-clip__n">Fig. {n}</span>}
       <span>{caption}</span>
-      <span class="case-clip__len">{mins}:{secs}</span>
+      <span class="case-clip__len">{length}</span>
     </figcaption>
   )}
 </figure>
@@ -61,6 +58,15 @@ const secs = String(total % 60).padStart(2, "0");
       width: 100%;
       height: 100%;
       object-fit: cover;
+
+      /* The frame clips its corners, which would clip an outside ring too.
+         Focus lands on the video's own controls, inside its shadow tree, so
+         the host matches :focus and :focus-within, not :focus-visible. */
+      &:focus,
+      &:focus-within {
+        outline: 2px solid var(--case-accent);
+        outline-offset: -4px;
+      }
     }
   }
 

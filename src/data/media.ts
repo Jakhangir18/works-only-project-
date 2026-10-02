@@ -49,6 +49,13 @@ export function picture(slug: string, id: string, cap = 1280): Picture {
   };
 }
 
+/** A clip's length as people read it: rounded once, then split, so 59.6 s
+ *  reads 1:00, never 0:60. */
+export function clipLength(seconds: number): string {
+  const total = Math.round(seconds);
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
+}
+
 export function video(slug: string, id: string): VideoEntry {
   return entry(slug, id, "video");
 }

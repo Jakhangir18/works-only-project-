@@ -2,7 +2,7 @@
 import CaseLayout from "../../layouts/CaseLayout.astro";
 import CaseMeta from "../../components/case/CaseMeta.astro";
 import CaseFigure from "../../components/case/CaseFigure.astro";
-import { picture, video } from "../../data/media";
+import { picture, video, clipLength } from "../../data/media";
 import { projects } from "../../data/projects";
 
 /**
@@ -30,8 +30,7 @@ const p = projects.find((x) => x.slug === "zyp")!;
 const live = p.links[0].href;
 const clip = video("zyp", "scroll");
 const first = picture("zyp", "hero", 1280);
-const mins = Math.floor(clip.duration / 60);
-const secs = String(Math.round(clip.duration % 60)).padStart(2, "0");
+const length = clipLength(clip.duration);
 
 /* The recording opens on the site's own loader: 1.5 s of blank ground, then
    the logo builds, and the first screen is whole at about 4.5 s. The first
@@ -50,7 +49,7 @@ const parts = [
 ];
 ---
 
-<CaseLayout slug="zyp" title="Zyp internship" description={p.line}>
+<CaseLayout slug="zyp" title="Zyp internship" description={p.line} shareCard="/projects/zyp/og.jpg">
   <div class="zyp">
     <header class="zyp-hero">
       <div class="zyp-hero__top">
@@ -78,7 +77,7 @@ const parts = [
               <video
                 class="js-case-loop"
                 src={`${clip.src}#t=${clipStart}`}
-                poster={first.src}
+                poster={clip.poster}
                 preload="none"
                 muted
                 playsinline
@@ -92,7 +91,7 @@ const parts = [
           <figcaption>
             <span class="zyp-n">Fig. 1</span>
             <span>The www.zyp.co home page, scrolled from the top. Recorded on 2 October 2026.</span>
-            <span class="zyp-len">{mins}:{secs}</span>
+            <span class="zyp-len">{length}</span>
           </figcaption>
         </figure>
       </div>
@@ -203,13 +202,6 @@ const parts = [
 
 <style lang="scss">
   @use "../../styles/helpers/fonts" as *;
-
-  /* The shared soft ink (#5b5b60) is 6.8:1 on white and 6.2:1 on the warm
-     surface; this page's captions, labels and details read at 8:1 or more.
-     A static token on the page's own wrapper, never written per frame. */
-  .zyp {
-    --case-soft: #4a4a4f;
-  }
 
   /* The hero: the name and the first action, then the site in its frame. */
   .zyp-hero__top {

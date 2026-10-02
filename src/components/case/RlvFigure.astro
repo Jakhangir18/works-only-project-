@@ -1,5 +1,5 @@
 ---
-import { picture, video } from "../../data/media";
+import { picture, video, clipLength } from "../../data/media";
 
 /**
  * A numbered figure on the Remote Lab Vision page ("The paper"): one picture
@@ -47,7 +47,7 @@ const crop = [
 ]
   .filter(Boolean)
   .join("; ");
-const length = clip ? `${Math.floor(clip.duration / 60)}:${String(Math.round(clip.duration % 60)).padStart(2, "0")}` : "";
+const length = clip ? clipLength(clip.duration) : "";
 ---
 
 <figure
@@ -153,10 +153,15 @@ const length = clip ? `${Math.floor(clip.duration / 60)}:${String(Math.round(cli
   /* Rail: every figure stacked in the stage, sized to fit it whole (the
      stage is a size container), one shown. The swap is a class toggle; the
      crossfade is opacity only, and under reduced motion there is none. */
+  /* Only the shown figure is displayed: a stacked figure that is merely
+     transparent still sits in the viewport, so its lazy image loads before
+     the page does (the critical path read 614 KB against a 600 KB budget).
+     The fade-in comes from @starting-style; where that is unsupported the
+     swap is instant. */
   .rlv-fig--rail {
     position: absolute;
     inset: 0;
-    display: grid;
+    display: none;
     align-content: center;
     justify-items: start;
     opacity: 0;
@@ -170,8 +175,13 @@ const length = clip ? `${Math.floor(clip.duration / 60)}:${String(Math.round(cli
   }
 
   .rlv-fig--rail.is-on {
+    display: grid;
     opacity: 1;
     pointer-events: auto;
+
+    @starting-style {
+      opacity: 0;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
