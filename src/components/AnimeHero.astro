@@ -298,10 +298,11 @@ const FIGURE_HEIGHT = 1214;
     transform: translateX(-50%);
     transform-origin: 50% 100%;
 
-    /* Promoted only where the tilt runs: a hovering, fine pointer. On touch
-       the controller writes nothing here and the layer would be a cost for
-       no motion. */
-    @media (hover: hover) and (pointer: fine) {
+    /* Promoted only where the tilt runs: a hovering, fine pointer, and no
+       request for reduced motion. On touch, or under that setting, the
+       controller writes nothing here and the layer would be a cost for no
+       motion. */
+    @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
       will-change: transform;
     }
 
