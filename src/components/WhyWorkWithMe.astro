@@ -66,12 +66,16 @@ const cards = [
 
   .bento-section {
     position: relative;
-    /* The tunnel's ground by default. The component is shared by both homes,
-       and the colour helper resolves to each page's own theme — on the tunnel
-       that turned the cards near-white under white type (1.1:1). So the
-       anime home opts in by its theme class below, and the tunnel keeps the
-       literals it was designed with. */
-    background: #fff2ed;
+    /* The component is shared by both homes, and the colour helper resolves
+       to each page's own theme — on the tunnel that turned the cards near-
+       white under white type (1.1:1). So the section carries its own four
+       colours: the tunnel's literals by default, redefined once under the
+       anime home's theme class. */
+    --bento-ground: #fff2ed;
+    --bento-ink: #000;
+    --bento-soft: rgba(0, 0, 0, 0.7);
+    --bento-card: #000;
+    background: var(--bento-ground);
     padding: 0;
     min-height: 100vh;
     z-index: 20;
@@ -108,22 +112,16 @@ const cards = [
     font-size: clamp(2.5rem, 6vw, 5rem);
     font-weight: 400;
     line-height: 1.1;
-    color: #000;
+    color: var(--bento-ink);
     margin: 0;
     text-transform: lowercase;
   }
 
   :global(.theme-anime) .bento-section {
-    background: color(secondary);
-  }
-
-  :global(.theme-anime) .bento-header__title,
-  :global(.theme-anime) .bento-footer__title {
-    color: color(primary);
-  }
-
-  :global(.theme-anime) .bento-footer__text {
-    color: color(ink-soft);
+    --bento-ground: var(--color-secondary);
+    --bento-ink: var(--color-primary);
+    --bento-soft: var(--color-ink-soft);
+    --bento-card: var(--color-primary);
   }
 
   .bento-container {
@@ -153,9 +151,7 @@ const cards = [
     border: 1px dashed rgba(255, 255, 255, 0.3);
     border-radius: 0.75rem;
     padding: clamp(1.5rem, 3vw, 2.5rem);
-    /* A literal on purpose: the cards are ink on both homes, and the helper
-       would hand the tunnel its theme's light primary under white type. */
-    background: #0b0b0c;
+    background: var(--bento-card);
     min-height: 200px;
     display: flex;
     flex-direction: column;
@@ -263,7 +259,7 @@ const cards = [
     font-size: clamp(2rem, 5vw, 3.75rem);
     font-weight: 400;
     line-height: 1.15;
-    color: #000;
+    color: var(--bento-ink);
     margin: 0 0 1.5rem 0;
     text-transform: lowercase;
   }
@@ -272,7 +268,7 @@ const cards = [
     font-family: font-family(fraktion);
     font-size: clamp(1rem, 1.2vw, 1.125rem);
     line-height: 1.7;
-    color: rgba(0, 0, 0, 0.7);
+    color: var(--bento-soft);
     margin: 0;
   }
 </style>
