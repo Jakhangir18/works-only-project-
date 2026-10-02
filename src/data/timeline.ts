@@ -186,6 +186,17 @@ export const timeline: readonly TimelineEntry[] = [
   },
 ];
 
+/** An entry's span as people read it, honouring `yearsOnly`: when only the
+ *  years are on record the months are not shown, because they would be a
+ *  guess. Every component formats dates through this or `when`. */
+export function span(entry: TimelineEntry): { text: string; from: string; to?: string } {
+  if (!entry.yearsOnly) return when(entry.start, entry.end);
+  const from = entry.start.slice(0, 4);
+  const to = entry.end?.slice(0, 4);
+  if (!to) return { text: `${from} — now`, from };
+  return { text: from === to ? from : `${from} – ${to}`, from, to: from === to ? undefined : to };
+}
+
 /** Whole months covered by an entry, minimum 1. */
 export function monthSpan(entry: TimelineEntry, today = new Date()): number {
   const [ys, ms] = entry.start.split("-").map(Number);

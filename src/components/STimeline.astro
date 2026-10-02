@@ -1,5 +1,5 @@
 ---
-import { timeline, monthSpan, type TimelineEntry } from "../data/timeline";
+import { timeline, monthSpan, span, type TimelineEntry } from "../data/timeline";
 
 const entries = timeline
   .filter((entry) => !entry.draft)
@@ -17,6 +17,8 @@ function label(value: string): string {
 }
 
 function range(entry: TimelineEntry): string {
+  // Only the years are on record: months here would be a guess.
+  if (entry.yearsOnly) return span(entry).text;
   const from = label(entry.start);
   if (!entry.end) return `${from} — now`;
   return entry.end === entry.start ? from : `${from} — ${label(entry.end)}`;
@@ -60,7 +62,8 @@ const groups = entries.reduce<{ year: string; items: TimelineEntry[] }[]>(
 
           <ol class="s-timeline__list">
             {group.items.map((entry) => {
-              const months = monthSpan(entry);
+              // A duration from guessed months would be invented precision.
+              const months = entry.yearsOnly ? 0 : monthSpan(entry);
               const Tag = entry.href ? "a" : "div";
               return (
                 <li

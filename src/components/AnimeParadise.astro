@@ -1,5 +1,5 @@
 ---
-import { timeline, KIND_LABEL, when, type TimelineEntry } from "../data/timeline";
+import { timeline, KIND_LABEL, span } from "../data/timeline";
 
 /**
  * The timeline, as a walk. Owner's direction (2026-10-02): from space, down
@@ -27,15 +27,6 @@ const stops = timeline
   .filter((entry) => !entry.draft)
   .slice()
   .sort((a, b) => a.start.localeCompare(b.start));
-
-function dates(entry: TimelineEntry) {
-  if (entry.yearsOnly) {
-    const ys = entry.start.slice(0, 4);
-    const ye = entry.end?.slice(0, 4);
-    return { text: !ye ? `${ys} — now` : ys === ye ? ys : `${ys} – ${ye}`, from: ys, to: ye };
-  }
-  return when(entry.start, entry.end);
-}
 
 const N = stops.length;
 
@@ -195,7 +186,7 @@ const SKY_H = 768;
 
     <ol class="paradise__stops">
       {stops.map((entry, i) => {
-        const d = dates(entry);
+        const d = span(entry);
         return (
           <li class:list={["paradise__stop js-par-stop", i % 2 ? "is-right" : "is-left"]}>
             <article class="paradise__sign">
