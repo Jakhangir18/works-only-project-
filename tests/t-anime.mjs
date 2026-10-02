@@ -142,16 +142,16 @@ for (const [ename, engine] of Object.entries({ chromium, webkit })) {
       results.push(check(`${tag} the rocket sits on its route`, onLine <= 6, `${onLine} px off the line`));
     }
 
-    // 5. The work panels and the timeline board.
+    // 5. The work carousel and the timeline board.
     const sections = await page.evaluate(() => ({
-      panels: document.querySelectorAll('.anime-work__panel').length,
-      links: [...document.querySelectorAll('.anime-work__link')].map((a) => a.getAttribute('href')),
+      panels: document.querySelectorAll('.anime-work__card').length,
+      links: [...document.querySelectorAll('.anime-work__card')].map((a) => a.getAttribute('href')),
       notes: document.querySelectorAll('.board__note').length,
       pins: document.querySelectorAll('.board__pin').length,
       drafts: [...document.querySelectorAll('.board__name')].map((n) => n.textContent.trim()),
     }));
-    results.push(check(`${tag} a panel for every project`, sections.panels === 7, `${sections.panels} panels`));
-    results.push(check(`${tag} every panel has a way in`, sections.links.length === 7 && sections.links.every((h) => h && h.startsWith('/')), sections.links.join(',')));
+    results.push(check(`${tag} a card for every project`, sections.panels === 7, `${sections.panels} cards`));
+    results.push(check(`${tag} every card has a way in`, sections.links.length === 7 && sections.links.every((h) => h && h.startsWith('/')), sections.links.join(',')));
     results.push(check(`${tag} the board is pinned`, sections.notes > 0 && sections.notes === sections.pins, `${sections.notes} notes, ${sections.pins} pins`));
     // The three entries whose roles are unconfirmed must not reach the page.
     const leaked = sections.drafts.filter((t) => /Google Developer Group|Reverlab|STEP Academy/i.test(t));

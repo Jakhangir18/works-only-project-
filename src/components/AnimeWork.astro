@@ -1,118 +1,125 @@
 ---
-import { works } from "../data/works";
-import { timeline, KIND_LABEL } from "../data/timeline";
-import SplitHeading from "./SplitHeading.astro";
+import { projects } from "../data/projects";
 
 /**
- * The work: one bordered panel per project on a dark sheet, a corner label,
- * a very large title, a couple of tags, a way in, and the project's own
- * photograph large. The look is GitHub's dark palette — canvas, a surface
- * one step lighter, hairline borders, pills — on the black the rocket's
- * burst left behind.
+ * WORK: out of the star field, the four letters of the old tunnel, and then
+ * his experience on a 3D carousel.
  *
- * No pinning and no scrub. Each panel is an ordinary full-height section,
- * which is exactly why the reference scrolls as smoothly as it does — the
- * browser is doing nothing but scrolling.
+ * Owner's direction (2026-10-02): after space, a proper hand-off into the
+ * WORK section the Vercel version has — the letter tunnel — but more
+ * beautiful, with a carousel, holding his experience.
  *
- * The tags are not invented. Each one is the kind and the year already
- * confirmed for that project in the timeline, matched by route; a project with
- * no timeline entry simply shows fewer tags rather than a guess.
+ * One sticky stage held for the section's length, driven by one ScrollTrigger
+ * (WorkCarousel.ts), in three acts:
+ *   1. the letters W O R K rise out of the dark, one after another, stacked
+ *      the way the tunnel opens;
+ *   2. each letter becomes a ring of itself turning around the screen — the
+ *      tunnel's rows — and the rings dim into a backdrop;
+ *   3. the seven projects on a ring of cards turn through the front, one per
+ *      seventh of the remaining scroll; dragging turns it too.
+ *
+ * Per frame: one transform per letter ring, one for the card ring, a few
+ * opacities, all through writeIfChanged. The card at the front is laid out
+ * at its on-screen size (the ring is pulled back by its own radius), so the
+ * card being read is never an upscaled raster (invariant 7).
  */
 
-function tagsFor(site: string): string[] {
-  const entry = timeline.find((item) => item.href === site);
-  if (!entry) return [];
-  const year = entry.start.slice(0, 4);
-  return [KIND_LABEL[entry.kind] ?? entry.kind, year];
-}
+const LETTERS = ["W", "O", "R", "K"];
+/* Copies of each letter round its ring. The ring is concave (its far half
+   faces the screen and its sides come forward past the screen's edges), so
+   about half of them are ever drawn; backface-visibility drops the rest. */
+const PER_RING = 12;
 
-const panels = works.map((work, index) => ({
-  ...work,
-  index: String(index + 1).padStart(2, "0"),
-  tags: tagsFor(work.site),
-}));
+const cards = projects.map((p, i) => ({ ...p, index: String(i + 1).padStart(2, "0") }));
 ---
 
-<section class="anime-work" id="work" aria-label="Work">
-  {
-    panels.map((panel) => (
-      <article class="anime-work__panel">
-        <p class="anime-work__label">Case {panel.index}</p>
+<section class="anime-work" id="work" aria-labelledby="work-title">
+  <h2 class="u-sr-only" id="work-title">Work</h2>
 
-        <div class="anime-work__inner">
-          <div class="anime-work__media">
-            {panel.cover ? (
-              <img
-                src={panel.cover.src}
-                alt={panel.cover.alt}
-                width={panel.cover.width}
-                height={panel.cover.height}
-                loading="lazy"
-                decoding="async"
-                style={`object-position:${panel.cover.focalPoint.x} ${panel.cover.focalPoint.y};`}
-              />
-            ) : (
-              <div class="anime-work__poster" aria-hidden="true">
-                <span>{panel.poster.mark}</span>
-              </div>
-            )}
-          </div>
-
-          <div class="anime-work__copy">
-            <SplitHeading as="h2" class="anime-work__title" text={panel.title} />
-            <p class="anime-work__blurb">{panel.blurb}</p>
-
-            {panel.tags.length > 0 && (
-              <ul class="anime-work__tags">
-                {panel.tags.map((tag) => (
-                  <li>{tag}</li>
-                ))}
-              </ul>
-            )}
-
-            <a class="anime-work__link" href={panel.site} data-magnetic>
-              Deep dive
-              <span aria-hidden="true">→</span>
-            </a>
-          </div>
+  <div class="anime-work__stage js-work-stage">
+    <div class="anime-work__tunnel" aria-hidden="true">
+      {LETTERS.map((letter, row) => (
+        <div class="anime-work__ring js-work-ring" style={`--row:${row}`}>
+          {Array.from({ length: PER_RING }, (_, i) => (
+            <span class:list={["anime-work__letter js-work-letter", { "is-front": i === 0 }]} style={`--i:${i}; --n:${PER_RING}`}>{letter}</span>
+          ))}
         </div>
-      </article>
-    ))
-  }
+      ))}
+    </div>
+
+    {/* Dims the tunnel into a backdrop for the third act: an overlay's
+        opacity, because opacity on a ring would flatten its 3D. */}
+    <div class="anime-work__veil js-work-veil" aria-hidden="true"></div>
+
+    <div class="anime-work__carousel js-work-carousel">
+      <ul class="anime-work__cards js-work-cards" style={`--n:${cards.length}`}>
+        {cards.map((card, i) => (
+          <li class="anime-work__slot" style={`--i:${i}`}>
+            <a class="anime-work__card js-work-card" href={card.href} data-index={i}>
+              <span class="anime-work__media">
+                <img
+                  src={card.cover.src}
+                  srcset={card.cover.srcset}
+                  sizes="(max-width: 40em) 72vw, 360px"
+                  alt={card.cover.alt}
+                  width={card.cover.width}
+                  height={card.cover.height}
+                  loading="lazy"
+                  decoding="async"
+                  style={`object-position:${card.cover.focal}`}
+                />
+              </span>
+              <span class="anime-work__body">
+                <span class="anime-work__meta">
+                  <span class="anime-work__kind">{card.kind}</span>
+                  <span class="anime-work__index">{card.index} / {String(cards.length).padStart(2, "0")}</span>
+                </span>
+                <span class="anime-work__title">{card.title}</span>
+                <span class="anime-work__role">{card.role}</span>
+                <span class="anime-work__when">{card.when} · {card.where}</span>
+                {card.result && <span class="anime-work__result">{card.result}</span>}
+                <span class="anime-work__open">Open the case <span aria-hidden="true">→</span></span>
+              </span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+
+    <p class="anime-work__hint" aria-hidden="true">
+      <span class="js-work-count">01</span> / {String(cards.length).padStart(2, "0")} · scroll<span class="anime-work__drag"> or drag</span>
+    </p>
+  </div>
 </section>
+
+<script>
+  import { initWorkCarousel } from "../utils/WorkCarousel";
+  initWorkCarousel();
+</script>
 
 <style lang="scss">
   @use "../styles/helpers/colors" as *;
   @use "../styles/helpers/fonts" as *;
-  @use "../styles/helpers/responsive" as *;
 
   .anime-work {
     position: relative;
-    /* The black the burst left behind, the same token the wipe and the star
-       field paint, so the work sits inside that dark rather than after it. */
+    /* The stage is held for the whole height; the acts are fractions of it. */
+    height: 560svh;
     background: color(space);
     color: color(work-text);
-    padding: clamp(3rem, 8vh, 6rem) clamp(1rem, 4vw, 3rem) clamp(2rem, 5vh, 4rem);
-    /* The two pseudo-elements below sit under the panels and over the ground,
-       so they rank inside this box only. */
+    /* clip, not hidden: hidden would make this a scroll container and the
+       stage would stick to it instead of to the viewport. */
+    overflow: clip;
     isolation: isolate;
 
-    /* The star field's tail. The drifting layers above settle to .4 and hand
-       off to this: a static scatter over the top of the sheet, painted once,
-       with no element to move. Three dot grids with coprime periods read as
-       scatter rather than as a grid; the second pseudo-element fades them
-       into the ground over the first sixty percent of a screen. */
-    &::before,
-    &::after {
+    /* The star field's tail, handed over from space: a static scatter over
+       the top of the section, painted once. */
+    &::before {
       content: "";
       position: absolute;
       inset: 0 0 auto;
       z-index: -1;
-      height: 60svh;
-      pointer-events: none;
-    }
-
-    &::before {
+      height: 100svh;
       background-image:
         radial-gradient(circle, rgba(255, 255, 255, 0.7) 0.6px, transparent 1.3px),
         radial-gradient(circle, rgba(255, 217, 168, 0.6) 0.8px, transparent 1.6px),
@@ -126,220 +133,342 @@ const panels = works.map((work, index) => ({
         89px 61px,
         41px 7px;
       opacity: 0.4;
-    }
-
-    &::after {
-      background: linear-gradient(to bottom, transparent, color(space));
+      pointer-events: none;
     }
   }
 
-  .anime-work__panel {
+  /* Out of the tree while the section is more than a screen away: its
+     forty-odd 3D layers otherwise sit in the page's layer tree and are
+     re-assigned on every frame the rocket or the stars write, which on a
+     phone profile cost long tasks in sections nowhere near this one. The
+     controller sets is-far from an IntersectionObserver. */
+  .anime-work:global(.is-far) .anime-work__tunnel,
+  .anime-work:global(.is-far) .anime-work__carousel {
+    display: none;
+  }
+
+  .anime-work__stage {
+    position: sticky;
+    top: 0;
+    height: 100svh;
+    overflow: clip;
+    /* The tunnel's dot grid, static. */
+    background-image: radial-gradient(circle, rgba(255, 242, 237, 0.16) 1px, transparent 1.4px);
+    background-size: 28px 28px;
+    background-position: center;
+  }
+
+  /* --- Act 1 and 2: the letters ------------------------------------------ */
+
+  .anime-work__tunnel {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    grid-template-rows: repeat(4, 1fr);
+    align-items: center;
+    padding: 6svh 0;
+    perspective: 1100px;
+    pointer-events: none;
+  }
+
+  .anime-work__tunnel {
+    /* The ring's radius, set by the controller once per resize so the
+       stylesheet and the turn it writes agree; this is the fallback. */
+    --radius: 420px;
+  }
+
+  .anime-work__ring {
     position: relative;
+    height: 100%;
+    transform-style: preserve-3d;
+    /* The ring's axis stands in front of the screen by its radius, the way
+       the hero's wheel does: the far side faces the viewer, the middle copy
+       sits on the screen at its own size and the copies to either side come
+       forward and grow toward the edges — the inside of the old tunnel. The
+       controller writes this whole transform, adding the turn. */
+    transform: translateZ(var(--radius));
+    will-change: transform;
+  }
+
+  .anime-work__letter {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 1em;
+    margin: -0.5em 0 0 -0.5em;
+    font: 400 clamp(64px, 19svh, 190px) / 1 font-family(bigger);
+    text-align: center;
+    color: #fff2ed;
+    /* Round the ring: each copy turned to its place and set back from the
+       axis by the radius, facing it; the copy at i = 0 is the middle one. */
+    transform: rotateY(calc(var(--i) * 360deg / var(--n))) translateZ(calc(-1 * var(--radius)));
+    backface-visibility: hidden;
+    /* Every letter starts hidden; the controller brings the front copies in
+       first, then the rest, writing each one's own opacity. */
+    opacity: 0;
+  }
+
+  .anime-work__veil {
+    position: absolute;
+    inset: 0;
+    background: color(space);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* --- Act 3: the cards --------------------------------------------------- */
+
+  .anime-work__carousel {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    perspective: 1600px;
+    /* Hidden until the third act; the controller fades it in. */
+    opacity: 0;
+    visibility: hidden;
+  }
+
+  .anime-work__cards {
+    --card: clamp(260px, 25vw, 360px);
+    position: relative;
+    width: var(--card);
+    height: calc(var(--card) * 1.42);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    transform-style: preserve-3d;
+    /* The ring's radius, the cards' half-width over tan(pi / n) widened by a
+       gap, is set by the controller once per resize; this is the fallback.
+       Pulled back by it, so the front card sits at exactly its own size; the
+       controller writes this whole transform, adding the turn. */
+    --ring-radius: 520px;
+    transform: translateZ(calc(-1 * var(--ring-radius)));
+    will-change: transform;
+  }
+
+  .anime-work__slot {
+    position: absolute;
+    inset: 0;
+    transform: rotateY(calc(var(--i) * 360deg / var(--n))) translateZ(var(--ring-radius));
+    backface-visibility: hidden;
+  }
+
+  .anime-work__card {
     display: flex;
     flex-direction: column;
-    justify-content: center;
-
-    max-width: 1180px;
-    min-height: min(100svh, 46rem);
-    margin: 0 auto clamp(1rem, 2.5vh, 1.5rem);
-    padding: 5rem clamp(1.5rem, 4vw, 4rem) 3.5rem;
-
-    /* One bordered box per project, the surface one step up from the canvas,
-       as GitHub draws a box: a hairline, a small radius, no shadow. */
+    height: 100%;
+    overflow: hidden;
     border: 1px solid color(work-border);
-    border-radius: 6px;
+    border-radius: 18px;
     background: color(work-surface);
+    color: color(work-text);
+    text-decoration: none;
+    /* A hairline and a lighter top edge rather than a drop shadow: seven
+       turning layers with a 60px blur each were most of this section's
+       compositing cost on a software rasteriser. */
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    transition: border-color 200ms ease;
 
-    /* Even panels put the media on the right, as the reference alternates
-       its cases. */
-    &:nth-child(even) {
-      .anime-work__inner {
-        grid-template-columns: 1fr 1.15fr;
-      }
-
-      .anime-work__media {
-        order: 2;
-      }
+    &:hover,
+    &:focus-visible {
+      border-color: color(accent);
     }
-  }
 
-  .anime-work__label {
-    position: absolute;
-    top: 1.5rem;
-    left: clamp(1.5rem, 4vw, 4rem);
-    margin: 0;
-    padding: 0.35em 0.75em;
-
-    border: 1px solid color(work-border);
-    border-radius: 999px;
-
-    font: 700 0.6875rem / 1 font-family(fraktion);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: color(work-muted);
-  }
-
-  .anime-work__inner {
-    display: grid;
-    grid-template-columns: 1.15fr 1fr;
-    gap: clamp(2rem, 5vw, 5rem);
-    align-items: center;
-    width: 100%;
+    &:focus-visible {
+      outline: 2px solid color(accent);
+      outline-offset: 4px;
+    }
   }
 
   .anime-work__media {
-    position: relative;
+    display: block;
+    flex: 0 0 52%;
+    overflow: hidden;
+    background: #16161a;
 
     img {
       display: block;
       width: 100%;
-      height: auto;
-      aspect-ratio: 4 / 3;
+      height: 100%;
       object-fit: cover;
-
-      border: 1px solid color(work-border);
-      border-radius: 6px;
-      /* Straight, as a screenshot sits in a readme; the shadow lifts it off
-         the surface a little. Static, so it is rastered once at this size. */
-      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
     }
   }
 
-  .anime-work__poster {
-    display: grid;
-    place-items: center;
-    aspect-ratio: 4 / 3;
-    border: 1px solid color(work-border);
-    border-radius: 6px;
-    background: color(space);
-
-    span {
-      font: 400 clamp(3rem, 8vw, 6rem) / 1 font-family(bigger);
-      color: color(work-muted);
-    }
+  .anime-work__body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding: 1rem 1.1rem 1.1rem;
   }
 
-  :global(.anime-work__title) {
-    margin: 0 0 1rem;
-    font: 400 clamp(2.25rem, 5.2vw, 4.25rem) / 1.02 font-family(editorial);
-    letter-spacing: -0.025em;
-  }
-
-  .anime-work__blurb {
-    margin: 0 0 1.5rem;
-    max-width: 34ch;
-    font: 400 clamp(0.9375rem, 1.2vw, 1.0625rem) / 1.65 font-family(geist);
-    /* The muted grey is 5.7:1 on the surface: behind the heading, above the
-       4.5 this size needs. */
+  .anime-work__meta {
+    display: flex;
+    justify-content: space-between;
+    font: 400 0.6875rem / 1 font-family(fraktion);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
     color: color(work-muted);
   }
 
-  .anime-work__tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin: 0 0 1.75rem;
-    padding: 0;
-    list-style: none;
-
-    li {
-      padding: 0.35em 0.75em;
-      border: 1px solid color(work-border);
-      border-radius: 999px;
-
-      font: 700 0.6875rem / 1 font-family(fraktion);
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: color(work-muted);
-    }
-
-    /* The first tag is the kind; it takes the one green, on its own ground,
-       the way a topic or a status reads on GitHub. */
-    li:first-child {
-      border-color: transparent;
-      background: color(work-green-bg);
-      color: color(work-green);
-    }
-  }
-
-  .anime-work__link {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1.125rem;
-    /* Clips the shimmer band to the button. */
-    overflow: hidden;
-
+  .anime-work__kind {
+    padding: 0.3em 0.6em;
     border: 1px solid color(work-border);
-    border-radius: 6px;
-    background: color(work-surface);
+    border-radius: 999px;
+  }
 
-    font: 700 0.75rem / 1 font-family(fraktion);
-    letter-spacing: 0.12em;
+  .anime-work__title {
+    margin-top: 0.35rem;
+    font: 400 clamp(1.9rem, 2.6vw, 2.5rem) / 0.95 font-family(bigger);
+    letter-spacing: 0.01em;
     text-transform: uppercase;
-    text-decoration: none;
+    color: #fff;
+  }
+
+  .anime-work__role {
+    font: 400 0.875rem / 1.35 font-family(geist);
     color: color(work-text);
+  }
 
-    transition: border-color 200ms ease, background-color 200ms ease;
+  .anime-work__when {
+    font: 400 0.6875rem / 1.4 font-family(fraktion);
+    letter-spacing: 0.06em;
+    color: color(work-muted);
+  }
 
-    &:hover,
-    &:focus-visible {
-      border-color: color(work-muted);
-      background: color(work-border);
-    }
+  .anime-work__result {
+    font: 400 0.75rem / 1.3 font-family(fraktion);
+    letter-spacing: 0.04em;
+    color: #ffd9a8;
+  }
 
-    /* The shimmer: one band of light crossing the button once on hover or
-       focus, a compositor transform on a pseudo-element and nothing else. It
-       exists only under those states, so at rest nothing runs. */
-    &::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(115deg, transparent 38%, rgba(255, 255, 255, 0.22) 50%, transparent 62%);
-      transform: translateX(-130%);
-      pointer-events: none;
-    }
+  .anime-work__open {
+    margin-top: auto;
+    font: 700 0.6875rem / 1 font-family(fraktion);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: color(accent);
+  }
 
-    &:hover::after,
-    &:focus-visible::after {
-      animation: shimmer 900ms ease-out 1;
+  .anime-work__hint {
+    position: absolute;
+    left: 50%;
+    bottom: 4svh;
+    margin: 0;
+    transform: translateX(-50%);
+    font: 400 0.6875rem / 1 font-family(fraktion);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: color(work-muted);
+    opacity: 0;
+    transition: opacity 300ms ease;
+
+    &:global(.is-on) {
+      opacity: 1;
     }
   }
 
-  @keyframes shimmer {
-    to {
-      transform: translateX(130%);
+  @media (max-width: 639.98px) {
+    .anime-work__cards {
+      --card: min(72vw, 290px);
+    }
+
+    /* A phone's ring is small: every other copy, and smaller letters, or
+       the band turns into a fence. */
+    .anime-work__letter {
+      font-size: clamp(56px, 12svh, 120px);
+    }
+
+    .anime-work__letter:nth-child(3n + 2) {
+      display: none;
     }
   }
 
+  @media (pointer: coarse) {
+    .anime-work__drag {
+      display: none;
+    }
+  }
+
+  /* Stillness, not absence: no holding, no turning. The word is set once and
+     the cards sit in a row the hand or the keyboard scrolls sideways. */
   @media (prefers-reduced-motion: reduce) {
-    .anime-work__link::after {
-      animation: none;
-    }
-  }
-
-  @include mq(tablet-sm) {
-    .anime-work__panel {
-      min-height: 0;
-      padding: 4.5rem 1.25rem 2.5rem;
+    .anime-work {
+      height: auto;
+      padding: 12svh 0 10svh;
     }
 
-    /* Written at the even-panel selector's specificity too, or the alternate
-       two-column grid above would survive into one-column widths and split a
-       390px panel into two narrow tracks. */
-    .anime-work__inner,
-    .anime-work__panel:nth-child(even) .anime-work__inner {
-      grid-template-columns: 1fr;
-      gap: 2rem;
+    .anime-work__stage {
+      position: static;
+      height: auto;
+      background: none;
     }
 
-    .anime-work__panel:nth-child(even) .anime-work__media {
-      order: 0;
+    .anime-work__tunnel {
+      position: static;
+      display: flex;
+      justify-content: center;
+      gap: 0.1em;
+      padding: 0 0 6svh;
+      perspective: none;
     }
 
-    .anime-work__blurb {
-      max-width: none;
+    .anime-work__ring {
+      height: auto;
+      opacity: 1;
+      will-change: auto;
+      transform-style: flat;
+    }
+
+    .anime-work__letter {
+      position: static;
+      display: block;
+      margin: 0;
+      transform: none;
+      opacity: 1;
+      font-size: clamp(64px, 14vw, 180px);
+    }
+
+    .anime-work__veil {
+      display: none;
+    }
+
+    .anime-work__letter:not(.is-front) {
+      display: none;
+    }
+
+    .anime-work__carousel {
+      position: static;
+      display: block;
+      opacity: 1;
+      visibility: visible;
+      perspective: none;
+    }
+
+    .anime-work__cards {
+      display: flex;
+      gap: 1rem;
+      width: auto;
+      height: auto;
+      padding: 0 clamp(1rem, 4vw, 3rem) 1rem;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      transform: none;
+      transform-style: flat;
+      will-change: auto;
+    }
+
+    .anime-work__slot {
+      position: static;
+      flex: 0 0 var(--card);
+      height: calc(var(--card) * 1.42);
+      transform: none;
+      scroll-snap-align: center;
+    }
+
+    .anime-work__hint {
+      display: none;
     }
   }
 </style>
