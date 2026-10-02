@@ -1,6 +1,7 @@
 ---
 import { works } from "../data/works";
 import { timeline } from "../data/timeline";
+import SplitHeading from "./SplitHeading.astro";
 
 /**
  * The work: one bordered panel per project on a dark sheet, a corner label,
@@ -65,7 +66,7 @@ const panels = works.map((work, index) => ({
           </div>
 
           <div class="anime-work__copy">
-            <h2 class="anime-work__title">{panel.title}</h2>
+            <SplitHeading as="h2" class="anime-work__title" text={panel.title} />
             <p class="anime-work__blurb">{panel.blurb}</p>
 
             {panel.tags.length > 0 && (
@@ -225,7 +226,7 @@ const panels = works.map((work, index) => ({
     }
   }
 
-  .anime-work__title {
+  :global(.anime-work__title) {
     margin: 0 0 1rem;
     font: 400 clamp(2.25rem, 5.2vw, 4.25rem) / 1.02 font-family(editorial);
     letter-spacing: -0.025em;

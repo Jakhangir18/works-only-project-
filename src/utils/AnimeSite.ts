@@ -1,4 +1,5 @@
 import { initSmoothScroll } from "./SmoothScroll";
+import { initReveal } from "./Reveal";
 
 /**
  * The light home page's controller.
@@ -40,6 +41,10 @@ function after(ms: number): Promise<void> {
 
 export function initAnimeSite(): void {
   if (typeof window === "undefined") return;
+
+  // Headings arrive word by word as they scroll in. Started before the cover
+  // leaves, so the hidden state is in place before anything can be seen.
+  initReveal();
 
   const intro = document.querySelector<HTMLElement>(".js-anime-intro");
   const root = document.documentElement;

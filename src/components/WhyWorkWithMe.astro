@@ -1,5 +1,6 @@
 ---
 import BentoCard from "./BentoCard.astro";
+import SplitHeading from "./SplitHeading.astro";
 
 const cards = [
   {
@@ -36,7 +37,7 @@ const cards = [
   </div>
 
   <div class="bento-header">
-    <h2 class="bento-header__title">Why work with me?</h2>
+    <SplitHeading class="bento-header__title" text="Why work with me?" />
   </div>
 
   <div class="bento-container">
@@ -47,9 +48,7 @@ const cards = [
     </div>
 
     <div class="bento-footer">
-      <h2 class="bento-footer__title">
-        Software for things that move, and a page that shows the work.
-      </h2>
+      <SplitHeading class="bento-footer__title" text="Software for things that move, and a page that shows the work." />
       <p class="bento-footer__text">
         Every project below is something I built and can still explain: the
         code, the model or the board, the measurement that decided a design,
@@ -107,7 +106,7 @@ const cards = [
     padding: 0 clamp(1.5rem, 4vw, 3rem) clamp(3rem, 6vh, 4rem);
   }
 
-  .bento-header__title {
+  :global(.bento-header__title) {
     font-family: font-family(editorial);
     font-size: clamp(2.5rem, 6vw, 5rem);
     font-weight: 400;
@@ -254,7 +253,7 @@ const cards = [
     }
   }
 
-  .bento-footer__title {
+  :global(.bento-footer__title) {
     font-family: font-family(editorial);
     font-size: clamp(2rem, 5vw, 3.75rem);
     font-weight: 400;

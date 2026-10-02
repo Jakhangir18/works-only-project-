@@ -1,5 +1,6 @@
 ---
 import { timeline } from "../data/timeline";
+import SplitHeading from "./SplitHeading.astro";
 
 /**
  * The timeline as a pinned board, after the 21st.dev "how it works" component
@@ -59,7 +60,7 @@ const cards = entries.map((entry, index) => ({
 <section class="board" id="timeline" aria-label="Timeline">
   <div class="board__head">
     <p class="board__kicker">Timeline</p>
-    <h2 class="board__title">How it went</h2>
+    <SplitHeading class="board__title" text="How it went" />
   </div>
 
   <ol class="board__list">
@@ -132,7 +133,7 @@ const cards = entries.map((entry, index) => ({
     color: color(accent-ink);
   }
 
-  .board__title {
+  :global(.board__title) {
     margin: 0;
     font: 400 clamp(2.25rem, 5vw, 4rem) / 1.04 font-family(editorial);
     letter-spacing: -0.025em;
