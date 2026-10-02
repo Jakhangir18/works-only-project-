@@ -104,7 +104,8 @@ const count = (i: number) => String(i + 1).padStart(2, "0");
   .case-page {
     --case-ground: #ffffff;
     --case-ink: #0b0b0c;
-    --case-soft: #5b5b60;
+    /* 8.8:1 on white: captions and labels clear the 7:1 the body text gets. */
+    --case-soft: #4a4a4f;
     --case-rule: #e2e2e4;
     --case-surface: #f6f5f2;
     --case-accent: #e00538;
@@ -216,6 +217,13 @@ const count = (i: number) => String(i + 1).padStart(2, "0");
     margin: 0 0 1rem;
     font: 400 clamp(2.2rem, 4.6vw, 4.6rem) / 0.92 font-family(bigger);
     text-transform: uppercase;
+  }
+
+  /* A mono label over a display heading: the heading's tight line-height
+     would otherwise let the two touch. */
+  .case-label + .case-h2,
+  .case-label + .case-title {
+    margin-top: 0.75rem;
   }
 
   .case-h3 {
@@ -344,6 +352,7 @@ const count = (i: number) => String(i + 1).padStart(2, "0");
 
   .case-next__title {
     grid-area: title;
+    margin-top: 0.5rem;
     font: 400 clamp(3rem, 9vw, 8.5rem) / 0.86 font-family(bigger);
     text-transform: uppercase;
     transition: color 200ms ease;
