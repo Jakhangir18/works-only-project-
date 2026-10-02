@@ -44,15 +44,19 @@ for (const [ename, engine] of Object.entries({ chromium, webkit })) {
 
     // 2. The hero: one real heading, the arched name, seven cards on the wheel.
     const hero = await page.evaluate(() => {
-      // The name rides the arc as two words from opposite corners, so it is
-      // two <text> nodes; read them in order and compare them as one line.
-      const words = [...document.querySelectorAll('.anime-hero__headline text')];
+      // The name is laid on a cylinder one glyph at a time, in one SVG per
+      // layout (wide and narrow); read the glyphs of the layout this viewport
+      // shows, in order, and compare them with the heading's letters.
+      const shown = [...document.querySelectorAll('.anime-hero__name')].filter((svg) => getComputedStyle(svg).display !== 'none');
+      const glyphs = shown.flatMap((svg) => [...svg.querySelectorAll('text')]);
       return {
         h1: document.querySelectorAll('h1').length,
         h1Text: document.querySelector('h1')?.textContent?.trim() || '',
-        headline: words.map((t) => t.textContent?.trim() || '').join(' ').trim(),
+        nameLayouts: shown.length,
+        headline: glyphs.map((t) => t.textContent?.trim() || '').join(''),
         cards: document.querySelectorAll('.anime-hero__screen').length,
-        shots: [...document.querySelectorAll('.anime-hero__screen img')].map((i) => i.getAttribute('src')),
+        shots: [...document.querySelectorAll('.anime-hero__screen img:not(.anime-hero__screen-blur)')].map((i) => i.getAttribute('src')),
+        twins: [...document.querySelectorAll('.anime-hero__screen-blur')].map((i) => i.getAttribute('src')),
       };
     });
     results.push(check(`${tag} exactly one h1`, hero.h1 === 1, `${hero.h1}`));
@@ -60,17 +64,20 @@ for (const [ename, engine] of Object.entries({ chromium, webkit })) {
     // The drawn headline is decorative, but it must say the same thing as the
     // heading: a link preview and a screen reader should not disagree with the
     // page a sighted visitor sees.
-    results.push(check(`${tag} the drawn headline matches the heading`, hero.headline.replace(/\s+/g, ' ').toLowerCase() === hero.h1Text.replace(/\s+/g, ' ').toLowerCase(), `${hero.headline} vs ${hero.h1Text}`));
+    results.push(check(`${tag} exactly one name layout is shown`, hero.nameLayouts === 1, `${hero.nameLayouts}`));
+    results.push(check(`${tag} the drawn name matches the heading`, hero.headline.toLowerCase() === hero.h1Text.replace(/\s+/g, '').toLowerCase(), `${hero.headline} vs ${hero.h1Text}`));
     // The ring is concave, so only its far half is ever on screen; each
     // project sits on it twice to keep that half full. Fourteen cards, seven
     // distinct shots.
     results.push(check(`${tag} fourteen cards on the wheel`, hero.cards === 14, `${hero.cards} cards`));
     results.push(check(`${tag} seven distinct shots on the wheel`, new Set(hero.shots).size === 7, `${new Set(hero.shots).size} distinct`));
+    // Every card carries its pre-blurred twin, the same project's shot.
+    results.push(check(`${tag} every card has its blurred twin`, hero.twins.length === 14 && hero.twins.every((src, i) => src === hero.shots[i].replace('.webp', '-blur.webp')), `${hero.twins.length} twins`));
 
     // Every shot must actually resolve: a missing screenshot leaves a hole
     // where a project should be, and nothing else on the page would notice.
     const missing = [];
-    for (const src of hero.shots) {
+    for (const src of [...new Set([...hero.shots, ...hero.twins])]) {
       const resp = await page.request.get(BASE + src);
       if (resp.status() !== 200) missing.push(`${resp.status()} ${src}`);
     }

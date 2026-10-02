@@ -1,5 +1,6 @@
 ---
 import { works } from "../data/works";
+import { layoutRun, BIGGER_DISPLAY, FRAKTION_MONO, type Cylinder, type Glyph } from "../utils/cylinderText";
 
 /**
  * The light hero: one huge headline bent along a shallow arc, a slow wheel of
@@ -55,6 +56,85 @@ const SHOT_HEIGHT = 909;
    Anything larger is bytes the layout cannot use. */
 const FIGURE_WIDTH = 500;
 const FIGURE_HEIGHT = 1214;
+
+/* The name and the two lines, wrapped on the inside of a cylinder like the
+   wheel, and projected at build time into one static SVG glyph each — so the
+   curve costs nothing per frame and the text stays text. See cylinderText.ts
+   for the geometry. Two layouts, because a phone's stage is nearly square and
+   the figure takes half its width: the name rides above his cap there.
+
+   Each layout's viewBox is the stage's own box at a reference width (1440 and
+   390), centred on the perspective origin, so scene units are CSS px at that
+   width and the SVG scales with the stage like everything else in it.
+
+   The name sits deeper than the wheel's far side (depth), on a wider cylinder
+   (radius), so the cards pass in front of it and its middle reads as far away;
+   its ends come forward and grow, the way the edge cards do. The tone follows
+   the same depth: the deepest glyphs are the palest. */
+const STAGE_WIDE = { w: 1440, h: 1440 * 0.44 };
+const STAGE_NARROW = { w: 390, h: 390 * 1.05 };
+
+/* The name's cylinder leans further back than the wheel (tilt), which bends
+   its line into the arch the old textPath drew, now with depth: the middle is
+   deepest, smallest and palest, and the two ends come forward and grow. */
+const NAME_WIDE: Cylinder = { perspective: 1400, tilt: -22, radius: 740, depth: 400, fontSize: 250, condense: 0.7, tracking: 0.03, font: BIGGER_DISPLAY };
+const NAME_NARROW: Cylinder = { perspective: 700, tilt: -32, radius: 230, depth: 150, fontSize: 70, condense: 0.62, tracking: 0.03, font: BIGGER_DISPLAY };
+/* The lines hug the floor in front of the wheel, close to the projection
+   plane, so they stay small and readable rather than receding. */
+const LINES_WIDE: Cylinder = { perspective: 1400, tilt: -9, radius: 1500, depth: 0, fontSize: 16, tracking: 0.08, font: FRAKTION_MONO };
+const LINES_NARROW: Cylinder = { perspective: 700, tilt: -9, radius: 620, depth: 0, fontSize: 11.5, tracking: 0.08, font: FRAKTION_MONO };
+
+type Layout = { key: string; viewBox: string; size: number; glyphs: Glyph[] };
+const box = (stage: { w: number; h: number }) => `${-stage.w / 2} ${-stage.h / 2} ${stage.w} ${stage.h}`;
+
+const names: Layout[] = [
+  {
+    key: "wide",
+    viewBox: box(STAGE_WIDE),
+    size: NAME_WIDE.fontSize,
+    glyphs: [...layoutRun(HEADLINE_LEFT, -0.16, "end", -120, NAME_WIDE), ...layoutRun(HEADLINE_RIGHT, 0.16, "start", -120, NAME_WIDE)],
+  },
+  {
+    key: "narrow",
+    viewBox: box(STAGE_NARROW),
+    size: NAME_NARROW.fontSize,
+    glyphs: [...layoutRun(HEADLINE_LEFT, -0.08, "end", -178, NAME_NARROW), ...layoutRun(HEADLINE_RIGHT, 0.08, "start", -178, NAME_NARROW)],
+  },
+];
+
+/* The lines' SVG sits in flow under the stage and overlaps its bottom edge by
+   the same few units on every width, so its viewBox starts a little above the
+   stage's floor (scene y = h/2) and the negative margin in the stylesheet is
+   that overlap as a fraction of the width. */
+const LINES_TOP_WIDE = STAGE_WIDE.h / 2 - 16;
+const LINES_TOP_NARROW = STAGE_NARROW.h / 2 - 6;
+const lines: Layout[] = [
+  {
+    key: "wide",
+    viewBox: `${-STAGE_WIDE.w / 2} ${LINES_TOP_WIDE} ${STAGE_WIDE.w} 96`,
+    size: LINES_WIDE.fontSize,
+    glyphs: [
+      ...layoutRun(LINE_LEFT.toUpperCase(), -0.1, "end", 352, LINES_WIDE),
+      ...layoutRun(LINE_LEFT_2.toUpperCase(), -0.1, "end", 378, LINES_WIDE),
+      ...layoutRun(LINE_RIGHT.toUpperCase(), 0.1, "start", 352, LINES_WIDE),
+    ],
+  },
+  {
+    key: "narrow",
+    viewBox: `${-STAGE_NARROW.w / 2} ${LINES_TOP_NARROW} ${STAGE_NARROW.w} 84`,
+    size: LINES_NARROW.fontSize,
+    glyphs: [
+      ...layoutRun(LINE_LEFT.toUpperCase(), 0, "center", 226, LINES_NARROW),
+      ...layoutRun(LINE_LEFT_2.toUpperCase(), 0, "center", 244, LINES_NARROW),
+      ...layoutRun(LINE_RIGHT.toUpperCase(), 0, "center", 270, LINES_NARROW),
+    ],
+  },
+];
+/* The glyph index where the right-hand line begins: everything from there on
+   is the discipline line, drawn in full ink; the place lines are soft. Spaces
+   are not glyphs, so the count is of the visible characters only. */
+const visible = (text: string) => [...text].filter((ch) => ch.trim()).length;
+const EMPHASIS_FROM = visible(LINE_LEFT) + visible(LINE_LEFT_2);
 ---
 
 <section class="anime-hero" id="home" aria-label="Introduction">
@@ -64,6 +144,29 @@ const FIGURE_HEIGHT = 1214;
   <p class="anime-hero__place" aria-hidden="true">{PLACE}</p>
 
   <div class="anime-hero__stage js-anime-hero">
+    {/* The name, behind the wheel: a sign at the back of the ring that the
+        cards pass in front of. Decorative, because the h1 above carries it. */}
+    {
+      names.map((layout) => (
+        <svg
+          class={`anime-hero__name anime-hero__name--${layout.key}`}
+          viewBox={layout.viewBox}
+          aria-hidden="true"
+          focusable="false"
+        >
+          {layout.glyphs.map((g, i) => (
+            <g transform={`translate(${g.x} ${g.y}) skewY(${g.skew}) scale(${g.sx} ${g.sy})`}>
+              <text
+                font-size={layout.size}
+                fill-opacity={(0.5 + 0.5 * g.near).toFixed(3)}
+                style={`--i:${i}`}
+              >{g.char}</text>
+            </g>
+          ))}
+        </svg>
+      ))
+    }
+
     <div class="anime-hero__wheel js-anime-wheel" aria-hidden="true">
       {
         wheel.map((work, index) => (
@@ -73,6 +176,17 @@ const FIGURE_HEIGHT = 1214;
           >
             <img
               src={`/shots/${work.slug}.webp`}
+              alt=""
+              width={SHOT_WIDTH}
+              height={SHOT_HEIGHT}
+              loading="eager"
+              decoding="async"
+            />
+            {/* The same shot, pre-blurred and with the treatment above baked
+                in, faded up as the card turns toward the edge of the screen. */}
+            <img
+              class="anime-hero__screen-blur"
+              src={`/shots/${work.slug}-blur.webp`}
               alt=""
               width={SHOT_WIDTH}
               height={SHOT_HEIGHT}
@@ -103,45 +217,31 @@ const FIGURE_HEIGHT = 1214;
       />
     </div>
 
-    <svg
-      class="anime-hero__headline"
-      viewBox="0 0 1000 260"
-      aria-hidden="true"
-      focusable="false"
-    >
-      <defs>
-        <path id="anime-hero-arc" d="M 30 190 Q 500 60 970 190" fill="none" />
-      </defs>
-      {/* The two names ride the same arc from opposite corners and leave the
-          middle to the figure. textLength pins each word to a fixed stretch of
-          the arc however long it is, and spacingAndGlyphs condenses the glyphs
-          rather than only tightening the gaps — the weight-and-width the
-          reference's display face has. */}
-      <text textLength="400" lengthAdjust="spacingAndGlyphs">
-        <textPath href="#anime-hero-arc" startOffset="0%">{HEADLINE_LEFT}</textPath>
-      </text>
-      <text textLength="400" lengthAdjust="spacingAndGlyphs">
-        <textPath href="#anime-hero-arc" startOffset="100%" text-anchor="end">
-          {HEADLINE_RIGHT}
-        </textPath>
-      </text>
-    </svg>
-
-    {/* Two soft edges rather than one vignette: the reference blurs only the
-        left and right, so the wheel reads as passing behind a lens while the
-        top and bottom of the frame stay sharp. */}
-    <div class="anime-hero__lens anime-hero__lens--left" aria-hidden="true"></div>
-    <div class="anime-hero__lens anime-hero__lens--right" aria-hidden="true"></div>
   </div>
 
-  {/* Left and right of the figure, the way the reference splits its two
-      lines, rather than stacked under it. */}
-  <div class="anime-hero__lines" aria-hidden="true">
-    <p class="anime-hero__line anime-hero__line--left">
-      {LINE_LEFT}<br />{LINE_LEFT_2}
-    </p>
-    <p class="anime-hero__line anime-hero__line--right">{LINE_RIGHT}</p>
-  </div>
+  {/* The two lines, on the floor of the same cylinder: left of his feet the
+      place, right of them the discipline. Typed in glyph by glyph once the
+      cover lifts. On a phone they stack, centred, under the stage. */}
+  {
+    lines.map((layout) => (
+      <svg
+        class={`anime-hero__lines anime-hero__lines--${layout.key}`}
+        viewBox={layout.viewBox}
+        aria-hidden="true"
+        focusable="false"
+      >
+        {layout.glyphs.map((g, i) => (
+          <g transform={`translate(${g.x} ${g.y}) skewY(${g.skew}) scale(${g.sx} ${g.sy})`}>
+            <text
+              font-size={layout.size}
+              class={i >= EMPHASIS_FROM ? "is-strong" : undefined}
+              style={`--i:${i}`}
+            >{g.char}</text>
+          </g>
+        ))}
+      </svg>
+    ))
+  }
 
   <a class="anime-hero__explore" href="#work" data-magnetic>
     Explore
@@ -169,7 +269,9 @@ const FIGURE_HEIGHT = 1214;
     /* Small viewport units: the address bar on a phone must not be able to
        push the Explore link off the bottom of the first screen. */
     min-height: 100svh;
-    padding: 6rem 1.5rem 3rem;
+    /* No side padding: the stage runs edge to edge, so the wheel dissolves
+       into the screen's own edges instead of stopping at a gutter. */
+    padding: 6rem 0 3rem;
 
     background: color(secondary);
     color: color(primary);
@@ -188,10 +290,35 @@ const FIGURE_HEIGHT = 1214;
 
     /* The wheel's children are laid out in 3D against this. */
     perspective: 1400px;
+
+    /* A static haze at each screen edge, above the wheel and below the
+       figure: the outermost cards fade into the page rather than being cut
+       by it. Painted once; nothing here moves. */
+    &::before,
+    &::after {
+      content: "";
+      position: absolute;
+      z-index: 2;
+      top: -12%;
+      bottom: -6%;
+      width: clamp(16px, 6vw, 110px);
+      pointer-events: none;
+    }
+
+    &::before {
+      left: 0;
+      background: linear-gradient(to right, color(secondary) 8%, rgba(255, 255, 255, 0));
+    }
+
+    &::after {
+      right: 0;
+      background: linear-gradient(to left, color(secondary) 8%, rgba(255, 255, 255, 0));
+    }
   }
 
   .anime-hero__wheel {
     position: absolute;
+    z-index: 1;
     inset: 0;
     transform-style: preserve-3d;
 
@@ -274,6 +401,29 @@ const FIGURE_HEIGHT = 1214;
       filter: grayscale(0.9) brightness(1.9) contrast(0.62);
       opacity: 0.42;
     }
+
+    /* The blurred twin covers the sharp shot as the card turns away from
+       the middle: clear inside 30 degrees, fully soft by 55. It is opaque
+       (the treatment above is baked into it by scripts/shots.mjs), so at
+       full strength it hides the sharp shot rather than doubling it. Its
+       opacity follows the card's own --turn, which the controller already
+       writes on this card each frame — no new write — and it is its own
+       layer so the change is a composite, not a repaint of the card. */
+    .anime-hero__screen-blur {
+      position: absolute;
+      inset: 8px;
+      width: calc(100% - 16px);
+      height: auto;
+      filter: none;
+      opacity: 0;
+      will-change: opacity;
+    }
+  }
+
+  @supports (opacity: cos(0deg)) {
+    .anime-hero__screen .anime-hero__screen-blur {
+      opacity: clamp(0, (1 - cos(var(--turn, 0deg))) * 3.38 - 0.453, 1);
+    }
   }
 
   .anime-hero__figure {
@@ -313,58 +463,93 @@ const FIGURE_HEIGHT = 1214;
     }
   }
 
-  .anime-hero__headline {
+  /* The name: one static SVG per layout, behind the wheel. The glyphs are
+     already placed and scaled by the build; the stylesheet only colours them
+     and brings them in once. */
+  .anime-hero__name {
     position: absolute;
-    /* Above the wheel, below the figure: the reference's screens pass behind
-       the headline and the character stands in front of it. */
-    z-index: 2;
-    inset: auto 0 auto 0;
-    /* Above the stage, not inside it. The figure is two thirds of the screen
-       tall now, so an arc at 6% crossed his chest and his jacket swallowed
-       the middle of the name; from here only his cap and shoulders cut into
-       the letters, which is the overlap the composition wants. */
-    top: -12%;
+    z-index: 0;
+    inset: 0;
     width: 100%;
-    height: auto;
+    height: 100%;
     overflow: visible;
+    pointer-events: none;
 
     text {
       font-family: font-family(bigger);
-      font-size: 118px;
-      font-weight: 400;
-      letter-spacing: -0.02em;
+      text-anchor: middle;
+      fill: color(primary);
+      /* So a percentage in the entrance's transform is the glyph's own
+         height, not the viewBox's. */
+      transform-box: fill-box;
+    }
+  }
+
+  .anime-hero__name--narrow {
+    display: none;
+  }
+
+  .anime-hero__lines {
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+    pointer-events: none;
+
+    text {
+      font-family: font-family(fraktion);
+      text-anchor: middle;
+      fill: color(ink-soft);
+    }
+
+    text.is-strong {
       fill: color(primary);
     }
   }
 
-  .anime-hero__lens {
-    position: absolute;
-    z-index: 4;
-    top: 0;
-    bottom: 0;
-    width: clamp(40px, 8vw, 130px);
-    pointer-events: none;
-
-    backdrop-filter: blur(9px);
-    -webkit-backdrop-filter: blur(9px);
-    /* The mask is what keeps the blur from having a visible edge: it fades to
-       nothing before it reaches the middle of the frame. */
-    mask-image: linear-gradient(to var(--to), #000, transparent);
-    -webkit-mask-image: linear-gradient(to var(--to), #000, transparent);
+  /* The SVG overlaps the stage's floor by the 16 scene units its viewBox
+     starts above it, as a fraction of the width. */
+  .anime-hero__lines--wide {
+    margin-top: calc(-16 / 1440 * 100%);
   }
 
-  .anime-hero__lens--left {
-    left: 0;
-    --to: right;
+  .anime-hero__lines--narrow {
+    display: none;
+    margin-top: calc(-6 / 390 * 100%);
   }
 
-  .anime-hero__lens--right {
-    right: 0;
-    --to: left;
+  /* The entrance: the name rises letter by letter and the lines type in,
+     once, when the cover lifts — which is the moment the page drops
+     is-scroll-blocked. Transitions rather than keyframes, so the resting
+     state is the default and nothing is hidden if the class never changes
+     back; under reduced motion there is no travel and no delay. */
+  @media (prefers-reduced-motion: no-preference) {
+    .anime-hero__name text {
+      transition:
+        opacity 700ms ease,
+        transform 1100ms cubic-bezier(0.2, 0.8, 0.2, 1);
+      transition-delay: calc(120ms + var(--i) * 45ms);
+    }
+
+    .anime-hero__lines text {
+      transition: opacity 90ms linear;
+      transition-delay: calc(700ms + var(--i) * 16ms);
+    }
+
+    :global(.is-scroll-blocked) .anime-hero__name text {
+      opacity: 0;
+      transform: translateY(26%);
+    }
+
+    :global(.is-scroll-blocked) .anime-hero__lines text {
+      opacity: 0;
+    }
   }
 
   .anime-hero__place {
     position: absolute;
+    /* Above the stage's edge haze, which reaches up past the stage. */
+    z-index: 5;
     top: 1.75rem;
     left: 1.75rem;
     margin: 0;
@@ -373,40 +558,6 @@ const FIGURE_HEIGHT = 1214;
     letter-spacing: 0.16em;
     text-transform: uppercase;
     color: color(ink-soft);
-  }
-
-  .anime-hero__lines {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem 2rem;
-    justify-content: space-between;
-    width: 100%;
-    max-width: 940px;
-    margin-top: 1rem;
-  }
-
-  .anime-hero__line {
-    margin: 0;
-    font: 400 clamp(0.75rem, 1vw, 0.9375rem) / 1.4 font-family(fraktion);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: color(ink-soft);
-  }
-
-  .anime-hero__line--right {
-    color: color(primary);
-    text-align: right;
-  }
-
-  @include mq(phone) {
-    .anime-hero__lines {
-      justify-content: center;
-      text-align: center;
-    }
-
-    .anime-hero__line--right {
-      text-align: center;
-    }
   }
 
   .anime-hero__explore {
@@ -468,16 +619,24 @@ const FIGURE_HEIGHT = 1214;
   }
 
   @include mq(phone) {
+    /* Room above the stage for the name, which rides above his cap here
+       and clears the place label in the corner. */
     .anime-hero {
-      padding-top: 5rem;
+      padding-top: 6.25rem;
     }
 
     .anime-hero__stage {
       aspect-ratio: 1 / 1.05;
     }
 
-    .anime-hero__headline text {
-      font-size: 150px;
+    .anime-hero__name--wide,
+    .anime-hero__lines--wide {
+      display: none;
+    }
+
+    .anime-hero__name--narrow,
+    .anime-hero__lines--narrow {
+      display: block;
     }
 
     /* A phone is tall and narrow: the same fraction of the viewport would put
@@ -486,10 +645,5 @@ const FIGURE_HEIGHT = 1214;
       height: clamp(240px, min(46svh, 118%), 480px);
     }
 
-    /* The arc is only 342px wide here while he is 195px of it, so the name
-       has to clear his shoulders entirely rather than merely his chest. */
-    .anime-hero__headline {
-      top: -30%;
-    }
   }
 </style>

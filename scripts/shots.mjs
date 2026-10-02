@@ -11,6 +11,13 @@
 //
 // Usage: node scripts/shots.mjs            (needs a preview on SITE, default :4347)
 //        SITE=http://127.0.0.1:4322 node scripts/shots.mjs
+//        node scripts/shots.mjs --blur-only (re-derive the blurred twins only)
+//
+// Each shot also gets a blurred twin, <slug>-blur.webp. The hero fades it in
+// over the sharp one as a card turns toward the edge of the screen, which is
+// the depth-of-field look without a backdrop-filter re-blurring the moving
+// wheel every frame. Small and soft by design: a blur has no detail to lose
+// when the browser scales it up.
 
 import sharp from "sharp";
 import { mkdir, readdir, stat, rm } from "node:fs/promises";
@@ -30,6 +37,43 @@ const QUALITY = 72;
 /* Seven cards at a few tens of kilobytes each. Anything near this means a page
    started rendering something enormous. */
 const BUDGET = 900 * 1024;
+const BLUR_WIDTH = 140;
+const BLUR_SIGMA = 2.6;
+
+/* The twin is drawn over the sharp shot and has to cover it completely at the
+   edge, so it is opaque: the hero's CSS treatment of the shot (grayscale 0.9,
+   brightness 1.9, contrast 0.62, then 0.42 opacity over the white bezel) is
+   baked into its pixels here, step by step and clamped after each step the way
+   CSS filter functions are. Keep these in step with `.anime-hero__screen img`. */
+const SHOT_GRAYSCALE = 0.9;
+const SHOT_BRIGHTNESS = 1.9;
+const SHOT_CONTRAST = 0.62;
+const SHOT_OPACITY = 0.42;
+
+async function writeBlur(source, slug) {
+  const { data, info } = await sharp(source)
+    .resize({ width: BLUR_WIDTH })
+    .blur(BLUR_SIGMA)
+    .removeAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  const clamp = (v) => Math.min(1, Math.max(0, v));
+  for (let i = 0; i < data.length; i += 3) {
+    const [r, g, b] = [data[i] / 255, data[i + 1] / 255, data[i + 2] / 255];
+    const luma = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    for (let c = 0; c < 3; c++) {
+      let v = [r, g, b][c];
+      v = v + (luma - v) * SHOT_GRAYSCALE;
+      v = clamp(v * SHOT_BRIGHTNESS);
+      v = clamp((v - 0.5) * SHOT_CONTRAST + 0.5);
+      v = v * SHOT_OPACITY + (1 - SHOT_OPACITY);
+      data[i + c] = Math.round(v * 255);
+    }
+  }
+  await sharp(data, { raw: info })
+    .webp({ quality: 60 })
+    .toFile(join(OUT, `${slug}-blur.webp`));
+}
 
 /* NODE_PATH does not apply to ESM, so playwright is resolved the way the test
    runner resolves it — from the audit install that already has browsers. */
@@ -56,6 +100,12 @@ async function dirSize(dir) {
     total += entry.isDirectory() ? await dirSize(full) : (await stat(full)).size;
   }
   return total;
+}
+
+if (process.argv.includes("--blur-only")) {
+  for (const [slug] of ROUTES) await writeBlur(join(OUT, `${slug}.webp`), slug);
+  console.log(`blurred twins: ${ROUTES.length}`);
+  process.exit(0);
 }
 
 const browser = await chromium.launch();
@@ -99,6 +149,7 @@ for (const [slug, route] of ROUTES) {
       .resize({ width: CARD_WIDTH, withoutEnlargement: true })
       .webp({ quality: QUALITY })
       .toFile(out);
+    await writeBlur(png, slug);
     const { size } = await stat(out);
     console.log(
       JSON.stringify({ slug, route, out: `/shots/${slug}.webp`, width: CARD_WIDTH, height: Math.round((CARD_WIDTH * HEIGHT) / WIDTH), kb: Math.round(size / 1024) }),
