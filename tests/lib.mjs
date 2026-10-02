@@ -50,7 +50,11 @@ export function watch(page) {
   page.on('pageerror', (e) => errors.push('PAGEERROR ' + String(e).slice(0, 200)));
   page.on('requestfailed', (r) => {
     const t = r.failure()?.errorText || '';
-    if (!/ERR_ABORTED/.test(t)) failed.push(r.url().slice(0, 160) + ' ' + t);
+    // An abort is the engine's own decision, not a failure: Chromium says
+    // ERR_ABORTED, Firefox NS_BINDING_ABORTED, WebKit "cancelled". Firefox
+    // aborts an <img src> fetch once it settles on a srcset candidate, which
+    // is what firefox/phone saw twice on /hero/jak-500.webp.
+    if (!/ERR_ABORTED|NS_BINDING_ABORTED|cancelled/i.test(t)) failed.push(r.url().slice(0, 160) + ' ' + t);
   });
   page.on('response', (r) => {
     if (r.status() >= 400 && !r.url().endsWith('favicon.ico')) failed.push(r.status() + ' ' + r.url().slice(0, 160));
