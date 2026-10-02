@@ -31,9 +31,8 @@ const PLACE = "Corvallis, Oregon";
 /* What turns behind the figure: the project pages themselves, shot at phone
    size by scripts/shots.mjs. The reference floats app screens; these are the
    real thing, which means they cannot drift from the site the way a mockup
-   does. The slug is derived from the route, so a new project joins the wheel
-   by existing — and the last segment of `site` is exactly what shots.mjs
-   names its output. */
+   does. A project in src/data/projects.ts joins the wheel by existing; its
+   slug is the name shots.mjs gives its shot (keep ROUTES there in step). */
 const shots = projects.map((project) => ({ title: project.title, slug: project.slug }));
 /* Each project sits on the ring twice. The ring is concave, so only its far
    half is ever on screen — seven cards on a full circle would show three at a
