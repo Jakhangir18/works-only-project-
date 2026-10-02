@@ -1,43 +1,51 @@
 ---
 /**
- * The rocket flight, and the wipe into space.
+ * The rocket that keeps the reader company through "Why work with me?", and
+ * the crash that opens space.
  *
- * zainabkabira.com does this with a paper plane riding a dashed path that
- * threads between its work cards, and it does it with flat SVG and no
- * animation library at all — which is the whole reason that site is rich and
- * still does not stutter. This is the same trick with a rocket.
+ * Owner's direction (2026-10-02): the rocket travels with us down the whole
+ * bento section, looping beside it; when we reach the bottom it flies on a
+ * little, then crashes, and space appears.
  *
- * The rocket rides a transform. The controller samples the trail once per
- * resize and writes `--x`, `--y` and `--a`, which feed one `translate3d` plus
- * a rotate; the browser composites them and nothing in the document lays out
- * again. The CSS note further down says why this is not `offset-path`.
- * The flame is four hand-drawn shapes on a short CSS loop, no canvas.
- * As the rocket leaves to the right the flame grows into a wipe that takes the
- * page from white to the dark section below it.
+ * The section's children come in through the slot, so the flight zone wraps
+ * them: a sticky, viewport-sized stage rides at the top of the zone for its
+ * whole length, behind the bento's content (the cards pass in front of the
+ * rocket, the text is never covered), and the runway — one empty viewport
+ * after the bento — is where it dives and hits. The crash's flash, debris,
+ * burst and wipe are born at the impact point in the same stage, so the
+ * black that takes the screen is exactly where the rocket went down.
+ *
+ * The route lives in viewport space: the controller builds it in pixels from
+ * the stage's size on every resize (so a loop stays a circle at any aspect),
+ * samples it once, and from then on only looks points up. Every per-frame
+ * write is a transform or an opacity on the leaf that shows it. The hidden
+ * path below is the route itself, kept in the document so it can be sampled
+ * and checked.
  */
+
+/* Smoke behind the rocket: lagged copies of its own position, shrinking and
+   fading. Eight are enough to read as a trail at any speed it flies. */
+const PUFFS = 8;
+/* Debris from the impact: fixed directions in a fan that opens upward, so the
+   pieces fly out of the ground rather than into it. */
+const SHARDS = Array.from({ length: 10 }, (_, i) => {
+  const angle = (-170 + (160 / 9) * i) * (Math.PI / 180);
+  return { dx: Math.cos(angle).toFixed(3), dy: Math.sin(angle).toFixed(3), spin: ((i % 2 ? 1 : -1) * (220 + i * 37)).toFixed(0) };
+});
 ---
 
-<section class="rocket-flight">
-  <div class="rocket-flight__sky" aria-hidden="true">
-    {/* The path the rocket rides and the trail it leaves. One SVG, drawn once,
-        never touched after that: the rocket is a separate element so the path
-        itself never has to re-render. */}
-    <svg
-      class="rocket-flight__path"
-      viewBox="0 0 1000 700"
-      preserveAspectRatio="none"
-      aria-hidden="true"
-      focusable="false"
-    >
-      <path
-        class="rocket-flight__trail js-rocket-trail"
-        d="M 60 640 C 240 560 300 300 520 260 C 720 224 800 150 1040 40"
-        fill="none"
-      ></path>
+<div class="flight-zone">
+  <div class="flight-stage js-flight-stage" aria-hidden="true">
+    <svg class="flight-stage__route" focusable="false">
+      <path class="rocket-flight__trail js-rocket-trail" d="M 0 0" fill="none"></path>
     </svg>
 
+    {Array.from({ length: PUFFS }, (_, i) => (
+      <span class="flight-stage__puff js-rocket-puff" style={`--k:${i + 1}`}></span>
+    ))}
+
     <div class="rocket-flight__craft js-rocket-craft">
-      <div class="rocket-flight__flame" aria-hidden="true">
+      <div class="rocket-flight__flame">
         <span class="rocket-flight__flame__tongue"></span>
         <span class="rocket-flight__flame__tongue"></span>
         <span class="rocket-flight__flame__tongue"></span>
@@ -45,12 +53,7 @@
 
       {/* Flat, three colours, no gradient — the anime read comes from the hard
           edges and the single highlight, not from rendering. */}
-      <svg
-        class="rocket-flight__body"
-        viewBox="0 0 64 128"
-        aria-hidden="true"
-        focusable="false"
-      >
+      <svg class="rocket-flight__body" viewBox="0 0 64 128" focusable="false">
         <path
           class="rocket-flight__hull"
           d="M32 2c12 14 18 32 18 52v34H14V54C14 34 20 16 32 2Z"></path>
@@ -64,15 +67,25 @@
       </svg>
     </div>
 
-    {/* The burst, then the wipe. The burst is a ring with a bright core born
-        at the rocket's exit corner, scaling ahead of the wipe and fading as it
-        is overtaken, so the hand-off reads as the rocket going up rather than
-        as a curtain. The wipe behind it is the black the next section paints. */}
-    <div class="rocket-flight__burst js-rocket-burst" aria-hidden="true"></div>
-    <div class="rocket-flight__wipe js-rocket-wipe" aria-hidden="true"></div>
+    {/* The impact: everything below is born at the crash point (placed by the
+        controller with one translate on .flight-stage__impact) and is zero
+        at rest. */}
+    <div class="flight-stage__impact js-rocket-impact">
+      <div class="rocket-flight__wipe js-rocket-wipe"></div>
+      <div class="rocket-flight__burst js-rocket-burst"></div>
+      <div class="flight-stage__flash js-rocket-flash"></div>
+      {SHARDS.map((s) => (
+        <span class="flight-stage__shard js-rocket-shard" data-dx={s.dx} data-dy={s.dy} data-spin={s.spin}></span>
+      ))}
+    </div>
   </div>
 
-</section>
+  <slot />
+
+  {/* The runway: one empty viewport after the bento, where the rocket flies
+      on, dives and hits. Space starts one viewport early, on top of it. */}
+  <section class="rocket-flight" aria-hidden="true"></section>
+</div>
 
 <script>
   import { initRocketFlight } from "../utils/RocketFlight";
@@ -81,70 +94,71 @@
 
 <style lang="scss">
   @use "../styles/helpers/colors" as *;
-  @use "../styles/helpers/fonts" as *;
-  @use "../styles/helpers/responsive" as *;
 
-  .rocket-flight {
+  .flight-zone {
     position: relative;
-    /* One viewport tall and nothing inside it but the flight. The trigger runs
-       from the section's top entering at the bottom of the viewport to its
-       bottom landing there, so at progress .8, where the burst is born, the
-       section's top edge sits a fifth of the way down the screen: the burst
-       starts right under the bento's footer, and by the time the wipe has the
-       screen the section's top has reached the top of the viewport. */
-    height: 100svh;
-    padding: 0;
     background: color(secondary);
-    overflow: hidden;
-    /* The wipe and the burst carry z-indices of their own; they rank against
-       each other here and never against the sections around them. */
-    isolation: isolate;
+
+    /* The bento paints no ground of its own inside the zone, so the stage
+       under it shows through its gaps and margins; its content sits above
+       the stage. */
+    :global(.bento-section) {
+      position: relative;
+      z-index: 1;
+      background: transparent;
+    }
   }
 
-  .rocket-flight__sky {
-    position: absolute;
-    inset: 0;
+  /* One viewport, stuck to the top of the screen for the whole zone, taking
+     no room in the flow (the negative margin gives its height back). Under
+     the bento's content: the rocket weaves behind the cards and never covers
+     a line of text. Clipped to itself, so the wipe and the burst cannot widen
+     the page. */
+  .flight-stage {
+    position: sticky;
+    top: 0;
+    z-index: 0;
+    height: 100svh;
+    margin-bottom: -100svh;
+    overflow: clip;
     pointer-events: none;
   }
 
-  .rocket-flight__path {
+  /* On a phone the cards fill the width, so the stage comes in front and the
+     route keeps to the edge lanes, outside the text. Same breakpoint as
+     NARROW_BELOW in RocketFlight.ts. */
+  @media (max-width: 639.98px) {
+    .flight-stage {
+      z-index: 2;
+    }
+  }
+
+  .flight-stage__route {
     position: absolute;
     inset: 0;
     width: 100%;
     height: 100%;
+    overflow: visible;
+    /* The route is data, not decoration: it is sampled, never painted. */
+    visibility: hidden;
   }
 
-  .rocket-flight__trail {
-    stroke: color(rule);
-    stroke-width: 2;
-    stroke-dasharray: 7 9;
-    stroke-linecap: round;
-    /* The whole route is visible the whole time, the way the paper plane's
-       path is on zainabkabira.com: it reads as where the rocket is going
-       rather than as a tail it drags. Nothing animates on this element, so it
-       paints once. */
-    vector-effect: non-scaling-stroke;
+  .rocket-flight {
+    position: relative;
+    z-index: 1;
+    height: 100svh;
   }
 
   .rocket-flight__craft {
     position: absolute;
     top: 0;
     left: 0;
-    /* The transform below positions it; these keep its own box out of the way
-       so the translate is measured from the section's top-left corner. */
+    /* The transform below positions it; these centre its own box on the
+       point the controller writes. */
     margin-left: calc(clamp(34px, 4.4vw, 62px) / -2);
-    margin-top: calc(clamp(34px, 4.4vw, 62px) * -1.2);
+    margin-top: calc(clamp(34px, 4.4vw, 62px) * -1);
     width: clamp(34px, 4.4vw, 62px);
-
-    /* Not `offset-path`. That resolves its coordinates in CSS pixels against
-       this element's containing block, while the trail above is an SVG
-       stretched to the section with preserveAspectRatio="none" — the two
-       spaces cannot be made to agree, and the rocket flies somewhere the trail
-       is not. The controller samples the real path once per resize and writes
-       a transform here instead, which is the same cost to composite and is
-       guaranteed to sit on the line. */
-    transform: translate3d(var(--x, 0px), var(--y, 0px), 0)
-      rotate(var(--a, 0deg));
+    transform: translate3d(var(--x, 0px), var(--y, 0px), 0) rotate(var(--a, 0deg));
     transform-origin: 50% 50%;
     will-change: transform;
   }
@@ -205,6 +219,9 @@
     border-top: 1.1em solid color(accent);
     border-radius: 0 0 40% 40%;
     animation: rocket-flame 420ms steps(3, end) infinite;
+    /* Running only while the zone is on screen: the controller sets
+       is-flying on the stage from its trigger's toggle. */
+    animation-play-state: paused;
 
     &:nth-child(2) {
       border-top-width: 1.8em;
@@ -215,6 +232,10 @@
     &:nth-child(3) {
       animation-delay: 150ms;
     }
+  }
+
+  .flight-stage:global(.is-flying) .rocket-flight__flame__tongue {
+    animation-play-state: running;
   }
 
   @keyframes rocket-flame {
@@ -232,32 +253,85 @@
     }
   }
 
+  /* Smoke: soft grey discs, each a step further back along the route and a
+     step smaller and fainter. The controller writes their transform only. */
+  .flight-stage__puff {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: clamp(14px, 1.6vw, 22px);
+    height: clamp(14px, 1.6vw, 22px);
+    margin: calc(clamp(14px, 1.6vw, 22px) / -2) 0 0 calc(clamp(14px, 1.6vw, 22px) / -2);
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(11, 11, 12, 0.16), rgba(11, 11, 12, 0) 70%);
+    opacity: calc(1 - var(--k) / 9);
+    transform: translate3d(-200px, -200px, 0);
+    will-change: transform;
+  }
+
+  .flight-stage:global(.is-crashed) .flight-stage__puff,
+  .flight-stage:global(.is-crashed) .rocket-flight__craft {
+    visibility: hidden;
+  }
+
+  /* The impact point: a zero-size box the controller places once per resize;
+     everything inside is centred on it. */
+  .flight-stage__impact {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .flight-stage__flash {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 70vmin;
+    height: 70vmin;
+    margin: -35vmin 0 0 -35vmin;
+    border-radius: 50%;
+    background: radial-gradient(circle, #fff 0%, #fff4e6 18%, #ffd9a8 34%, rgba(255, 138, 61, 0.55) 52%, rgba(255, 138, 61, 0) 70%);
+    transform: scale(0);
+    opacity: 0;
+  }
+
+  .flight-stage__shard {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 10px;
+    height: 16px;
+    margin: -8px 0 0 -5px;
+    background: color(primary);
+    clip-path: polygon(50% 0, 100% 70%, 30% 100%, 0 40%);
+    transform: scale(0);
+    opacity: 0;
+
+    &:nth-child(3n) {
+      background: color(accent);
+    }
+
+    &:nth-child(3n + 1) {
+      background: #ff8a3d;
+    }
+  }
+
   .rocket-flight__burst {
     position: absolute;
-    z-index: 2;
+    left: 0;
     top: 0;
-    right: 0;
-    /* The ring lives between 64% and 93% of the radius and is gone by opacity
-       before it could leave the screen, so the box only has to carry the ring
-       past the fold, not clear the diagonal: 180vmax, two thirds of the raster
-       area a diagonal-clearing box would need. */
     width: 180vmax;
     height: 180vmax;
+    margin: -90vmax 0 0 -90vmax;
     /* `--burst` runs 0 -> 1 just ahead of the wipe. Scale carries the ring
-       outward; opacity takes it away as the wipe arrives behind it. Two
-       composited properties, nothing else. */
-    transform: translate(50%, -50%) scale(var(--burst, 0));
-    /* Zero at rest — the first factor — so the layer paints nothing while the
-       page sits on the hero or the timeline; then squared, so the ring stays
-       bright through most of its travel and lets go only at the end, once the
-       wipe behind it has the screen. */
+       outward; opacity takes it away as the wipe arrives behind it. */
+    transform: scale(var(--burst, 0));
+    /* Zero at rest, then squared, so the ring stays bright through most of
+       its travel and lets go only at the end. */
     opacity: calc(clamp(0, var(--burst, 0) * 10, 1) * (1 - var(--burst, 0) * var(--burst, 0)));
-    transform-origin: center;
     border-radius: 50%;
-    /* A hot core, a dark gap, a thick flame ring, then nothing: the shock
-       front. The ring is a third of the radius so it reads at any scale. It
-       starts at the accent, not at the ember: over the white page the dark
-       ember read as a brown smear inside the ring. */
     background: radial-gradient(
       circle at 50% 50%,
       #fff4e6 0%,
@@ -270,37 +344,24 @@
       #ffd9a8 93%,
       transparent 100%
     );
-    /* Promoted by the controller only while `--burst` is between 0 and 1,
-       not for the page's lifetime: at rest this is a 180vmax box, and a
-       standing layer of that size is memory the hero and the timeline pay for. */
-    pointer-events: none;
   }
 
+  /* The wipe, centred on the impact. Its flat core has to reach the far
+     corner of the screen from there: the impact sits at 86% of the height
+     and in the middle, so the far corners are sqrt((W/2)^2 + (0.86H)^2)
+     away — 1057px at 1440x900 and 752px at 390x844. With the core flat to
+     88% of the radius that needs a diameter of 167vmax and 202vmax; 210vmax
+     covers both and is a third smaller than the corner-born wipe it
+     replaces, which had to cross the whole diagonal. */
   .rocket-flight__wipe {
     position: absolute;
-    z-index: 1;
+    left: 0;
     top: 0;
-    right: 0;
-    /* Centred on the corner the rocket leaves through, and big enough that at
-       full scale its radius clears the viewport diagonal — otherwise the far
-       corner of the section stays white while the rest has already gone. */
-    /* The circle has to put its flat core over the whole section at scale 1,
-       or the far corner keeps the leading edge and the hand-off shows a seam.
-       The far corner from the exit corner is the section's diagonal: 1698px
-       at 1440x900, 930px at 390x844 (a 100svh section). With the core flat to
-       88% of the radius, max(330vmax, 360vh) covers both — diagonal / radius
-       is 0.71 and 0.61 there. The size was chosen for the 150svh section this
-       used to be (diagonal / radius 0.83 and 0.87); whether a smaller box now
-       pays back in layer memory is a measurement not yet taken. */
-    width: max(330vmax, 360vh);
-    height: max(330vmax, 360vh);
-    transform: translate(50%, -50%) scale(var(--wipe, 0));
-    transform-origin: center;
-
+    width: 210vmax;
+    height: 210vmax;
+    margin: -105vmax 0 0 -105vmax;
+    transform: scale(var(--wipe, 0));
     border-radius: 50%;
-    /* Flame at the leading edge, the space section's own colour behind it, so
-       the hand-off has no seam: what the wipe leaves behind is exactly what
-       the next section paints. The flame is the outer 12% of the radius. */
     background: radial-gradient(
       circle at 50% 50%,
       color(space) 0%,
@@ -310,23 +371,24 @@
       #ff8a3d 98%,
       #ffd9a8 100%
     );
-    /* Scale is the only thing that changes, so the wipe is a single composited
-       layer rather than a repaint of the section under it. */
-    will-change: transform;
   }
 
-  /* Stillness, not absence: the rocket sits where its path starts, the flame
-     holds one shape, and the wipe never runs — the section below simply
-     follows this one. The resting position is written by the controller, which
-     measures the path once and stops; a rule here could not know where the
-     path begins. */
+  /* Stillness, not absence: the stage is not stuck, the rocket rests at the
+     start of its route beside the bento, the flame holds one shape, there is
+     no smoke and no crash, and the star field simply follows the runway. */
   @media (prefers-reduced-motion: reduce) {
+    .flight-stage {
+      position: absolute;
+      inset: 0 0 auto 0;
+      margin-bottom: 0;
+    }
+
     .rocket-flight__flame__tongue {
       animation: none;
     }
 
-    .rocket-flight__wipe,
-    .rocket-flight__burst {
+    .flight-stage__puff,
+    .flight-stage__impact {
       display: none;
     }
   }

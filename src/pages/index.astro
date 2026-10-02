@@ -63,8 +63,11 @@ import "../styles/global.scss";
 
     <main>
       <AnimeHero />
-      <WhyWorkWithMe />
-      <AnimeRocket />
+      {/* The rocket's flight zone wraps the bento: it flies beside it the
+          whole way down, then dives on the runway after it. */}
+      <AnimeRocket>
+        <WhyWorkWithMe />
+      </AnimeRocket>
       <AnimeSpace />
       <AnimeWork />
       <AnimeCampus />
