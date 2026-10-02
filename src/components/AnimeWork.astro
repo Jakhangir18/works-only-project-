@@ -55,9 +55,10 @@ const cards = projects.map((p, i) => ({ ...p, index: String(i + 1).padStart(2, "
       <ul class="anime-work__cards js-work-cards" style={`--n:${cards.length}`}>
         {cards.map((card, i) => (
           <li class="anime-work__slot" style={`--i:${i}`}>
-            <a class="anime-work__card js-work-card" href={card.href} data-index={i}>
+            <a class="anime-work__card js-work-card" href={card.href} data-index={i} draggable="false">
               <span class="anime-work__media">
                 <img
+                  draggable="false"
                   src={card.cover.src}
                   srcset={card.cover.srcset}
                   sizes="(max-width: 40em) 72vw, 360px"
@@ -142,8 +143,9 @@ const cards = projects.map((p, i) => ({ ...p, index: String(i + 1).padStart(2, "
      re-assigned on every frame the rocket or the stars write, which on a
      phone profile cost long tasks in sections nowhere near this one. The
      controller sets is-far from an IntersectionObserver. */
-  .anime-work:global(.is-far) .anime-work__tunnel,
-  .anime-work:global(.is-far) .anime-work__carousel {
+  /* Only the tunnel's letters leave the tree: the cards stay, so they stay
+     in the keyboard's tab order from anywhere on the page. */
+  .anime-work:global(.is-far) .anime-work__tunnel {
     display: none;
   }
 
@@ -224,9 +226,10 @@ const cards = projects.map((p, i) => ({ ...p, index: String(i + 1).padStart(2, "
     display: grid;
     place-items: center;
     perspective: 1600px;
-    /* Hidden until the third act; the controller fades it in. */
+    /* Transparent and off the pointer until the third act; the controller
+       fades it in. Still focusable, so a keyboard can reach every card. */
     opacity: 0;
-    visibility: hidden;
+    pointer-events: none;
   }
 
   .anime-work__cards {
@@ -264,6 +267,10 @@ const cards = projects.map((p, i) => ({ ...p, index: String(i + 1).padStart(2, "
     background: color(work-surface);
     color: color(work-text);
     text-decoration: none;
+    /* A mouse drag turns the ring; the browser's own link and image drag
+       would cancel it. */
+    -webkit-user-drag: none;
+    user-select: none;
     /* A hairline and a lighter top edge rather than a drop shadow: seven
        turning layers with a 60px blur each were most of this section's
        compositing cost on a software rasteriser. */
@@ -442,7 +449,7 @@ const cards = projects.map((p, i) => ({ ...p, index: String(i + 1).padStart(2, "
       position: static;
       display: block;
       opacity: 1;
-      visibility: visible;
+      pointer-events: auto;
       perspective: none;
     }
 

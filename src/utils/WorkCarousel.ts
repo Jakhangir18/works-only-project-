@@ -132,9 +132,12 @@ function apply(p: number): void {
   const show = cardsIn > 0;
   if (carousel) {
     writeIfChanged(carousel, "opacity", cardsIn.toFixed(3));
+    // Not visibility: the cards stay in the tab order before the third act,
+    // and focusing one scrolls it round (onFocusIn). Only the pointer is
+    // kept off an invisible carousel.
     if (show !== shown) {
       shown = show;
-      carousel.style.visibility = show ? "visible" : "hidden";
+      carousel.style.pointerEvents = show ? "" : "none";
       hint?.classList.toggle("is-on", show);
     }
   }
@@ -161,6 +164,11 @@ function bindInput(): void {
   };
   onMove = (e) => {
     if (!dragging || !trigger || !cardRing) return;
+    // The button was released somewhere we did not hear about: stop.
+    if ((e.buttons & 1) === 0) {
+      dragging = false;
+      return;
+    }
     const dx = e.clientX - dragStartX;
     dragMoved = Math.max(dragMoved, Math.abs(dx));
     // One card's width of drag turns the ring by one card.
@@ -189,6 +197,7 @@ function bindInput(): void {
   carousel.addEventListener("pointerdown", onDown);
   window.addEventListener("pointermove", onMove, { passive: true });
   window.addEventListener("pointerup", onUp, { passive: true });
+  window.addEventListener("pointercancel", onUp, { passive: true });
   carousel.addEventListener("click", onClickCapture, true);
   carousel.addEventListener("focusin", onFocusIn);
 }
@@ -258,7 +267,10 @@ export function destroyWorkCarousel(): void {
     if (onFocusIn) carousel.removeEventListener("focusin", onFocusIn);
   }
   if (onMove) window.removeEventListener("pointermove", onMove);
-  if (onUp) window.removeEventListener("pointerup", onUp);
+  if (onUp) {
+    window.removeEventListener("pointerup", onUp);
+    window.removeEventListener("pointercancel", onUp);
+  }
   onDown = onMove = onUp = null;
   onClickCapture = null;
   onFocusIn = null;
