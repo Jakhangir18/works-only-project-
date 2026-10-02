@@ -294,8 +294,7 @@
       1,
       2,
       5,
-      6,
-      7
+      6
     ],
     "note": "AMS.pdf pages 1-7 with p.6 replaced by a raster copy whose names are blurred"
   },
@@ -440,13 +439,6 @@
     "kind": "image",
     "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/prepared/gdg/ext-004.png",
     "note": "External PDF embedded image 4"
-  },
-  {
-    "slug": "gdg",
-    "id": "report",
-    "kind": "image",
-    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/prepared/gdg/ext-p1-200dpi.png",
-    "note": "External (Donors) PDF p.1 at 200 dpi"
   },
   {
     "slug": "rowerlab",

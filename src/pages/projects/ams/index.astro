@@ -42,8 +42,9 @@ const deckIndex: Record<number, string> = {
   7: "Installations",
 };
 /* Page 7 (installations) is held back: it names client sites the owner has
-   not confirmed and shows a person's face without a blur. It is imported and
-   ready; add it back once he says so. */
+   not confirmed and shows a person's face without a blur. Its file is kept
+   out of public/ (~/work/works-only/in/mwe-2026-10-02/held/ams/) and out of
+   media.json; the filter stays so a re-import cannot bring it back unasked. */
 const deckPages = slides("ams", "slides-deck").pages.filter((pg) => pg.page !== 7);
 const deck = deckPages.map((pg) => ({ src: pg.src, width: pg.width, height: pg.height, alt: deckAlt[pg.page] }));
 
@@ -65,7 +66,7 @@ const did = [
 const nn = (i: number) => String(i + 1).padStart(2, "0");
 ---
 
-<CaseLayout slug="ams" title="AMS Tablet" description={p.line}>
+<CaseLayout slug="ams" title="AMS Tablet" description={p.line} shareCard="/projects/ams/og.jpg">
   <div class="ams">
     <header class="ams-open">
       <figure class="ams-open__media">

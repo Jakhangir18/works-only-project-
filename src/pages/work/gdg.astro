@@ -24,15 +24,17 @@ import { projects } from "../../data/projects";
  */
 const p = projects.find((x) => x.slug === "gdg")!;
 const cover = picture("gdg", "hero", 1800);
-const report = picture("gdg", "report", 1500);
 /* The report page is held back until the owner confirms it: it is a draft
    template, and it reads out claims that are on no source list (a trip to
    Google I/O, a sponsorship, the chapter's founding year, an older name).
-   Set this to true once he says the page can be shown. */
+   Its files are kept out of public/ (in ~/work/works-only/in/mwe-2026-10-02/
+   held/gdg/, with its media.json entry) so they cannot be opened by URL.
+   To show it: move them back, restore the entry, set this to true. */
 const SHOW_REPORT = false;
+const report = SHOW_REPORT ? picture("gdg", "report", 1500) : null;
 ---
 
-<CaseLayout slug="gdg" title="GDG on Campus" description="President of Google Developer Group on Campus at Oregon State University, a chapter with 200+ students registered.">
+<CaseLayout slug="gdg" title="GDG on Campus" description="President of Google Developer Group on Campus at Oregon State University, a chapter with 200+ students registered." shareCard="/projects/gdg/og.jpg">
   <div class="gdg">
     <header class="gdg-cover">
       <img class="gdg-cover__img" src={cover.src} srcset={cover.srcset} sizes="100vw" alt="A speaker holding a microphone on a wood-panelled stage, a second person standing behind, under a projected slide headed 'Why join GDG?'" width={cover.width} height={cover.height} fetchpriority="high" decoding="async" />
@@ -92,7 +94,7 @@ const SHOW_REPORT = false;
       </div>
     </section>
 
-    {SHOW_REPORT && <section class="case-section gdg-report">
+    {report && <section class="case-section gdg-report">
       <p class="case-label gdg-folio"><span>04</span><span>The report</span></p>
       <h2 class="case-h2" data-reveal>On paper</h2>
       <figure class="gdg-doc" data-reveal>

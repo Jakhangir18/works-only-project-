@@ -122,25 +122,5 @@
       }
     ],
     "thumb": "/projects/gdg/media/g05-thumb.webp"
-  },
-  "report": {
-    "kind": "image",
-    "width": 1500,
-    "height": 2000,
-    "files": [
-      {
-        "w": 640,
-        "src": "/projects/gdg/media/report-640.webp"
-      },
-      {
-        "w": 1280,
-        "src": "/projects/gdg/media/report-1280.webp"
-      },
-      {
-        "w": 1500,
-        "src": "/projects/gdg/media/report-1500.webp"
-      }
-    ],
-    "thumb": "/projects/gdg/media/report-thumb.webp"
   }
 }
