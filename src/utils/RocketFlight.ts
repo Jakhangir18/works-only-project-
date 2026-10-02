@@ -84,6 +84,24 @@ function measure(): void {
   }
 }
 
+/* A linear 0..1 ramp between two progress values, clamped at both ends. One
+   definition for the wipe, the burst and the copy, so their windows read in
+   one place and no leaf grows its own clamp convention. */
+function ramp(progress: number, from: number, to: number): number {
+  return Math.min(1, Math.max(0, (progress - from) / (to - from)));
+}
+
+/* The last string written to each leaf. ScrollTrigger calls apply() on every
+   scroll frame across the whole section, and for most of it the wipe, the
+   burst and the copy hold a constant; writing the same value again is the
+   rewrite this repository already paid for once on this very driver. */
+const last = new Map<HTMLElement, string>();
+function write(el: HTMLElement, prop: string, value: string): void {
+  if (last.get(el) === value) return;
+  last.set(el, value);
+  el.style.setProperty(prop, value);
+}
+
 function apply(progress: number): void {
   if (craft && points.length) {
     const at = Math.min(points.length - 1, Math.max(0, Math.round(progress * (points.length - 1))));
@@ -92,35 +110,17 @@ function apply(progress: number): void {
     craft.style.setProperty("--y", `${p.y.toFixed(1)}px`);
     craft.style.setProperty("--a", `${p.a.toFixed(1)}deg`);
   }
-  if (wipe) {
-    const w = progress <= WIPE_STARTS ? 0 : (progress - WIPE_STARTS) / (1 - WIPE_STARTS);
-    wipe.style.setProperty("--wipe", w.toFixed(3));
-  }
+  if (wipe) write(wipe, "--wipe", ramp(progress, WIPE_STARTS, 1).toFixed(3));
   if (burst) {
-    const b = Math.min(1, Math.max(0, (progress - BURST_STARTS) / (BURST_ENDS - BURST_STARTS)));
-    burst.style.setProperty("--burst", b.toFixed(3));
+    const b = ramp(progress, BURST_STARTS, BURST_ENDS);
+    write(burst, "--burst", b.toFixed(3));
+    // Promoted only while it is actually moving. A standing will-change on a
+    // 180vmax box is a layer the whole page carries; here it exists for the
+    // twelve percent of the section where the ring is on screen.
+    const active = b > 0 && b < 1 ? "transform, opacity" : "";
+    if (burst.style.willChange !== active) burst.style.willChange = active;
   }
-  if (copy) {
-    const fade = progress <= COPY_FADES ? 1 : 1 - (progress - COPY_FADES) / (COPY_GONE - COPY_FADES);
-    copy.style.setProperty("--copy", Math.min(1, Math.max(0, fade)).toFixed(3));
-  }
-}
-
-/* Put the rocket at the start of its trail, and do it only when that can have
-   moved. The section is sized in `svh`, so iOS Safari fires `resize` as the URL
-   bar collapses while the box stays the same; without this guard a reduced-
-   motion phone would pay 402 `getPointAtLength` calls per scroll gesture for a
-   pose that does not change. The 200 ms settle is the one `SiteController`
-   uses. */
-function restAtStart(): void {
-  if (!section) return;
-  const box = section.getBoundingClientRect();
-  const w = Math.round(box.width);
-  const h = Math.round(box.height);
-  if (w === restBox.w && h === restBox.h) return;
-  restBox = { w, h };
-  measure();
-  apply(0);
+  if (copy) write(copy, "--copy", (1 - ramp(progress, COPY_FADES, COPY_GONE)).toFixed(3));
 }
 
 export function initRocketFlight(): void {
@@ -195,4 +195,5 @@ export function destroyRocketFlight(): void {
   wipe = null;
   burst = null;
   points = [];
+  last.clear();
 }
