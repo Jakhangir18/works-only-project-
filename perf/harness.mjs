@@ -977,6 +977,124 @@ async function main() {
       });
     }
 
+    // ---- Pointer phases and the space hand-off (anime home only)
+    // The pointer is parked off-content for every phase above, so anything
+    // the page does on pointer input — the hero tilt, a magnetic button, a
+    // spotlight on a card — never runs during a measurement. These phases
+    // drive the pointer the way a visitor would and hold the scroll still, so
+    // a failed from===to assertion means the page moved under a hover.
+    if (!DIVE_ONLY && ROUTE !== "tunnel") {
+      const anchors = await page.evaluate(() => {
+        const abs = (sel) => {
+          const el = document.querySelector(sel);
+          if (!el) return null;
+          const r = el.getBoundingClientRect();
+          return { top: Math.round(r.top + window.scrollY), h: Math.round(r.height) };
+        };
+        const cards = [...document.querySelectorAll(".bento-card")].map((el) => {
+          const r = el.getBoundingClientRect();
+          return { x: r.x + r.width / 2, yAbs: r.y + window.scrollY + r.height / 2 };
+        });
+        const explore = document.querySelector(".anime-hero__explore")?.getBoundingClientRect();
+        return {
+          hero: abs(".anime-hero"),
+          bento: abs(".bento-section"),
+          rocket: abs(".rocket-flight"),
+          work: abs(".anime-work"),
+          cards,
+          explore: explore ? { x: explore.x + explore.width / 2, yAbs: explore.y + window.scrollY + explore.height / 2 } : null,
+          vh: window.innerHeight,
+          vw: window.innerWidth,
+        };
+      });
+
+      // A figure-eight over the hero: 3 laps of 120 steps, ~12 ms apart, the
+      // same cadence as the wheel bursts, so the tilt lerp is exercised at the
+      // rate a hand moves rather than teleported corner to corner.
+      if (anchors.hero) {
+        await jumpTo(0);
+        await runPhase(
+          "hero-pointer",
+          async () => {
+            const cx = anchors.vw / 2;
+            const cy = Math.min(anchors.vh, anchors.hero.h) / 2;
+            const rx = anchors.vw * 0.35;
+            const ry = Math.min(anchors.vh, anchors.hero.h) * 0.3;
+            for (let i = 0; i < 360; i++) {
+              const t = (i / 120) * Math.PI * 2;
+              await page.mouse.move(cx + rx * Math.sin(t), cy + ry * Math.sin(2 * t));
+              await sleep(STEP_MS);
+            }
+            await page.mouse.move(30, 450);
+            await sleep(400);
+          },
+          { from: 0, to: 0 },
+        );
+      } else {
+        result.notes.push("hero-pointer skipped: .anime-hero not found.");
+      }
+
+      // Each bento card in turn, dwelling long enough for a spotlight to
+      // follow and a beam to start, then the Explore button for the magnetic
+      // pull. Scroll parked at the bento section's top.
+      if (anchors.bento && anchors.cards.length) {
+        const bentoY = Math.min(anchors.bento.top, geom.maxScroll);
+        await jumpTo(bentoY);
+        await runPhase(
+          "bento-pointer",
+          async () => {
+            for (const c of anchors.cards) {
+              const y = c.yAbs - bentoY;
+              if (y < 0 || y > anchors.vh) continue;
+              for (let i = 0; i <= 20; i++) {
+                await page.mouse.move(c.x - 80 + i * 8, y - 20 + i * 2);
+                await sleep(STEP_MS);
+              }
+              await sleep(300);
+            }
+            await page.mouse.move(30, 450);
+            await sleep(400);
+          },
+          { from: bentoY, to: bentoY },
+        );
+      } else {
+        result.notes.push("bento-pointer skipped: no .bento-card on this page.");
+      }
+
+      // Explore sits in the hero; sweep it on its own, scroll at top.
+      if (anchors.explore) {
+        await jumpTo(0);
+        await runPhase(
+          "explore-pointer",
+          async () => {
+            const { x, yAbs } = anchors.explore;
+            for (let lap = 0; lap < 3; lap++) {
+              for (let i = 0; i <= 24; i++) {
+                const t = (i / 24) * Math.PI * 2;
+                await page.mouse.move(x + 28 * Math.cos(t), yAbs + 16 * Math.sin(t));
+                await sleep(STEP_MS);
+              }
+            }
+            await page.mouse.move(30, 450);
+            await sleep(700); // elastic return
+          },
+          { from: 0, to: 0 },
+        );
+      }
+
+      // The hand-off: from the rocket section's top to the work section's
+      // top, which crosses the burst, the wipe and the star drift.
+      if (anchors.rocket && anchors.work) {
+        const from = Math.max(0, anchors.rocket.top - anchors.vh);
+        const to = Math.min(anchors.work.top, geom.maxScroll);
+        await jumpTo(from);
+        await runPhase("space-down", () => wheelBy(to - from), { from, to });
+        await runPhase("space-up", () => wheelBy(from - to), { from: to, to: from });
+      } else {
+        result.notes.push("space phases skipped: .rocket-flight or .anime-work not found.");
+      }
+    }
+
     // ---- Collect in-page data
     await harvest();
     const pageData = collected;
