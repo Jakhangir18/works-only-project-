@@ -1001,6 +1001,7 @@ async function main() {
           bento: abs(".bento-section"),
           rocket: abs(".rocket-flight"),
           work: abs(".anime-work"),
+          paradise: abs(".paradise"),
           cards,
           explore: explore ? { x: explore.x + explore.width / 2, yAbs: explore.y + window.scrollY + explore.height / 2 } : null,
           vh: window.innerHeight,
@@ -1092,6 +1093,27 @@ async function main() {
         await runPhase("space-up", () => wheelBy(from - to), { from: to, to: from });
       } else {
         result.notes.push("space phases skipped: .rocket-flight or .anime-work not found.");
+      }
+
+      // The timeline: the descent from space onto the meadow (clouds, the
+      // sky settling, the meadow rising, the rays turning) and the first
+      // stretch of the walk with the firefly and the swaying grass.
+      if (anchors.paradise) {
+        const from = Math.min(anchors.paradise.top, geom.maxScroll);
+        const to = Math.min(anchors.paradise.top + Math.round(anchors.vh * 3.2), geom.maxScroll);
+        // A long jump right after the space phases can land while Lenis is
+        // still easing toward its last target, which takes the page back;
+        // jump again until the page is where it was sent.
+        for (let attempt = 0; attempt < 4; attempt++) {
+          await settleScroll();
+          await jumpTo(from);
+          const at = await page.evaluate(() => window.scrollY);
+          if (Math.abs(at - from) <= 8) break;
+        }
+        await runPhase("paradise-down", () => wheelBy(to - from), { from, to });
+        await runPhase("paradise-up", () => wheelBy(from - to), { from: to, to: from });
+      } else {
+        result.notes.push("paradise phases skipped: .paradise not found.");
       }
     }
 
