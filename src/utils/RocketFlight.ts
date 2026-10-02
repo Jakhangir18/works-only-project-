@@ -18,10 +18,6 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 /* The flame only takes the screen at the very end. Exported: the star field
    starts moving on the same mark. */
 export const WIPE_STARTS = 0.84;
-/* The copy lets go as the burst is born, not after: it is ink, and once the
-   black is under it there is nothing left to read. */
-const COPY_FADES = 0.8;
-const COPY_GONE = 0.9;
 /* The burst leads the wipe: it is born a little before it and has run its
    course by the time the wipe is half way, so the flame front is what the eye
    follows and the black is what it leaves behind. */
@@ -37,7 +33,6 @@ const RESIZE_SETTLE = 200;
 let trigger: ScrollTrigger | null = null;
 let section: HTMLElement | null = null;
 let craft: HTMLElement | null = null;
-let copy: HTMLElement | null = null;
 let trail: SVGPathElement | null = null;
 let wipe: HTMLElement | null = null;
 let burst: HTMLElement | null = null;
@@ -85,16 +80,16 @@ function measure(): void {
 }
 
 /* A linear 0..1 ramp between two progress values, clamped at both ends. One
-   definition for the wipe, the burst and the copy, so their windows read in
-   one place and no leaf grows its own clamp convention. */
+   definition for the wipe and the burst, so their windows read in one place
+   and no leaf grows its own clamp convention. */
 function ramp(progress: number, from: number, to: number): number {
   return Math.min(1, Math.max(0, (progress - from) / (to - from)));
 }
 
 /* The last string written to each leaf. ScrollTrigger calls apply() on every
-   scroll frame across the whole section, and for most of it the wipe, the
-   burst and the copy hold a constant; writing the same value again is the
-   rewrite this repository already paid for once on this very driver. */
+   scroll frame across the whole section, and for most of it the wipe and the
+   burst hold a constant; writing the same value again is the rewrite this
+   repository already paid for once on this very driver. */
 const last = new Map<HTMLElement, string>();
 function write(el: HTMLElement, prop: string, value: string): void {
   if (last.get(el) === value) return;
@@ -135,7 +130,6 @@ function apply(progress: number): void {
     const active = b > 0 && b < 1 ? "transform, opacity" : "";
     if (burst.style.willChange !== active) burst.style.willChange = active;
   }
-  if (copy) write(copy, "--copy", (1 - ramp(progress, COPY_FADES, COPY_GONE)).toFixed(3));
 }
 
 export function initRocketFlight(): void {
@@ -143,7 +137,6 @@ export function initRocketFlight(): void {
 
   section = document.querySelector<HTMLElement>(".rocket-flight");
   craft = document.querySelector<HTMLElement>(".js-rocket-craft");
-  copy = document.querySelector<HTMLElement>(".rocket-flight__copy");
   trail = document.querySelector<SVGPathElement>(".js-rocket-trail");
   wipe = document.querySelector<HTMLElement>(".js-rocket-wipe");
   burst = document.querySelector<HTMLElement>(".js-rocket-burst");
@@ -205,7 +198,6 @@ export function destroyRocketFlight(): void {
   restBox = { w: 0, h: 0 };
   section = null;
   craft = null;
-  copy = null;
   trail = null;
   wipe = null;
   burst = null;
