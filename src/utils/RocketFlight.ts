@@ -18,7 +18,15 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 /* The flame only takes the screen at the very end, so the section's own copy
    has been readable for the whole climb. */
 const WIPE_STARTS = 0.84;
-const COPY_FADES = 0.9;
+/* The copy lets go as the burst is born, not after: it is ink, and once the
+   violet is under it there is nothing left to read. */
+const COPY_FADES = 0.8;
+const COPY_GONE = 0.9;
+/* The burst leads the wipe: it is born a little before it and has run its
+   course by the time the wipe is half way, so the flame front is what the eye
+   follows and the violet is what it leaves behind. */
+const BURST_STARTS = 0.8;
+const BURST_ENDS = 0.92;
 /* How many points to sample off the path. Two hundred is finer than a pixel at
    any viewport this page runs at, and it is sampled once per resize. */
 const SAMPLES = 200;
@@ -32,6 +40,7 @@ let craft: HTMLElement | null = null;
 let copy: HTMLElement | null = null;
 let trail: SVGPathElement | null = null;
 let wipe: HTMLElement | null = null;
+let burst: HTMLElement | null = null;
 /* Only set on the reduced-motion path, where there is no ScrollTrigger to
    refresh the geometry after a resize. */
 let onResize: (() => void) | null = null;
@@ -87,9 +96,13 @@ function apply(progress: number): void {
     const w = progress <= WIPE_STARTS ? 0 : (progress - WIPE_STARTS) / (1 - WIPE_STARTS);
     wipe.style.setProperty("--wipe", w.toFixed(3));
   }
+  if (burst) {
+    const b = Math.min(1, Math.max(0, (progress - BURST_STARTS) / (BURST_ENDS - BURST_STARTS)));
+    burst.style.setProperty("--burst", b.toFixed(3));
+  }
   if (copy) {
-    const fade = progress <= COPY_FADES ? 1 : 1 - (progress - COPY_FADES) / (1 - COPY_FADES);
-    copy.style.setProperty("--copy", Math.max(0, fade).toFixed(3));
+    const fade = progress <= COPY_FADES ? 1 : 1 - (progress - COPY_FADES) / (COPY_GONE - COPY_FADES);
+    copy.style.setProperty("--copy", Math.min(1, Math.max(0, fade)).toFixed(3));
   }
 }
 
@@ -118,6 +131,7 @@ export function initRocketFlight(): void {
   copy = document.querySelector<HTMLElement>(".rocket-flight__copy");
   trail = document.querySelector<SVGPathElement>(".js-rocket-trail");
   wipe = document.querySelector<HTMLElement>(".js-rocket-wipe");
+  burst = document.querySelector<HTMLElement>(".js-rocket-burst");
   if (!section || !craft) return;
 
   // Under reduced motion the rocket does not fly, but it still has to sit on
@@ -179,5 +193,6 @@ export function destroyRocketFlight(): void {
   copy = null;
   trail = null;
   wipe = null;
+  burst = null;
   points = [];
 }

@@ -64,8 +64,11 @@
       </svg>
     </div>
 
-    {/* The wipe. It is the flame's colour, grows from the rocket's exit corner
-        and hands the screen to the section below. */}
+    {/* The burst, then the wipe. The burst is a ring with a bright core born
+        at the rocket's exit corner, scaling ahead of the wipe and fading as it
+        is overtaken, so the hand-off reads as the rocket going up rather than
+        as a curtain. The wipe behind it is the violet the next section paints. */}
+    <div class="rocket-flight__burst js-rocket-burst" aria-hidden="true"></div>
     <div class="rocket-flight__wipe js-rocket-wipe" aria-hidden="true"></div>
   </div>
 
@@ -232,6 +235,40 @@
     }
   }
 
+  .rocket-flight__burst {
+    position: absolute;
+    z-index: 2;
+    top: 0;
+    right: 0;
+    width: 220vmax;
+    height: 220vmax;
+    /* `--burst` runs 0 -> 1 just ahead of the wipe. Scale carries the ring
+       outward; opacity takes it away as the wipe arrives behind it. Two
+       composited properties, nothing else. */
+    transform: translate(50%, -50%) scale(var(--burst, 0));
+    /* Squared so the ring stays bright through most of its travel and lets go
+       only at the end, once the wipe behind it has the screen. */
+    opacity: calc(1 - var(--burst, 0) * var(--burst, 0));
+    transform-origin: center;
+    border-radius: 50%;
+    /* A hot core, a dark gap, a thick flame ring, then nothing: the shock
+       front. The ring is a third of the radius so it reads at any scale. */
+    background: radial-gradient(
+      circle at 50% 50%,
+      #fff4e6 0%,
+      #ffd9a8 8%,
+      transparent 18%,
+      transparent 56%,
+      color(space-glow) 64%,
+      color(accent) 74%,
+      #ff8a3d 86%,
+      #ffd9a8 93%,
+      transparent 100%
+    );
+    will-change: transform, opacity;
+    pointer-events: none;
+  }
+
   .rocket-flight__wipe {
     position: absolute;
     z-index: 1;
@@ -251,9 +288,10 @@
        the next section paints. */
     background: radial-gradient(
       circle at 50% 50%,
-      #120b2a 0%,
-      #120b2a 62%,
-      color(accent) 78%,
+      color(space) 0%,
+      color(space) 58%,
+      color(space-glow) 70%,
+      color(accent) 80%,
       #ff8a3d 92%,
       #ffd9a8 100%
     );
@@ -335,7 +373,8 @@
       animation: none;
     }
 
-    .rocket-flight__wipe {
+    .rocket-flight__wipe,
+    .rocket-flight__burst {
       display: none;
     }
   }
