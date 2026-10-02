@@ -66,10 +66,12 @@ const cards = [
 
   .bento-section {
     position: relative;
-    /* The anime home's own ground, so the section reads as part of the opening
-       rather than as the tunnel page it came from. */
-    background: color(secondary);
-    color: color(primary);
+    /* The tunnel's ground by default. The component is shared by both homes,
+       and the colour helper resolves to each page's own theme — on the tunnel
+       that turned the cards near-white under white type (1.1:1). So the
+       anime home opts in by its theme class below, and the tunnel keeps the
+       literals it was designed with. */
+    background: #fff2ed;
     padding: 0;
     min-height: 100vh;
     z-index: 20;
@@ -106,9 +108,22 @@ const cards = [
     font-size: clamp(2.5rem, 6vw, 5rem);
     font-weight: 400;
     line-height: 1.1;
-    color: color(primary);
+    color: #000;
     margin: 0;
     text-transform: lowercase;
+  }
+
+  :global(.theme-anime) .bento-section {
+    background: color(secondary);
+  }
+
+  :global(.theme-anime) .bento-header__title,
+  :global(.theme-anime) .bento-footer__title {
+    color: color(primary);
+  }
+
+  :global(.theme-anime) .bento-footer__text {
+    color: color(ink-soft);
   }
 
   .bento-container {
@@ -138,7 +153,9 @@ const cards = [
     border: 1px dashed rgba(255, 255, 255, 0.3);
     border-radius: 0.75rem;
     padding: clamp(1.5rem, 3vw, 2.5rem);
-    background: color(primary);
+    /* A literal on purpose: the cards are ink on both homes, and the helper
+       would hand the tunnel its theme's light primary under white type. */
+    background: #0b0b0c;
     min-height: 200px;
     display: flex;
     flex-direction: column;
@@ -246,7 +263,7 @@ const cards = [
     font-size: clamp(2rem, 5vw, 3.75rem);
     font-weight: 400;
     line-height: 1.15;
-    color: color(primary);
+    color: #000;
     margin: 0 0 1.5rem 0;
     text-transform: lowercase;
   }
@@ -255,7 +272,7 @@ const cards = [
     font-family: font-family(fraktion);
     font-size: clamp(1rem, 1.2vw, 1.125rem);
     line-height: 1.7;
-    color: color(ink-soft);
+    color: rgba(0, 0, 0, 0.7);
     margin: 0;
   }
 </style>
