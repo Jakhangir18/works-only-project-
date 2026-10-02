@@ -18,9 +18,11 @@ import { works } from "../data/works";
 
 /* The three pieces of copy on the first screen, each its own constant so a
    change of mind is a change of one line. */
-const HEADLINE = "JAKHANGIR TYNSHIMOV";
-const LINE_LEFT = "Computer science & physics, Oregon State";
-const LINE_RIGHT = "Software engineer";
+const HEADLINE_LEFT = "JAKHANGIR";
+const HEADLINE_RIGHT = "TYNSHIMOV";
+const LINE_LEFT = "Computer Science, minoring Physics";
+const LINE_LEFT_2 = "Oregon State University";
+const LINE_RIGHT = "Software Engineer";
 const PLACE = "Corvallis, Oregon";
 
 /* What turns behind the figure: the project pages themselves, shot at phone
@@ -29,10 +31,15 @@ const PLACE = "Corvallis, Oregon";
    does. The slug is derived from the route, so a new project joins the wheel
    by existing — and the last segment of `site` is exactly what shots.mjs
    names its output. */
-const wheel = works.map((work) => ({
+const shots = works.map((work) => ({
   title: work.title,
   slug: work.site.replace(/\/$/, "").split("/").pop() || "",
 }));
+/* Each project sits on the ring twice. The ring is concave, so only its far
+   half is ever on screen — seven cards on a full circle would show three at a
+   time, and the reference wraps the figure in six. Fourteen slots keep the
+   spin continuous and the visible arc full. */
+const wheel = [...shots, ...shots];
 const step = 360 / Math.max(wheel.length, 1);
 
 /* A phone screenshot is 390x844; the card is drawn at 420 wide. */
@@ -41,16 +48,16 @@ const SHOT_HEIGHT = 909;
 
 /* The smallest candidate's own pixels, after the transparent margin was
    trimmed off, so the box is reserved at the right ratio before the file
-   arrives. The slot renders 170 CSS px wide on every desktop width — the
-   stage caps at 1100 — and 115 on a phone, so 340w covers it at 2x and 510w
-   at 3x. Anything larger is bytes the layout cannot use. */
-const FIGURE_WIDTH = 340;
-const FIGURE_HEIGHT = 825;
+   arrives. He now renders about 245 CSS px wide on a 900px-tall desktop
+   viewport and about 170 on a phone, so 500w covers 2x and 760w covers 3x.
+   Anything larger is bytes the layout cannot use. */
+const FIGURE_WIDTH = 500;
+const FIGURE_HEIGHT = 1214;
 ---
 
 <section class="anime-hero" id="home" aria-label="Introduction">
   <h1 class="u-sr-only">Jakhangir Tynshimov</h1>
-  <p class="u-sr-only">{LINE_RIGHT}. {LINE_LEFT}.</p>
+  <p class="u-sr-only">{LINE_RIGHT}. {LINE_LEFT}, {LINE_LEFT_2}.</p>
 
   <p class="anime-hero__place" aria-hidden="true">{PLACE}</p>
 
@@ -67,7 +74,7 @@ const FIGURE_HEIGHT = 825;
               alt=""
               width={SHOT_WIDTH}
               height={SHOT_HEIGHT}
-              loading="lazy"
+              loading="eager"
               decoding="async"
             />
           </div>
@@ -82,9 +89,9 @@ const FIGURE_HEIGHT = 825;
         first screen, so it is the LCP candidate. */}
     <div class="anime-hero__figure" aria-hidden="true">
       <img
-        src="/hero/jak-340.webp"
-        srcset="/hero/jak-340.webp 340w, /hero/jak-510.webp 510w"
-        sizes="(max-width: 48em) 120px, 170px"
+        src="/hero/jak-500.webp"
+        srcset="/hero/jak-500.webp 500w, /hero/jak-760.webp 760w"
+        sizes="(max-width: 48em) 170px, 250px"
         alt=""
         width={FIGURE_WIDTH}
         height={FIGURE_HEIGHT}
@@ -103,12 +110,17 @@ const FIGURE_HEIGHT = 825;
       <defs>
         <path id="anime-hero-arc" d="M 30 190 Q 500 60 970 190" fill="none" />
       </defs>
-      {/* textLength makes the name fit the arc exactly however long it is, and
-          spacingAndGlyphs is what condenses rather than just tightening the
-          gaps — the same weight-and-width the reference's display face has. */}
-      <text textLength="900" lengthAdjust="spacingAndGlyphs">
-        <textPath href="#anime-hero-arc" startOffset="50%" text-anchor="middle">
-          {HEADLINE}
+      {/* The two names ride the same arc from opposite corners and leave the
+          middle to the figure. textLength pins each word to a fixed stretch of
+          the arc however long it is, and spacingAndGlyphs condenses the glyphs
+          rather than only tightening the gaps — the weight-and-width the
+          reference's display face has. */}
+      <text textLength="400" lengthAdjust="spacingAndGlyphs">
+        <textPath href="#anime-hero-arc" startOffset="0%">{HEADLINE_LEFT}</textPath>
+      </text>
+      <text textLength="400" lengthAdjust="spacingAndGlyphs">
+        <textPath href="#anime-hero-arc" startOffset="100%" text-anchor="end">
+          {HEADLINE_RIGHT}
         </textPath>
       </text>
     </svg>
@@ -123,7 +135,9 @@ const FIGURE_HEIGHT = 825;
   {/* Left and right of the figure, the way the reference splits its two
       lines, rather than stacked under it. */}
   <div class="anime-hero__lines" aria-hidden="true">
-    <p class="anime-hero__line anime-hero__line--left">{LINE_LEFT}</p>
+    <p class="anime-hero__line anime-hero__line--left">
+      {LINE_LEFT}<br />{LINE_LEFT_2}
+    </p>
     <p class="anime-hero__line anime-hero__line--right">{LINE_RIGHT}</p>
   </div>
 
@@ -163,10 +177,12 @@ const FIGURE_HEIGHT = 825;
   .anime-hero__stage {
     position: relative;
     width: 100%;
-    max-width: 1100px;
+    /* Edge to edge: the ring is meant to wrap the whole first screen, so the
+       stage no longer stops at a reading measure. */
+    max-width: none;
     /* Wider than tall: the ring is a shallow ellipse on screen, so a squarer
        stage only adds empty ground under it. */
-    aspect-ratio: 1000 / 480;
+    aspect-ratio: 1000 / 440;
 
     /* The wheel's children are laid out in 3D against this. */
     perspective: 1400px;
@@ -193,21 +209,29 @@ const FIGURE_HEIGHT = 825;
     position: absolute;
     top: 50%;
     left: 50%;
-    width: clamp(64px, 7.6vw, 110px);
+    width: clamp(96px, 11.5vw, 176px);
     /* Half the width, so the card's own centre sits on the ring's axis. The
        three clamp bounds have to stay in step with the width above. */
-    margin-left: clamp(-55px, -3.8vw, -32px);
+    margin-left: clamp(-88px, -5.75vw, -48px);
 
-    /* Turn to this card's place on the ring, push out along the new z, then
-       turn back by the same amount so the card faces the viewer wherever it
-       is. That last rotation is what makes all seven readable at once — tangent
-       to the ring, the far half shows as mirrored photographs and has to be
-       hidden, which leaves three cards on screen out of seven.
-       `--turn` is the card's own angle plus the wheel's rotation, and the
-       controller writes it here, on the leaf that consumes it. */
-    transform: translateY(-50%) rotateY(var(--turn, 0deg))
-      translateZ(clamp(250px, 33vw, 470px)) rotateY(calc(-1 * var(--turn, 0deg)));
+    /* A concave ring: the circle's centre sits in front of the stage, so the
+       arc the viewer sees is its far side — the middle card is deepest and the
+       cards at the edges come forward and grow, the way the reference's
+       phones wrap around the figure. Step forward by the radius, turn to this
+       card's place, step back along the turned z, then turn back so the card
+       and leave it turned: on the far side of a circle whose centre is in
+       front of the stage, a card's front faces that centre, so the viewer sees
+       every screen's face while the ones at the edges angle inward — the
+       inside of a half-cylinder, not a row of billboards. The near half of
+       the circle would land between the viewer and the figure, so it fades
+       out as it swings round. `--turn` is the card's own angle plus the
+       wheel's rotation, and the controller writes it here, on the leaf that
+       consumes it. */
+    --ring: clamp(300px, 36vw, 560px);
+    transform: translateY(-50%) translateZ(var(--ring)) rotateY(var(--turn, 0deg))
+      translateZ(calc(-1 * var(--ring)));
     transform-style: preserve-3d;
+    opacity: clamp(0, cos(var(--turn, 0deg)) * 2.2, 1);
 
     /* The phone is drawn here rather than baked into the screenshot: a CSS
        bezel costs no bytes, stays crisp at any size, and follows the theme. */
@@ -236,12 +260,13 @@ const FIGURE_HEIGHT = 825;
     left: 50%;
     bottom: 0;
     /* Sized by height, not width: a standing person in a stage that is wider
-       than it is tall. A width rule at this ratio (0.41) would push his head
-       out through the top of the stage. The percentage is of the stage, which
-       has an aspect-ratio, so the height is known without measuring. No upper
-       bound: the stage's own `max-width: 1100px` already caps this at 412px,
-       so a clamp ceiling here would be a number that never binds. */
-    height: max(220px, 78%);
+       than it is tall, and at this ratio (0.41) a width rule would decide his
+       height for him. Measured against the viewport rather than the stage so
+       he stays the subject of the first screen, but a step back from filling
+       it: the ring wraps him, it does not hide behind him. He stands a little
+       above the stage's floor so the lowest cards pass under his feet. */
+    height: clamp(320px, 64svh, 700px);
+    bottom: 6%;
     transform: translateX(-50%);
 
     img {
@@ -257,7 +282,11 @@ const FIGURE_HEIGHT = 825;
        the headline and the character stands in front of it. */
     z-index: 2;
     inset: auto 0 auto 0;
-    top: 6%;
+    /* Above the stage, not inside it. The figure is two thirds of the screen
+       tall now, so an arc at 6% crossed his chest and his jacket swallowed
+       the middle of the name; from here only his cap and shoulders cut into
+       the letters, which is the overlap the composition wants. */
+    top: -12%;
     width: 100%;
     height: auto;
     overflow: visible;
@@ -380,6 +409,18 @@ const FIGURE_HEIGHT = 825;
 
     .anime-hero__headline text {
       font-size: 150px;
+    }
+
+    /* A phone is tall and narrow: the same fraction of the viewport would put
+       his cap through the top edge, so he is a little shorter here. */
+    .anime-hero__figure {
+      height: clamp(240px, 46svh, 480px);
+    }
+
+    /* The arc is only 342px wide here while he is 195px of it, so the name
+       has to clear his shoulders entirely rather than merely his chest. */
+    .anime-hero__headline {
+      top: -30%;
     }
   }
 </style>

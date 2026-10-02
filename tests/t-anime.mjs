@@ -44,11 +44,13 @@ for (const [ename, engine] of Object.entries({ chromium, webkit })) {
 
     // 2. The hero: one real heading, the arched name, seven cards on the wheel.
     const hero = await page.evaluate(() => {
-      const svg = document.querySelector('.anime-hero__headline text');
+      // The name rides the arc as two words from opposite corners, so it is
+      // two <text> nodes; read them in order and compare them as one line.
+      const words = [...document.querySelectorAll('.anime-hero__headline text')];
       return {
         h1: document.querySelectorAll('h1').length,
         h1Text: document.querySelector('h1')?.textContent?.trim() || '',
-        headline: svg?.textContent?.trim() || '',
+        headline: words.map((t) => t.textContent?.trim() || '').join(' ').trim(),
         cards: document.querySelectorAll('.anime-hero__screen').length,
         shots: [...document.querySelectorAll('.anime-hero__screen img')].map((i) => i.getAttribute('src')),
       };
@@ -59,7 +61,11 @@ for (const [ename, engine] of Object.entries({ chromium, webkit })) {
     // heading: a link preview and a screen reader should not disagree with the
     // page a sighted visitor sees.
     results.push(check(`${tag} the drawn headline matches the heading`, hero.headline.replace(/\s+/g, ' ').toLowerCase() === hero.h1Text.replace(/\s+/g, ' ').toLowerCase(), `${hero.headline} vs ${hero.h1Text}`));
-    results.push(check(`${tag} seven cards on the wheel`, hero.cards === 7, `${hero.cards} cards`));
+    // The ring is concave, so only its far half is ever on screen; each
+    // project sits on it twice to keep that half full. Fourteen cards, seven
+    // distinct shots.
+    results.push(check(`${tag} fourteen cards on the wheel`, hero.cards === 14, `${hero.cards} cards`));
+    results.push(check(`${tag} seven distinct shots on the wheel`, new Set(hero.shots).size === 7, `${new Set(hero.shots).size} distinct`));
 
     // Every shot must actually resolve: a missing screenshot leaves a hole
     // where a project should be, and nothing else on the page would notice.
