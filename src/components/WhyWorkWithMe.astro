@@ -4,8 +4,8 @@ import BentoCard from "./BentoCard.astro";
 const cards = [
   {
     variant: "large" as const,
-    title: "hardware, not just screens",
-    text: "Most of what I build starts as a physical thing: a haptic glove wired to a Raspberry Pi, 3D-printed glasses with an OLED on the frame, printed rocket airframes, cameras calibrated into a LabVIEW rig. I design the board, print the parts, write the firmware and then build the interface on top of it.",
+    title: "robots, software, learning",
+    text: "I work where robotics, software and machine learning meet. In Prof. Raffaele De Amicis's lab at Oregon State I am building a MuJoCo simulation of a robot arm and hand, with reinforcement learning in MuJoCo Playground, imitation learning with LeRobot and ACT, and VR teleoperation on a Quest through Unity and OpenXR. It is in progress, so there are no results here yet. Before it came a haptic glove, OLED glasses and printed rocket airframes.",
   },
   {
     variant: "medium" as const,
@@ -15,7 +15,7 @@ const cards = [
   {
     variant: "wide" as const,
     title: "measured, not asserted",
-    text: "This site has a performance harness that runs against the production build in three engines and reports frame timing, long tasks, forced reflows and listener growth. It exists because four animation systems on one page competed for the same frame budget, and no amount of reasoning found it — the profile did. Every fix in the repository carries its before and after numbers, and the hypotheses that failed are written down so nobody re-runs them.",
+    text: "This site has a performance harness that runs against the production build in three engines and reports frame timing, long tasks, forced reflows and listener growth. Every fix carries its before and after numbers, and the hypotheses that failed are written down. The robot-learning work follows the same rule: nothing about it goes on this page until it has been measured.",
   },
   {
     variant: "small" as const,
@@ -48,12 +48,12 @@ const cards = [
 
     <div class="bento-footer">
       <h2 class="bento-footer__title">
-        Hardware that works, and a page that proves it.
+        Software for things that move, and a page that shows the work.
       </h2>
       <p class="bento-footer__text">
         Every project below is something I built and can still explain: the
-        board, the firmware, the measurement that decided a design, and the
-        limit it has not passed yet.
+        code, the model or the board, the measurement that decided a design,
+        and the limit it has not passed yet. Work still in progress says so.
       </p>
     </div>
   </div>

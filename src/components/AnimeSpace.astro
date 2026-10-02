@@ -29,7 +29,7 @@ const far = field(120, 20260911);
 const near = field(46, 7734121);
 ---
 
-<section class="space" id="space" aria-label="Into space">
+<section class="space" id="space">
   <div class="space__layer space__layer--far js-space-far" aria-hidden="true">
     <svg viewBox="0 0 100 100" preserveAspectRatio="none" focusable="false">
       {far.map((s) => <circle cx={s.x} cy={s.y} r={s.r / 10} opacity={s.o} />)}
@@ -42,14 +42,6 @@ const near = field(46, 7734121);
     </svg>
   </div>
 
-  <div class="space__copy">
-    <p class="space__kicker">Where it goes</p>
-    <h2 class="space__title">Seven projects, one line of work</h2>
-    <p class="space__blurb">
-      Hardware that has to survive being held, research that has to survive
-      being checked, and interfaces that have to survive being used.
-    </p>
-  </div>
 </section>
 
 <script>
@@ -102,35 +94,6 @@ const near = field(46, 7734121);
 
   .space__layer--near circle {
     fill: #ffd9a8;
-  }
-
-  .space__copy {
-    position: relative;
-    z-index: 1;
-    max-width: 36rem;
-    text-align: center;
-  }
-
-  .space__kicker {
-    margin: 0 0 1rem;
-    font: 700 0.6875rem / 1 font-family(fraktion);
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: #ffb37a;
-  }
-
-  .space__title {
-    margin: 0 0 1.25rem;
-    font: 400 clamp(2rem, 5vw, 4rem) / 1.04 font-family(editorial);
-    letter-spacing: -0.02em;
-  }
-
-  .space__blurb {
-    margin: 0;
-    font: 400 clamp(0.9375rem, 1.2vw, 1.0625rem) / 1.65 font-family(fraktion);
-    /* 0.78 of white on #1b0f3f is above 9:1 — well clear of the 4.5 this
-       size needs, and it keeps the paragraph behind the heading. */
-    color: rgba(255, 255, 255, 0.78);
   }
 
   @media (prefers-reduced-motion: reduce) {

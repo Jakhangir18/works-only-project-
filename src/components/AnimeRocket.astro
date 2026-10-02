@@ -17,7 +17,7 @@
  */
 ---
 
-<section class="rocket-flight" aria-label="Engineering rocket">
+<section class="rocket-flight">
   <div class="rocket-flight__sky" aria-hidden="true">
     {/* The path the rocket rides and the trail it leaves. One SVG, drawn once,
         never touched after that: the rocket is a separate element so the path
@@ -72,18 +72,6 @@
     <div class="rocket-flight__wipe js-rocket-wipe" aria-hidden="true"></div>
   </div>
 
-  <div class="rocket-flight__copy">
-    <p class="rocket-flight__kicker">Engineering Rocket</p>
-    <h2 class="rocket-flight__title">Three years of a rocket club</h2>
-    <p class="rocket-flight__blurb">
-      Model rockets designed, printed and flown in Mangystau — and the club that
-      built them.
-    </p>
-    <a class="rocket-flight__link" href="/work/engineering-rocket/">
-      Deep dive
-      <span aria-hidden="true">→</span>
-    </a>
-  </div>
 </section>
 
 <script>
@@ -313,69 +301,6 @@
     /* Scale is the only thing that changes, so the wipe is a single composited
        layer rather than a repaint of the section under it. */
     will-change: transform;
-  }
-
-  .rocket-flight__copy {
-    position: relative;
-    /* Above the wipe: the reader has to be able to finish the sentence while
-       the flame is already climbing. It fades only at the very end. */
-    z-index: 2;
-    max-width: 30rem;
-    margin-left: auto;
-    padding-top: 26svh;
-    color: color(primary);
-    opacity: var(--copy, 1);
-  }
-
-  .rocket-flight__kicker {
-    margin: 0 0 1rem;
-    font: 700 0.6875rem / 1 font-family(fraktion);
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: color(accent-ink);
-  }
-
-  .rocket-flight__title {
-    margin: 0 0 1rem;
-    font: 400 clamp(2rem, 4.4vw, 3.5rem) / 1.05 font-family(editorial);
-    letter-spacing: -0.02em;
-  }
-
-  .rocket-flight__blurb {
-    margin: 0 0 1.75rem;
-    font: 400 clamp(0.9375rem, 1.2vw, 1.0625rem) / 1.6 font-family(fraktion);
-    color: color(ink-soft);
-  }
-
-  .rocket-flight__link {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1.25rem;
-
-    border: 1px solid color(primary);
-    border-radius: 999px;
-
-    font: 700 0.6875rem / 1 font-family(fraktion);
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    text-decoration: none;
-    color: color(primary);
-
-    transition: background-color 240ms ease, color 240ms ease;
-
-    &:hover,
-    &:focus-visible {
-      background: color(primary);
-      color: color(secondary);
-    }
-  }
-
-  @include mq(phone) {
-    .rocket-flight__copy {
-      margin-left: 0;
-      padding-top: 20svh;
-    }
   }
 
   /* Stillness, not absence: the rocket sits where its path starts, the flame
