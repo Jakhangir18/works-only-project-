@@ -143,10 +143,25 @@ const cards = projects.map((p, i) => ({ ...p, index: String(i + 1).padStart(2, "
      re-assigned on every frame the rocket or the stars write, which on a
      phone profile cost long tasks in sections nowhere near this one. The
      controller sets is-far from an IntersectionObserver. */
-  /* Only the tunnel's letters leave the tree: the cards stay, so they stay
-     in the keyboard's tab order from anywhere on the page. */
+  /* Far away, the tunnel's letters leave the tree, and the cards stay in it
+     but go flat: still in the keyboard's tab order from anywhere on the
+     page, no longer seven 3D layers in the tree the rocket's frames update
+     (with them there, phone x4 rocket phases read 7-9 frames over 50 ms
+     against 1-3). !important because the controller writes the ring's
+     transform inline; nearer than a screen, that inline value is back in
+     force before the section shows. */
   .anime-work:global(.is-far) .anime-work__tunnel {
     display: none;
+  }
+
+  .anime-work:global(.is-far) .anime-work__cards {
+    transform: none !important;
+    transform-style: flat;
+    will-change: auto;
+  }
+
+  .anime-work:global(.is-far) .anime-work__slot {
+    transform: none;
   }
 
   .anime-work__stage {
