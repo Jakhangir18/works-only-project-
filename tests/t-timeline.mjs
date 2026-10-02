@@ -34,7 +34,8 @@ for (const [ename, engine] of Object.entries({ chromium, webkit })) {
         alt: i.getAttribute('alt'),
       })),
       heights: entries.map((e) => Math.round(e.getBoundingClientRect().height)),
-      drafts: entries.filter((e) => /Reverlab|STEP Academy|Google Developer/.test(e.textContent)).length,
+      // GDG and Rowerlab were confirmed by the owner on 2026-10-02.
+      drafts: entries.filter((e) => /STEP Academy/.test(e.textContent)).length,
     };
   });
 
@@ -43,7 +44,7 @@ for (const [ename, engine] of Object.entries({ chromium, webkit })) {
   // Eight since the robot-arm lab entry (June 2026, in progress) joined the
   // seven confirmed ones; the count is pinned so an entry cannot slip in or
   // out unnoticed.
-  results.push(check(`${tag} eight live entries`, info.entries === 8, `${info.entries}`));
+  results.push(check(`${tag} ten live entries`, info.entries === 10, `${info.entries}`));
   results.push(check(`${tag} draft entries stay hidden`, info.drafts === 0, `${info.drafts} rendered`));
   results.push(check(`${tag} every entry has a machine-readable date`, info.times.length === info.entries && info.times.every((t) => /^\d{4}-\d{2}$/.test(t)), info.times.join(',')));
   results.push(check(`${tag} years run newest first`, JSON.stringify(info.yearsAscending) === JSON.stringify([...info.yearsAscending].sort().reverse()), info.yearsAscending.join(',')));

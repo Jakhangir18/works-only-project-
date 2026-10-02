@@ -142,20 +142,21 @@ for (const [ename, engine] of Object.entries({ chromium, webkit })) {
       results.push(check(`${tag} the rocket sits on its route`, onLine <= 6, `${onLine} px off the line`));
     }
 
-    // 5. The work carousel and the timeline board.
+    // 5. The work carousel and the timeline walk.
     const sections = await page.evaluate(() => ({
       panels: document.querySelectorAll('.anime-work__card').length,
       links: [...document.querySelectorAll('.anime-work__card')].map((a) => a.getAttribute('href')),
-      notes: document.querySelectorAll('.board__note').length,
-      pins: document.querySelectorAll('.board__pin').length,
-      drafts: [...document.querySelectorAll('.board__name')].map((n) => n.textContent.trim()),
+      notes: document.querySelectorAll('.paradise__stop').length,
+      pins: document.querySelectorAll('.paradise__stop time[datetime]').length,
+      drafts: [...document.querySelectorAll('.paradise__name')].map((n) => n.textContent.trim()),
     }));
     results.push(check(`${tag} a card for every project`, sections.panels === 7, `${sections.panels} cards`));
     results.push(check(`${tag} every card has a way in`, sections.links.length === 7 && sections.links.every((h) => h && h.startsWith('/')), sections.links.join(',')));
-    results.push(check(`${tag} the board is pinned`, sections.notes > 0 && sections.notes === sections.pins, `${sections.notes} notes, ${sections.pins} pins`));
-    // The three entries whose roles are unconfirmed must not reach the page.
-    const leaked = sections.drafts.filter((t) => /Google Developer Group|Reverlab|STEP Academy/i.test(t));
-    results.push(check(`${tag} unconfirmed entries stay off the board`, leaked.length === 0, leaked.join(', ')));
+    results.push(check(`${tag} every stop on the walk is dated`, sections.notes === 10 && sections.notes === sections.pins, `${sections.notes} stops, ${sections.pins} dated`));
+    // The one entry whose role is still unconfirmed must not reach the page;
+    // GDG and Rowerlab were confirmed by the owner on 2026-10-02.
+    const leaked = sections.drafts.filter((t) => /STEP Academy/i.test(t));
+    results.push(check(`${tag} unconfirmed entries stay off the walk`, leaked.length === 0, leaked.join(', ')));
 
     results.push(check(`${tag} no runtime errors`, errors.length === 0, errors.slice(0, 2).join(' | ')));
     await ctx.close();

@@ -20,6 +20,8 @@ export type TimelineEntry = {
   campus?: boolean;
   /** Work that is still running and has no results to show yet. */
   status?: "in progress";
+  /** The months are not on record, only the years: show "2022 – 2024". */
+  yearsOnly?: boolean;
 };
 
 /** One label per kind, shared by the board, the work tags and the campus
@@ -57,11 +59,27 @@ export function when(start: string, end?: string): { text: string; from: string;
  */
 export const timeline: readonly TimelineEntry[] = [
   {
-    title: "Frontend and 3D interaction",
-    org: "ZIP",
+    // Dates: the owner's note ("started in August") and his commits on the
+    // company's site, Aug 16 - Sep 19, 2026.
+    title: "Software engineering intern",
+    org: "Zyp",
     kind: "work",
     start: "2026-08",
-    summary: "Interface systems, motion and 3D graphics on the web.",
+    end: "2026-09",
+    summary: "Motion and 3D on the company's site: a scroll-scrubbed hero, a canvas globe, end-to-end tests.",
+    href: "/work/zyp/",
+    thumb: "/projects/zyp/media/cover-thumb.webp",
+  },
+  {
+    // The owner, 2026-10-02: he is President and 200+ students registered.
+    title: "President, Google Developer Group on Campus",
+    org: "Oregon State",
+    kind: "club",
+    start: "2026-09",
+    campus: true,
+    summary: "Leading Oregon State's GDG chapter: workshops and events, 200+ students registered.",
+    href: "/work/gdg/",
+    thumb: "/projects/gdg/media/cover-thumb.webp",
   },
   {
     title: "Robot arm and hand in simulation",
@@ -114,6 +132,8 @@ export const timeline: readonly TimelineEntry[] = [
     kind: "research",
     start: "2025-11",
     end: "2026-04",
+    // The months are a guess from photo dates; the years are not in doubt.
+    yearsOnly: true,
     campus: true,
     summary:
       "Which camera can hold a readable feed inside LabVIEW, answered with histograms.",
@@ -122,44 +142,38 @@ export const timeline: readonly TimelineEntry[] = [
   },
   {
     title: "AMS Tablet",
-    org: "Automated monitoring solutions",
+    org: "Automated Monitoring Solutions, Aktau",
     kind: "work",
-    start: "2023-10",
-    end: "2026-04",
+    // The resume's dates; the earlier 2023-10 - 2026-04 was a file-date guess.
+    start: "2024-11",
+    end: "2025-09",
     summary:
       "Pre-shift inspection and workforce verification at industrial checkpoints.",
     href: "/projects/ams/",
     thumb: "/projects/ams/images/thumb.webp",
   },
   {
-    title: "Rocket club",
-    org: "Faculty of Science and Technology, Kazakhstan",
+    title: "President, rocket club",
+    org: "Mangystau region, Kazakhstan",
     kind: "club",
-    start: "2022-04",
-    end: "2025-04",
+    // The resume's years.
+    start: "2022-01",
+    end: "2024-12",
+    yearsOnly: true,
     summary:
       "Printed airframes, avionics on the bench, and a design loop a beginner could join.",
     href: "/work/engineering-rocket/",
     thumb: "/projects/engineering-rocket/thumb.webp",
   },
   {
-    title: "Google Developer Group on Campus",
-    org: "Oregon State",
-    kind: "club",
-    start: "2026-04",
-    end: "2026-06",
-    summary: "Club impact reporting and event support.",
-    draft: true,
-    campus: true,
-  },
-  {
-    title: "Reverlab",
-    org: "rowerlab.pl",
+    // The owner, 2026-10-02: remote work for a company in Poland. The months
+    // are the dated GTmetrix and PageSpeed reports in his folder.
+    title: "Web performance and analytics",
+    org: "Rowerlab, Poland (remote)",
     kind: "work",
     start: "2025-01",
     end: "2025-02",
-    summary: "Web performance work on a bicycle storefront.",
-    draft: true,
+    summary: "A Polish bicycle store's site: analytics, SEO and page speed, measured before and after.",
   },
   {
     title: "STEP Academy",
