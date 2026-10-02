@@ -86,10 +86,19 @@
 
   .rocket-flight {
     position: relative;
-    min-height: 150svh;
-    padding: 6rem 1.5rem;
+    /* One viewport tall and nothing inside it but the flight. The trigger runs
+       from the section's top entering at the bottom of the viewport to its
+       bottom landing there, so at progress .8, where the burst is born, the
+       section's top edge sits a fifth of the way down the screen: the burst
+       starts right under the bento's footer, and by the time the wipe has the
+       screen the section's top has reached the top of the viewport. */
+    height: 100svh;
+    padding: 0;
     background: color(secondary);
     overflow: hidden;
+    /* The wipe and the burst carry z-indices of their own; they rank against
+       each other here and never against the sections around them. */
+    isolation: isolate;
   }
 
   .rocket-flight__sky {
@@ -275,11 +284,12 @@
        corner of the section stays white while the rest has already gone. */
     /* The circle has to put its flat core over the whole section at scale 1,
        or the far corner keeps the leading edge and the hand-off shows a seam.
-       The far corner from the exit corner is the section's diagonal: 1974px
-       at 1440x900 (a 150svh section), 1325px at 390x844, where 300vmax alone
-       fell short by 60px and left a white crescent above the violet. With the
-       core flat to 88% of the radius, max(330vmax, 360vh) covers both —
-       diagonal / radius is 0.83 and 0.87 there. */
+       The far corner from the exit corner is the section's diagonal: 1698px
+       at 1440x900, 930px at 390x844 (a 100svh section). With the core flat to
+       88% of the radius, max(330vmax, 360vh) covers both — diagonal / radius
+       is 0.71 and 0.61 there. The size was chosen for the 150svh section this
+       used to be (diagonal / radius 0.83 and 0.87); whether a smaller box now
+       pays back in layer memory is a measurement not yet taken. */
     width: max(330vmax, 360vh);
     height: max(330vmax, 360vh);
     transform: translate(50%, -50%) scale(var(--wipe, 0));
