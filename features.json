@@ -109,9 +109,9 @@
   },
   {
     "id": "F19",
-    "title": "Resume linked",
-    "done_when": "the owner has supplied public/resume.pdf and it is linked from the contact section's resume slot",
-    "passes": false
+    "title": "Resume not on the site",
+    "done_when": "the owner's decision (2026-10-02) holds: no resume link anywhere; public/resume.pdf stays on disk unlinked",
+    "passes": true
   },
   {
     "id": "F20",
@@ -130,6 +130,24 @@
     "id": "F22",
     "title": "Safari gate on the anime home",
     "done_when": "the owner has run restore-report section 9 (S1-S11) on a real iPhone and reported YES or NO per item",
+    "passes": false
+  },
+  {
+    "id": "F23",
+    "title": "v4 home per the owner's direction (2026-10-02)",
+    "done_when": "hero name on a cylinder behind the wheel with edge-to-edge blur, curved lines; bento line beside the cards; rocket beside the bento crashing into space; WORK rings and a carousel of the seven; paradise timeline; sign-off without resume; t-anime green; harness in band",
+    "passes": true
+  },
+  {
+    "id": "F24",
+    "title": "Seven bespoke case pages",
+    "done_when": "TouchPoint, SPOOT, Zyp, GDG, Remote Lab Vision, AMS and Rocket club each in its own composition on the case system, every claim sourced, zero console errors at 1440x900 and 390x844",
+    "passes": true
+  },
+  {
+    "id": "F25",
+    "title": "Owner confirms the held-back items",
+    "done_when": "the owner has answered: the GDG impact report, AMS deck page 7, the 'Track: Google' slide on TouchPoint, the speaker in the GDG photos, the rocket club's launch-day rockets",
     "passes": false
   }
 ]
