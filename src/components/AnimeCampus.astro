@@ -1,5 +1,5 @@
 ---
-import { timeline } from "../data/timeline";
+import { timeline, KIND_LABEL, when } from "../data/timeline";
 
 /**
  * The owner's time at Oregon State, as a short list after the work: the
@@ -10,26 +10,6 @@ import { timeline } from "../data/timeline";
  * `campus` is shown here, in the board's own order, and a draft stays out
  * until the owner confirms it. Nothing here runs in the browser.
  */
-
-const KIND_LABEL: Record<string, string> = {
-  research: "Research",
-  competition: "Hackathon",
-  club: "Club",
-  work: "Work",
-};
-
-const MONTH = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-function month(ym: string): string {
-  const [y, m] = ym.split("-").map(Number);
-  return `${MONTH[m - 1]} ${y}`;
-}
-
-function when(start: string, end?: string): string {
-  if (!end) return `since ${month(start)}`;
-  if (end === start) return month(start);
-  return `${month(start)} – ${month(end)}`;
-}
 
 const rows = timeline
   .filter((entry) => entry.campus && !entry.draft)
@@ -60,7 +40,20 @@ const rows = timeline
             </div>
             <p class="campus__meta">
               <span class="campus__org">{row.org}</span>
-              <time>{row.date}</time>
+              {/* Machine-readable like the board's: one <time> per end of the span. */}
+              <span class="campus__date">
+                {row.date.to ? (
+                  <>
+                    <time datetime={row.start}>{row.date.from}</time> – <time datetime={row.end}>{row.date.to}</time>
+                  </>
+                ) : row.end ? (
+                  <time datetime={row.start}>{row.date.text}</time>
+                ) : (
+                  <>
+                    <time datetime={row.start}>{row.date.from}</time> — now
+                  </>
+                )}
+              </span>
             </p>
           </li>
         ))

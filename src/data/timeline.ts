@@ -22,6 +22,34 @@ export type TimelineEntry = {
   status?: "in progress";
 };
 
+/** One label per kind, shared by the board, the work tags and the campus
+ *  rows, so the same project is never "Competition" in one place and
+ *  "Hackathon" in another. Both competitions on record are hackathons. */
+export const KIND_LABEL: Record<TimelineKind, string> = {
+  work: "Work",
+  research: "Research",
+  competition: "Hackathon",
+  club: "Club",
+};
+
+const MONTHS = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
+
+/** The span as people read it: one month, two months of one year, two
+ *  months of two years, or "— now" for work still running. The pieces
+ *  come back separately so a template can wrap each in its own <time>. */
+export function when(start: string, end?: string): { text: string; from: string; to?: string } {
+  const [ys, ms] = start.split("-").map(Number);
+  const from = `${MONTHS[ms - 1]} ${ys}`;
+  if (!end) return { text: `${from} — now`, from };
+  const [ye, me] = end.split("-").map(Number);
+  if (ye === ys && me === ms) return { text: from, from };
+  const to = ye === ys ? `${MONTHS[me - 1]} ${ys}` : `${MONTHS[me - 1]} ${ye}`;
+  return { text: ye === ys ? `${MONTHS[ms - 1]} – ${to}` : `${from} – ${to}`, from, to };
+}
+
 /**
  * Chronology behind the Work section. Dates were drafted from the owner's own
  * material and are corrected by the owner, not guessed further: an entry whose

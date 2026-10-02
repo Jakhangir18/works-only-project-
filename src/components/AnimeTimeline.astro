@@ -1,5 +1,5 @@
 ---
-import { timeline } from "../data/timeline";
+import { timeline, KIND_LABEL, when } from "../data/timeline";
 import SplitHeading from "./SplitHeading.astro";
 
 /**
@@ -23,29 +23,6 @@ const entries = timeline
      backwards, not from where they started. */
   .sort((a, b) => b.start.localeCompare(a.start));
 
-const MONTHS = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
-];
-
-/** "2026-05" becomes "May 2026"; a range becomes "May – July 2026". */
-function when(start: string, end?: string): string {
-  const [ys, ms] = start.split("-").map(Number);
-  const from = `${MONTHS[ms - 1]} ${ys}`;
-  if (!end) return `${from} — now`;
-  const [ye, me] = end.split("-").map(Number);
-  if (ye === ys && me === ms) return from;
-  if (ye === ys) return `${MONTHS[ms - 1]} – ${MONTHS[me - 1]} ${ys}`;
-  return `${from} – ${MONTHS[me - 1]} ${ye}`;
-}
-
-const KIND_LABEL: Record<string, string> = {
-  work: "Work",
-  research: "Research",
-  competition: "Competition",
-  club: "Club",
-};
-
 const cards = entries.map((entry, index) => ({
   ...entry,
   number: String(index + 1).padStart(2, "0"),
@@ -53,7 +30,7 @@ const cards = entries.map((entry, index) => ({
   /* A repeating set of small angles rather than a random one, so the board is
      identical between builds and the diff stays readable. */
   tilt: [-2.1, 1.6, -1.2, 2.3, -1.7, 1.1][index % 6],
-  date: when(entry.start, entry.end),
+  date: when(entry.start, entry.end).text,
 }));
 ---
 

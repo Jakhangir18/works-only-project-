@@ -1,6 +1,6 @@
 ---
 import { works } from "../data/works";
-import { timeline } from "../data/timeline";
+import { timeline, KIND_LABEL } from "../data/timeline";
 import SplitHeading from "./SplitHeading.astro";
 
 /**
@@ -18,13 +18,6 @@ import SplitHeading from "./SplitHeading.astro";
  * confirmed for that project in the timeline, matched by route; a project with
  * no timeline entry simply shows fewer tags rather than a guess.
  */
-
-const KIND_LABEL: Record<string, string> = {
-  work: "Work",
-  research: "Research",
-  competition: "Competition",
-  club: "Club",
-};
 
 function tagsFor(site: string): string[] {
   const entry = timeline.find((item) => item.href === site);
