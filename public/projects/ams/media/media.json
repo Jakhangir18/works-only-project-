@@ -23,6 +23,10 @@
       {
         "w": 1280,
         "src": "/projects/ams/media/hero-1280.webp"
+      },
+      {
+        "w": 1800,
+        "src": "/projects/ams/media/hero-1800.webp"
       }
     ],
     "thumb": "/projects/ams/media/hero-thumb.webp"
@@ -39,6 +43,10 @@
       {
         "w": 1280,
         "src": "/projects/ams/media/g01-1280.webp"
+      },
+      {
+        "w": 1600,
+        "src": "/projects/ams/media/g01-1600.webp"
       }
     ],
     "thumb": "/projects/ams/media/g01-thumb.webp"
@@ -119,6 +127,10 @@
       {
         "w": 1280,
         "src": "/projects/ams/media/m1-1280.webp"
+      },
+      {
+        "w": 1800,
+        "src": "/projects/ams/media/m1-1800.webp"
       }
     ],
     "thumb": "/projects/ams/media/m1-thumb.webp"
@@ -131,6 +143,10 @@
       {
         "w": 640,
         "src": "/projects/ams/media/m2-640.webp"
+      },
+      {
+        "w": 1094,
+        "src": "/projects/ams/media/m2-1094.webp"
       }
     ],
     "thumb": "/projects/ams/media/m2-thumb.webp"

@@ -11,6 +11,10 @@
       {
         "w": 1280,
         "src": "/projects/spoot/media/cover-1280.webp"
+      },
+      {
+        "w": 1600,
+        "src": "/projects/spoot/media/cover-1600.webp"
       }
     ],
     "thumb": "/projects/spoot/media/cover-thumb.webp"
@@ -27,6 +31,10 @@
       {
         "w": 1280,
         "src": "/projects/spoot/media/hero-1280.webp"
+      },
+      {
+        "w": 1600,
+        "src": "/projects/spoot/media/hero-1600.webp"
       }
     ],
     "thumb": "/projects/spoot/media/hero-thumb.webp"
@@ -43,6 +51,10 @@
       {
         "w": 1280,
         "src": "/projects/spoot/media/g01-1280.webp"
+      },
+      {
+        "w": 1600,
+        "src": "/projects/spoot/media/g01-1600.webp"
       }
     ],
     "thumb": "/projects/spoot/media/g01-thumb.webp"
@@ -68,6 +80,10 @@
       {
         "w": 1280,
         "src": "/projects/spoot/media/g03-1280.webp"
+      },
+      {
+        "w": 1600,
+        "src": "/projects/spoot/media/g03-1600.webp"
       }
     ],
     "thumb": "/projects/spoot/media/g03-thumb.webp"

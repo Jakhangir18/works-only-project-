@@ -7,6 +7,10 @@
       {
         "w": 640,
         "src": "/projects/engineering-rocket/media/cover-640.webp"
+      },
+      {
+        "w": 1200,
+        "src": "/projects/engineering-rocket/media/cover-1200.webp"
       }
     ],
     "thumb": "/projects/engineering-rocket/media/cover-thumb.webp"
@@ -23,6 +27,10 @@
       {
         "w": 1280,
         "src": "/projects/engineering-rocket/media/hero-1280.webp"
+      },
+      {
+        "w": 1600,
+        "src": "/projects/engineering-rocket/media/hero-1600.webp"
       }
     ],
     "thumb": "/projects/engineering-rocket/media/hero-thumb.webp"
@@ -39,6 +47,10 @@
       {
         "w": 1280,
         "src": "/projects/engineering-rocket/media/g01-1280.webp"
+      },
+      {
+        "w": 1800,
+        "src": "/projects/engineering-rocket/media/g01-1800.webp"
       }
     ],
     "thumb": "/projects/engineering-rocket/media/g01-thumb.webp"
@@ -55,6 +67,10 @@
       {
         "w": 1280,
         "src": "/projects/engineering-rocket/media/g02-1280.webp"
+      },
+      {
+        "w": 1600,
+        "src": "/projects/engineering-rocket/media/g02-1600.webp"
       }
     ],
     "thumb": "/projects/engineering-rocket/media/g02-thumb.webp"
@@ -67,6 +83,10 @@
       {
         "w": 640,
         "src": "/projects/engineering-rocket/media/g03-640.webp"
+      },
+      {
+        "w": 1000,
+        "src": "/projects/engineering-rocket/media/g03-1000.webp"
       }
     ],
     "thumb": "/projects/engineering-rocket/media/g03-thumb.webp"
@@ -83,6 +103,10 @@
       {
         "w": 1280,
         "src": "/projects/engineering-rocket/media/g04-1280.webp"
+      },
+      {
+        "w": 1600,
+        "src": "/projects/engineering-rocket/media/g04-1600.webp"
       }
     ],
     "thumb": "/projects/engineering-rocket/media/g04-thumb.webp"
@@ -99,6 +123,10 @@
       {
         "w": 1280,
         "src": "/projects/engineering-rocket/media/g05-1280.webp"
+      },
+      {
+        "w": 1600,
+        "src": "/projects/engineering-rocket/media/g05-1600.webp"
       }
     ],
     "thumb": "/projects/engineering-rocket/media/g05-thumb.webp"
@@ -115,6 +143,10 @@
       {
         "w": 1280,
         "src": "/projects/engineering-rocket/media/g06-1280.webp"
+      },
+      {
+        "w": 1600,
+        "src": "/projects/engineering-rocket/media/g06-1600.webp"
       }
     ],
     "thumb": "/projects/engineering-rocket/media/g06-thumb.webp"
@@ -127,6 +159,10 @@
       {
         "w": 640,
         "src": "/projects/engineering-rocket/media/g07-640.webp"
+      },
+      {
+        "w": 1200,
+        "src": "/projects/engineering-rocket/media/g07-1200.webp"
       }
     ],
     "thumb": "/projects/engineering-rocket/media/g07-thumb.webp"
@@ -152,6 +188,10 @@
       {
         "w": 1280,
         "src": "/projects/engineering-rocket/media/g09-1280.webp"
+      },
+      {
+        "w": 1600,
+        "src": "/projects/engineering-rocket/media/g09-1600.webp"
       }
     ],
     "thumb": "/projects/engineering-rocket/media/g09-thumb.webp"

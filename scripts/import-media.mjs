@@ -63,7 +63,9 @@ async function image(e) {
   const srcW = swap ? meta.height : meta.width;
   const srcH = swap ? meta.width : meta.height;
   const widths = (e.widths ?? [640, 1280, 1920]).filter((w) => w <= srcW);
-  if (!widths.length) widths.push(srcW);
+  // A source between two standard widths also gets its own width, or a 1200 px
+  // photograph would only ever be served at 640.
+  if (!widths.length || srcW - widths[widths.length - 1] > 160) widths.push(srcW);
   const files = [];
   for (const w of widths) {
     const file = join(dir, `${e.id}-${w}.webp`);

@@ -11,6 +11,10 @@
       {
         "w": 1280,
         "src": "/projects/touchpoint/media/cover-1280.webp"
+      },
+      {
+        "w": 1600,
+        "src": "/projects/touchpoint/media/cover-1600.webp"
       }
     ],
     "thumb": "/projects/touchpoint/media/cover-thumb.webp"
@@ -27,6 +31,10 @@
       {
         "w": 1280,
         "src": "/projects/touchpoint/media/hero-1280.webp"
+      },
+      {
+        "w": 1600,
+        "src": "/projects/touchpoint/media/hero-1600.webp"
       }
     ],
     "thumb": "/projects/touchpoint/media/hero-thumb.webp"
@@ -39,6 +47,10 @@
       {
         "w": 640,
         "src": "/projects/touchpoint/media/g01-640.webp"
+      },
+      {
+        "w": 1200,
+        "src": "/projects/touchpoint/media/g01-1200.webp"
       }
     ],
     "thumb": "/projects/touchpoint/media/g01-thumb.webp"
@@ -51,6 +63,10 @@
       {
         "w": 640,
         "src": "/projects/touchpoint/media/g02-640.webp"
+      },
+      {
+        "w": 1200,
+        "src": "/projects/touchpoint/media/g02-1200.webp"
       }
     ],
     "thumb": "/projects/touchpoint/media/g02-thumb.webp"
@@ -63,6 +79,10 @@
       {
         "w": 640,
         "src": "/projects/touchpoint/media/g03-640.webp"
+      },
+      {
+        "w": 1200,
+        "src": "/projects/touchpoint/media/g03-1200.webp"
       }
     ],
     "thumb": "/projects/touchpoint/media/g03-thumb.webp"
@@ -79,6 +99,10 @@
       {
         "w": 1280,
         "src": "/projects/touchpoint/media/g04-1280.webp"
+      },
+      {
+        "w": 1600,
+        "src": "/projects/touchpoint/media/g04-1600.webp"
       }
     ],
     "thumb": "/projects/touchpoint/media/g04-thumb.webp"
@@ -109,6 +133,10 @@
       {
         "w": 640,
         "src": "/projects/touchpoint/media/g06-640.webp"
+      },
+      {
+        "w": 1200,
+        "src": "/projects/touchpoint/media/g06-1200.webp"
       }
     ],
     "thumb": "/projects/touchpoint/media/g06-thumb.webp"
@@ -121,6 +149,10 @@
       {
         "w": 640,
         "src": "/projects/touchpoint/media/g07-640.webp"
+      },
+      {
+        "w": 1200,
+        "src": "/projects/touchpoint/media/g07-1200.webp"
       }
     ],
     "thumb": "/projects/touchpoint/media/g07-thumb.webp"
@@ -133,6 +165,10 @@
       {
         "w": 640,
         "src": "/projects/touchpoint/media/g08-640.webp"
+      },
+      {
+        "w": 1200,
+        "src": "/projects/touchpoint/media/g08-1200.webp"
       }
     ],
     "thumb": "/projects/touchpoint/media/g08-thumb.webp"
