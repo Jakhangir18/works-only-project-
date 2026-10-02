@@ -280,6 +280,17 @@ The measurement harness lives in `perf/` (`harness.mjs`, `regression.mjs`,
   970, heap and listeners flat. The seven-card numbers below are kept for the
   comparison; the stubbed control (16.7 ms) still names the wheel as the cost.
 
+  **The space sequence** (2026-10-02: "Why work with me?" between hero and
+  rocket, the rocket ending in a burst, the star field and the work panels in
+  one violet; `docs/space-sequence-plan.md` has the plan, the as-built and the
+  numbers). Desktop rocket phases after the review round: p95 33.4 / 50.0 ms,
+  worst 83 ms, three and five long frames against two and three before the
+  burst; phone cpu x4 unchanged at the median with one long frame in
+  rocket-up. The burst is zero at rest and promoted only while `--burst` is
+  strictly between 0 and 1; the wipe is `max(330vmax, 360vh)` so its flat core
+  reaches the far corner on a 390x844 section too. Nodes 970 -> 1137 are the
+  bento section's.
+
   The hero wheel halves the frame rate on the first screen at rest at 1440x900,
   proven by the stubbed control; at 390x844 it covers about a third of the area
   and costs nothing measurable. **Budgets not met, and not only at the median:**

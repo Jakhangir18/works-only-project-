@@ -88,6 +88,15 @@ fades, and is gone when the wipe owns the screen. Frame zero is the white page.
 | 1440x900 cpu x1, after | 33.4 / 50.1 / 83.3 (9) | 33.4 / 66.7 (5) | 49.9 / 83.4 (6) |
 | 390x844 cpu x4, before | 16.7 / 16.8 / 33.4 (0) | 33.4 / 33.4 (0) | 33.4 / 33.4 (0) |
 | 390x844 cpu x4, after | 16.7 / 16.8 / 33.3 (0) | 33.4 / 50.0 (0) | 33.4 / 66.7 (1) |
+| 1440x900 cpu x1, fixed | 50.0 / 66.7 / 83.3 (8) | 33.4 / 83.3 (3) | 50.0 / 83.4 (5) |
+| 390x844 cpu x4, fixed | 16.7 / 16.8 / 33.3 (0) | 33.4 / 33.5 (0) | 33.4 / 50.1 (1) |
+
+"Fixed" is after the review round (burst 180vmax, zero at rest, promoted only
+while it runs; wipe max(330vmax, 360vh)). The rocket phases lost two long
+frames on desktop and kept their medians; the remaining long frames are the
+first raster of the two gradient layers, which a software rasteriser pays
+once per promotion. idle-top is the hero wheel, untouched by this work, and
+reads 33–50 ms from run to run on this host.
 
 Nodes 970 -> 1137 (the bento section). Heap and listeners flat on both.
 
