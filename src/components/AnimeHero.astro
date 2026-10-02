@@ -38,6 +38,14 @@ const step = 360 / Math.max(wheel.length, 1);
 /* A phone screenshot is 390x844; the card is drawn at 420 wide. */
 const SHOT_WIDTH = 420;
 const SHOT_HEIGHT = 909;
+
+/* The smallest candidate's own pixels, after the transparent margin was
+   trimmed off, so the box is reserved at the right ratio before the file
+   arrives. The slot renders 170 CSS px wide on every desktop width — the
+   stage caps at 1100 — and 115 on a phone, so 340w covers it at 2x and 510w
+   at 3x. Anything larger is bytes the layout cannot use. */
+const FIGURE_WIDTH = 340;
+const FIGURE_HEIGHT = 825;
 ---
 
 <section class="anime-hero" id="home" aria-label="Introduction">
@@ -67,10 +75,24 @@ const SHOT_HEIGHT = 909;
       }
     </div>
 
-    {/* The drawn figure goes here. Until the PNG exists the slot holds nothing
-        and occupies no space, so the headline and the wheel compose on their
-        own rather than around a gap. */}
-    <div class="anime-hero__figure" aria-hidden="true"></div>
+    {/* The drawn figure: the owner, standing in front of the headline with the
+        wheel turning behind him. Decorative — the `h1` above carries his name
+        and the headline repeats it — so no alt text, and the slot keeps its
+        `aria-hidden`. Eager and high priority: it is the largest thing on the
+        first screen, so it is the LCP candidate. */}
+    <div class="anime-hero__figure" aria-hidden="true">
+      <img
+        src="/hero/jak-340.webp"
+        srcset="/hero/jak-340.webp 340w, /hero/jak-510.webp 510w"
+        sizes="(max-width: 48em) 120px, 170px"
+        alt=""
+        width={FIGURE_WIDTH}
+        height={FIGURE_HEIGHT}
+        loading="eager"
+        fetchpriority="high"
+        decoding="async"
+      />
+    </div>
 
     <svg
       class="anime-hero__headline"
@@ -213,10 +235,20 @@ const SHOT_HEIGHT = 909;
     z-index: 3;
     left: 50%;
     bottom: 0;
-    width: clamp(200px, 24vw, 340px);
+    /* Sized by height, not width: a standing person in a stage that is wider
+       than it is tall. A width rule at this ratio (0.41) would push his head
+       out through the top of the stage. The percentage is of the stage, which
+       has an aspect-ratio, so the height is known without measuring. No upper
+       bound: the stage's own `max-width: 1100px` already caps this at 412px,
+       so a clamp ceiling here would be a number that never binds. */
+    height: max(220px, 78%);
     transform: translateX(-50%);
-    /* Empty until the illustration arrives; it must not reserve a hole. */
-    min-height: 0;
+
+    img {
+      display: block;
+      height: 100%;
+      width: auto;
+    }
   }
 
   .anime-hero__headline {
