@@ -6,13 +6,24 @@ Read this before doing anything in this repository.
 
 A personal portfolio site built with **Astro**, animation-heavy. Two homes ship:
 
-- `/` is the **anime home** (white ground, near-black ink, one red accent):
-  `AnimeIntro` (~1 s opening cover), `AnimeHero` (the name on an SVG arc over a
-  CSS 3D wheel of project-page shots, turned by GSAP's ticker), `AnimeRocket`
-  (an SVG rocket riding a dashed path on ScrollTrigger, whose flame wipes into)
-  `AnimeSpace` (star field), `AnimeWork` (one panel per project),
-  `AnimeTimeline` (pinned-note board), `ContactSection`. Lenis smooth scroll,
-  off on touch and under reduced motion.
+- `/` is the **anime home** (v4, branch `feat/portfolio-v4`). The sections:
+  - `AnimeIntro`: the opening cover.
+  - `AnimeHero`: the name and the two lines on a cylinder, projected at build
+    time by `src/utils/cylinderText.ts`, behind a CSS 3D wheel of the seven
+    case-page shots, each with a pre-blurred twin.
+  - `AnimeRocket` wraps `WhyWorkWithMe`. A sticky stage flies the rocket beside
+    the bento, then crashes it into the wipe.
+  - `AnimeSpace`: the star field.
+  - `AnimeWork`: the WORK letter rings, then a 3D carousel of
+    `src/data/projects.ts`.
+  - `AnimeParadise`: the timeline. A descent onto a meadow with a painted sky,
+    then a walk along a trail.
+  - `AnimeContact`: no resume link, by the owner's choice.
+  - Lenis smooth scroll runs on the home only, off on touch and under reduced
+    motion.
+  - The seven case pages use `src/layouts/CaseLayout.astro` and
+    `src/components/case/`. Each page has its own composition.
+  - Design, decisions and progress: `docs/portfolio-v4-design.md`.
 - `/tunnel/` is the previous home, kept until the owner decides its fate: a
   Three.js hero background, a scroll-driven 240-frame JPG sequence, and a
   pinned "Work" letter tunnel that expands and rotates to reveal project cards.
@@ -34,7 +45,7 @@ it is why the invariants below exist.
 |---|---|
 | `npm run dev` | Dev server on **:4321**. `astro.config.mjs` sets `server.host: true`, so it also binds to the LAN address |
 | `npm start` | Identical to `npm run dev` — same server, same port |
-| `npm run build` | Production build into `dist/`. Astro reports **9 pages** (`/`, `/tunnel/`, `/projects/ams/`, six `/work/*`); `dist/` ends up with 10 `.html` files because the empty `public/nasa-nns.html` is copied verbatim |
+| `npm run build` | Production build into `dist/`. Astro reports **11 pages** (`/`, `/tunnel/`, `/projects/ams/`, eight `/work/*` including the unlisted `private-clinic` and `portfolio-rocket`); `dist/` ends up with 12 `.html` files because the empty `public/nasa-nns.html` is copied verbatim |
 | `npm run preview` | Serves the built `dist/` on **:4321** |
 | `npm test` | Nine Playwright suites (`tests/run.mjs`, see `tests/README.md`) against a served production build at `SITE` (default `http://127.0.0.1:4347`). Needs `PLAYWRIGHT_HOME` pointing at a `node_modules` with chromium, webkit and firefox; on this host that is `/home/ubuntu/work/landing-page/repo/node_modules` (the built-in default path does not exist here) |
 | `npm run astro` | Astro CLI passthrough (e.g. `npm run astro -- --version`). With no arguments it prints CLI help |
@@ -163,6 +174,38 @@ explicit size.
 engine spec disagreement, when both engines agreed and only the containment state
 differed. The real engine spread was ~4%, from font metrics.
 
+### 10. Sample a path in arithmetic, never with `getPointAtLength` in a loop
+
+`SVGPathElement.getPointAtLength` walks the path from its start on every call. On
+a long multi-segment route it costs ~4 ms a call under `--cpu=4`. Build the curve
+in JS (Catmull-Rom → cubic Béziers), walk a dense polyline once, and resample by
+arc length. Write the `d` attribute only so the route can be inspected.
+
+*Was broken by:* the v4 rocket route. ~2,700 calls per refresh made two 22 s long
+tasks and a 34 s DOMContentLoaded on the phone profile; the arithmetic version
+loads in under 1 s.
+
+### 11. A 3D layer stack that is a screen away leaves the layer tree
+
+Every promoted 3D layer stays in the page's layer tree while off screen, and the
+tree is re-assigned on every frame anything else on the page writes. Take big
+stacks out with `display: none` from an IntersectionObserver with a one-screen
+margin (`is-far`). Keep keyboard-reachable content in the tree: hide the scenery,
+not the links.
+
+*Was broken by:* the hero wheel (28 layers) and the WORK letter rings (40). With
+both in the tree, phone `--cpu=4` rocket-down showed 13-18 frames over 50 ms and
+205-332 ms of long tasks. With both out: 1 frame and 0 ms.
+
+### 12. No blurred `box-shadow` on a layer that turns in 3D
+
+A drop shadow is part of the layer's raster. On seven turning carousel cards, a
+60px blur was most of the WORK section's compositing cost on this host. Use a
+hairline border or an inset highlight instead.
+
+*Was broken by:* the first WORK carousel: 133-163 frames over 50 ms per work phase
+on the desktop, 4-11 with a hairline.
+
 ---
 
 ## Performance budgets
@@ -250,56 +293,25 @@ The measurement harness lives in `perf/` (`harness.mjs`, `regression.mjs`,
   has a fix applied but **unverified on iOS**.
 - Running notes and rejected hypotheses live in `PERF-NOTES.md`. Read it before
   re-proposing something that was already tried.
-- **The anime home is measured** (2026-10-01, four configurations, every scroll
-  assertion passing). Read these numbers with the platform attached: chromium
-  headless on the VPS, software raster, **no GPU**. They are not a Mac.
-
-  | 1440x900 | idle-top med / p95 / worst | work + rocket med | >50 ms frames |
-  |---|---|---|---|
-  | cpu x1 | 33.2 / 33.4 / 33.4 | 16.7 | 0 |
-  | cpu x1, wheel stubbed | **16.7** / 16.8 / 16.8 | 16.7 | 0 |
-  | cpu x4 | 33.3 / **50.0** / 50.1 | 16.7 | **3** |
-
-  | 390x844 | idle-top med / p95 / worst | work + rocket med | >50 ms frames |
-  |---|---|---|---|
-  | cpu x1 | 16.7 / 16.7 / 16.8 | 16.7 | 0 |
-  | cpu x4 | 16.7 / 16.7 / 16.8 | 16.7 | 0 |
-
-  **Re-measured 2026-10-02 after the hero rework** (fourteen 246px cards on a
-  concave ring, turned with it, box-shadow and filter on each, opacity ramp;
-  commits d499067 and e0efeba), same host and settings:
-
-  | | idle-top med / p95 / worst | >50 ms | rocket p95 / >50 ms |
-  |---|---|---|---|
-  | 1440x900 cpu x1 | **50.0 / 66.6 / 83.3** | **5** | **50.0 / 2-3** |
-  | 390x844 cpu x4 | 16.7 / 16.8 / 33.4 | 0 | 33.4 / 0 |
-
-  The reworked wheel costs more at desktop width: the first screen at rest
-  went from 30 fps to 20 fps on this rasteriser, and the rocket phases picked
-  up long frames they did not have. Phone width is unchanged. Nodes 931 ->
-  970, heap and listeners flat. The seven-card numbers below are kept for the
-  comparison; the stubbed control (16.7 ms) still names the wheel as the cost.
-
-  **The space sequence** (2026-10-02: "Why work with me?" between hero and
-  rocket, the rocket ending in a burst, the star field and the work panels in
-  one violet; `docs/space-sequence-plan.md` has the plan, the as-built and the
-  numbers). Desktop rocket phases after the review round: p95 33.4 / 50.0 ms,
-  worst 83 ms, three and five long frames against two and three before the
-  burst; phone cpu x4 unchanged at the median with one long frame in
-  rocket-up. The burst is zero at rest and promoted only while `--burst` is
-  strictly between 0 and 1; the wipe is `max(330vmax, 360vh)` so its flat core
-  reaches the far corner on a 390x844 section too. Nodes 970 -> 1137 are the
-  bento section's.
-
-  The hero wheel halves the frame rate on the first screen at rest at 1440x900,
-  proven by the stubbed control; at 390x844 it covers about a third of the area
-  and costs nothing measurable. **Budgets not met, and not only at the median:**
-  `p95 <= 25 ms` is missed by `idle-top` everywhere it runs at 33+ and by the
-  rocket phases at 33.3-33.4, and the `0 long frames` budget is missed by three
-  frames at cpu x4. Heap 2.0 -> 2.1 MB over three cycles, nodes 931 -> 931,
-  listeners flat, no forced reflows, no console errors. A GPU may absorb all of
-  this; the verdict needs the owner's own machine, and what to do about the
-  wheel is F10, his to make.
+- **v4 numbers** (2026-10-02, chromium headless, software raster, no GPU,
+  `wheelScale` 2 / 1; commit messages carry each block's before/after):
+  - Desktop: idle-top 33.3 / 50 (was 50.0 / 66.7 before the backdrop-filter
+    lenses went); rocket and space phases at medians of 16.7 with 0-2 frames over
+    50 ms; work phases 16.7-33.2 / 50 with 4-11 frames over 50 ms; paradise
+    16.7 / 33-50.
+  - Phone cpu x4: every scroll phase at a median of 16.7, except rocket-down at
+    33.3 with 1-4 frames over 50 ms.
+  - Heap, listeners and nodes stay flat across cycles.
+  - The idle-top and pointer medians alternate between two and three vsyncs on
+    this rasteriser. The owner's Mac and iPhone give the verdict (F10, F11).
+  - Earlier rounds' tables are in `docs/anime-direction-plan.md` and
+    `docs/space-sequence-plan.md`. Those sections have since been replaced.
+- **On this host the harness needs**
+  `PERF_CHROMIUM=/home/ubuntu/.cache/ms-playwright/chromium-1243/chrome-linux64/chrome`
+  (there is no `chrome` channel) and `--url=http://100.122.188.86:4400/`. It
+  measures `paradise-down` and `paradise-up` since v4. Its jump to that section
+  retries, because a long jump while Lenis is still easing lands back where Lenis
+  was going.
 - **Several harness assumptions were Mac-only.** Fixed: it launched
   `channel: "chrome"` (still the default, so Mac baselines reproduce; pass
   `--chromium=`/`PERF_CHROMIUM` elsewhere) and forced headful (now headful on
@@ -323,65 +335,46 @@ The measurement harness lives in `perf/` (`harness.mjs`, `regression.mjs`,
   correlation, and the calibration makes it moot. `config.wheelScale`,
   `config.binary` and `config.headless` all have to match before two runs are
   compared.
-- The hero wheel shows `public/shots/*.webp`, pictures of each project page's
-  first screen. Re-run `scripts/shots.mjs` after changing a project page's
-  first screen, or the wheel shows the old page.
+- The hero wheel shows `public/shots/<slug>.webp`, a picture of the first screen
+  of each page in `src/data/projects.ts`, plus `<slug>-blur.webp`, an opaque
+  twin with the hero's CSS treatment baked in.
+  - After changing a case page's first screen, re-run `scripts/shots.mjs`
+    (`SITE=…` on a served build). Otherwise the wheel shows the old page.
+  - `--blur-only` re-derives just the twins.
+- **Project media pipeline.** The owner's source folder is
+  `~/Desktop/my_work_experienceh` on his Mac. It was copied read-only to
+  `~/work/works-only/in/mwe-2026-10-02/` (edited copies in `prepared/`).
+  - The picks, with captions, privacy fixes and the facts the photos
+    contradict, are in `docs/media-picks.md`.
+  - `scripts/import-media.mjs <manifest>` writes `public/projects/<slug>/media/`
+    and a `media.json` (manifests: `docs/media-manifest*.json`).
+  - Pages read the files through `src/data/media.ts` (`picture`, `video`,
+    `slides`), never by hard-coded paths: a small source has fewer widths.
+  - iPhone clips are HDR (HLG). Convert them to SDR before the import.
+- **Held back for the owner.** Each item is built and switched off:
+  - the GDG impact report (`SHOW_REPORT` in `src/pages/work/gdg.astro`);
+  - AMS deck page 7 (the filter in `src/pages/projects/ams/index.astro`);
+  - `touchpoint-19` and `IMG_9344`, which show a "Track: Google — TouchPoint"
+    slide.
+  His open questions are in the v4 report and in `docs/facts-to-confirm.md`.
 - **Prizes are settled against the official pages** (2026-09-29): TouchPoint
   placed 2nd overall of 71 teams at QuackHacks 3 and did not win the Google
   track; SPOOT placed 3rd in Google's Best Use of Gemini at BeaverHacks 2026
-  (May 2-3, 2026). `/resume.pdf` links the combined resume variant (built
-  2026-09-29, commit 33efd95, awaiting owner approval), which uses these
-  official placements. All four resume variants and the LinkedIn drafts in
+  (May 2-3, 2026). 2026.quackhacks.org reads "250+ PARTICIPANTS" (checked
+  2026-10-02). The site links no resume (owner, 2026-10-02);
+  `public/resume.pdf`, the combined variant built 2026-09-29 (33efd95), stays on
+  disk unlinked. All four resume variants and the LinkedIn drafts in
   `~/work/school/out/career` use the same official wording (checked with
   pdftotext on 2026-09-29).
-- **Round three is built and measured** (2026-10-02, fourteen commits from
-  9588cc9 to 5be5089 plus the review round's seven fixes to e99bf9f, all on
-  `night/restore-2026-09-30`; plan, as-built and the review's outcomes in
-  `docs/anime-direction-plan.md`): copy without the hardware lean, the
-  rocket bursting under the bento footer (36px below it at 1440x900), space
-  black (`space #08080a`, `space-glow #3b1409`, black intro cover), a sticky
-  star stage the wipe reveals with the field sliding right to left, GitHub-
-  dark Work with a static star tail, wheel cards with body, the figure at
-  74svh leaning after the pointer, Geist for prose, split-text headings,
-  shimmer + magnetic buttons, spotlight + border beam on the bento cards,
-  and an "At Oregon State" section. Same host and settings as above
-  (chromium headless, software raster, no GPU, `wheelScale` 2 / 1):
-
-  | 1440x900 cpu x1 | before (f0c131e) | after (5be5089) |
-  |---|---|---|
-  | idle-top med / p95 | 50.0 / 66.7 | 50.0 / 66.7 (33.4 and 50.0 alternate run to run) |
-  | hero-pointer med / p95 | 49.9 / 50.1 | 49.9 / 50.1 |
-  | explore-pointer med / p95 | 33.4 / 50.1 | 49.9 / 50.1 |
-  | rocket-down p95 / >50 ms | 33.4 / 4 | 49.9 / 4-6 |
-  | space-down p95 | 16.8 | 33.4 |
-  | bento-pointer med | 16.7 | 16.7 |
-
-  | 390x844 cpu x4 | before | after |
-  |---|---|---|
-  | idle-top med / p95 | 16.7 / 16.8 | 16.7 / 33.3 |
-  | rocket-down med / >50 ms | 16.7 / 0 | 33.2 / 4-5 |
-  | space-down p95 | 33.4 | 33.4 |
-
-  Medians are 16.7 in every scroll phase on the desktop and p95 never moved
-  past 50.1 anywhere; heap flat, listeners 42 -> 68 desktop (eight magnetic
-  buttons by three, the bento grid by two) and 34 phone, +0 per resize,
-  nodes 1137 -> 1526. Three readings are **attributed**: the rocket-down
-  and space p95 step on the desktop is the two promoted star layers over
-  the flight (B6, two runs); the rest is **not**: the desktop pointer
-  medians moved from two to three vsyncs with the D commits and an
-  isolation pass flipped between the two values with the reload; the
-  phone's rocket-down median at 33 in both D runs is not reproduced by a
-  plain rAF sampler over the same scroll (16.7 with every D feature on or
-  off). Read all of it as a software-raster host at its vsync edge; the
-  owner's Mac and iPhone give the verdict. Untested anywhere: the sticky
-  stage under `overflow: clip` on iOS, the touch lap on a real phone, Geist
-  on a Mac display.
 - Found on the way: 353711e had deleted `restAtStart()` from
   `RocketFlight.ts`; under reduced motion the rocket threw at init until
   353f6da. `t-anime` runs a reduced-motion context per engine since. The
   suite is 1130+ checks; `tests/lib.mjs` ignores the engines' own aborts
   (`ERR_ABORTED`, `NS_BINDING_ABORTED`, "cancelled").
-- Branch history: `night/restore-2026-09-30` is `feat/anime` (425f3e0,
+- Branch history:
+  - `feat/portfolio-v4` (2026-10-02, local, not pushed) is v4. It branches
+    from `night/restore-2026-09-30` at 401a391.
+  - `night/restore-2026-09-30` is `feat/anime` (425f3e0,
   recovered from the Mac archive, never pushed) plus content commits. The
   restore report, the fixes report and the open owner questions are in
   `~/work/works-only/docs/night-2026-09-30/`; the owner's questionnaire is
