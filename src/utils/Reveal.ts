@@ -1,5 +1,6 @@
 /**
- * Marks split headings as in view, once each.
+ * Marks split headings, and anything else carrying `data-reveal`, as in
+ * view, once each.
  *
  * No loop: an IntersectionObserver adds `.is-in` and lets go of the heading,
  * and the words' CSS transitions do the rest on the compositor. Headings that
@@ -16,9 +17,11 @@ let pending = 0;
 
 export function initReveal(): void {
   if (typeof window === "undefined") return;
-  const targets = document.querySelectorAll<HTMLElement>("[data-split]");
+  const targets = document.querySelectorAll<HTMLElement>("[data-split], [data-reveal]");
   if (!targets.length) return;
 
+  // Only the headings have a hidden state behind this class; a card with
+  // `data-reveal` is visible throughout and gets `.is-in` for its own ending.
   document.documentElement.classList.add("js-reveal");
   pending = targets.length;
 

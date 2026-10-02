@@ -58,6 +58,12 @@ const cards = [
   </div>
 </section>
 
+<script>
+  import { initBentoGlow } from "../utils/BentoGlow";
+  // The spotlight is the anime home's; the tunnel keeps its cards still.
+  if (document.documentElement.classList.contains("theme-anime")) initBentoGlow();
+</script>
+
 <style lang="scss">
   @use "../styles/helpers/colors" as *;
   @use "../styles/helpers/fonts" as *;
@@ -214,6 +220,104 @@ const cards = [
   :global(.corner-plus--tr) { top: -12px; right: -12px; }
   :global(.corner-plus--bl) { bottom: -12px; left: -12px; }
   :global(.corner-plus--br) { bottom: -12px; right: -12px; }
+
+  /* The light inside a card. The box clips the spot and the beam to the
+     card's own rounded edge; the corner marks are its siblings, outside it. */
+  :global(.bento-card__fx) {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    border-radius: inherit;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  /* The spot: 360px across, moved by the controller's transform, never by a
+     property on the card. Opacity 0 at rest; the controller brings it up on
+     the card under the pointer and down again when it leaves. */
+  :global(.bento-card__spot) {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 360px;
+    height: 360px;
+    border-radius: 50%;
+    opacity: 0;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.16), transparent 62%);
+  }
+
+  /* The beam: four hairline tracks along the edges, each clipping one
+     gradient segment that crosses it in its quarter of a 3.2 s lap. Transform
+     only, and declared only under hover (or once, when the card comes in,
+     for a screen that has no hover), so at rest there is no animation. */
+  :global(.bento-card__beam) {
+    position: absolute;
+    inset: 0;
+  }
+
+  :global(.bento-card__track) {
+    position: absolute;
+    overflow: hidden;
+  }
+
+  :global(.bento-card__track::before) {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+
+  :global(.bento-card__track--t) { top: 0; left: 0; right: 0; height: 1.5px; }
+  :global(.bento-card__track--b) { bottom: 0; left: 0; right: 0; height: 1.5px; }
+  :global(.bento-card__track--r) { top: 0; right: 0; bottom: 0; width: 1.5px; }
+  :global(.bento-card__track--l) { top: 0; left: 0; bottom: 0; width: 1.5px; }
+
+  :global(.bento-card__track--t::before),
+  :global(.bento-card__track--b::before) {
+    width: 40%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, #fff, transparent);
+  }
+
+  :global(.bento-card__track--r::before),
+  :global(.bento-card__track--l::before) {
+    width: 100%;
+    height: 40%;
+    background: linear-gradient(180deg, transparent, #fff, transparent);
+  }
+
+  :global(.bento-card__track--t::before) { transform: translateX(-100%); }
+  :global(.bento-card__track--r::before) { transform: translateY(-100%); }
+  :global(.bento-card__track--b::before) { transform: translateX(250%); }
+  :global(.bento-card__track--l::before) { transform: translateY(250%); }
+
+  /* Each segment crosses its track in one quarter of the lap and waits out
+     of sight for the other three: top, right, bottom, left, clockwise. */
+  @keyframes beam-t { 0% { transform: translateX(-100%); } 25%, 100% { transform: translateX(250%); } }
+  @keyframes beam-r { 0%, 25% { transform: translateY(-100%); } 50%, 100% { transform: translateY(250%); } }
+  @keyframes beam-b { 0%, 50% { transform: translateX(250%); } 75%, 100% { transform: translateX(-100%); } }
+  @keyframes beam-l { 0%, 75% { transform: translateY(250%); } 100% { transform: translateY(-100%); } }
+
+  @media (hover: hover) {
+    :global(.bento-card:hover .bento-card__track--t::before) { animation: beam-t 3.2s linear infinite; }
+    :global(.bento-card:hover .bento-card__track--r::before) { animation: beam-r 3.2s linear infinite; }
+    :global(.bento-card:hover .bento-card__track--b::before) { animation: beam-b 3.2s linear infinite; }
+    :global(.bento-card:hover .bento-card__track--l::before) { animation: beam-l 3.2s linear infinite; }
+  }
+
+  /* The touch ending: one lap as the card comes into view. */
+  @media (hover: none) {
+    :global(.bento-card.is-in .bento-card__track--t::before) { animation: beam-t 3.2s linear 1; }
+    :global(.bento-card.is-in .bento-card__track--r::before) { animation: beam-r 3.2s linear 1; }
+    :global(.bento-card.is-in .bento-card__track--b::before) { animation: beam-b 3.2s linear 1; }
+    :global(.bento-card.is-in .bento-card__track--l::before) { animation: beam-l 3.2s linear 1; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :global(.bento-card__track::before) {
+      animation: none !important;
+    }
+  }
 
   :global(.bento-card__content) {
     position: relative;
