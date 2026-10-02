@@ -106,7 +106,22 @@ Captions sit under full-bleed figures. A Details block (Role / Year / Stack) ope
   clouds, meadow) and the walk (trail, ten signposts, firefly, swaying grass).
   AnimeCampus and AnimeTimeline are no longer on the home.
 - B7 (item 8), ff89693: AnimeContact on a dusk sky, no resume link anywhere.
-- Phase 3: the case system 27f07ed, TouchPoint d80b885. Six Opus agents are building
-  SPOOT, Zyp, GDG, Remote Lab Vision, AMS and Rocket club in parallel (one file each).
-- Then: switch the hero wheel to the seven projects and re-shoot their pages; the full
-  suite; /simplify and /code-review; the CLAUDE.md as-built; the Discord post; the report.
+- Phase 3: the case system 27f07ed, TouchPoint d80b885. Six Opus agents built SPOOT
+  65204f5, Zyp 330f6df, GDG 0cb0f95, Remote Lab Vision cc0c32f, AMS 2386c95 and Rocket
+  club eae36f0. The hero wheel shows the seven case pages (165c341).
+- Reviews:
+  - /code-review high on 401a391..c3e0eb8: 10 findings, 9 acted on (72f8988-279c652).
+    Declined: wiring destroy*() to pagehide, as in round three (bfcache).
+  - /code-review high on 279c652..b7a89ef: 10 findings, 8 acted on (2c03515-75fa0f5).
+    Not done: RlvRail repeats case.ts's loop control (a refactor, no bug), and
+    330f6df mixed a manifest reformat with a value change (already committed).
+  - /code-review medium on b7a89ef..69e7ea9: no bugs.
+- Final (7999e48): full suite 1142/1142. Harness on the final build, every scroll
+  assertion passing:
+  - desktop: medians 16.7-33.4, 0-27 frames over 50 ms by phase;
+  - phone cpu x4: 16.7 everywhere except rocket-down 33.3, 0-5 frames over 50 ms.
+  The far carousel goes flat: 7999e48.
+- Held back for the owner: the GDG impact report, AMS deck page 7, the "Track:
+  Google" slide on TouchPoint. All files are in in/mwe-2026-10-02/held/ (see CLAUDE.md).
+- The Discord post (final v3, not sent):
+  ~/work/school/out/mhacks-2026/discord-team-post.md
