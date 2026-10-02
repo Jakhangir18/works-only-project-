@@ -73,7 +73,7 @@ async function image(e) {
     files.push({ w, src: `/projects/${e.slug}/media/${e.id}-${w}.webp` });
   }
   const thumb = join(dir, `${e.id}-thumb.webp`);
-  if (!fresh(thumb)) await sharp(e.src).rotate().resize({ width: 480 }).webp({ quality: 72 }).toFile(thumb);
+  if (!fresh(thumb)) await sharp(e.src).rotate().resize({ width: 480, withoutEnlargement: true }).webp({ quality: 72 }).toFile(thumb);
   record(e.slug, e.id, {
     kind: "image",
     width: srcW,
