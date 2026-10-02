@@ -11,16 +11,18 @@ import { works } from "../data/works";
  * is CSS 3D, which is the same technique the letter tunnel in this repository
  * already uses. Same picture, a fraction of the cost, and the text stays text.
  *
- * HEADLINE is one constant. It is the owner's name because that is the one
- * thing on this page that needs no argument; a discipline line would be a
- * claim, and claims on this site come from the fact list.
+ * The headline is the owner's name, split into HEADLINE_LEFT and
+ * HEADLINE_RIGHT so each word can ride the arc from its own corner. It is the
+ * name because that is the one thing on this page that needs no argument; a
+ * discipline line would be a claim, and claims on this site come from the
+ * fact list.
  */
 
 /* The three pieces of copy on the first screen, each its own constant so a
    change of mind is a change of one line. */
 const HEADLINE_LEFT = "JAKHANGIR";
 const HEADLINE_RIGHT = "TYNSHIMOV";
-const LINE_LEFT = "Computer Science, minoring Physics";
+const LINE_LEFT = "Computer Science, minoring in Physics";
 const LINE_LEFT_2 = "Oregon State University";
 const LINE_RIGHT = "Software Engineer";
 const PLACE = "Corvallis, Oregon";
@@ -91,7 +93,7 @@ const FIGURE_HEIGHT = 1214;
       <img
         src="/hero/jak-500.webp"
         srcset="/hero/jak-500.webp 500w, /hero/jak-760.webp 760w"
-        sizes="(max-width: 48em) 170px, 250px"
+        sizes="(max-width: 48em) 170px, 290px"
         alt=""
         width={FIGURE_WIDTH}
         height={FIGURE_HEIGHT}
@@ -203,34 +205,44 @@ const FIGURE_HEIGHT = 1214;
        value has to match its BASE_TILT or the first written frame jumps. */
     transform: rotateX(-9deg);
     will-change: transform;
+    /* Decoration, and hidden from assistive tech already. The near half of
+       the ring is faded to nothing but still a box, 4-5x magnified, and it
+       passed over the Explore link often enough to swallow most clicks on it
+       — every click under reduced motion, where the ring never turns. */
+    pointer-events: none;
   }
 
   .anime-hero__screen {
     position: absolute;
     top: 50%;
     left: 50%;
-    width: clamp(96px, 11.5vw, 176px);
+    /* Laid out at the size the card reaches at the edge of the visible arc
+       (1.4x the centre), then statically scaled down to 0.715 in the transform
+       below, so the GPU only ever downsamples the raster — invariant 7. The
+       centre card renders at 176px on a wide desktop. */
+    width: clamp(134px, 16.1vw, 246px);
     /* Half the width, so the card's own centre sits on the ring's axis. The
        three clamp bounds have to stay in step with the width above. */
-    margin-left: clamp(-88px, -5.75vw, -48px);
+    margin-left: clamp(-123px, -8.05vw, -67px);
 
     /* A concave ring: the circle's centre sits in front of the stage, so the
        arc the viewer sees is its far side — the middle card is deepest and the
        cards at the edges come forward and grow, the way the reference's
        phones wrap around the figure. Step forward by the radius, turn to this
-       card's place, step back along the turned z, then turn back so the card
-       and leave it turned: on the far side of a circle whose centre is in
-       front of the stage, a card's front faces that centre, so the viewer sees
-       every screen's face while the ones at the edges angle inward — the
-       inside of a half-cylinder, not a row of billboards. The near half of
-       the circle would land between the viewer and the figure, so it fades
-       out as it swings round. `--turn` is the card's own angle plus the
-       wheel's rotation, and the controller writes it here, on the leaf that
-       consumes it. */
+       card's place, step back along the turned z, and leave it turned: on the
+       far side of that circle a card's front faces the centre, so the viewer
+       sees every screen's face while the ones at the edges angle inward —
+       the inside of a half-cylinder, not a row of billboards. The near half
+       of the circle would land between the viewer and the figure: its faces
+       point away, so backface-visibility drops it in every engine, and the
+       cos() ramp fades the cards out before they get there where the engine
+       has trig. `--turn` is the card's own angle plus the wheel's rotation,
+       and the controller writes it here, on the leaf that consumes it. */
     --ring: clamp(300px, 36vw, 560px);
     transform: translateY(-50%) translateZ(var(--ring)) rotateY(var(--turn, 0deg))
-      translateZ(calc(-1 * var(--ring)));
+      translateZ(calc(-1 * var(--ring))) scale(0.715);
     transform-style: preserve-3d;
+    backface-visibility: hidden;
     opacity: clamp(0, cos(var(--turn, 0deg)) * 2.2, 1);
 
     /* The phone is drawn here rather than baked into the screenshot: a CSS
@@ -258,14 +270,15 @@ const FIGURE_HEIGHT = 1214;
     position: absolute;
     z-index: 3;
     left: 50%;
-    bottom: 0;
     /* Sized by height, not width: a standing person in a stage that is wider
        than it is tall, and at this ratio (0.41) a width rule would decide his
-       height for him. Measured against the viewport rather than the stage so
-       he stays the subject of the first screen, but a step back from filling
-       it: the ring wraps him, it does not hide behind him. He stands a little
-       above the stage's floor so the lowest cards pass under his feet. */
-    height: clamp(320px, 64svh, 700px);
+       height for him. Two bounds: the viewport, so he stays the subject of the
+       first screen, and the stage, so a tall narrow window (a portrait tablet,
+       where the stage is short) cannot send him through the arc and out of
+       the hero's clipped top — 118% of the stage keeps his cap just above
+       it. He stands a little above the stage's floor so the lowest cards pass
+       under his feet. */
+    height: clamp(320px, min(64svh, 118%), 700px);
     bottom: 6%;
     transform: translateX(-50%);
 
@@ -414,7 +427,7 @@ const FIGURE_HEIGHT = 1214;
     /* A phone is tall and narrow: the same fraction of the viewport would put
        his cap through the top edge, so he is a little shorter here. */
     .anime-hero__figure {
-      height: clamp(240px, 46svh, 480px);
+      height: clamp(240px, min(46svh, 118%), 480px);
     }
 
     /* The arc is only 342px wide here while he is 195px of it, so the name
