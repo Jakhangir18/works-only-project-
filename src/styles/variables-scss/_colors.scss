@@ -44,5 +44,15 @@ $theme-colors: (
     // The ember inside that black — the inner edge of the burst's ring and of
     // the wipe's flame, between the dark and the accent.
     space-glow: #3b1409,
+    // The work's dark sheet, in GitHub's dark palette: panels one step
+    // lighter than the canvas (the canvas is `space`), a hairline border,
+    // text in two greys and one green for the live pill. Measured on the
+    // surface: text 15:1, muted 5.7:1, green on its own ground 6.5:1.
+    work-surface: #0e0e10,
+    work-border: #26262a,
+    work-text: #e6e6e9,
+    work-muted: #8b8b93,
+    work-green: #3fb950,
+    work-green-bg: #142318,
   ),
 );

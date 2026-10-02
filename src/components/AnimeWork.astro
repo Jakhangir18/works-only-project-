@@ -3,9 +3,11 @@ import { works } from "../data/works";
 import { timeline } from "../data/timeline";
 
 /**
- * The work, as the reference lays it out: one bordered panel per project, a
- * corner label, a very large title, a couple of tags, a way in, and the
- * project's own photograph large and tilted.
+ * The work: one bordered panel per project on a dark sheet, a corner label,
+ * a very large title, a couple of tags, a way in, and the project's own
+ * photograph large. The look is GitHub's dark palette — canvas, a surface
+ * one step lighter, hairline borders, pills — on the black the rocket's
+ * burst left behind.
  *
  * No pinning and no scrub. Each panel is an ordinary full-height section,
  * which is exactly why the reference scrolls as smoothly as it does — the
@@ -69,7 +71,7 @@ const panels = works.map((work, index) => ({
             {panel.tags.length > 0 && (
               <ul class="anime-work__tags">
                 {panel.tags.map((tag) => (
-                  <li>#{tag}</li>
+                  <li>{tag}</li>
                 ))}
               </ul>
             )}
@@ -91,10 +93,50 @@ const panels = works.map((work, index) => ({
   @use "../styles/helpers/responsive" as *;
 
   .anime-work {
+    position: relative;
     /* The black the burst left behind, the same token the wipe and the star
-       field paint, so the work sits inside that light rather than after it. */
+       field paint, so the work sits inside that dark rather than after it. */
     background: color(space);
-    color: #fff;
+    color: color(work-text);
+    padding: clamp(3rem, 8vh, 6rem) clamp(1rem, 4vw, 3rem) clamp(2rem, 5vh, 4rem);
+    /* The two pseudo-elements below sit under the panels and over the ground,
+       so they rank inside this box only. */
+    isolation: isolate;
+
+    /* The star field's tail. The drifting layers above settle to .4 and hand
+       off to this: a static scatter over the top of the sheet, painted once,
+       with no element to move. Three dot grids with coprime periods read as
+       scatter rather than as a grid; the second pseudo-element fades them
+       into the ground over the first sixty percent of a screen. */
+    &::before,
+    &::after {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto;
+      z-index: -1;
+      height: 60svh;
+      pointer-events: none;
+    }
+
+    &::before {
+      background-image:
+        radial-gradient(circle, rgba(255, 255, 255, 0.7) 0.6px, transparent 1.3px),
+        radial-gradient(circle, rgba(255, 217, 168, 0.6) 0.8px, transparent 1.6px),
+        radial-gradient(circle, rgba(255, 255, 255, 0.45) 0.5px, transparent 1.1px);
+      background-size:
+        137px 149px,
+        211px 173px,
+        97px 83px;
+      background-position:
+        17px 23px,
+        89px 61px,
+        41px 7px;
+      opacity: 0.4;
+    }
+
+    &::after {
+      background: linear-gradient(to bottom, transparent, color(space));
+    }
   }
 
   .anime-work__panel {
@@ -103,28 +145,20 @@ const panels = works.map((work, index) => ({
     flex-direction: column;
     justify-content: center;
 
-    min-height: 100svh;
-    padding: 5rem clamp(1.5rem, 5vw, 5rem) 4rem;
+    max-width: 1180px;
+    min-height: min(100svh, 46rem);
+    margin: 0 auto clamp(1rem, 2.5vh, 1.5rem);
+    padding: 5rem clamp(1.5rem, 4vw, 4rem) 3.5rem;
 
-    /* One hairline between panels rather than a box around each: the reference
-       reads as a single ruled sheet, not as a stack of cards. */
-    border-top: 1px solid rgba(255, 255, 255, 0.12);
-    /* The light the work sits in: an ember glow behind each panel's media,
-       painted once as a static background. Even panels put the media on the
-       right, as the reference alternates its cases, and the glow follows. */
-    background: radial-gradient(
-      ellipse 55% 60% at 30% 50%,
-      color-mix(in srgb, var(--color-space-glow) 28%, transparent),
-      transparent 70%
-    );
+    /* One bordered box per project, the surface one step up from the canvas,
+       as GitHub draws a box: a hairline, a small radius, no shadow. */
+    border: 1px solid color(work-border);
+    border-radius: 6px;
+    background: color(work-surface);
 
+    /* Even panels put the media on the right, as the reference alternates
+       its cases. */
     &:nth-child(even) {
-      background: radial-gradient(
-        ellipse 55% 60% at 70% 50%,
-        color-mix(in srgb, var(--color-space-glow) 28%, transparent),
-        transparent 70%
-      );
-
       .anime-work__inner {
         grid-template-columns: 1fr 1.15fr;
       }
@@ -132,23 +166,23 @@ const panels = works.map((work, index) => ({
       .anime-work__media {
         order: 2;
       }
-
-      .anime-work__media img {
-        transform: rotate(2.2deg);
-      }
     }
   }
 
   .anime-work__label {
     position: absolute;
-    top: 2rem;
-    left: clamp(1.5rem, 5vw, 5rem);
+    top: 1.5rem;
+    left: clamp(1.5rem, 4vw, 4rem);
     margin: 0;
+    padding: 0.35em 0.75em;
 
-    font: 400 0.6875rem / 1 font-family(fraktion);
-    letter-spacing: 0.2em;
+    border: 1px solid color(work-border);
+    border-radius: 999px;
+
+    font: 700 0.6875rem / 1 font-family(fraktion);
+    letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.62);
+    color: color(work-muted);
   }
 
   .anime-work__inner {
@@ -157,8 +191,6 @@ const panels = works.map((work, index) => ({
     gap: clamp(2rem, 5vw, 5rem);
     align-items: center;
     width: 100%;
-    max-width: 1180px;
-    margin: 0 auto;
   }
 
   .anime-work__media {
@@ -171,12 +203,11 @@ const panels = works.map((work, index) => ({
       aspect-ratio: 4 / 3;
       object-fit: cover;
 
-      border-radius: 18px;
-      /* The reference tilts its device mockups a few degrees. One static
-         transform, so the image is rastered once at its final size and never
-         scaled up inside a promoted layer. */
-      transform: rotate(-2.2deg);
-      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+      border: 1px solid color(work-border);
+      border-radius: 6px;
+      /* Straight, as a screenshot sits in a readme; the shadow lifts it off
+         the surface a little. Static, so it is rastered once at this size. */
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
     }
   }
 
@@ -184,12 +215,13 @@ const panels = works.map((work, index) => ({
     display: grid;
     place-items: center;
     aspect-ratio: 4 / 3;
-    border-radius: 18px;
-    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid color(work-border);
+    border-radius: 6px;
+    background: color(space);
 
     span {
       font: 400 clamp(3rem, 8vw, 6rem) / 1 font-family(bigger);
-      color: rgba(255, 255, 255, 0.7);
+      color: color(work-muted);
     }
   }
 
@@ -203,24 +235,36 @@ const panels = works.map((work, index) => ({
     margin: 0 0 1.5rem;
     max-width: 34ch;
     font: 400 clamp(0.9375rem, 1.2vw, 1.0625rem) / 1.65 font-family(fraktion);
-    /* 0.78 of white on the black is 12:1 and more; it keeps the paragraph
-       behind the heading without dropping below the 4.5 this size needs. */
-    color: rgba(255, 255, 255, 0.78);
+    /* The muted grey is 5.7:1 on the surface: behind the heading, above the
+       4.5 this size needs. */
+    color: color(work-muted);
   }
 
   .anime-work__tags {
     display: flex;
     flex-wrap: wrap;
-    gap: 1.25rem;
+    gap: 0.5rem;
     margin: 0 0 1.75rem;
     padding: 0;
     list-style: none;
 
     li {
-      font: 400 0.6875rem / 1 font-family(fraktion);
-      letter-spacing: 0.16em;
+      padding: 0.35em 0.75em;
+      border: 1px solid color(work-border);
+      border-radius: 999px;
+
+      font: 700 0.6875rem / 1 font-family(fraktion);
+      letter-spacing: 0.08em;
       text-transform: uppercase;
-      color: rgba(255, 255, 255, 0.62);
+      color: color(work-muted);
+    }
+
+    /* The first tag is the kind; it takes the one green, on its own ground,
+       the way a topic or a status reads on GitHub. */
+    li:first-child {
+      border-color: transparent;
+      background: color(work-green-bg);
+      color: color(work-green);
     }
   }
 
@@ -228,27 +272,33 @@ const panels = works.map((work, index) => ({
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.8125rem 1.375rem;
+    padding: 0.75rem 1.125rem;
 
-    border: 1px solid #fff;
-    border-radius: 999px;
+    border: 1px solid color(work-border);
+    border-radius: 6px;
+    background: color(work-surface);
 
-    font: 700 0.6875rem / 1 font-family(fraktion);
-    letter-spacing: 0.2em;
+    font: 700 0.75rem / 1 font-family(fraktion);
+    letter-spacing: 0.12em;
     text-transform: uppercase;
     text-decoration: none;
-    color: #fff;
+    color: color(work-text);
 
-    transition: background-color 240ms ease, color 240ms ease;
+    transition: border-color 200ms ease, background-color 200ms ease;
 
     &:hover,
     &:focus-visible {
-      background: #fff;
-      color: color(space);
+      border-color: color(work-muted);
+      background: color(work-border);
     }
   }
 
   @include mq(tablet-sm) {
+    .anime-work__panel {
+      min-height: 0;
+      padding: 4.5rem 1.25rem 2.5rem;
+    }
+
     /* Written at the even-panel selector's specificity too, or the alternate
        two-column grid above would survive into one-column widths and split a
        390px panel into two narrow tracks. */
@@ -260,11 +310,6 @@ const panels = works.map((work, index) => ({
 
     .anime-work__panel:nth-child(even) .anime-work__media {
       order: 0;
-    }
-
-    .anime-work__media img,
-    .anime-work__panel:nth-child(even) .anime-work__media img {
-      transform: none;
     }
 
     .anime-work__blurb {
