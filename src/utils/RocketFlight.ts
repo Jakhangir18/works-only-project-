@@ -102,6 +102,21 @@ function write(el: HTMLElement, prop: string, value: string): void {
   el.style.setProperty(prop, value);
 }
 
+/* The resting pose under reduced motion: the craft at the start of its trail.
+   Measured against the section's box and only re-measured when that box has
+   changed by a whole pixel, so a phone's address bar coming and going does
+   not resample the path. */
+function restAtStart(): void {
+  if (!section) return;
+  const box = section.getBoundingClientRect();
+  const w = Math.round(box.width);
+  const h = Math.round(box.height);
+  if (w === restBox.w && h === restBox.h) return;
+  restBox = { w, h };
+  measure();
+  apply(0);
+}
+
 function apply(progress: number): void {
   if (craft && points.length) {
     const at = Math.min(points.length - 1, Math.max(0, Math.round(progress * (points.length - 1))));

@@ -153,6 +153,46 @@ for (const [ename, engine] of Object.entries({ chromium, webkit })) {
     results.push(check(`${tag} no runtime errors`, errors.length === 0, errors.slice(0, 2).join(' | ')));
     await ctx.close();
   }
+
+  // 6. Reduced motion is an alternate ending, not a crash: the rocket rests at
+  //    the start of its trail and the star field is simply there, in flow.
+  //    353711e deleted the rocket's rest function and nothing here noticed;
+  //    every controller on the page threw under the setting until the next
+  //    visual pass ran with it on.
+  {
+    const tag = `${ename}/reduced`;
+    const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' });
+    const page = await ctx.newPage();
+    const errors = [];
+    page.on('pageerror', (e) => errors.push(String(e).slice(0, 140)));
+    page.on('console', (m) => { if (m.type() === 'error' && !/favicon/.test(m.text())) errors.push(m.text().slice(0, 140)); });
+    await page.goto(BASE + '/', { waitUntil: 'load' });
+    await page
+      .waitForFunction(() => !document.documentElement.classList.contains('is-scroll-blocked'), null, { timeout: 12000 })
+      .catch(() => {});
+    await page.waitForTimeout(800);
+
+    const rest = await page.evaluate(() => {
+      const craft = document.querySelector('.js-rocket-craft');
+      const trail = document.querySelector('.js-rocket-trail');
+      const section = document.querySelector('.rocket-flight');
+      const space = document.querySelector('.space');
+      if (!craft || !trail || !section || !space) return null;
+      const box = section.getBoundingClientRect();
+      const vb = trail.ownerSVGElement.viewBox.baseVal;
+      const start = trail.getPointAtLength(0);
+      const x = parseFloat(craft.style.getPropertyValue('--x'));
+      const y = parseFloat(craft.style.getPropertyValue('--y'));
+      const off = Math.round(Math.hypot((start.x * box.width) / vb.width - x, (start.y * box.height) / vb.height - y));
+      const sp = space.getBoundingClientRect();
+      const layers = [...document.querySelectorAll('.space__layer')].map((l) => getComputedStyle(l).opacity);
+      return { off: Number.isFinite(off) ? off : 9999, gap: Math.round(sp.top - box.bottom), layers };
+    });
+    results.push(check(`${tag} the rocket rests at the start of its route`, !!rest && rest.off <= 6, rest ? `${rest.off} px off the start` : 'missing'));
+    results.push(check(`${tag} the star field is simply there`, !!rest && rest.gap === 0 && rest.layers.length === 2 && rest.layers.every((o) => o === '1'), rest ? `gap ${rest.gap}px, opacity ${rest.layers.join('/')}` : 'missing'));
+    results.push(check(`${tag} no runtime errors`, errors.length === 0, errors.slice(0, 2).join(' | ')));
+    await ctx.close();
+  }
   await browser.close();
 }
 
