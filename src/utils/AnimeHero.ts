@@ -33,6 +33,10 @@ let figure: HTMLElement | null = null;
    per frame would mean a getComputedStyle call per card per frame. */
 let cards: { el: HTMLElement; angle: number }[] = [];
 let observer: IntersectionObserver | null = null;
+/* Takes the wheel's 3D layers out of the tree while the hero is more than a
+   screen away (is-far on the stage), so the layer tree the rest of the page
+   updates every frame does not carry them. */
+let farObserver: IntersectionObserver | null = null;
 let onTick: (() => void) | null = null;
 
 let spin = 0;
@@ -118,6 +122,17 @@ export function initAnimeHero(): void {
     ? document.querySelector<HTMLElement>(".anime-hero__figure")
     : null;
 
+  const stage = wheel.closest<HTMLElement>(".js-anime-hero");
+  if (stage) {
+    farObserver = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) stage.classList.toggle("is-far", !entry.isIntersecting);
+      },
+      { rootMargin: "100% 0px 100% 0px" },
+    );
+    farObserver.observe(stage);
+  }
+
   // The setting asks for stillness, not for an empty frame: the wheel keeps
   // the angles it was rendered with and nothing moves.
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -152,6 +167,9 @@ export function destroyAnimeHero(): void {
   stop();
   observer?.disconnect();
   observer = null;
+  farObserver?.disconnect();
+  farObserver = null;
+  document.querySelector(".js-anime-hero")?.classList.remove("is-far");
   document.removeEventListener("visibilitychange", onVisibilityChange);
   window.removeEventListener("pointermove", onPointerMove);
   onTick = null;

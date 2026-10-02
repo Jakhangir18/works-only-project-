@@ -316,6 +316,12 @@ const EMPHASIS_FROM = visible(LINE_LEFT) + visible(LINE_LEFT_2);
     }
   }
 
+  /* Out of the tree while the hero is more than a screen away; the
+     controller sets is-far from an IntersectionObserver. */
+  .anime-hero__stage:global(.is-far) .anime-hero__wheel {
+    display: none;
+  }
+
   .anime-hero__wheel {
     position: absolute;
     z-index: 1;
