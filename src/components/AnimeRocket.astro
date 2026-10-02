@@ -240,15 +240,21 @@
     z-index: 2;
     top: 0;
     right: 0;
-    width: 220vmax;
-    height: 220vmax;
+    /* The ring lives between 64% and 93% of the radius and is gone by opacity
+       before it could leave the screen, so the box only has to carry the ring
+       past the fold, not clear the diagonal: 180vmax, two thirds of the raster
+       area a diagonal-clearing box would need. */
+    width: 180vmax;
+    height: 180vmax;
     /* `--burst` runs 0 -> 1 just ahead of the wipe. Scale carries the ring
        outward; opacity takes it away as the wipe arrives behind it. Two
        composited properties, nothing else. */
     transform: translate(50%, -50%) scale(var(--burst, 0));
-    /* Squared so the ring stays bright through most of its travel and lets go
-       only at the end, once the wipe behind it has the screen. */
-    opacity: calc(1 - var(--burst, 0) * var(--burst, 0));
+    /* Zero at rest — the first factor — so the layer paints nothing while the
+       page sits on the hero or the timeline; then squared, so the ring stays
+       bright through most of its travel and lets go only at the end, once the
+       wipe behind it has the screen. */
+    opacity: calc(clamp(0, var(--burst, 0) * 10, 1) * (1 - var(--burst, 0) * var(--burst, 0)));
     transform-origin: center;
     border-radius: 50%;
     /* A hot core, a dark gap, a thick flame ring, then nothing: the shock
@@ -265,7 +271,9 @@
       #ffd9a8 93%,
       transparent 100%
     );
-    will-change: transform, opacity;
+    /* Promoted by the controller only while `--burst` is between 0 and 1,
+       not for the page's lifetime: at rest this is a 180vmax box, and a
+       standing layer of that size is memory the hero and the timeline pay for. */
     pointer-events: none;
   }
 
@@ -277,22 +285,29 @@
     /* Centred on the corner the rocket leaves through, and big enough that at
        full scale its radius clears the viewport diagonal — otherwise the far
        corner of the section stays white while the rest has already gone. */
-    width: 300vmax;
-    height: 300vmax;
+    /* The circle has to put its flat core over the whole section at scale 1,
+       or the far corner keeps the leading edge and the hand-off shows a seam.
+       The far corner from the exit corner is the section's diagonal: 1974px
+       at 1440x900 (a 150svh section), 1325px at 390x844, where 300vmax alone
+       fell short by 60px and left a white crescent above the violet. With the
+       core flat to 88% of the radius, max(330vmax, 360vh) covers both —
+       diagonal / radius is 0.83 and 0.87 there. */
+    width: max(330vmax, 360vh);
+    height: max(330vmax, 360vh);
     transform: translate(50%, -50%) scale(var(--wipe, 0));
     transform-origin: center;
 
     border-radius: 50%;
     /* Flame at the leading edge, the space section's own colour behind it, so
        the hand-off has no seam: what the wipe leaves behind is exactly what
-       the next section paints. */
+       the next section paints. The flame is the outer 12% of the radius. */
     background: radial-gradient(
       circle at 50% 50%,
       color(space) 0%,
-      color(space) 58%,
-      color(space-glow) 70%,
-      color(accent) 80%,
-      #ff8a3d 92%,
+      color(space) 88%,
+      color(space-glow) 92%,
+      color(accent) 95%,
+      #ff8a3d 98%,
       #ffd9a8 100%
     );
     /* Scale is the only thing that changes, so the wipe is a single composited
