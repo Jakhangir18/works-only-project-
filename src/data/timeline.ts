@@ -16,6 +16,10 @@ export type TimelineEntry = {
   thumb?: string;
   /** Kept out of the build until the owner confirms the role and the dates. */
   draft?: boolean;
+  /** Part of the owner's time at Oregon State; listed in the campus section. */
+  campus?: boolean;
+  /** Work that is still running and has no results to show yet. */
+  status?: "in progress";
 };
 
 /**
@@ -32,11 +36,22 @@ export const timeline: readonly TimelineEntry[] = [
     summary: "Interface systems, motion and 3D graphics on the web.",
   },
   {
+    title: "Robot arm and hand in simulation",
+    org: "Prof. Raffaele De Amicis's lab, Oregon State",
+    kind: "research",
+    start: "2026-06",
+    status: "in progress",
+    campus: true,
+    summary:
+      "MuJoCo simulation of a robot arm and hand: RL in MuJoCo Playground, imitation learning with LeRobot and ACT, VR teleoperation on a Quest. In progress.",
+  },
+  {
     title: "TouchPoint",
     org: "QuackHacks 3, University of Oregon",
     kind: "competition",
     start: "2026-05",
     end: "2026-05",
+    campus: true,
     summary:
       "A haptic glove for deafblind web browsing. 2nd place overall of 71 teams, QuackHacks 3.",
     href: "/work/touchpoint/",
@@ -48,6 +63,7 @@ export const timeline: readonly TimelineEntry[] = [
     kind: "competition",
     start: "2026-05",
     end: "2026-05",
+    campus: true,
     summary:
       "Glasses that show where a sound came from. 3rd in Google's Best Use of Gemini track.",
     href: "/work/spoot/",
@@ -70,6 +86,7 @@ export const timeline: readonly TimelineEntry[] = [
     kind: "research",
     start: "2025-11",
     end: "2026-04",
+    campus: true,
     summary:
       "Which camera can hold a readable feed inside LabVIEW, answered with histograms.",
     href: "/work/remote-lab-vision/",
@@ -105,6 +122,7 @@ export const timeline: readonly TimelineEntry[] = [
     end: "2026-06",
     summary: "Club impact reporting and event support.",
     draft: true,
+    campus: true,
   },
   {
     title: "Reverlab",
