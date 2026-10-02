@@ -24,14 +24,25 @@ let grid: HTMLElement | null = null;
 let active: HTMLElement | null = null;
 let spot: HTMLElement | null = null;
 let rect: DOMRect | null = null;
+/* The scroll position the rect was read at, and where the pointer last was:
+   a scroll under a resting pointer moves the card, not the pointer, so the
+   rect is re-read on the next move and the card let go if it has gone. */
+let rectScrollY = 0;
+let lastX = 0;
+let lastY = 0;
 let xTo: ((v: number) => void) | null = null;
 let yTo: ((v: number) => void) | null = null;
 let onMove: ((event: PointerEvent) => void) | null = null;
 let onLeave: (() => void) | null = null;
+let onScroll: (() => void) | null = null;
 
 const reduced = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 function setActive(card: HTMLElement | null): void {
+  // The read first, then the writes (invariant 3): the outgoing spot's
+  // fade and will-change are style writes, and a rect read after them
+  // would force a layout inside the pointer handler.
+  const next = card ? card.getBoundingClientRect() : null;
   if (spot) {
     gsap.to(spot, { opacity: 0, duration: 0.25, overwrite: "auto" });
     // Promoted only while it is the one under the pointer: five standing
@@ -40,7 +51,8 @@ function setActive(card: HTMLElement | null): void {
   }
   active = card;
   spot = card?.querySelector<HTMLElement>(".bento-card__spot") ?? null;
-  rect = card ? card.getBoundingClientRect() : null;
+  rect = next;
+  rectScrollY = window.scrollY;
   xTo = spot ? gsap.quickTo(spot, "x", { duration: 0.3, ease: "power3.out" }) : null;
   yTo = spot ? gsap.quickTo(spot, "y", { duration: 0.3, ease: "power3.out" }) : null;
   if (spot && rect) {
@@ -62,21 +74,40 @@ export function initBentoGlow(): void {
   if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
 
   onMove = (event: PointerEvent) => {
+    lastX = event.clientX;
+    lastY = event.clientY;
     const card = (event.target as Element | null)?.closest?.(".bento-card") as HTMLElement | null;
     if (card !== active) setActive(card);
+    else if (active && window.scrollY !== rectScrollY) {
+      // The page moved under the pointer since the rect was read.
+      rect = active.getBoundingClientRect();
+      rectScrollY = window.scrollY;
+    }
     if (!active || !spot || !rect || !xTo || !yTo || reduced()) return;
     xTo(event.clientX - rect.left - SPOT / 2);
     yTo(event.clientY - rect.top - SPOT / 2);
   };
   onLeave = () => setActive(null);
+  // A card can scroll out from under a resting pointer with no pointerleave:
+  // one read, and the card is let go if the pointer is no longer inside it.
+  onScroll = () => {
+    if (!active) return;
+    rect = active.getBoundingClientRect();
+    rectScrollY = window.scrollY;
+    const inside = lastX >= rect.left && lastX <= rect.right && lastY >= rect.top && lastY <= rect.bottom;
+    if (!inside) setActive(null);
+  };
 
   grid.addEventListener("pointermove", onMove, { passive: true });
   grid.addEventListener("pointerleave", onLeave);
+  window.addEventListener("scroll", onScroll, { passive: true });
 }
 
 export function destroyBentoGlow(): void {
   if (grid && onMove) grid.removeEventListener("pointermove", onMove);
   if (grid && onLeave) grid.removeEventListener("pointerleave", onLeave);
+  if (onScroll) window.removeEventListener("scroll", onScroll);
+  onScroll = null;
   if (spot) gsap.killTweensOf(spot);
   grid = null;
   active = null;
