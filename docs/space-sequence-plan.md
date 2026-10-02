@@ -66,6 +66,40 @@ The reference's "DEEP DIVE" 3D blow-out into a case page is a route-level
 transition; this project has no client router and that is a separate design.
 The reference's sticky hero with cases scrolling over it is noted, not built.
 
-## As built / deviations
+## As built
 
-Filled in after phases 4–5.
+Commits 9d2cf7b (palette), bd14427 (why work with me), 63492fc (burst),
+589074a (work in the violet), plus one fix: the bento retheme had to be scoped
+to `.theme-anime`, because the component is shared with `/tunnel/` and the
+colour helper gave that page near-white cards under white type.
+
+Visual pass, 1440x900 and 390x844, four burst frames each (0.82, 0.86, 0.90,
+0.94): the ring is born as the rocket leaves, sweeps the copy while the copy
+fades, and is gone when the wipe owns the screen. Frame zero is the white page.
+
+## Measured (chromium headless, software raster, no GPU; all scroll assertions passing)
+
+| | idle-top med / p95 / worst (>50) | rocket down p95 / worst (>50) | rocket up p95 / worst (>50) |
+|---|---|---|---|
+| 1440x900 cpu x1, before | 50.0 / 66.6 / 83.3 (5) | 50.0 / 50.1 (2) | 50.0 / 83.4 (3) |
+| 1440x900 cpu x1, after | 33.4 / 50.1 / 83.3 (9) | 33.4 / 66.7 (5) | 49.9 / 83.4 (6) |
+| 390x844 cpu x4, before | 16.7 / 16.8 / 33.4 (0) | 33.4 / 33.4 (0) | 33.4 / 33.4 (0) |
+| 390x844 cpu x4, after | 16.7 / 16.8 / 33.3 (0) | 33.4 / 50.0 (0) | 33.4 / 66.7 (1) |
+
+Nodes 970 -> 1137 (the bento section). Heap and listeners flat on both.
+
+## Deviations
+
+- The copy fade moved from 0.90–1.00 to 0.80–0.90. The plan assumed the copy
+  could stay through the wipe; in the frames it sat as ink on violet and could
+  not be read, so it now leaves as the burst is born.
+- The burst's opacity is squared rather than linear: a linear fade had the
+  ring at 50% while the wipe was still at 12%, and it read as a smear rather
+  than a front.
+- The desktop rocket phases carry two to three more long frames than before
+  the burst. The burst and the wipe are each one promoted layer with a
+  gradient background, laid out at 220vmax and 300vmax and rastered once at
+  that size; on a software rasteriser that first raster is the long frame.
+  Not fixed here. The experiment to run next, as its own measured commit: lay
+  the burst out at 160vmax, which still reaches past the fold before its fade
+  completes and halves the raster area.
