@@ -246,17 +246,27 @@ const FIGURE_HEIGHT = 1214;
     opacity: clamp(0, cos(var(--turn, 0deg)) * 2.2, 1);
 
     /* The phone is drawn here rather than baked into the screenshot: a CSS
-       bezel costs no bytes, stays crisp at any size, and follows the theme. */
-    padding: 2px;
-    border-radius: 12px;
-    background: color(rule);
-    box-shadow: 0 10px 24px rgba(11, 11, 12, 0.06);
+       bezel costs no bytes, stays crisp at any size, and follows the theme.
+       Layout values are the rendered ones divided by the 0.715 static scale:
+       8px of bezel renders as 5.7, the 22px corner as 15.7 and the image's
+       14px corner as 10, concentric with it. The edge is the first shadow, a
+       hairline ring, so there is no border to add to the box; the outer
+       shadow's extent is unchanged, so the layer's bounds do not grow. The
+       image keeps its own radius and the card has no overflow rule, so
+       nothing here is a clip layer. */
+    padding: 8px;
+    border-radius: 22px;
+    background: color(secondary);
+    box-shadow:
+      0 0 0 1.4px rgba(11, 11, 12, 0.07),
+      0 1px 2px rgba(11, 11, 12, 0.05),
+      0 10px 24px rgba(11, 11, 12, 0.06);
 
     img {
       display: block;
       width: 100%;
       height: auto;
-      border-radius: 11px;
+      border-radius: 14px;
       /* Scenery, not the subject. These pages are dark-themed, so against a
          white hero they arrive as black bricks: drained, lifted hard and held
          well back, they read as pale ghosts the way the reference's screens
