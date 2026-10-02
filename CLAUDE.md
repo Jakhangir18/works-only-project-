@@ -334,6 +334,53 @@ The measurement harness lives in `perf/` (`harness.mjs`, `regression.mjs`,
   official placements. All four resume variants and the LinkedIn drafts in
   `~/work/school/out/career` use the same official wording (checked with
   pdftotext on 2026-09-29).
+- **Round three is built and measured** (2026-10-02, fourteen commits from
+  9588cc9 to 5be5089 plus the review round's seven fixes to e99bf9f, all on
+  `night/restore-2026-09-30`; plan, as-built and the review's outcomes in
+  `docs/anime-direction-plan.md`): copy without the hardware lean, the
+  rocket bursting under the bento footer (36px below it at 1440x900), space
+  black (`space #08080a`, `space-glow #3b1409`, black intro cover), a sticky
+  star stage the wipe reveals with the field sliding right to left, GitHub-
+  dark Work with a static star tail, wheel cards with body, the figure at
+  74svh leaning after the pointer, Geist for prose, split-text headings,
+  shimmer + magnetic buttons, spotlight + border beam on the bento cards,
+  and an "At Oregon State" section. Same host and settings as above
+  (chromium headless, software raster, no GPU, `wheelScale` 2 / 1):
+
+  | 1440x900 cpu x1 | before (f0c131e) | after (5be5089) |
+  |---|---|---|
+  | idle-top med / p95 | 50.0 / 66.7 | 50.0 / 66.7 (33.4 and 50.0 alternate run to run) |
+  | hero-pointer med / p95 | 49.9 / 50.1 | 49.9 / 50.1 |
+  | explore-pointer med / p95 | 33.4 / 50.1 | 49.9 / 50.1 |
+  | rocket-down p95 / >50 ms | 33.4 / 4 | 49.9 / 4-6 |
+  | space-down p95 | 16.8 | 33.4 |
+  | bento-pointer med | 16.7 | 16.7 |
+
+  | 390x844 cpu x4 | before | after |
+  |---|---|---|
+  | idle-top med / p95 | 16.7 / 16.8 | 16.7 / 33.3 |
+  | rocket-down med / >50 ms | 16.7 / 0 | 33.2 / 4-5 |
+  | space-down p95 | 33.4 | 33.4 |
+
+  Medians are 16.7 in every scroll phase on the desktop and p95 never moved
+  past 50.1 anywhere; heap flat, listeners 42 -> 68 desktop (eight magnetic
+  buttons by three, the bento grid by two) and 34 phone, +0 per resize,
+  nodes 1137 -> 1526. Three readings are **attributed**: the rocket-down
+  and space p95 step on the desktop is the two promoted star layers over
+  the flight (B6, two runs); the rest is **not**: the desktop pointer
+  medians moved from two to three vsyncs with the D commits and an
+  isolation pass flipped between the two values with the reload; the
+  phone's rocket-down median at 33 in both D runs is not reproduced by a
+  plain rAF sampler over the same scroll (16.7 with every D feature on or
+  off). Read all of it as a software-raster host at its vsync edge; the
+  owner's Mac and iPhone give the verdict. Untested anywhere: the sticky
+  stage under `overflow: clip` on iOS, the touch lap on a real phone, Geist
+  on a Mac display.
+- Found on the way: 353711e had deleted `restAtStart()` from
+  `RocketFlight.ts`; under reduced motion the rocket threw at init until
+  353f6da. `t-anime` runs a reduced-motion context per engine since. The
+  suite is 1130+ checks; `tests/lib.mjs` ignores the engines' own aborts
+  (`ERR_ABORTED`, `NS_BINDING_ABORTED`, "cancelled").
 - Branch history: `night/restore-2026-09-30` is `feat/anime` (425f3e0,
   recovered from the Mac archive, never pushed) plus content commits. The
   restore report, the fixes report and the open owner questions are in
