@@ -9,6 +9,9 @@ $theme-font-families: (
   fraktion: "'Fraktion Mono', monospace",
   editorial: "'Editorial New', serif",
   bigger: "'Bigger Display', sans-serif",
+  // Geist (OFL, self-hosted, latin only): the sentence-case prose face.
+  // Labels stay Fraktion Mono, titles Editorial New, the arc Bigger Display.
+  geist: "'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
 );
 
 /* Sizes */
