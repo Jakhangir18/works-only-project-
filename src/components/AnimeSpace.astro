@@ -69,8 +69,12 @@ const near = field(46, 7734121);
     min-height: 100svh;
     padding: 8rem 1.5rem;
 
-    /* The colour the wipe lands on, so the hand-off has no seam. */
-    background: #120b2a;
+    /* The colour the wipe lands on, declared once in the palette and shared
+       with the wipe and the work panels, so the hand-off has no seam. A soft
+       glow at the top is where the burst was. */
+    background:
+      radial-gradient(ellipse 70% 45% at 50% 0%, rgba(106, 44, 240, 0.35), transparent 70%),
+      color(space);
     color: #fff;
     overflow: hidden;
     isolation: isolate;

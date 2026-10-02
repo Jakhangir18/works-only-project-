@@ -36,5 +36,10 @@ $theme-colors: (
     accent-ink: #e00538,
     ink-soft: #5b5b60,
     rule: #e2e2e4,
+    // Where the rocket's burst lands: the one violet the wipe, the star field
+    // and the work panels all paint, so the hand-off between them has no seam.
+    space: #1b0f3f,
+    // The glow inside that violet — the burst's core and the panels' light.
+    space-glow: #6a2cf0,
   ),
 );
