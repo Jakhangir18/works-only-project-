@@ -45,15 +45,18 @@ const cards = [
       {cards.map((card) => (
         <BentoCard variant={card.variant} title={card.title} text={card.text} />
       ))}
-    </div>
 
-    <div class="bento-footer">
-      <SplitHeading class="bento-footer__title" text="Software for things that move, and a page that shows the work." />
-      <p class="bento-footer__text">
-        Every project below is something I built and can still explain: the
-        code, the model or the board, the measurement that decided a design,
-        and the limit it has not passed yet. Work still in progress says so.
-      </p>
+      {/* The closing line is the grid's last cell, not a block under it: the
+          last small card leaves four empty columns on a desktop, and the
+          line read as a separate section floating below them. */}
+      <div class="bento-footer">
+        <SplitHeading class="bento-footer__title" text="Software for things that move, and a page that shows the work." />
+        <p class="bento-footer__text">
+          Every project below is something I built and can still explain: the
+          code, the model or the board, the measurement that decided a design,
+          and the limit it has not passed yet. Work still in progress says so.
+        </p>
+      </div>
     </div>
   </div>
 </section>
@@ -346,14 +349,26 @@ const cards = [
   }
 
   .bento-footer {
+    grid-column: span 4;
+    align-self: center;
+    justify-self: end;
     max-width: 40rem;
-    margin-left: auto;
     text-align: right;
-    padding: 0 clamp(1rem, 2vw, 2rem);
+    padding: clamp(1rem, 2vw, 2rem) clamp(1rem, 2vw, 2rem) 0;
+
+    @media (max-width: 1024px) {
+      grid-column: span 4;
+      padding-top: clamp(1.5rem, 3vh, 2.5rem);
+    }
 
     @media (max-width: 768px) {
+      justify-self: start;
       text-align: left;
-      margin: 0;
+    }
+
+    @media (max-width: 640px) {
+      grid-column: span 1;
+      padding: 1.5rem 0 0;
     }
   }
 
