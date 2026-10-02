@@ -62,8 +62,11 @@ const groups = entries.reduce<{ year: string; items: TimelineEntry[] }[]>(
 
           <ol class="s-timeline__list">
             {group.items.map((entry) => {
-              // A duration from guessed months would be invented precision.
-              const months = entry.yearsOnly ? 0 : monthSpan(entry);
+              const months = monthSpan(entry);
+              // The bar's length is the span; a printed duration from guessed
+              // months would be invented precision, so years-only entries
+              // keep the length and drop the label.
+              const label = entry.yearsOnly ? "" : duration(months);
               const Tag = entry.href ? "a" : "div";
               return (
                 <li
@@ -79,9 +82,9 @@ const groups = entries.reduce<{ year: string; items: TimelineEntry[] }[]>(
                   >
                     <span class="s-timeline__meta">
                       <time datetime={entry.start}>{range(entry)}</time>
-                      {duration(months) && (
+                      {label && (
                         <span class="s-timeline__duration js-timeline-duration">
-                          {duration(months)}
+                          {label}
                         </span>
                       )}
                       <span class="s-timeline__kind">{entry.kind}</span>
