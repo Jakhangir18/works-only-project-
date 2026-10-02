@@ -1,5 +1,5 @@
 ---
-import { works } from "../data/works";
+import { projects } from "../data/projects";
 import { layoutRun, BIGGER_DISPLAY, FRAKTION_MONO, type Cylinder, type Glyph } from "../utils/cylinderText";
 
 /**
@@ -34,9 +34,9 @@ const PLACE = "Corvallis, Oregon";
    does. The slug is derived from the route, so a new project joins the wheel
    by existing — and the last segment of `site` is exactly what shots.mjs
    names its output. */
-const shots = works.map((work) => ({
-  title: work.title,
-  slug: work.site.replace(/\/$/, "").split("/").pop() || "",
+const shots = projects.map((project) => ({
+  title: project.title,
+  slug: project.href.replace(/\/$/, "").split("/").pop() || "",
 }));
 /* Each project sits on the ring twice. The ring is concave, so only its far
    half is ever on screen — seven cards on a full circle would show three at a

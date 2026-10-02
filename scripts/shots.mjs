@@ -82,14 +82,15 @@ const require = createRequire(
 );
 const { chromium } = require("playwright");
 
+/* The anime home's seven (src/data/projects.ts), in its order. */
 const ROUTES = [
   ["touchpoint", "/work/touchpoint/"],
   ["spoot", "/work/spoot/"],
+  ["zyp", "/work/zyp/"],
+  ["gdg", "/work/gdg/"],
   ["remote-lab-vision", "/work/remote-lab-vision/"],
   ["ams", "/projects/ams/"],
   ["engineering-rocket", "/work/engineering-rocket/"],
-  ["private-clinic", "/work/private-clinic/"],
-  ["portfolio-rocket", "/work/portfolio-rocket/"],
 ];
 
 async function dirSize(dir) {
@@ -135,12 +136,15 @@ for (const [slug, route] of ROUTES) {
     // Let the hero image decode; a card of a half-loaded page is worse than no
     // card at all.
     await page.waitForTimeout(1800);
+    // Bounded: decode() on a lazy image the browser has not started to fetch
+    // never settles, and one such image hung the whole run.
     await page.evaluate(async () => {
-      await Promise.all(
+      const settled = Promise.all(
         [...document.images]
-          .filter((img) => img.getBoundingClientRect().top < window.innerHeight * 1.5)
+          .filter((img) => img.getBoundingClientRect().top < window.innerHeight)
           .map((img) => (img.complete ? Promise.resolve() : img.decode().catch(() => {}))),
       );
+      await Promise.race([settled, new Promise((resolve) => setTimeout(resolve, 5000))]);
     });
 
     const png = await page.screenshot({ type: "png" });
