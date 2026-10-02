@@ -25,10 +25,15 @@ export function initCase(): void {
   const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const loops = [...document.querySelectorAll<HTMLVideoElement>(".js-case-loop")];
   if (loops.length) {
+    // Which loops are on screen, so a tab coming back can resume exactly
+    // those: the observer does not fire again for an unchanged intersection.
+    const onScreen = new Set<HTMLVideoElement>();
     const playback = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
           const v = entry.target as HTMLVideoElement;
+          if (entry.isIntersecting) onScreen.add(v);
+          else onScreen.delete(v);
           if (entry.isIntersecting && !reduce && !document.hidden) v.play().catch(() => {});
           else v.pause();
         }
@@ -40,6 +45,7 @@ export function initCase(): void {
     if (reduce) loops.forEach((v) => (v.controls = true));
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) loops.forEach((v) => v.pause());
+      else if (!reduce) onScreen.forEach((v) => v.play().catch(() => {}));
     });
   }
 

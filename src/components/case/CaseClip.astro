@@ -21,8 +21,10 @@ interface Props {
 }
 const { slug, id, label, caption, n, loop = false, class: className } = Astro.props;
 const v = video(slug, id);
-const mins = Math.floor(v.duration / 60);
-const secs = String(Math.round(v.duration % 60)).padStart(2, "0");
+// Round the whole length once, then split it, so 59.6 s reads 1:00, not 0:60.
+const total = Math.round(v.duration);
+const mins = Math.floor(total / 60);
+const secs = String(total % 60).padStart(2, "0");
 ---
 
 <figure class:list={["case-clip", className]} data-reveal>
