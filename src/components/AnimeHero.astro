@@ -93,7 +93,7 @@ const FIGURE_HEIGHT = 1214;
       <img
         src="/hero/jak-500.webp"
         srcset="/hero/jak-500.webp 500w, /hero/jak-760.webp 760w"
-        sizes="(max-width: 48em) 170px, 290px"
+        sizes="(max-width: 48em) 170px, 320px"
         alt=""
         width={FIGURE_WIDTH}
         height={FIGURE_HEIGHT}
@@ -285,12 +285,25 @@ const FIGURE_HEIGHT = 1214;
        height for him. Two bounds: the viewport, so he stays the subject of the
        first screen, and the stage, so a tall narrow window (a portrait tablet,
        where the stage is short) cannot send him through the arc and out of
-       the hero's clipped top — 118% of the stage keeps his cap just above
-       it. He stands a little above the stage's floor so the lowest cards pass
-       under his feet. */
-    height: clamp(320px, min(64svh, 118%), 700px);
-    bottom: 6%;
+       the hero's clipped top — 140% of the stage keeps his cap just above
+       it. 74svh puts his cap about 40px under the top of a 900px-tall
+       screen, over the arc rather than through its edge; 80 clipped the
+       crown. 760px is the ceiling because the source is 1535px tall: at 2x
+       anything larger would be upsampled. He stands on the stage's floor
+       and the controller tilts him a few degrees after the pointer, pivoting
+       at the feet, so the lean reads as balance rather than as a hinge at
+       the waist. */
+    height: clamp(360px, min(74svh, 140%), 760px);
+    bottom: 0;
     transform: translateX(-50%);
+    transform-origin: 50% 100%;
+
+    /* Promoted only where the tilt runs: a hovering, fine pointer. On touch
+       the controller writes nothing here and the layer would be a cost for
+       no motion. */
+    @media (hover: hover) and (pointer: fine) {
+      will-change: transform;
+    }
 
     img {
       display: block;

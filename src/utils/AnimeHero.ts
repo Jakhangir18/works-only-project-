@@ -1,10 +1,11 @@
 import { gsap } from "gsap";
 
 /**
- * The hero wheel: a slow constant turn, plus a tilt that follows the pointer.
+ * The hero wheel: a slow constant turn, plus a tilt that follows the pointer —
+ * and the figure, which leans a little after the same pointer, more slowly.
  *
- * Both values are written on the wheel element itself and nowhere higher. A
- * custom property inherits, so setting one per frame on a container
+ * Every value is written on the element that consumes it and nowhere higher.
+ * A custom property inherits, so setting one per frame on a container
  * invalidates the style of every node beneath it — measured at 44-89 ms of
  * style recalculation in this repository, its single most expensive bug.
  *
@@ -17,8 +18,17 @@ const MAX_TILT = 7; // degrees either side of level
 /* Matches the resting value the stylesheet gives the wheel, so the first
    written frame does not jump. */
 const BASE_TILT = -9;
+/* The figure's lean: a fraction of the wheel's tilt targets, so at the edge
+   of the screen he turns 4.2 degrees and leans 2.5, and eased more heavily
+   than the wheel — he is heavier than it. */
+const FIGURE_TURN = 0.6;
+const FIGURE_LEAN = 0.35;
+const FIGURE_EASE = 0.045;
+/* Below this change in degrees the frame is not worth a write. */
+const FIGURE_EPSILON = 0.01;
 
 let wheel: HTMLElement | null = null;
+let figure: HTMLElement | null = null;
 /* The cards, with the angle each one sits at, read once. Reading `--angle`
    per frame would mean a getComputedStyle call per card per frame. */
 let cards: { el: HTMLElement; angle: number }[] = [];
@@ -35,6 +45,11 @@ let pointerX = 0;
 let pointerY = 0;
 let tiltX = 0;
 let tiltY = 0;
+/* Where the figure has eased to, and what was last written for it. */
+let figX = 0;
+let figY = 0;
+let wroteX = 0;
+let wroteY = 0;
 
 function write(): void {
   if (!wheel) return;
@@ -45,6 +60,13 @@ function write(): void {
   // leaf writes cost less than one inherited property on their parent.
   for (const card of cards) {
     card.el.style.setProperty("--turn", `${(card.angle + spin).toFixed(2)}deg`);
+  }
+  // The figure: one transform on its own leaf, and only when it has moved
+  // enough to see — at rest, with the pointer still, nothing is written.
+  if (figure && (Math.abs(figX - wroteX) > FIGURE_EPSILON || Math.abs(figY - wroteY) > FIGURE_EPSILON)) {
+    wroteX = figX;
+    wroteY = figY;
+    figure.style.transform = `translateX(-50%) perspective(1400px) rotateY(${(figY * FIGURE_TURN).toFixed(2)}deg) rotateX(${(figX * FIGURE_LEAN).toFixed(2)}deg)`;
   }
 }
 
@@ -57,6 +79,8 @@ function tick(): void {
   // to the pointer, slow enough that a flick does not snap.
   tiltX += (pointerY * -MAX_TILT - tiltX) * 0.06;
   tiltY += (pointerX * MAX_TILT - tiltY) * 0.06;
+  figX += (pointerY * -MAX_TILT - figX) * FIGURE_EASE;
+  figY += (pointerX * MAX_TILT - figY) * FIGURE_EASE;
 
   write();
 }
@@ -88,6 +112,11 @@ export function initAnimeHero(): void {
 
   wheel = document.querySelector<HTMLElement>(".js-anime-wheel");
   if (!wheel) return;
+  // Only where there is a pointer to follow: on touch the figure keeps the
+  // stylesheet's transform and is never written to.
+  figure = window.matchMedia("(hover: hover) and (pointer: fine)").matches
+    ? document.querySelector<HTMLElement>(".anime-hero__figure")
+    : null;
 
   // The setting asks for stillness, not for an empty frame: the wheel keeps
   // the angles it was rendered with and nothing moves.
@@ -126,6 +155,9 @@ export function destroyAnimeHero(): void {
   document.removeEventListener("visibilitychange", onVisibilityChange);
   window.removeEventListener("pointermove", onPointerMove);
   onTick = null;
+  if (figure) figure.style.transform = "";
+  figure = null;
+  figX = figY = wroteX = wroteY = 0;
   wheel = null;
   cards = [];
 }
