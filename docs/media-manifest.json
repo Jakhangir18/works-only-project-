@@ -1,0 +1,465 @@
+[
+  {
+    "slug": "touchpoint",
+    "id": "cover",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/_web/touchpoint/touchpoint-21.webp"
+  },
+  {
+    "slug": "touchpoint",
+    "id": "hero",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/_web/touchpoint/touchpoint-01.webp"
+  },
+  {
+    "slug": "touchpoint",
+    "id": "g01",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/_web/touchpoint/touchpoint-05.webp"
+  },
+  {
+    "slug": "touchpoint",
+    "id": "g02",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/_web/touchpoint/touchpoint-02.webp"
+  },
+  {
+    "slug": "touchpoint",
+    "id": "g03",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/_web/touchpoint/touchpoint-23.webp"
+  },
+  {
+    "slug": "touchpoint",
+    "id": "g04",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/_web/touchpoint/touchpoint-21.webp",
+    "note": "same picture as cover"
+  },
+  {
+    "slug": "touchpoint",
+    "id": "demo-loop",
+    "kind": "video",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/prepared/touchpoint/touchpoint-22-sdr.mp4",
+    "start": 107,
+    "duration": 30,
+    "posterAt": 15,
+    "note": "glove and UI close-ups 1:47-2:17, muted; source HLG tonemapped to SDR",
+    "crf": 30
+  },
+  {
+    "slug": "touchpoint",
+    "id": "talk",
+    "kind": "video",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/prepared/touchpoint/touchpoint-22-sdr.mp4",
+    "keepAudio": true,
+    "maxHeight": 720,
+    "posterAt": 122,
+    "crf": 32,
+    "note": "full 141 s explanation with audio; audio not listened to"
+  },
+  {
+    "slug": "touchpoint",
+    "id": "g06",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/prepared/touchpoint/touchpoint-11-blur.png",
+    "note": "visitor name tag blurred"
+  },
+  {
+    "slug": "touchpoint",
+    "id": "g07",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/_web/touchpoint/touchpoint-17.webp"
+  },
+  {
+    "slug": "touchpoint",
+    "id": "g08",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/_web/touchpoint/touchpoint-20.webp"
+  },
+  {
+    "slug": "spoot",
+    "id": "cover",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/_web/spoot/spoot-01.webp"
+  },
+  {
+    "slug": "spoot",
+    "id": "hero",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/_web/spoot/spoot-02.webp"
+  },
+  {
+    "slug": "spoot",
+    "id": "g01",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/_web/spoot/spoot-01.webp",
+    "note": "same picture as cover"
+  },
+  {
+    "slug": "spoot",
+    "id": "walk",
+    "kind": "video",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/_web/spoot/spoot-04.mp4",
+    "posterAt": 42,
+    "note": "walk to the stage, muted"
+  },
+  {
+    "slug": "spoot",
+    "id": "g03",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/_web/spoot/spoot-02.webp",
+    "note": "same picture as hero"
+  },
+  {
+    "slug": "remote-lab-vision",
+    "id": "cover",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/_web/remote-lab-vision/remote-lab-vision-11.webp"
+  },
+  {
+    "slug": "remote-lab-vision",
+    "id": "hero",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/_web/remote-lab-vision/remote-lab-vision-02.webp"
+  },
+  {
+    "slug": "remote-lab-vision",
+    "id": "g01",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/_web/remote-lab-vision/remote-lab-vision-11.webp",
+    "note": "same picture as cover"
+  },
+  {
+    "slug": "remote-lab-vision",
+    "id": "g02",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/prepared/remote-lab-vision/ursa-011-rot.png",
+    "note": "URSA PDF image 11 (rig two), rotated 90 cw"
+  },
+  {
+    "slug": "remote-lab-vision",
+    "id": "walk",
+    "kind": "video",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/prepared/remote-lab-vision/remote-lab-vision-12-sdr.mp4",
+    "posterAt": 5.5,
+    "note": "walk through both rigs, muted; source HLG tonemapped to SDR"
+  },
+  {
+    "slug": "remote-lab-vision",
+    "id": "g04",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/_web/remote-lab-vision/remote-lab-vision-10.webp"
+  },
+  {
+    "slug": "remote-lab-vision",
+    "id": "g05",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/_web/remote-lab-vision/remote-lab-vision-03.webp"
+  },
+  {
+    "slug": "remote-lab-vision",
+    "id": "g06",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/prepared/remote-lab-vision/ursa-012-rot.png",
+    "note": "URSA PDF image 12 (camera on stand), rotated 90 cw"
+  },
+  {
+    "slug": "remote-lab-vision",
+    "id": "g07",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/prepared/remote-lab-vision/poster-results.png",
+    "note": "poster crop: histogram column, camera strip, evaluation and conclusion"
+  },
+  {
+    "slug": "remote-lab-vision",
+    "id": "g08",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/prepared/remote-lab-vision/remote-lab-vision-01-crop.png",
+    "note": "cropped from x>=35% to drop the colleague's face"
+  },
+  {
+    "slug": "remote-lab-vision",
+    "id": "poster",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/prepared/remote-lab-vision/poster-2400.png",
+    "widths": [
+      640,
+      1280,
+      1920,
+      2400
+    ],
+    "note": "full poster rendered at 2400 px"
+  },
+  {
+    "slug": "remote-lab-vision",
+    "id": "poster-objectives",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/prepared/remote-lab-vision/poster-objectives.png",
+    "note": "poster region"
+  },
+  {
+    "slug": "remote-lab-vision",
+    "id": "poster-cameras",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/prepared/remote-lab-vision/poster-cameras.png",
+    "note": "poster region"
+  },
+  {
+    "slug": "remote-lab-vision",
+    "id": "poster-histograms",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/prepared/remote-lab-vision/poster-histograms.png",
+    "note": "poster region"
+  },
+  {
+    "slug": "remote-lab-vision",
+    "id": "poster-conclusion",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/prepared/remote-lab-vision/poster-conclusion.png",
+    "note": "poster region"
+  },
+  {
+    "slug": "ams",
+    "id": "cover",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/repo/public/projects/ams/images/deploy-construction.webp",
+    "note": "only 512 px wide; ask the owner for the original"
+  },
+  {
+    "slug": "ams",
+    "id": "hero",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/prepared/ams/IMG_2325-blur.png",
+    "note": "three faces and the tablet's live face preview blurred"
+  },
+  {
+    "slug": "ams",
+    "id": "g01",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/_web/ams-tablet/ams-tablet-08-01.png"
+  },
+  {
+    "slug": "ams",
+    "id": "g02",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/_web/ams-tablet/ams-tablet-07.webp"
+  },
+  {
+    "slug": "ams",
+    "id": "g03",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/repo/public/projects/ams/images/deploy-construction.webp",
+    "note": "same picture as cover"
+  },
+  {
+    "slug": "ams",
+    "id": "g04",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/repo/public/projects/ams/images/deploy-akimat.webp"
+  },
+  {
+    "slug": "ams",
+    "id": "g05",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/repo/public/projects/ams/images/deploy-police.webp"
+  },
+  {
+    "slug": "ams",
+    "id": "g06",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/prepared/ams/ams-p6-phone.png",
+    "note": "AMS.pdf p.6 phone crop, nine names blurred"
+  },
+  {
+    "slug": "ams",
+    "id": "m1",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/prepared/ams/camphoto_1903590565-crop.png",
+    "note": "IP address bar cropped out"
+  },
+  {
+    "slug": "ams",
+    "id": "m2",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/prepared/ams/IMG_8164-frigate.png",
+    "note": "cropped to the Frigate zone panel; presenter name, Meet code, URL and participant tiles removed"
+  },
+  {
+    "slug": "ams",
+    "id": "slides-deck",
+    "kind": "slides",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/prepared/ams/ams-deck.pdf",
+    "pages": [
+      1,
+      2,
+      5,
+      6,
+      7
+    ],
+    "note": "AMS.pdf pages 1-7 with p.6 replaced by a raster copy whose names are blurred"
+  },
+  {
+    "slug": "engineering-rocket",
+    "id": "cover",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/_web/engineering-rocket/engineering-rocket-07.webp",
+    "note": "second person's face is clear: owner consent needed"
+  },
+  {
+    "slug": "engineering-rocket",
+    "id": "hero",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/prepared/engineering-rocket/engineering-rocket-09-band.png",
+    "note": "1600x900 band at y 945-1845"
+  },
+  {
+    "slug": "engineering-rocket",
+    "id": "g01",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/mwe-jpg/root/IMG_1939.jpg"
+  },
+  {
+    "slug": "engineering-rocket",
+    "id": "g02",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/_web/engineering-rocket/engineering-rocket-05.webp"
+  },
+  {
+    "slug": "engineering-rocket",
+    "id": "g03",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/prepared/engineering-rocket/engineering-rocket-30-board.png",
+    "note": "R30 poster, 1:1 crop on the board"
+  },
+  {
+    "slug": "engineering-rocket",
+    "id": "g04",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/prepared/engineering-rocket/engineering-rocket-06-top.png",
+    "note": "top 63% (keeps the sled's base)"
+  },
+  {
+    "slug": "engineering-rocket",
+    "id": "g05",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/_web/engineering-rocket/engineering-rocket-04.webp"
+  },
+  {
+    "slug": "engineering-rocket",
+    "id": "g06",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/_web/engineering-rocket/engineering-rocket-02.webp"
+  },
+  {
+    "slug": "engineering-rocket",
+    "id": "g07",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/_web/engineering-rocket/engineering-rocket-07.webp",
+    "note": "same picture as cover"
+  },
+  {
+    "slug": "engineering-rocket",
+    "id": "pads",
+    "kind": "video",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/_web/engineering-rocket/engineering-rocket-31.mp4",
+    "start": 0,
+    "duration": 29,
+    "posterAt": 12,
+    "note": "trimmed to 0:00-0:29, muted"
+  },
+  {
+    "slug": "engineering-rocket",
+    "id": "g09",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/_web/engineering-rocket/engineering-rocket-20.webp"
+  },
+  {
+    "slug": "engineering-rocket",
+    "id": "tvc-demo",
+    "kind": "video",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/prepared/engineering-rocket/IMG_1942-sdr.mp4",
+    "start": 2.5,
+    "duration": 20,
+    "posterAt": 9,
+    "note": "unsorted IMG_1942: board tilted, gimbal servos follow; 0:02.5-0:22.5, muted, HLG tonemapped"
+  },
+  {
+    "slug": "engineering-rocket",
+    "id": "telemetry",
+    "kind": "video",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/prepared/engineering-rocket/IMG_1941-sdr.mp4",
+    "start": 4,
+    "duration": 24,
+    "posterAt": 10,
+    "note": "unsorted IMG_1941: board moved, serial monitor updates; 0:04-0:28, muted, HLG tonemapped"
+  },
+  {
+    "slug": "gdg",
+    "id": "cover",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/prepared/gdg/IMG_2940-3x4.png",
+    "note": "3:4 crop from x=430"
+  },
+  {
+    "slug": "gdg",
+    "id": "hero",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/mwe-jpg/root/IMG_2953.jpg"
+  },
+  {
+    "slug": "gdg",
+    "id": "g01",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/mwe-jpg/root/IMG_2940.jpg"
+  },
+  {
+    "slug": "gdg",
+    "id": "g02",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/prepared/gdg/ext-003.png",
+    "note": "External PDF embedded image 3"
+  },
+  {
+    "slug": "gdg",
+    "id": "g03",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/prepared/gdg/int-004.png",
+    "note": "Internal PDF embedded image 4"
+  },
+  {
+    "slug": "gdg",
+    "id": "g04",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/prepared/gdg/ext-005.png",
+    "note": "External PDF embedded image 5"
+  },
+  {
+    "slug": "gdg",
+    "id": "g05",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/prepared/gdg/ext-004.png",
+    "note": "External PDF embedded image 4"
+  },
+  {
+    "slug": "gdg",
+    "id": "report",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/prepared/gdg/ext-p1-200dpi.png",
+    "note": "External (Donors) PDF p.1 at 200 dpi"
+  },
+  {
+    "slug": "rowerlab",
+    "id": "thumb-src",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/prepared/rowerlab/reverlab-04-page.png",
+    "note": "reverlab-04 cropped to the page"
+  },
+  {
+    "slug": "step-academy",
+    "id": "thumb-src",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/prepared/step-academy/step-academy-01-3x2.png",
+    "note": "3:2 centre crop"
+  }
+]

@@ -1,0 +1,9 @@
+[
+  { "slug": "zyp", "id": "cover", "kind": "image", "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/prepared/zyp/zyp-cover.png", "widths": [640] },
+  { "slug": "zyp", "id": "hero", "kind": "image", "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/prepared/zyp/zyp-hero.png", "widths": [640, 1280] },
+  { "slug": "zyp", "id": "g01", "kind": "image", "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/prepared/zyp/zyp-18.png", "widths": [640, 1280] },
+  { "slug": "zyp", "id": "g02", "kind": "image", "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/prepared/zyp/zyp-32.png", "widths": [640, 1280] },
+  { "slug": "zyp", "id": "g03", "kind": "image", "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/prepared/zyp/zyp-50.png", "widths": [640, 1280] },
+  { "slug": "zyp", "id": "g04", "kind": "image", "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/prepared/zyp/zyp-70.png", "widths": [640, 1280] },
+  { "slug": "zyp", "id": "scroll", "kind": "video", "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/prepared/zyp/page@5781de848ae031bed9e2ab2feb926561.webm", "maxHeight": 720, "crf": 30, "posterAt": 1.5 }
+]

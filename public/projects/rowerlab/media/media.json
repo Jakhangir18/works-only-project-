@@ -1,0 +1,18 @@
+{
+  "thumb-src": {
+    "kind": "image",
+    "width": 1280,
+    "height": 600,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/rowerlab/media/thumb-src-640.webp"
+      },
+      {
+        "w": 1280,
+        "src": "/projects/rowerlab/media/thumb-src-1280.webp"
+      }
+    ],
+    "thumb": "/projects/rowerlab/media/thumb-src-thumb.webp"
+  }
+}
