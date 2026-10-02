@@ -59,13 +59,13 @@ const count = (i: number) => String(i + 1).padStart(2, "0");
 
   <body>
     <header class="case-bar">
-      <a class="case-bar__back" href="/#work">← All work</a>
+      <a class="case-bar__back" id="js-back-to-works" href="/#work">← All work</a>
       <p class="case-bar__count" aria-label={`Project ${index + 1} of ${projects.length}`}>
         <span>{count(index)}</span> / {count(projects.length - 1)}
       </p>
       <nav class="case-bar__nav" aria-label="Projects">
-        <a href={prev.href} rel="prev"><span aria-hidden="true">←</span> <span class="case-bar__label">{prev.title}</span></a>
-        <a href={next.href} rel="next"><span class="case-bar__label">{next.title}</span> <span aria-hidden="true">→</span></a>
+        <a href={prev.href} rel="prev" aria-label={`Previous project: ${prev.title}`}><span aria-hidden="true">←</span> <span class="case-bar__label" aria-hidden="true">{prev.title}</span></a>
+        <a href={next.href} rel="next" aria-label={`Next project: ${next.title}`}><span class="case-bar__label" aria-hidden="true">{next.title}</span> <span aria-hidden="true">→</span></a>
       </nav>
     </header>
 
