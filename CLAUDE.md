@@ -265,6 +265,21 @@ The measurement harness lives in `perf/` (`harness.mjs`, `regression.mjs`,
   | cpu x1 | 16.7 / 16.7 / 16.8 | 16.7 | 0 |
   | cpu x4 | 16.7 / 16.7 / 16.8 | 16.7 | 0 |
 
+  **Re-measured 2026-10-02 after the hero rework** (fourteen 246px cards on a
+  concave ring, turned with it, box-shadow and filter on each, opacity ramp;
+  commits d499067 and e0efeba), same host and settings:
+
+  | | idle-top med / p95 / worst | >50 ms | rocket p95 / >50 ms |
+  |---|---|---|---|
+  | 1440x900 cpu x1 | **50.0 / 66.6 / 83.3** | **5** | **50.0 / 2-3** |
+  | 390x844 cpu x4 | 16.7 / 16.8 / 33.4 | 0 | 33.4 / 0 |
+
+  The reworked wheel costs more at desktop width: the first screen at rest
+  went from 30 fps to 20 fps on this rasteriser, and the rocket phases picked
+  up long frames they did not have. Phone width is unchanged. Nodes 931 ->
+  970, heap and listeners flat. The seven-card numbers below are kept for the
+  comparison; the stubbed control (16.7 ms) still names the wheel as the cost.
+
   The hero wheel halves the frame rate on the first screen at rest at 1440x900,
   proven by the stubbed control; at 390x844 it covers about a third of the area
   and costs nothing measurable. **Budgets not met, and not only at the median:**
