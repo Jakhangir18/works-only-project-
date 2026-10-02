@@ -67,7 +67,7 @@
     {/* The burst, then the wipe. The burst is a ring with a bright core born
         at the rocket's exit corner, scaling ahead of the wipe and fading as it
         is overtaken, so the hand-off reads as the rocket going up rather than
-        as a curtain. The wipe behind it is the violet the next section paints. */}
+        as a curtain. The wipe behind it is the black the next section paints. */}
     <div class="rocket-flight__burst js-rocket-burst" aria-hidden="true"></div>
     <div class="rocket-flight__wipe js-rocket-wipe" aria-hidden="true"></div>
   </div>
@@ -255,15 +255,17 @@
     transform-origin: center;
     border-radius: 50%;
     /* A hot core, a dark gap, a thick flame ring, then nothing: the shock
-       front. The ring is a third of the radius so it reads at any scale. */
+       front. The ring is a third of the radius so it reads at any scale. It
+       starts at the accent, not at the ember: over the white page the dark
+       ember read as a brown smear inside the ring. */
     background: radial-gradient(
       circle at 50% 50%,
       #fff4e6 0%,
       #ffd9a8 8%,
       transparent 18%,
       transparent 56%,
-      color(space-glow) 64%,
-      color(accent) 74%,
+      color(accent) 64%,
+      color(accent) 72%,
       #ff8a3d 86%,
       #ffd9a8 93%,
       transparent 100%

@@ -91,7 +91,7 @@ const panels = works.map((work, index) => ({
   @use "../styles/helpers/responsive" as *;
 
   .anime-work {
-    /* The violet the burst left behind, the same token the wipe and the star
+    /* The black the burst left behind, the same token the wipe and the star
        field paint, so the work sits inside that light rather than after it. */
     background: color(space);
     color: #fff;
@@ -109,7 +109,7 @@ const panels = works.map((work, index) => ({
     /* One hairline between panels rather than a box around each: the reference
        reads as a single ruled sheet, not as a stack of cards. */
     border-top: 1px solid rgba(255, 255, 255, 0.12);
-    /* The light the work sits in: a violet glow behind each panel's media,
+    /* The light the work sits in: an ember glow behind each panel's media,
        painted once as a static background. Even panels put the media on the
        right, as the reference alternates its cases, and the glow follows. */
     background: radial-gradient(
@@ -203,7 +203,7 @@ const panels = works.map((work, index) => ({
     margin: 0 0 1.5rem;
     max-width: 34ch;
     font: 400 clamp(0.9375rem, 1.2vw, 1.0625rem) / 1.65 font-family(fraktion);
-    /* 0.78 of white on the violet is 10:1 and more; it keeps the paragraph
+    /* 0.78 of white on the black is 12:1 and more; it keeps the paragraph
        behind the heading without dropping below the 4.5 this size needs. */
     color: rgba(255, 255, 255, 0.78);
   }

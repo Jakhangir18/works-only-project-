@@ -41,7 +41,9 @@
     display: grid;
     place-items: center;
 
-    background: color(secondary);
+    /* Space black, not the page's white: the page opens and closes dark, with
+       the white hero between — and the mark is the one white thing on it. */
+    background: color(space);
 
     /* Cleared by the controller once the hero has something to show. The cover
        fades; the mark leaves first and a little faster, so the last thing on
@@ -58,7 +60,7 @@
   .anime-intro__mark {
     width: clamp(64px, 7vw, 96px);
     height: auto;
-    color: color(primary);
+    color: color(secondary);
     overflow: visible;
   }
 

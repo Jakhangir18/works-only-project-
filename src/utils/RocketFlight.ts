@@ -19,12 +19,12 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
    has been readable for the whole climb. */
 const WIPE_STARTS = 0.84;
 /* The copy lets go as the burst is born, not after: it is ink, and once the
-   violet is under it there is nothing left to read. */
+   black is under it there is nothing left to read. */
 const COPY_FADES = 0.8;
 const COPY_GONE = 0.9;
 /* The burst leads the wipe: it is born a little before it and has run its
    course by the time the wipe is half way, so the flame front is what the eye
-   follows and the violet is what it leaves behind. */
+   follows and the black is what it leaves behind. */
 const BURST_STARTS = 0.8;
 const BURST_ENDS = 0.92;
 /* How many points to sample off the path. Two hundred is finer than a pixel at
