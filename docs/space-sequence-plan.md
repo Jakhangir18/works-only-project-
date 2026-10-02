@@ -36,7 +36,9 @@ Nothing is written on an ancestor. No layout property moves.
 ## Rest state
 
 At progress 0 the rocket sits at the start of its trail, the wipe is scale 0,
-the burst is scale 0 and opacity 0: the section is the white page it was.
+the burst is scale 0 and — by the first factor of its opacity expression,
+`clamp(0, burst * 10, 1)` — opacity 0, with no `will-change` set: the section
+is the white page it was, and the burst is not a standing layer.
 
 ## The burst
 
@@ -50,8 +52,9 @@ the same pixel and the seam cannot drift.
 
 ## Reduced motion
 
-The wipe never runs (already so); the burst stays at scale 0 and opacity 0; the
-space section simply follows. Same destination, no travel.
+The wipe and the burst are `display: none` under the media query (the
+controller returns before writing anything); the space section simply follows.
+Same destination, no travel.
 
 ## Work in the violet
 
@@ -90,16 +93,22 @@ Nodes 970 -> 1137 (the bento section). Heap and listeners flat on both.
 
 ## Deviations
 
+- The way-in link on the violet panels is white with a violet hover fill, not
+  the red accent the plan named: red on the violet measured too low to carry
+  an 11px label, and the panels keep the accent nowhere else either.
+- Even panels put the media on the right, as the reference alternates its
+  cases; the plan said the layout was untouched. The glow follows the media.
 - The copy fade moved from 0.90–1.00 to 0.80–0.90. The plan assumed the copy
   could stay through the wipe; in the frames it sat as ink on violet and could
   not be read, so it now leaves as the burst is born.
 - The burst's opacity is squared rather than linear: a linear fade had the
   ring at 50% while the wipe was still at 12%, and it read as a smear rather
   than a front.
-- The desktop rocket phases carry two to three more long frames than before
-  the burst. The burst and the wipe are each one promoted layer with a
-  gradient background, laid out at 220vmax and 300vmax and rastered once at
-  that size; on a software rasteriser that first raster is the long frame.
-  Not fixed here. The experiment to run next, as its own measured commit: lay
-  the burst out at 160vmax, which still reaches past the fold before its fade
-  completes and halves the raster area.
+- The first build carried two to three more long frames in the desktop
+  rocket phases. Review found why: the burst was a 220vmax box promoted for
+  the page's lifetime with opacity 1 at rest, and the wipe's flat core did not
+  reach the far corner at progress 1 (a glow band and, at 390x844, a white
+  crescent against the space section). The burst is now 180vmax, zero at
+  rest, promoted only while it runs; the wipe is max(330vmax, 360vh) with the
+  core flat to 88% of the radius. Numbers after those changes are in the
+  table's "fixed" rows.
