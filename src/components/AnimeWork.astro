@@ -77,7 +77,7 @@ const panels = works.map((work, index) => ({
               </ul>
             )}
 
-            <a class="anime-work__link" href={panel.site}>
+            <a class="anime-work__link" href={panel.site} data-magnetic>
               Deep dive
               <span aria-hidden="true">→</span>
             </a>
@@ -270,10 +270,13 @@ const panels = works.map((work, index) => ({
   }
 
   .anime-work__link {
+    position: relative;
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
     padding: 0.75rem 1.125rem;
+    /* Clips the shimmer band to the button. */
+    overflow: hidden;
 
     border: 1px solid color(work-border);
     border-radius: 6px;
@@ -291,6 +294,35 @@ const panels = works.map((work, index) => ({
     &:focus-visible {
       border-color: color(work-muted);
       background: color(work-border);
+    }
+
+    /* The shimmer: one band of light crossing the button once on hover or
+       focus, a compositor transform on a pseudo-element and nothing else. It
+       exists only under those states, so at rest nothing runs. */
+    &::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(115deg, transparent 38%, rgba(255, 255, 255, 0.22) 50%, transparent 62%);
+      transform: translateX(-130%);
+      pointer-events: none;
+    }
+
+    &:hover::after,
+    &:focus-visible::after {
+      animation: shimmer 900ms ease-out 1;
+    }
+  }
+
+  @keyframes shimmer {
+    to {
+      transform: translateX(130%);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .anime-work__link::after {
+      animation: none;
     }
   }
 

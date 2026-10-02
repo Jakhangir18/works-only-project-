@@ -143,7 +143,7 @@ const FIGURE_HEIGHT = 1214;
     <p class="anime-hero__line anime-hero__line--right">{LINE_RIGHT}</p>
   </div>
 
-  <a class="anime-hero__explore" href="#work">
+  <a class="anime-hero__explore" href="#work" data-magnetic>
     Explore
     <span aria-hidden="true">↓</span>
   </a>
@@ -409,12 +409,15 @@ const FIGURE_HEIGHT = 1214;
   }
 
   .anime-hero__explore {
+    position: relative;
     display: inline-flex;
     flex-direction: column;
     align-items: center;
     gap: 0.35rem;
     margin-top: 2rem;
     padding: 0.75rem 1.25rem;
+    /* Clips the shimmer band to the pill. */
+    overflow: hidden;
 
     border: 1px solid color(primary);
     border-radius: 999px;
@@ -431,6 +434,35 @@ const FIGURE_HEIGHT = 1214;
     &:focus-visible {
       background: color(primary);
       color: color(secondary);
+    }
+
+    /* The shimmer: one band of light crossing the button once on hover or
+       focus, a compositor transform on a pseudo-element and nothing else. It
+       exists only under those states, so at rest nothing runs. */
+    &::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(115deg, transparent 38%, rgba(255, 255, 255, 0.45) 50%, transparent 62%);
+      transform: translateX(-130%);
+      pointer-events: none;
+    }
+
+    &:hover::after,
+    &:focus-visible::after {
+      animation: shimmer 900ms ease-out 1;
+    }
+  }
+
+  @keyframes shimmer {
+    to {
+      transform: translateX(130%);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .anime-hero__explore::after {
+      animation: none;
     }
   }
 

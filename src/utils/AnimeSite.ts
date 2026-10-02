@@ -1,5 +1,6 @@
 import { initSmoothScroll } from "./SmoothScroll";
 import { initReveal } from "./Reveal";
+import { initMagnetic } from "./Magnetic";
 
 /**
  * The light home page's controller.
@@ -45,6 +46,9 @@ export function initAnimeSite(): void {
   // Headings arrive word by word as they scroll in. Started before the cover
   // leaves, so the hidden state is in place before anything can be seen.
   initReveal();
+  // Explore and the work links lean toward a hovering pointer. Listeners
+  // only; nothing runs until a pointer is over one of them.
+  initMagnetic();
 
   const intro = document.querySelector<HTMLElement>(".js-anime-intro");
   const root = document.documentElement;
