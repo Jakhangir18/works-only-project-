@@ -65,6 +65,13 @@ for (const [w, h, size] of [[1440, 900, 'desktop'], [390, 844, 'phone']]) {
         // this is the text most likely to acquire a contrast failure later.
         const forced = [...document.querySelectorAll('a-work:not(.is-inview)')];
         forced.forEach((el) => el.classList.add('is-inview'));
+        // On the home the whole section is display:none while it is more than
+        // a screen away (`is-far`); lift that too, and put it back below.
+        const far = document.querySelector('.s-work.is-far');
+        far?.classList.remove('is-far');
+        // ...and it shows nothing until the star field hands over (`is-on`).
+        const off = document.querySelector('.s-work--home:not(.is-on)');
+        off?.classList.add('is-on');
         void document.body.offsetHeight;
 
         const lum = (c) => {
@@ -175,6 +182,8 @@ for (const [w, h, size] of [[1440, 900, 'desktop'], [390, 844, 'phone']]) {
           if (ratio + 0.01 < need) bad.push(`${el.tagName}.${el.className || '-'} ${ratio.toFixed(2)}:1 needs ${need}`);
         }
         forced.forEach((el) => el.classList.remove('is-inview'));
+        far?.classList.add('is-far');
+        off?.classList.remove('is-on');
         return { bad, examined, inCards, cards: document.querySelectorAll('a-work').length };
       });
       // Measured: a project page grades 11 strings, the home page many more.
@@ -184,11 +193,11 @@ for (const [w, h, size] of [[1440, 900, 'desktop'], [390, 844, 'phone']]) {
       // A bare count cannot notice one region dropping out, and the tunnel is
       // the region that matters: those cards take their colours from
       // per-project data rather than the stylesheet, so they are where a new
-      // project introduces a failure. Measured at five graded strings per card
-      // on desktop and two on a phone, so four per card is a real floor rather
-      // than a formality — three cards going dark would clear `>= cards`.
+      // project introduces a failure. Measured at three graded strings per card
+      // on desktop (the number is gone) and two on a phone, so three per card is a
+      // real floor rather than a formality.
       if (contrast.cards > 0) {
-        const perCard = size === 'phone' ? 2 : 4;
+        const perCard = size === 'phone' ? 2 : 3;
         results.push(check(`${tag} the contrast check reached the tunnel cards`, contrast.inCards >= contrast.cards * perCard, `${contrast.inCards} card strings graded across ${contrast.cards} cards`));
       }
       results.push(check(`${tag} static text meets the WCAG AA contrast ratio`, contrast.bad.length === 0, contrast.bad.slice(0, 3).join(' | ')));

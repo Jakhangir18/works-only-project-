@@ -9,6 +9,26 @@ export const BASE = process.env.SITE || 'http://127.0.0.1:4347';
  */
 export const TUNNEL = '/tunnel/';
 
+/** The two pages that mount the letter tunnel: [label, path]. */
+export const WORK_PAGES = [['tunnel', '/tunnel/'], ['home', '/']];
+
+/**
+ * Open a page that carries the letter tunnel and wait until it is ready. The
+ * tunnel page gets a fixed sleep (it has no ready flag). The home waits for
+ * its opening cover to hand the page over, then for WorkSection's own
+ * `is-works-ready`.
+ */
+export async function openWorkPage(page, path) {
+  await page.goto(BASE + path, { waitUntil: 'load' });
+  if (path === '/') {
+    await page.waitForFunction(() => !document.documentElement.classList.contains('is-scroll-blocked'), null, { timeout: 15000 }).catch(() => {});
+    await page.waitForFunction(() => document.documentElement.classList.contains('is-works-ready'), null, { timeout: 15000 }).catch(() => {});
+    await page.waitForTimeout(800);
+  } else {
+    await page.waitForTimeout(6000);
+  }
+}
+
 export const ROUTES = [
   '/',
   '/tunnel/',
@@ -89,7 +109,7 @@ export async function workBox(page) {
 
 /** Scroll into the pinned tunnel until a card link is fully on screen. */
 export async function findCardInView(page, box) {
-  for (let step = 200; step <= 5000; step += 200) {
+  for (let step = 200; step <= Math.max(5000, box.height); step += 200) {
     await page.evaluate((y) => window.scrollTo({ top: y, behavior: 'instant' }), box.top + step);
     await page.waitForTimeout(320);
     const href = await page.evaluate(() => {

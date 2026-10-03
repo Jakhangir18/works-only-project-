@@ -1,7 +1,7 @@
 // The dive: it opens from a card, shows the teaser and the close control,
 // prefetches the destination, closes cleanly, and leaks nothing over cycles.
 import { chromium, webkit } from 'playwright';
-import { BASE, check, summarize, workBox, findCardInView, TUNNEL } from './lib.mjs';
+import { BASE, check, summarize, workBox, findCardInView, WORK_PAGES, openWorkPage } from './lib.mjs';
 
 const results = [];
 
@@ -45,19 +45,21 @@ async function settle(page, results, tag) {
 }
 
 const browser = await chromium.launch();
+const errors = [];
+const prefetched = [];
+
+for (const [pname, path] of WORK_PAGES) {
+prefetched.length = 0;
 const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
 const page = await ctx.newPage();
-const errors = [];
 page.on('pageerror', (e) => errors.push(String(e).slice(0, 140)));
 page.on('console', (m) => { if (m.type() === 'error' && !/favicon/.test(m.text())) errors.push(m.text().slice(0, 140)); });
-const prefetched = [];
 page.on('request', (r) => { if (r.resourceType() === 'other' && /\/work\/|\/projects\//.test(r.url())) prefetched.push(r.url()); });
 
-await page.goto(BASE + TUNNEL, { waitUntil: 'load' });
-await page.waitForTimeout(6000);
+await openWorkPage(page, path);
 const box = await workBox(page);
 const href = await findCardInView(page, box);
-results.push(check('dive: a card is reachable in the tunnel', !!href, href || 'none found'));
+results.push(check(`dive ${pname}: a card is reachable in the tunnel`, !!href, href || 'none found'));
 
 if (href) {
   const before = await page.evaluate(() => ({
@@ -70,7 +72,7 @@ if (href) {
   // The return matters: without an overlay every read below is against null,
   // and an unhandled throw here loses the whole suite's results rather than
   // naming the one thing that went wrong.
-  const opened = await settle(page, results, 'dive');
+  const opened = await settle(page, results, `dive ${pname}`);
 
   const open = await page.evaluate(() => {
     const hint = (sel) => {
@@ -94,20 +96,29 @@ if (href) {
   if (!opened) {
     // Everything below describes a dive that is on screen. Reporting each of
     // them against an overlay that never appeared turns one failure into nine.
-    results.push(check('dive: no runtime errors', errors.length === 0, errors.slice(0, 2).join(' | ')));
-    await browser.close();
-    const s = summarize(results);
-    console.log(JSON.stringify({ suite: 'dive', ...s }, null, 1));
-    process.exit(s.failed ? 1 : 0);
+    results.push(check(`dive ${pname}: no runtime errors`, errors.length === 0, errors.slice(0, 2).join(' | ')));
+    await page.close();
+    continue;
   }
-  results.push(check('dive: opens', open.isOpen === true, `is-open=${open.isOpen}`));
-  results.push(check('dive: teaser is shown once settled', Number(open.teaser) === 1, `opacity ${open.teaser}`));
-  results.push(check('dive: close control is shown', Number(open.close) === 1, `opacity ${open.close}`));
-  results.push(check('dive: compositing hints cleared after the timeline', open.glowHint === 'auto' && open.vignetteHint === 'auto', `${open.glowHint}/${open.vignetteHint}`));
-  results.push(check('dive: scroll is locked while open', open.scrollLocked, `overflow=${open.scrollLocked}`));
-  results.push(check('dive: exactly one prefetch link', open.links.length === 1, open.links.join(',')));
-  results.push(check('dive: prefetch points at the clicked project', open.links[0] === href, `${open.links[0]} vs ${href}`));
-  results.push(check('dive: the destination was requested during the dive', prefetched.some((u) => u.includes(href.replace(/^\//, ''))), prefetched.slice(0, 2).join(' ')));
+  // Wheel over the open overlay must not move the page behind it.
+  {
+    await page.mouse.move(720, 450);
+    for (let i = 0; i < 3; i++) {
+      await page.mouse.wheel(0, 400);
+      await page.waitForTimeout(250);
+    }
+    await page.waitForTimeout(400);
+    const wy = await page.evaluate(() => window.scrollY);
+    results.push(check(`dive ${pname}: three 400 px wheel steps over the overlay leave scrollY unchanged`, Math.abs(wy - before.scrollY) <= 1, `${before.scrollY} -> ${wy}`));
+  }
+  results.push(check(`dive ${pname}: opens`, open.isOpen === true, `is-open=${open.isOpen}`));
+  results.push(check(`dive ${pname}: teaser is shown once settled`, Number(open.teaser) === 1, `opacity ${open.teaser}`));
+  results.push(check(`dive ${pname}: close control is shown`, Number(open.close) === 1, `opacity ${open.close}`));
+  results.push(check(`dive ${pname}: compositing hints cleared after the timeline`, open.glowHint === 'auto' && open.vignetteHint === 'auto', `${open.glowHint}/${open.vignetteHint}`));
+  results.push(check(`dive ${pname}: scroll is locked while open`, open.scrollLocked, `overflow=${open.scrollLocked}`));
+  results.push(check(`dive ${pname}: exactly one prefetch link`, open.links.length === 1, open.links.join(',')));
+  results.push(check(`dive ${pname}: prefetch points at the clicked project`, open.links[0] === href, `${open.links[0]} vs ${href}`));
+  results.push(check(`dive ${pname}: the destination was requested during the dive`, prefetched.some((u) => u.includes(href.replace(/^\//, ''))), prefetched.slice(0, 2).join(' ')));
 
   // The teaser sits over the project's cover at full bleed, and a cover can be
   // a screenshot of a white web page. Same method as the tunnel cards: hide the
@@ -162,8 +173,8 @@ if (href) {
       });
     }, { png, targets });
     const bad = measured.filter((m) => m.ratio + 0.01 < m.need).map((m) => `${m.cls} ${m.ratio}:1 needs ${m.need}`);
-    results.push(check('dive: the teaser pixel check found its strings', measured.length >= 3, `${measured.length} strings measured`));
-    results.push(check('dive: teaser text is legible on the cover', bad.length === 0, bad.slice(0, 3).join(' | ')));
+    results.push(check(`dive ${pname}: the teaser pixel check found its strings`, measured.length >= 3, `${measured.length} strings measured`));
+    results.push(check(`dive ${pname}: teaser text is legible on the cover`, bad.length === 0, bad.slice(0, 3).join(' | ')));
   }
 
   // Close and check the page is restored.
@@ -176,11 +187,12 @@ if (href) {
     hiddenCards: [...document.querySelectorAll('a-work a')].filter((a) => a.style.visibility === 'hidden').length,
     scrollY: window.scrollY,
   }));
-  results.push(check('dive: closes', closed.isOpen === false, `is-open=${closed.isOpen}`));
-  results.push(check('dive: scroll unlocked on close', !closed.scrollLocked, 'still locked'));
-  results.push(check('dive: prefetch link dropped on close', closed.links === 0, `${closed.links} left`));
-  results.push(check('dive: card made visible again', closed.hiddenCards === 0, `${closed.hiddenCards} still hidden`));
-  results.push(check('dive: scroll position kept', Math.abs(closed.scrollY - before.scrollY) < 4, `${before.scrollY} -> ${closed.scrollY}`));
+  results.push(check(`dive ${pname}: closes`, closed.isOpen === false, `is-open=${closed.isOpen}`));
+  results.push(check(`dive ${pname}: scroll unlocked on close`, !closed.scrollLocked, 'still locked'));
+  results.push(check(`dive ${pname}: prefetch link dropped on close`, closed.links === 0, `${closed.links} left`));
+  results.push(check(`dive ${pname}: card made visible again`, closed.hiddenCards === 0, `${closed.hiddenCards} still hidden`));
+  results.push(check(`dive ${pname}: scroll after Escape equals the scroll before the dive (±1 px)`, Math.abs(closed.scrollY - before.scrollY) <= 1, `${before.scrollY} -> ${closed.scrollY}`));
+  results.push(check(`dive ${pname}: scroll position kept`, Math.abs(closed.scrollY - before.scrollY) < 4, `${before.scrollY} -> ${closed.scrollY}`));
 
   // Three more cycles: node count must not grow.
   for (let i = 0; i < 3; i++) {
@@ -192,26 +204,27 @@ if (href) {
     await page.waitForTimeout(1400);
   }
   const after = await page.evaluate(() => ({ nodes: document.querySelectorAll('*').length, links: document.querySelectorAll('link[rel=prefetch]').length }));
-  results.push(check('dive: no node growth over four cycles', after.nodes - before.nodes < 40, `${before.nodes} -> ${after.nodes}`));
-  results.push(check('dive: no prefetch links accumulate', after.links === 0, `${after.links} left`));
+  results.push(check(`dive ${pname}: no node growth over four cycles`, after.nodes - before.nodes < 40, `${before.nodes} -> ${after.nodes}`));
+  results.push(check(`dive ${pname}: no prefetch links accumulate`, after.links === 0, `${after.links} left`));
+}
+await ctx.close();
 }
 
 // A dive taken with reduced motion on fades the flip plane to opacity 0 on the
 // way out. If the full-motion path does not put it back, every later dive in
 // the session renders as a black rectangle: backdrop, teaser and close button
 // over nothing. The OS setting can change mid-session, so this is reachable.
-{
+for (const [pname, path] of WORK_PAGES) {
   const rctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' });
   const rpage = await rctx.newPage();
   rpage.on('pageerror', (e) => errors.push(String(e).slice(0, 140)));
   rpage.on('console', (m) => { if (m.type() === 'error' && !/favicon/.test(m.text())) errors.push(m.text().slice(0, 140)); });
-  await rpage.goto(BASE + TUNNEL, { waitUntil: 'load' });
-  await rpage.waitForTimeout(6000);
+  await openWorkPage(rpage, path);
   const rbox = await workBox(rpage);
   const rhref = rbox ? await findCardInView(rpage, rbox) : null;
   // Guard the premise: without these, a card that stops being reachable makes
   // the whole regression silently vanish while the suite still reports green.
-  results.push(check('dive/reduced: a card is reachable', !!rhref, rhref || 'none'));
+  results.push(check(`dive/reduced ${pname}: a card is reachable`, !!rhref, rhref || 'none'));
   if (rhref) {
     await rpage.evaluate(() => window.__card.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true })));
     await rpage.waitForTimeout(1200);
@@ -221,7 +234,7 @@ if (href) {
 
     await rpage.emulateMedia({ reducedMotion: 'no-preference' });
     const again = await findCardInView(rpage, rbox);
-    results.push(check('dive/reduced: a card is reachable again after the switch', !!again, again || 'none'));
+    results.push(check(`dive/reduced ${pname}: a card is reachable again after the switch`, !!again, again || 'none'));
     if (again) {
       await rpage.evaluate(() => window.__card.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true })));
       await rpage.waitForTimeout(2600);
@@ -229,8 +242,8 @@ if (href) {
         flip: getComputedStyle(document.querySelector('.dive__flip')).opacity,
         open: document.querySelector('.dive')?.classList.contains('is-open'),
       }));
-      results.push(check('dive: the reduced exit parks the flip plane at 0', Number(parked) < 0.1, `opacity ${parked}`));
-      results.push(check('dive: a full dive after a reduced one is visible', shown.open === true && Number(shown.flip) > 0.9, `is-open=${shown.open} flip opacity ${shown.flip}`));
+      results.push(check(`dive ${pname}: the reduced exit parks the flip plane at 0`, Number(parked) < 0.1, `opacity ${parked}`));
+      results.push(check(`dive ${pname}: a full dive after a reduced one is visible`, shown.open === true && Number(shown.flip) > 0.9, `is-open=${shown.open} flip opacity ${shown.flip}`));
     }
   }
   await rctx.close();
@@ -244,21 +257,21 @@ await browser.close();
 // where the dive is slowest. The fallback is a same-origin fetch.
 {
   const wb = await webkit.launch();
+  for (const [pname, path] of WORK_PAGES) {
   const wctx = await wb.newContext({ viewport: { width: 1440, height: 900 } });
   const wpage = await wctx.newPage();
   const werrors = [];
   wpage.on('pageerror', (e) => werrors.push(String(e).slice(0, 140)));
   const warmed = [];
   wpage.on('request', (r) => { if (/\/work\/[a-z-]+\/?$/.test(r.url())) warmed.push(r.url()); });
-  await wpage.goto(BASE + TUNNEL, { waitUntil: 'load' });
-  await wpage.waitForTimeout(6000);
+  await openWorkPage(wpage, path);
   const wbox = await workBox(wpage);
   const whref = wbox ? await findCardInView(wpage, wbox) : null;
-  results.push(check('dive/webkit: a card is reachable', !!whref, whref || 'none'));
+  results.push(check(`dive/webkit ${pname}: a card is reachable`, !!whref, whref || 'none'));
   let wopened = false;
   if (whref) {
     await wpage.evaluate(() => window.__card.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true })));
-    wopened = await settle(wpage, results, 'dive/webkit');
+    wopened = await settle(wpage, results, `dive/webkit ${pname}`);
   }
   // Same reason as the Chromium block: the reads below are against an overlay
   // that has to be on screen, and one clear failure beats five derived ones.
@@ -271,19 +284,21 @@ await browser.close();
         flip: getComputedStyle(document.querySelector('.dive__flip')).opacity,
       };
     });
-    results.push(check('dive/webkit: opens', wopen.isOpen === true, `is-open=${wopen.isOpen}`));
-    results.push(check('dive/webkit: the composition is visible', Number(wopen.flip) > 0.9, `flip opacity ${wopen.flip}`));
-    results.push(check('dive/webkit: teaser is shown', Number(wopen.teaser) === 1, `opacity ${wopen.teaser}`));
-    results.push(check('dive/webkit: the destination is warmed during the dive', warmed.some((u) => u.includes(whref.replace(/^\//, ''))), warmed.slice(0, 2).join(' ') || 'nothing requested'));
+    results.push(check(`dive/webkit ${pname}: opens`, wopen.isOpen === true, `is-open=${wopen.isOpen}`));
+    results.push(check(`dive/webkit ${pname}: the composition is visible`, Number(wopen.flip) > 0.9, `flip opacity ${wopen.flip}`));
+    results.push(check(`dive/webkit ${pname}: teaser is shown`, Number(wopen.teaser) === 1, `opacity ${wopen.teaser}`));
+    results.push(check(`dive/webkit ${pname}: the destination is warmed during the dive`, warmed.some((u) => u.includes(whref.replace(/^\//, ''))), warmed.slice(0, 2).join(' ') || 'nothing requested'));
     await wpage.keyboard.press('Escape');
     await wpage.waitForTimeout(1600);
     const wclosed = await wpage.evaluate(() => ({
       isOpen: document.querySelector('.dive')?.classList.contains('is-open'),
       locked: document.documentElement.style.overflow === 'hidden',
     }));
-    results.push(check('dive/webkit: closes and unlocks scroll', wclosed.isOpen === false && !wclosed.locked, `is-open=${wclosed.isOpen} locked=${wclosed.locked}`));
+    results.push(check(`dive/webkit ${pname}: closes and unlocks scroll`, wclosed.isOpen === false && !wclosed.locked, `is-open=${wclosed.isOpen} locked=${wclosed.locked}`));
   }
-  results.push(check('dive/webkit: no runtime errors', werrors.length === 0, werrors.slice(0, 2).join(' | ')));
+  results.push(check(`dive/webkit ${pname}: no runtime errors`, werrors.length === 0, werrors.slice(0, 2).join(' | ')));
+  await wctx.close();
+  }
   await wb.close();
 }
 

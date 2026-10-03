@@ -106,7 +106,7 @@ if (ROUTE !== "tunnel" && ROUTE !== "anime") {
 let SECTIONS =
   ROUTE === "tunnel"
     ? { work: ".s-work", rocket: ".js-rocket-story" }
-    : { work: ".anime-work", rocket: ".rocket-flight" };
+    : { work: ".s-work--home", rocket: ".rocket-flight" };
 
 /* This harness was written on a Mac with Google Chrome and a display; the VPS
    has neither. Chrome stays the default wherever Playwright can resolve the
@@ -517,14 +517,15 @@ async function main() {
        on this branch `/` is the anime home. When the route was not stated,
        ask the page which it is — the two homes have no section in common. */
     if (!args.route) {
+      // Both homes carry `.s-work` now; only the anime home has the rocket.
       const detected = await page.evaluate(
         (sel) =>
-          document.querySelector(sel.tunnelWork)
-            ? "tunnel"
-            : document.querySelector(sel.animeWork)
-              ? "anime"
+          document.querySelector(sel.animeMark)
+            ? "anime"
+            : document.querySelector(sel.tunnelWork)
+              ? "tunnel"
               : null,
-        { tunnelWork: ".s-work", animeWork: ".anime-work" },
+        { tunnelWork: ".s-work", animeMark: ".rocket-flight" },
       );
       if (detected && detected !== ROUTE) {
         result.notes.push(`route corrected from the URL guess "${ROUTE}" to "${detected}" by what the page holds.`);
@@ -532,7 +533,7 @@ async function main() {
         SECTIONS =
           ROUTE === "tunnel"
             ? { work: ".s-work", rocket: ".js-rocket-story" }
-            : { work: ".anime-work", rocket: ".rocket-flight" };
+            : { work: ".s-work--home", rocket: ".rocket-flight" };
       }
       result.route = ROUTE;
       result.config.route = ROUTE;
@@ -603,6 +604,7 @@ async function main() {
             document.documentElement.classList.contains("is-works-ready") &&
             !document.documentElement.classList.contains("is-scroll-blocked")
           : !document.documentElement.classList.contains("is-scroll-blocked") &&
+            document.documentElement.classList.contains("is-works-ready") &&
             !document.querySelector(".js-anime-intro:not(.is-gone)"),
       ROUTE,
       { timeout: 60000, polling: 250 },
@@ -871,20 +873,31 @@ async function main() {
       }
     }
 
-    // ---- Dive transition: open/close a project card's dive 5x
-    // Only the tunnel has `a-work` cards to dive into. On the anime home the
-    // sweep would scroll through seventeen positions over twenty seconds and
-    // find nothing, so it is skipped outright rather than failed slowly.
-    const diveGeom = ROUTE === "tunnel" ? await findRenderedCard(page, geom) : null;
-    if (ROUTE !== "tunnel") {
-      result.notes.push("dive phase skipped: the anime home has no dive cards.");
-    }
+    // ---- Dive transition: open/close a project card's dive.
+    // Both homes mount the letter tunnel, so both have `a-work` cards. The
+    // tunnel measures five open/close pairs as separate phases; the anime
+    // home measures one phase, `dive-home`, of three open/Escape cycles.
+    const diveGeom = await findRenderedCard(page, geom);
     result.dive = { found: !!diveGeom };
     if (diveGeom) {
       await jumpTo(diveGeom.scrollY);
       const diveHeapBefore = await gcHeapMb();
       const diveDomBefore = await cdpMetrics();
 
+      if (ROUTE !== "tunnel") {
+        await runPhase(
+          "dive-home",
+          async () => {
+            for (let i = 0; i < 3; i++) {
+              await page.mouse.click(diveGeom.cx, diveGeom.cy);
+              await sleep(1600); // DURATION_IN 1.15s + settle
+              await page.keyboard.press("Escape");
+              await sleep(1100); // DURATION_OUT 0.7s + settle
+            }
+          },
+          { from: diveGeom.scrollY, to: diveGeom.scrollY },
+        );
+      } else
       for (let i = 1; i <= 5; i++) {
         // The scroll position never moves during a dive — it's locked — so
         // from === to is the correct assertion, same as the idle phases.
@@ -916,7 +929,7 @@ async function main() {
         nodes: IS_CHROMIUM ? { before: diveDomBefore.Nodes, after: diveDomAfter.Nodes } : null,
         listeners: IS_CHROMIUM ? { before: diveDomBefore.JSEventListeners, after: diveDomAfter.JSEventListeners } : null,
       };
-    } else if (ROUTE === "tunnel") {
+    } else {
       result.notes.push("dive phase skipped: no rendered card found near the sampled scroll position.");
     }
 
@@ -1000,7 +1013,7 @@ async function main() {
           hero: abs(".anime-hero"),
           bento: abs(".bento-section"),
           rocket: abs(".rocket-flight"),
-          work: abs(".anime-work"),
+          work: abs(".s-work--home"),
           paradise: abs(".paradise"),
           cards,
           explore: explore ? { x: explore.x + explore.width / 2, yAbs: explore.y + window.scrollY + explore.height / 2 } : null,
@@ -1092,7 +1105,7 @@ async function main() {
         await runPhase("space-down", () => wheelBy(to - from), { from, to });
         await runPhase("space-up", () => wheelBy(from - to), { from: to, to: from });
       } else {
-        result.notes.push("space phases skipped: .rocket-flight or .anime-work not found.");
+        result.notes.push("space phases skipped: .rocket-flight or .s-work--home not found.");
       }
 
       // The timeline: the descent from space onto the meadow (the Earth and

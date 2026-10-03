@@ -183,32 +183,35 @@ for (const [ename, engine] of Object.entries({ chromium, webkit })) {
     });
     results.push(check(`${tag} the rocket hits on the right`, !!impact && impact.x > 0.6 * impact.w, impact ? `x ${impact.x} of ${impact.w}` : 'no impact point'));
 
-    // 5. The work rows and the timeline walk.
+    // 5. WORK (the letter tunnel, as on /tunnel/) and the timeline walk.
+    const CASES = ['/work/touchpoint/', '/work/spoot/', '/work/zyp/', '/work/gdg/', '/work/remote-lab-vision/', '/projects/ams/', '/work/engineering-rocket/'];
     const sections = await page.evaluate(() => ({
-      panels: document.querySelectorAll('.js-work-slot').length,
-      links: [...document.querySelectorAll('.js-work-slot')].map((a) => a.getAttribute('href')),
-      listed: document.querySelectorAll('.anime-work__list a').length,
-      counters: (document.querySelector('.anime-work')?.textContent || '').match(/(?<![:\d])0\d\s*\/\s*0?\d(?![:\d])/g) || [],
+      section: !!document.querySelector('section#work.s-work.s-work--home'),
+      cards: [...document.querySelectorAll('#work a-work a[href]')].map((a) => a.getAttribute('href')),
+      listed: [...document.querySelectorAll('#work nav.s__index a')].map((a) => a.getAttribute('href')),
+      counters: (document.querySelector('#work')?.textContent || '').match(/(?<![:\d])#?0\d\s*\/\s*0?\d(?![:\d])/g) || [],
       notes: document.querySelectorAll('.paradise__stop').length,
       pins: document.querySelectorAll('.paradise__stop time[datetime]').length,
       drafts: [...document.querySelectorAll('.paradise__name')].map((n) => n.textContent.trim()),
     }));
-    results.push(check(`${tag} a photograph in the rows for every project`, sections.panels === 7 && sections.listed === 7, `${sections.panels} in the rows, ${sections.listed} listed`));
-    results.push(check(`${tag} every project has a way in`, sections.links.length === 7 && sections.links.every((h) => h && h.startsWith('/')), sections.links.join(',')));
+    const sameSet = (list) => list.length === 7 && [...list].sort().join() === [...CASES].sort().join();
+    results.push(check(`${tag} WORK is the letter tunnel section`, sections.section, 'no section#work.s-work.s-work--home'));
+    results.push(check(`${tag} seven cards link to the seven case pages`, sameSet(sections.cards), sections.cards.join(',')));
+    results.push(check(`${tag} the keyboard route lists the seven case pages`, sameSet(sections.listed), sections.listed.join(',')));
     results.push(check(`${tag} no "0n / 0n" counter in WORK`, sections.counters.length === 0, sections.counters.join(', ')));
 
     // 5b. The hand-off, by pixels: the last frame the star field draws (its
     //     canvas letters) and the first frame WORK shows (its own DOM
-    //     letters) must put the four letters on the same pixels. Measured on
+    //     letters, the tunnel's ghost letters) must put the four letters on the same pixels. Measured on
     //     screenshots, not from either side's formula.
     const hand = await page.evaluate(() => {
-      const space = document.querySelector('.space');
-      const stage = document.querySelector('.space__stage');
-      if (!space || !stage) return null;
-      // The star field lets go where WORK pins: a stage's height above its bottom.
-      return { end: Math.round(space.getBoundingClientRect().top + scrollY + space.offsetHeight - stage.clientHeight), w: innerWidth, h: innerHeight };
+      const work = document.querySelector('#work');
+      if (!work) return null;
+      // The star field lets go where WORK's top reaches the viewport top.
+      return { end: Math.round(work.getBoundingClientRect().top + scrollY), w: innerWidth, h: innerHeight };
     });
     let handOff = null;
+    let afterOn = null;
     if (hand) {
       const shotAt = async (y) => {
         for (let i = 0; i < 2; i++) {
@@ -219,10 +222,12 @@ for (const [ename, engine] of Object.entries({ chromium, webkit })) {
       };
       const before = await inkRowsOf(await shotAt(hand.end - 3));
       const after = await inkRowsOf(await shotAt(hand.end + 3));
+      afterOn = await page.evaluate(() => document.querySelector('#work')?.classList.contains('is-on'));
       const off = before.length === after.length ? before.map((b, i) => Math.max(...['top', 'bottom', 'left', 'right'].map((k) => Math.abs(b[k] - after[i][k])))) : null;
       handOff = { before: before.length, after: after.length, off };
     }
     results.push(check(`${tag} WORK's letters land on the constellation's pixels`, !!handOff && handOff.before === 4 && handOff.after === 4 && handOff.off.every((d) => d <= 3), handOff ? `${handOff.before} then ${handOff.after} letters, ${handOff.off ? handOff.off.join('/') + ' px' : 'unmatched'}` : 'missing'));
+    results.push(check(`${tag} the tunnel shows its own letters after the hand-off (is-on)`, afterOn === true, `is-on=${afterOn}`));
     results.push(check(`${tag} every stop on the walk is dated`, sections.notes === 10 && sections.notes === sections.pins, `${sections.notes} stops, ${sections.pins} dated`));
     // The one entry whose role is still unconfirmed must not reach the page;
     // GDG and Rowerlab were confirmed by the owner on 2026-10-02.
@@ -234,7 +239,7 @@ for (const [ename, engine] of Object.entries({ chromium, webkit })) {
     //     seeks. Once per engine, at the desktop size. A clip's time ("0:00 /
     //     0:30") is not a counter, so a number next to a colon does not count.
     if (size === 'desktop') {
-      for (const path of ['/work/touchpoint/', '/work/spoot/', '/work/zyp/', '/work/gdg/', '/work/remote-lab-vision/', '/projects/ams/', '/work/engineering-rocket/']) {
+      for (const path of CASES) {
         await page.goto(BASE + path, { waitUntil: 'load' });
         const hits = await page.evaluate(() => (document.body.innerText.match(/Fig\.\s*\d+|(?<![:\d])0\d\s*\/\s*0?\d(?![:\d])/g) || []));
         results.push(check(`${tag} ${path} has no figure numbers or counters`, hits.length === 0, hits.slice(0, 3).join(', ')));
@@ -300,6 +305,11 @@ for (const [ename, engine] of Object.entries({ chromium, webkit })) {
     });
     results.push(check(`${tag} the rocket rests at the start of its route`, !!rest && rest.off <= 6, rest ? `${rest.off} px off the start` : 'missing'));
     results.push(check(`${tag} the star field is simply there`, !!rest && rest.gap === 0 && rest.layers.length === 2 && rest.layers.every((o) => o === '1'), rest ? `gap ${rest.gap}px, opacity ${rest.layers.join('/')}` : 'missing'));
+    const redWork = await page.evaluate(() => ({
+      cards: document.querySelectorAll('#work a-work a[href]').length,
+      on: document.querySelector('#work')?.classList.contains('is-on'),
+    }));
+    results.push(check(`${tag} WORK is there without the star field's hand-off`, redWork.cards === 7 && !redWork.on, `${redWork.cards} cards, is-on=${redWork.on}`));
     results.push(check(`${tag} no runtime errors`, errors.length === 0, errors.slice(0, 2).join(' | ')));
     await ctx.close();
   }

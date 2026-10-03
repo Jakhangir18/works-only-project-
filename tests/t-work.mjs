@@ -1,20 +1,20 @@
 // The Work tunnel: it pins, the cards render, the covers arrive before the
 // scrub, the canvas draws, and the keyboard route to the projects exists.
 import { chromium, webkit } from 'playwright';
-import { BASE, check, summarize, workBox, TUNNEL } from './lib.mjs';
+import { BASE, check, summarize, workBox, WORK_PAGES, openWorkPage } from './lib.mjs';
 
 const results = [];
 
 for (const [ename, engine] of Object.entries({ chromium, webkit })) {
   const browser = await engine.launch();
   for (const [w, h, size] of [[1440, 900, 'desktop'], [390, 844, 'phone']]) {
-    const tag = `${ename}/${size}`;
+   for (const [pname, path] of WORK_PAGES) {
+    const tag = `${pname} ${ename}/${size}`;
     const ctx = await browser.newContext({ viewport: { width: w, height: h }, isMobile: size === 'phone', hasTouch: size === 'phone' });
     const page = await ctx.newPage();
     const covers = [];
-    page.on('response', (r) => { if (/cover\.webp/.test(r.url())) covers.push(r.url().split('/').slice(-2)[0]); });
-    await page.goto(BASE + TUNNEL, { waitUntil: 'load' });
-    await page.waitForTimeout(6000);
+    page.on('response', (r) => { if (/cover[^/]*\.webp/.test(r.url())) covers.push(r.url().split('/').slice(-2)[0]); });
+    await openWorkPage(page, path);
 
     const box = await workBox(page);
     results.push(check(`${tag} work section exists`, !!box, box ? `${Math.round(box.height)}px tall` : 'missing'));
@@ -27,8 +27,21 @@ for (const [ename, engine] of Object.entries({ chromium, webkit })) {
       const nav = document.querySelector('.s__index');
       return nav ? nav.querySelectorAll('a[href]').length : 0;
     });
+    // No card numbering anywhere in the section (owner, 2026-10-03).
+    const counters = await page.evaluate(() => ((document.querySelector('.s-work')?.innerText || '') + ' ' + [...document.querySelectorAll('a-work')].map((c) => c.textContent).join(' ')).match(/(?<![:\d])#?0\d\s*\/\s*0?\d(?![:\d])/g) || []);
+    results.push(check(`${tag} no card numbering in the section`, counters.length === 0, counters.join(', ')));
+    const indexEls = await page.evaluate(() => document.querySelectorAll('.a__card__index').length);
+    results.push(check(`${tag} cards carry no index element`, indexEls === 0, `${indexEls} found`));
+
     results.push(check(`${tag} keyboard project list has every project`, srIndex === 7, `${srIndex} links`));
 
+    // On the tunnel page the covers are warmed before the scrub starts. On the
+    // home they load on demand, a few cards ahead of the scrub, so there the
+    // pre-warm is read after jumping to one screen above the section.
+    if (pname === 'home') {
+      await page.evaluate((y) => window.scrollTo({ top: y, behavior: 'instant' }), Math.max(0, box.top - h * 1.2));
+      await page.waitForTimeout(2500);
+    }
     const coversBefore = covers.length;
 
     // Walk the pinned section.
@@ -107,7 +120,7 @@ for (const [ename, engine] of Object.entries({ chromium, webkit })) {
           const out = [];
           document.querySelectorAll('a-work.is-inview.is-cover-ready .a__card').forEach((card) => {
             const name = (card.querySelector('.a__card__title')?.textContent || '?').trim().slice(0, 16);
-            ['.a__card__index span', '.a__card__title span', '.a__card__cta span'].forEach((sel) => {
+            ['.a__card__title span', '.a__card__cta span'].forEach((sel) => {
               const el = card.querySelector(sel);
               if (!el) return;
               const r = el.getBoundingClientRect();
@@ -126,7 +139,7 @@ for (const [ename, engine] of Object.entries({ chromium, webkit })) {
         await page.evaluate(() => {
           const st = document.createElement('style');
           st.className = 'hide-card-text';
-          st.textContent = '.a__card__index span,.a__card__title span,.a__card__cta span{color:transparent !important}';
+          st.textContent = '.a__card__title span,.a__card__cta span{color:transparent !important}';
           document.head.appendChild(st);
         });
         await page.waitForTimeout(250);
@@ -158,11 +171,12 @@ for (const [ename, engine] of Object.entries({ chromium, webkit })) {
       }
       const keys = Object.keys(worst);
       const failures = keys.filter((k) => worst[k].ratio + 0.01 < worst[k].need).map((k) => `${k} ${worst[k].ratio}:1 needs ${worst[k].need}`);
-      results.push(check(`${tag} the pixel check reached the card text`, keys.length >= 9, `${keys.length} strings measured`));
+      results.push(check(`${tag} the pixel check reached the card text`, keys.length >= 6, `${keys.length} strings measured`));
       results.push(check(`${tag} card text is legible on its own cover`, failures.length === 0, failures.slice(0, 3).join(' | ')));
     }
 
     await ctx.close();
+   }
   }
   await browser.close();
 }
