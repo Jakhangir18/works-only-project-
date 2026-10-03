@@ -3,6 +3,14 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { getSmoothScroll } from "./SmoothScroll";
 
 /**
+ * Where the anime home parks the dive's offset for the trip back
+ * (AnimeSite.ts reads it). Its own key: /tunnel/'s SiteController writes
+ * "returnScrollY" on every case link, and the home must not jump to the
+ * tunnel's offset.
+ */
+export const HOME_RETURN_KEY = "returnScrollY:/";
+
+/**
  * Dive-into-image transition for the Work cards.
  *
  * Clicking a card flies the viewer *into* its composition: the card's own
@@ -375,7 +383,8 @@ class DiveTransition {
    * standing when they dived.
    */
   onTeaserLinkClick = () => {
-    sessionStorage.setItem("returnScrollY", String(this.lockedScrollY));
+    const key = document.querySelector(".s-work--home") ? HOME_RETURN_KEY : "returnScrollY";
+    sessionStorage.setItem(key, String(this.lockedScrollY));
   };
 
   onKeyDown = (event: KeyboardEvent) => {

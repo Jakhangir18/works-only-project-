@@ -129,6 +129,10 @@ class Section {
   /** Home only: the dissolve segment's progress, and what draws it. */
   dissolve = 0;
   dust: WorkDust | null = null;
+  /** Timeline time where the dissolve starts, and the per-card step. */
+  dissolveAt = Infinity;
+  workStepVh = DESKTOP_WORK_STEP_VH;
+  gridBlank = false;
 
   constructor() {
     if (isSafariBrowser) {
@@ -197,15 +201,13 @@ class Section {
     }
 
     // Defer the heavy DOM work until fonts and the base page are ready.
+    // On the home, fonts are all the wall needs: waiting for `load` (the
+    // hero's shots, media) could leave the star field handing over to a
+    // section that has no letters yet.
     const doInit = () => {
-      if (document.readyState === "complete") {
-        if (this.home) requestAnimationFrame(() => this.init());
-        else Ticker.nextTick(this.init, this);
-      } else if (this.home) {
-        window.addEventListener("load", () => this.init(), { once: true });
-      } else {
-        Emitter.once("siteLoaded", this.init, this);
-      }
+      if (this.home) requestAnimationFrame(() => this.init());
+      else if (document.readyState === "complete") Ticker.nextTick(this.init, this);
+      else Emitter.once("siteLoaded", this.init, this);
     };
 
     if (document.fonts && document.fonts.ready) {
@@ -292,7 +294,12 @@ class Section {
           this.near = entry.isIntersecting;
           this.el.classList.toggle("is-far", !this.near);
           this.setPausedState(!this.near);
-          if (this.near && this.activeWorkIndex < 0) this.prepareCoverWindow(0);
+          // Covers decoded while the cards were out of the tree may have
+          // failed: ask again for the window the scroll is at now.
+          if (this.near) {
+            this.activeWorkIndex = -1;
+            this.prepareCoverWindow(this.workIndexAt(this.tl?.scrollTrigger?.progress ?? 0));
+          }
         }
       },
       { rootMargin: "100% 0px" },
@@ -606,6 +613,15 @@ class Section {
     });
   }
 
+  /** The card the scroll is at, from the timeline trigger's progress. */
+  workIndexAt(progress: number): number {
+    if (!this.tl) return 0;
+    const raw = Math.floor(
+      (progress * this.tl.duration() - INTRO_VH) / this.workStepVh,
+    );
+    return Math.max(0, Math.min(this.works.length - 1, raw));
+  }
+
   prepareCoverWindow(activeIndex: number) {
     if (activeIndex === this.activeWorkIndex) return;
     this.activeWorkIndex = activeIndex;
@@ -676,15 +692,10 @@ class Section {
         onUpdate: (self) => {
           // From the scroll's progress, not tl.time(): under scrub the
           // timeline trails the scroll, and after a jump (a restored offset,
-          // the End key) no later update comes to catch the covers up.
-          const rawIndex = Math.floor(
-            (self.progress * tl.duration() - INTRO_VH) / workStepVh,
-          );
-          const activeIndex = Math.max(
-            0,
-            Math.min(works.length - 1, rawIndex),
-          );
-          this.prepareCoverWindow(activeIndex);
+          // the End key) no later update comes to catch the covers up. On
+          // the home, not while the cards are out of the tree.
+          if (this.home && !this.near) return;
+          this.prepareCoverWindow(this.workIndexAt(self.progress));
         },
       },
     });
@@ -755,6 +766,7 @@ class Section {
     if (this.dust) {
       // The last card leaves the way the others did, and the wall dissolves.
       const dissolveAt = workTravelEnd + END_HOLD_VH;
+      this.dissolveAt = dissolveAt;
       const lastWork = works[works.length - 1];
       if (lastWork) {
         tl.to(
@@ -772,6 +784,7 @@ class Section {
     }
 
     this.tl = tl;
+    this.workStepVh = workStepVh;
     this.activeWorkIndex = -1;
     // On the home the first covers wait until the section is near.
     if (!this.home || this.near) this.prepareCoverWindow(0);
@@ -877,6 +890,23 @@ class Section {
     )
       return;
 
+    // On the home the grid comes in with the tunnel instead of appearing on
+    // the hand-off frame, where the star field showed no grid, and it goes
+    // again as the wall dissolves. Invisible, it is cleared once and not
+    // drawn.
+    const alpha = this.home
+      ? Math.min(1, pointsProgress * 4) * Math.max(0, 1 - rDissolve * 2)
+      : 1;
+    last.pointsProgress = rPointsProgress;
+    last.animationProgress = rAnimationProgress;
+    last.dissolve = rDissolve;
+    if (alpha <= 0) {
+      if (!this.gridBlank) ctx.clearRect(0, 0, bounding.width, bounding.height);
+      this.gridBlank = true;
+      return;
+    }
+    this.gridBlank = false;
+
     ctx.clearRect(0, 0, bounding.width, bounding.height);
     ctx.beginPath();
 
@@ -899,21 +929,22 @@ class Section {
       });
     }
 
-    // On the home the grid comes in with the tunnel instead of appearing on
-    // the hand-off frame, where the star field showed no grid.
-    // It goes again as the wall dissolves.
-    if (this.home) {
-      ctx.globalAlpha =
-        Math.min(1, pointsProgress * 4) * Math.max(0, 1 - rDissolve * 2);
-    }
+    ctx.globalAlpha = alpha;
     ctx.stroke();
-
-    last.pointsProgress = rPointsProgress;
-    last.animationProgress = rAnimationProgress;
-    last.dissolve = rDissolve;
   }
 
   tick() {
+    // The dissolve's glyphs, read in the middle of the hold, where the
+    // letters stand still, and before this tick writes anything.
+    if (
+      this.dust &&
+      !this.dust.measured &&
+      this.tl &&
+      this.tl.time() >= this.dissolveAt - END_HOLD_VH / 2
+    ) {
+      this.dust.measure();
+    }
+
     // Same math as ScrollTrigger.positionInViewport(el, "top"/"bottom"),
     // but from cached geometry — the rect reads landed right after GSAP's
     // scrub writes and forced a reflow every frame.

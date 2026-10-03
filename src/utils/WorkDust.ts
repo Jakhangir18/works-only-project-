@@ -14,19 +14,24 @@
  *
  * Nothing moves on its own: a frame is drawn only when `d` changed, from
  * WorkSection's tick on the GSAP ticker, on a canvas of its own layer
- * (invariant 13). The glyphs are sampled once per layout, the first time
- * the segment starts: one rect read per ghost letter, then an offscreen
- * canvas at half resolution. Sizing the canvas resets its context, and its
- * state is set again in the same function (invariant 8).
+ * (invariant 13), into buffers allocated once per sample. The glyphs are
+ * sampled once per layout, during the hold before the segment, where the
+ * letters stand still: WorkSection calls measure() at the top of its tick,
+ * before anything is written (invariant 3), and the offscreen drawing and
+ * the pixel scan run in an idle callback of their own, not in a frame.
+ * Sizing the canvas resets its context, and its state is set again in the
+ * same function (invariant 8).
  */
 
-/* The star field's two tiles, as in helpers/_stars.scss: offset, size,
-   colour and alpha. A star sits at the centre of each tile. */
-const TILES = [
-  { x: 17, y: 23, w: 137, h: 149, rgb: "255, 255, 255", a: 0.7, size: 1.8 },
-  { x: 89, y: 61, w: 211, h: 173, rgb: "255, 217, 168", a: 0.55, size: 2.2 },
+/* The star field's two tiles: their colour and alpha here, their offsets
+   and sizes read from `.s__stars`'s computed background (the one source is
+   helpers/_stars.scss). A star sits at the centre of each tile. */
+const LOOKS = [
+  { rgb: "255, 255, 255", a: 0.7, size: 1.8 },
+  { rgb: "255, 217, 168", a: 0.55, size: 2.2 },
 ] as const;
 const DUST = "255, 242, 237";
+const COLOURS = [DUST, ...LOOKS.map((l) => l.rgb)];
 const WIDE_COUNT = 3200;
 const NARROW_COUNT = 1300;
 const NARROW_BELOW = 640;
@@ -43,6 +48,8 @@ const MAX_DELAY = 0.36;
 const STARS_IN = [0.86, 0.98] as const;
 const DUST_OUT = [0.7, 0.96] as const;
 
+type Tile = { x: number; y: number; w: number; h: number };
+
 type Speck = {
   x0: number;
   y0: number;
@@ -56,6 +63,8 @@ type Speck = {
 };
 
 export type Glyph = { el: HTMLElement; letter: string };
+
+type Box = { letter: string; left: number; top: number; width: number; height: number };
 
 function ramp(p: number, from: number, to: number): number {
   return Math.min(1, Math.max(0, (p - from) / (to - from)));
@@ -71,6 +80,19 @@ function rng(seed: number): () => number {
   };
 }
 
+/* "17px 23px, 89px 61px" -> [[17, 23], [89, 61]] */
+function pairs(value: string): number[][] {
+  return value.split(",").map((part) => part.trim().split(/\s+/).map(parseFloat));
+}
+
+function idle(fn: () => void): void {
+  const ric = (window as any).requestIdleCallback as
+    | ((cb: () => void, opts: { timeout: number }) => number)
+    | undefined;
+  if (ric) ric(fn, { timeout: 300 });
+  else setTimeout(fn, 0);
+}
+
 export class WorkDust {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D | null;
@@ -81,8 +103,15 @@ export class WorkDust {
   W = 0;
   H = 0;
   dpr = 1;
+  tiles: Tile[] = [];
   specks: Speck[] = [];
-  sampled = false;
+  /* Per colour and band: x, y, size triples, and how many are filled. */
+  buffers: Float32Array[] = [];
+  counts: number[] = [];
+  /* measured: the boxes are read; ready: the specks are built. */
+  measured = false;
+  ready = false;
+  generation = 0;
   blank = true;
   last = -1;
   sceneOpacity = "";
@@ -108,12 +137,20 @@ export class WorkDust {
     this.ctx = this.canvas.getContext("2d");
     this.ctx?.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
     this.blank = true;
+    const cs = getComputedStyle(this.stars);
+    const pos = pairs(cs.backgroundPosition);
+    const size = pairs(cs.backgroundSize);
+    this.tiles = LOOKS.map((_, i) => ({ x: pos[i]?.[0], y: pos[i]?.[1], w: size[i]?.[0], h: size[i]?.[1] })).filter(
+      (t) => [t.x, t.y, t.w, t.h].every((n) => Number.isFinite(n)) && t.w > 0 && t.h > 0,
+    );
     this.forget();
   }
 
   /** The wall was rebuilt: its letters stand somewhere else now. */
   forget(): void {
-    this.sampled = false;
+    this.generation++;
+    this.measured = false;
+    this.ready = false;
     this.specks = [];
     this.last = -1;
   }
@@ -121,9 +158,9 @@ export class WorkDust {
   /* Star centres on the stage, per tile. */
   starCentres(): { x: number; y: number; tile: number }[] {
     const out: { x: number; y: number; tile: number }[] = [];
-    TILES.forEach((t, tile) => {
-      const cx = (t.x + t.w / 2) % t.w;
-      const cy = (t.y + t.h / 2) % t.h;
+    this.tiles.forEach((t, tile) => {
+      const cx = (((t.x + t.w / 2) % t.w) + t.w) % t.w;
+      const cy = (((t.y + t.h / 2) % t.h) + t.h) % t.h;
       for (let x = cx; x < this.W; x += t.w) {
         for (let y = cy; y < this.H; y += t.h) out.push({ x, y, tile });
       }
@@ -131,14 +168,31 @@ export class WorkDust {
     return out;
   }
 
-  sample(): void {
-    this.sampled = true;
+  /**
+   * The reads: one rect per ghost letter on screen. WorkSection calls this
+   * at the top of its tick, during the hold, before anything is written;
+   * the drawing and the scan follow in an idle callback.
+   */
+  measure(): void {
+    if (this.measured) return;
+    this.measured = true;
     const { W, H } = this;
     if (!W || !H) return;
-    // One read per ghost, before anything here writes.
-    const boxes = this.glyphs()
-      .map((g) => ({ letter: g.letter, r: g.el.getBoundingClientRect() }))
-      .filter(({ r }) => r.width > 0 && r.right > 0 && r.left < W && r.bottom > 0 && r.top < H);
+    const boxes: Box[] = [];
+    for (const g of this.glyphs()) {
+      const r = g.el.getBoundingClientRect();
+      if (r.width > 0 && r.right > 0 && r.left < W && r.bottom > 0 && r.top < H) {
+        boxes.push({ letter: g.letter, left: r.left, top: r.top, width: r.width, height: r.height });
+      }
+    }
+    const gen = this.generation;
+    idle(() => {
+      if (gen === this.generation) this.build(boxes);
+    });
+  }
+
+  build(boxes: Box[]): void {
+    const { W, H } = this;
     const off = document.createElement("canvas");
     off.width = Math.ceil(W * SAMPLE_SCALE);
     off.height = Math.ceil(H * SAMPLE_SCALE);
@@ -149,23 +203,23 @@ export class WorkDust {
     o.textAlign = "center";
     o.textBaseline = "alphabetic";
     o.fillStyle = "#fff";
-    for (const { letter, r } of boxes) {
-      const m = o.measureText(letter);
+    for (const b of boxes) {
+      const m = o.measureText(b.letter);
       const ascent = m.fontBoundingBoxAscent ?? BASE * 0.8;
       const descent = m.fontBoundingBoxDescent ?? BASE * 0.2;
       // The ghost's box is its glyph's advance by a 0.85 line; its content
       // area is centred on the line, as in the DOM.
-      const sx = r.width / Math.max(1, m.width);
-      const sy = r.height / (0.85 * BASE);
+      const sx = b.width / Math.max(1, m.width);
+      const sy = b.height / (0.85 * BASE);
       o.setTransform(
         sx * SAMPLE_SCALE,
         0,
         0,
         sy * SAMPLE_SCALE,
-        (r.left + r.width / 2) * SAMPLE_SCALE,
-        (r.top + r.height / 2) * SAMPLE_SCALE,
+        (b.left + b.width / 2) * SAMPLE_SCALE,
+        (b.top + b.height / 2) * SAMPLE_SCALE,
       );
-      o.fillText(letter, 0, (ascent - descent) / 2);
+      o.fillText(b.letter, 0, (ascent - descent) / 2);
     }
     const data = o.getImageData(0, 0, off.width, off.height).data;
     const inside: [number, number][] = [];
@@ -208,7 +262,7 @@ export class WorkDust {
         y1: star.y,
         delay: r() * MAX_DELAY,
         size0,
-        size1: TILES[star.tile].size,
+        size1: LOOKS[star.tile].size,
         tile: star.tile,
       });
     }
@@ -216,10 +270,10 @@ export class WorkDust {
     // The rest drift outward from the middle of the screen and fade.
     const cx = W / 2;
     const cy = H / 2;
+    const jitter = 0.06 * Math.hypot(W, H);
     for (let i = 0; i < count; i++) {
       const [x, y] = inside[i];
       const k = 0.25 + r() * 0.6;
-      const jitter = 0.06 * Math.hypot(W, H);
       specks.push({
         x0: x,
         y0: y,
@@ -232,6 +286,13 @@ export class WorkDust {
       });
     }
     this.specks = specks;
+    // Room for every speck in any one colour and band: allocated here, once
+    // per sample, so a drawn frame allocates nothing.
+    const slots = COLOURS.length * BANDS;
+    this.buffers = Array.from({ length: slots }, () => new Float32Array(specks.length * 3));
+    this.counts = new Array(slots).fill(0);
+    this.ready = true;
+    this.last = -1;
   }
 
   /** The segment's progress, from WorkSection's tick. Draws only on change. */
@@ -245,20 +306,22 @@ export class WorkDust {
 
     const ctx = this.ctx;
     if (!ctx) return;
-    const nothing = rd <= 0 || rd >= 1;
+    const nothing = rd <= 0 || rd >= 1 || !this.ready;
     if (nothing && this.blank) return;
-    if (!nothing && !this.sampled) this.sample();
     ctx.clearRect(0, 0, this.W, this.H);
     this.blank = true;
-    if (nothing || !this.specks.length) return;
+    if (nothing) {
+      // Not built yet: draw this progress once it is.
+      if (!this.ready) this.last = -1;
+      return;
+    }
     this.blank = false;
 
     const dustIn = ramp(rd, DUST_IN[0], DUST_IN[1]);
     const dustOut = 1 - ramp(rd, DUST_OUT[0], DUST_OUT[1]);
     const starsIn = ramp(rd, STARS_IN[0], STARS_IN[1]);
-    // Per colour, a path per brightness band.
-    const colours = [DUST, ...TILES.map((t) => t.rgb)];
-    const bands: number[][][] = colours.map(() => Array.from({ length: BANDS }, () => []));
+    const { buffers, counts } = this;
+    counts.fill(0);
     for (const s of this.specks) {
       const t = easeInOut(ramp(rd, MOVE_FROM + s.delay, MOVE_FROM + s.delay + MOVE_SPAN));
       let a: number;
@@ -267,25 +330,30 @@ export class WorkDust {
         a = dustIn * (1 - 0.45 * t) * dustOut;
         colour = 0;
       } else {
-        const tile = TILES[s.tile];
-        a = dustIn * (1 + (tile.a - 1) * t) * (1 - starsIn);
+        a = dustIn * (1 + (LOOKS[s.tile].a - 1) * t) * (1 - starsIn);
         // Dust while it travels, the star's own colour once it is close.
         colour = t < 0.6 ? 0 : 1 + s.tile;
       }
       if (a <= 0.02) continue;
-      const x = s.x0 + (s.x1 - s.x0) * t;
-      const y = s.y0 + (s.y1 - s.y0) * t;
       const size = s.size0 + (s.size1 - s.size0) * t;
-      bands[colour][Math.min(BANDS - 1, Math.floor(a * BANDS))].push(x - size / 2, y - size / 2, size);
+      const slot = colour * BANDS + Math.min(BANDS - 1, Math.floor(a * BANDS));
+      const buf = buffers[slot];
+      const n = counts[slot];
+      buf[n] = s.x0 + (s.x1 - s.x0) * t - size / 2;
+      buf[n + 1] = s.y0 + (s.y1 - s.y0) * t - size / 2;
+      buf[n + 2] = size;
+      counts[slot] = n + 3;
     }
-    for (let c = 0; c < colours.length; c++) {
-      ctx.fillStyle = `rgb(${colours[c]})`;
+    for (let c = 0; c < COLOURS.length; c++) {
+      ctx.fillStyle = `rgb(${COLOURS[c]})`;
       for (let b = 0; b < BANDS; b++) {
-        const list = bands[c][b];
-        if (!list.length) continue;
+        const slot = c * BANDS + b;
+        const n = counts[slot];
+        if (!n) continue;
+        const buf = buffers[slot];
         ctx.globalAlpha = (b + 1) / BANDS;
         ctx.beginPath();
-        for (let i = 0; i < list.length; i += 3) ctx.rect(list[i], list[i + 1], list[i + 2], list[i + 2]);
+        for (let i = 0; i < n; i += 3) ctx.rect(buf[i], buf[i + 1], buf[i + 2], buf[i + 2]);
         ctx.fill();
       }
     }

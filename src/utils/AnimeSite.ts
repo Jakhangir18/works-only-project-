@@ -1,4 +1,5 @@
 import { initSmoothScroll, getSmoothScroll } from "./SmoothScroll";
+import { HOME_RETURN_KEY } from "./DiveTransition";
 import { initReveal } from "./Reveal";
 import { initMagnetic } from "./Magnetic";
 
@@ -39,8 +40,8 @@ function ready(): Promise<void> {
 function returnToWork(): void {
   let saved: string | null = null;
   try {
-    saved = sessionStorage.getItem("returnScrollY");
-    sessionStorage.removeItem("returnScrollY");
+    saved = sessionStorage.getItem(HOME_RETURN_KEY);
+    sessionStorage.removeItem(HOME_RETURN_KEY);
   } catch {
     return;
   }
@@ -63,6 +64,17 @@ export function initAnimeSite(): void {
   // Explore and the work links lean toward a hovering pointer. Listeners
   // only; nothing runs until a pointer is over one of them.
   initMagnetic();
+
+  // Back from a case page through the history, the page comes out of the
+  // back-forward cache as it was, and the offset the dive parked is stale.
+  window.addEventListener("pageshow", (e) => {
+    if (!e.persisted) return;
+    try {
+      sessionStorage.removeItem(HOME_RETURN_KEY);
+    } catch {
+      /* Storage blocked: nothing was parked either. */
+    }
+  });
 
   const intro = document.querySelector<HTMLElement>(".js-anime-intro");
   const root = document.documentElement;
