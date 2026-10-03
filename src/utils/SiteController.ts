@@ -18,6 +18,7 @@ class Site {
   timeouts: any = { resizeThrottle: null };
 
   hasSiteLoaded = false;
+  worksWaitTimer = 0;
   hasWorksReady = false;
   introStarted = false;
   isReturning = false;
@@ -164,12 +165,30 @@ class Site {
 
   onSiteLoaded() {
     this.hasSiteLoaded = true;
+    this.capWorksWait();
     this.tryStartIntro();
   }
 
   onWorksReady() {
     this.hasWorksReady = true;
     this.tryStartIntro();
+  }
+
+  /**
+   * The intro waits for the Work section so the tunnel never flashes in
+   * half-built. Under a slow CPU that wait ran into double-digit seconds and
+   * the whole page — hero included — stayed at opacity 0 behind the loader,
+   * which put the largest contentful paint 11.5 s after navigation. The wait
+   * is now capped: past the cap the page reveals and the tunnel finishes
+   * building underneath it.
+   */
+  capWorksWait() {
+    if (this.worksWaitTimer) return;
+    this.worksWaitTimer = window.setTimeout(() => {
+      if (this.hasWorksReady) return;
+      this.hasWorksReady = true;
+      this.tryStartIntro();
+    }, 1200);
   }
 
   tryStartIntro() {

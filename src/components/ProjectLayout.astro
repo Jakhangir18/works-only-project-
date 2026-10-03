@@ -14,6 +14,20 @@ interface Props {
   outcome: string;
   /** Optional hero image. Omitted pages show the colored placeholder. */
   heroImage?: string;
+  /** Intrinsic size of heroImage, so the browser reserves its box. */
+  heroImageWidth?: number;
+  heroImageHeight?: number;
+  /** Optional photographs shown after Outcome. Every entry needs real pixel
+   * dimensions so the grid reserves its space before the image decodes. */
+  gallery?: {
+    src: string;
+    alt: string;
+    width: number;
+    height: number;
+    caption?: string;
+  }[];
+  /** Optional outbound links (demo video, repository, document). */
+  downloads?: { href: string; label: string }[];
 }
 
 const {
@@ -27,7 +41,15 @@ const {
   solution,
   outcome,
   heroImage,
+  heroImageWidth,
+  heroImageHeight,
+  gallery,
+  downloads,
 } = Astro.props;
+
+// The share card sits beside the cover: /projects/<slug>/og.jpg, a 1200x630
+// JPEG, because a portrait webp previews badly and some scrapers skip webp.
+const shareCard = heroImage?.replace(/\/[^/]+$/, "/og.jpg");
 ---
 
 <!doctype html>
@@ -38,6 +60,25 @@ const {
     <title>{title} — Portfolio</title>
     <meta name="description" content={intro} />
     <meta name="robots" content="noindex, nofollow" />
+
+    <!-- Sharing a single project should preview that project. -->
+    <meta property="og:type" content="article" />
+    <meta property="og:title" content={`${title} — Jakhangir Tynshimov`} />
+    <meta property="og:description" content={intro} />
+    <meta property="og:url" content={new URL(Astro.url.pathname, Astro.site)} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={`${title} — Jakhangir Tynshimov`} />
+    <meta name="twitter:description" content={intro} />
+    {
+      shareCard && (
+        <>
+          <meta property="og:image" content={new URL(shareCard, Astro.site)} />
+          <meta property="og:image:width" content="1200" />
+          <meta property="og:image:height" content="630" />
+          <meta name="twitter:image" content={new URL(shareCard, Astro.site)} />
+        </>
+      )
+    }
     <link rel="icon" type="image/svg+xml" href="/icons/favicon.svg" />
     <style is:global>
       @import url("/fonts/editorial-new.css");
@@ -46,11 +87,15 @@ const {
   </head>
 
   <body>
-    <!-- Navigation -->
-    <nav class="proj-nav">
+    {/* Not navigation: it holds no links, only the project's number pinned in
+        the corner. As a nav landmark it announced itself as "navigation" and
+        then read out a bare numeral, which is worse than saying nothing. It is
+        a decorative marker until it has something to navigate to. */}
+    <div class="proj-nav" aria-hidden="true">
       <span class="proj-nav__num">{number}</span>
-    </nav>
+    </div>
 
+    <main>
     <!-- Hero -->
     <header class="proj-hero" style={`--hero-color: ${heroColor};`}>
       <div class="proj-hero__image-wrap">
@@ -60,12 +105,20 @@ const {
               <img
                 src={heroImage}
                 alt={title}
+                width={heroImageWidth}
+                height={heroImageHeight}
+                fetchpriority="high"
+                decoding="async"
                 class="proj-hero__img"
                 onerror="this.style.display='none'"
               />
             )
           }
-          <span class="proj-hero__placeholder-num">{number}</span>
+          {/* A watermark, not a label: 7% white at 22rem behind the hero
+              image, and the kicker below it already reads the number out as
+              "Project 04". Marked decorative so a screen reader is not handed
+              a bare numeral it cannot place. */}
+          <span class="proj-hero__placeholder-num" aria-hidden="true">{number}</span>
         </div>
       </div>
       <div class="proj-hero__title-wrap">
@@ -85,7 +138,7 @@ const {
     <div class="proj-divider"></div>
 
     <!-- Storytelling sections -->
-    <main class="proj-content">
+    <div class="proj-content">
       <article class="proj-story-section proj-animate">
         <div class="proj-story-section__label">
           <span class="proj-story-section__tag" style={`color: ${accentColor};`}
@@ -139,6 +192,57 @@ const {
           <p>{outcome}</p>
         </div>
       </article>
+
+      {
+        gallery && gallery.length > 0 && (
+          <section class="proj-gallery proj-animate" aria-label="Photographs">
+            <ul class="proj-gallery__grid">
+              {gallery.map((item) => (
+                <li class="proj-gallery__item">
+                  <figure>
+                    <img
+                      src={item.src}
+                      alt={item.alt}
+                      width={item.width}
+                      height={item.height}
+                      loading="lazy"
+                      decoding="async"
+                    />
+                    {item.caption && (
+                      <figcaption class="proj-gallery__caption">
+                        {item.caption}
+                      </figcaption>
+                    )}
+                  </figure>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )
+      }
+
+      {
+        downloads && downloads.length > 0 && (
+          <section class="proj-links proj-animate" aria-label="Links">
+            <ul class="proj-links__list">
+              {downloads.map((link) => (
+                <li>
+                  <a
+                    href={link.href}
+                    class="proj-links__link"
+                    style={`color: ${accentColor};`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {link.label} <span aria-hidden="true">↗</span><span class="proj-links__sr"> (opens in a new tab)</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )
+      }
+    </div>
     </main>
 
     <!-- Footer -->
@@ -223,7 +327,7 @@ const {
     font-family: var(--font-family-fraktion), monospace;
     font-size: 0.75rem;
     letter-spacing: 0.2em;
-    color: rgba(255, 255, 255, 0.25);
+    color: rgba(255, 255, 255, 0.62);
     text-transform: uppercase;
   }
 
@@ -286,7 +390,7 @@ const {
     font-size: clamp(0.7rem, 1vw, 0.85rem);
     letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.35);
+    color: rgba(255, 255, 255, 0.62);
     margin-bottom: 1rem;
   }
 
@@ -347,6 +451,15 @@ const {
     gap: 0.5rem;
     position: sticky;
     top: 6rem;
+  }
+
+  /* One column means the label sits directly above its own paragraph, so a
+     sticky label pins itself over the text it introduces. It only makes sense
+     beside the text, never above it. */
+  @media (max-width: 768px) {
+    .proj-story-section__label {
+      position: static;
+    }
   }
 
   .proj-story-section__tag {
@@ -422,6 +535,83 @@ const {
   .proj-hero__placeholder {
     will-change: transform;
   }
+
+  /* Gallery and links (optional props) */
+  .proj-gallery,
+  .proj-links {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 3rem clamp(1.5rem, 5vw, 5rem);
+  }
+
+  .proj-gallery__grid {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: clamp(1rem, 2vw, 2rem);
+  }
+
+  .proj-gallery__item figure {
+    margin: 0;
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .proj-gallery__item img {
+    width: 100%;
+    height: auto;
+    display: block;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+  }
+
+  .proj-gallery__caption {
+    font-family: var(--font-family-fraktion);
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    line-height: 1.4;
+    color: rgba(255, 255, 255, 0.55);
+  }
+
+  .proj-links__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem 2rem;
+  }
+
+  .proj-links__link {
+    font-family: var(--font-family-fraktion);
+    font-size: 0.8125rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+
+  /* Project pages do not load the global utilities, so the visually hidden
+     new-tab text carries its own rule (same values as .u-sr-only). */
+  .proj-links__sr {
+    position: absolute;
+    margin: -1px;
+    padding: 0;
+    width: 1px;
+    height: 1px;
+    border: 0;
+    clip-path: rect(0, 0, 0, 0);
+    overflow: hidden;
+  }
+
+  @media (max-width: 768px) {
+    .proj-gallery__grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
 </style>
 
 <script>

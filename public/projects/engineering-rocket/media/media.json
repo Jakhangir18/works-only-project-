@@ -1,0 +1,227 @@
+{
+  "cover": {
+    "kind": "image",
+    "width": 1600,
+    "height": 2844,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/engineering-rocket/media/cover-640.webp"
+      },
+      {
+        "w": 1280,
+        "src": "/projects/engineering-rocket/media/cover-1280.webp"
+      },
+      {
+        "w": 1600,
+        "src": "/projects/engineering-rocket/media/cover-1600.webp"
+      }
+    ],
+    "thumb": "/projects/engineering-rocket/media/cover-thumb.webp"
+  },
+  "hero": {
+    "kind": "image",
+    "width": 1600,
+    "height": 900,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/engineering-rocket/media/hero-640.webp"
+      },
+      {
+        "w": 1280,
+        "src": "/projects/engineering-rocket/media/hero-1280.webp"
+      },
+      {
+        "w": 1600,
+        "src": "/projects/engineering-rocket/media/hero-1600.webp"
+      }
+    ],
+    "thumb": "/projects/engineering-rocket/media/hero-thumb.webp"
+  },
+  "g01": {
+    "kind": "image",
+    "width": 1800,
+    "height": 1350,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/engineering-rocket/media/g01-640.webp"
+      },
+      {
+        "w": 1280,
+        "src": "/projects/engineering-rocket/media/g01-1280.webp"
+      },
+      {
+        "w": 1800,
+        "src": "/projects/engineering-rocket/media/g01-1800.webp"
+      }
+    ],
+    "thumb": "/projects/engineering-rocket/media/g01-thumb.webp"
+  },
+  "g02": {
+    "kind": "image",
+    "width": 1600,
+    "height": 2133,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/engineering-rocket/media/g02-640.webp"
+      },
+      {
+        "w": 1280,
+        "src": "/projects/engineering-rocket/media/g02-1280.webp"
+      },
+      {
+        "w": 1600,
+        "src": "/projects/engineering-rocket/media/g02-1600.webp"
+      }
+    ],
+    "thumb": "/projects/engineering-rocket/media/g02-thumb.webp"
+  },
+  "g03": {
+    "kind": "image",
+    "width": 1000,
+    "height": 1000,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/engineering-rocket/media/g03-640.webp"
+      },
+      {
+        "w": 1000,
+        "src": "/projects/engineering-rocket/media/g03-1000.webp"
+      }
+    ],
+    "thumb": "/projects/engineering-rocket/media/g03-thumb.webp"
+  },
+  "g04": {
+    "kind": "image",
+    "width": 1600,
+    "height": 1790,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/engineering-rocket/media/g04-640.webp"
+      },
+      {
+        "w": 1280,
+        "src": "/projects/engineering-rocket/media/g04-1280.webp"
+      },
+      {
+        "w": 1600,
+        "src": "/projects/engineering-rocket/media/g04-1600.webp"
+      }
+    ],
+    "thumb": "/projects/engineering-rocket/media/g04-thumb.webp"
+  },
+  "g05": {
+    "kind": "image",
+    "width": 1600,
+    "height": 2844,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/engineering-rocket/media/g05-640.webp"
+      },
+      {
+        "w": 1280,
+        "src": "/projects/engineering-rocket/media/g05-1280.webp"
+      },
+      {
+        "w": 1600,
+        "src": "/projects/engineering-rocket/media/g05-1600.webp"
+      }
+    ],
+    "thumb": "/projects/engineering-rocket/media/g05-thumb.webp"
+  },
+  "g06": {
+    "kind": "image",
+    "width": 1600,
+    "height": 2844,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/engineering-rocket/media/g06-640.webp"
+      },
+      {
+        "w": 1280,
+        "src": "/projects/engineering-rocket/media/g06-1280.webp"
+      },
+      {
+        "w": 1600,
+        "src": "/projects/engineering-rocket/media/g06-1600.webp"
+      }
+    ],
+    "thumb": "/projects/engineering-rocket/media/g06-thumb.webp"
+  },
+  "g07": {
+    "kind": "image",
+    "width": 1600,
+    "height": 2133,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/engineering-rocket/media/g07-640.webp"
+      },
+      {
+        "w": 1280,
+        "src": "/projects/engineering-rocket/media/g07-1280.webp"
+      },
+      {
+        "w": 1600,
+        "src": "/projects/engineering-rocket/media/g07-1600.webp"
+      }
+    ],
+    "thumb": "/projects/engineering-rocket/media/g07-thumb.webp"
+  },
+  "pads": {
+    "kind": "video",
+    "width": 408,
+    "height": 720,
+    "duration": 29,
+    "bytes": 1906936,
+    "src": "/projects/engineering-rocket/media/pads.mp4",
+    "poster": "/projects/engineering-rocket/media/pads-poster.webp",
+    "playFrom": 10,
+    "audio": true
+  },
+  "g09": {
+    "kind": "image",
+    "width": 1600,
+    "height": 2133,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/engineering-rocket/media/g09-640.webp"
+      },
+      {
+        "w": 1280,
+        "src": "/projects/engineering-rocket/media/g09-1280.webp"
+      },
+      {
+        "w": 1600,
+        "src": "/projects/engineering-rocket/media/g09-1600.webp"
+      }
+    ],
+    "thumb": "/projects/engineering-rocket/media/g09-thumb.webp"
+  },
+  "tvc-demo": {
+    "kind": "video",
+    "width": 1280,
+    "height": 720,
+    "duration": 20,
+    "bytes": 2808627,
+    "src": "/projects/engineering-rocket/media/tvc-demo.mp4",
+    "poster": "/projects/engineering-rocket/media/tvc-demo-poster.webp"
+  },
+  "telemetry": {
+    "kind": "video",
+    "width": 1280,
+    "height": 720,
+    "duration": 24,
+    "bytes": 2944793,
+    "src": "/projects/engineering-rocket/media/telemetry.mp4",
+    "poster": "/projects/engineering-rocket/media/telemetry-poster.webp"
+  }
+}

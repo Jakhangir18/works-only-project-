@@ -1,0 +1,353 @@
+---
+import { video, clipLength } from "../../data/media";
+
+/**
+ * A clip from the project's imported media, in the case pages' player
+ * (utils/player.ts): a play button over the poster, then a bar of liquid
+ * glass with play and pause, a seek bar, the time, sound (when the clip has
+ * a sound track) and full screen. The owner, 2026-10-03: videos you can
+ * seek, with sound.
+ *
+ * Nothing downloads until it is needed (preload="none", the poster in its
+ * place). A clip with a start point (media.json `playFrom`) opens there by
+ * a media fragment and can still be sought back to the beginning.
+ *
+ * `loop` clips are silent footage: they play muted while on screen and pause
+ * off it (case.ts), and get the same bar, so the visitor can stop or seek
+ * one; after that it is theirs and case.ts no longer starts it.
+ */
+interface Props {
+  slug: string;
+  id: string;
+  label: string;
+  caption?: string;
+  loop?: boolean;
+  class?: string;
+}
+const { slug, id, label, caption, loop = false, class: className } = Astro.props;
+const v = video(slug, id);
+const length = clipLength(v.duration);
+const from = v.playFrom ?? 0;
+const src = from > 0 ? `${v.src}#t=${from}` : v.src;
+const start = clipLength(from);
+---
+
+<figure class:list={["case-clip", className]} data-reveal>
+  <div
+    class:list={["case-clip__frame js-player", { "is-loop": loop }]}
+    style={`aspect-ratio:${v.width} / ${v.height}`}
+    data-duration={v.duration}
+    data-from={from}
+  >
+    <video
+      class:list={[{ "js-case-loop": loop }]}
+      src={src}
+      poster={v.poster}
+      preload="none"
+      playsinline
+      muted={loop}
+      loop={loop}
+      aria-label={label}
+      width={v.width}
+      height={v.height}
+    ></video>
+
+    {!loop && (
+      <button class="case-clip__big js-player-big" type="button" aria-label={`Play: ${label}`}>
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 5.5v13l10.5-6.5z"></path></svg>
+      </button>
+    )}
+
+    <div class="case-clip__bar">
+      <button class="case-clip__btn js-player-toggle" type="button" aria-label="Play">
+        <svg class="case-clip__icon case-clip__icon--play" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 5.5v13l10.5-6.5z"></path></svg>
+        <svg class="case-clip__icon case-clip__icon--pause" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"></path></svg>
+      </button>
+      <div
+        class="case-clip__scrub js-player-scrub"
+        role="slider"
+        tabindex="0"
+        aria-label={`Seek: ${label}`}
+        aria-valuemin="0"
+        aria-valuemax={Math.floor(v.duration)}
+        aria-valuenow={Math.floor(from)}
+        aria-valuetext={`${start} of ${length}`}
+      >
+        <span class="case-clip__rail">
+          <span class="case-clip__buffered js-player-buffered"></span>
+          <span class="case-clip__fill js-player-fill" style={`transform:scaleX(${(from / v.duration).toFixed(4)})`}></span>
+        </span>
+      </div>
+      <span class="case-clip__time js-player-time" aria-hidden="true">{start} / {length}</span>
+      {v.audio && !loop && (
+        <button class="case-clip__btn js-player-mute" type="button" aria-label="Turn sound off" aria-pressed="true">
+          <svg class="case-clip__icon case-clip__icon--sound" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"></path><path d="M15 9a4 4 0 0 1 0 6M17.5 6.5a7.5 7.5 0 0 1 0 11" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path></svg>
+          <svg class="case-clip__icon case-clip__icon--muted" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"></path><path d="M15.5 9.5l5 5m0-5l-5 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path></svg>
+        </button>
+      )}
+      <button class="case-clip__btn js-player-fs" type="button" aria-label="Full screen">
+        <svg class="case-clip__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 9V5h4M15 5h4v4M19 15v4h-4M9 19H5v-4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+      </button>
+    </div>
+  </div>
+  {caption && (
+    <figcaption>
+      <span>{caption}</span>
+      <span class="case-clip__len">{v.audio && !loop ? "Sound · " : ""}{length}</span>
+    </figcaption>
+  )}
+</figure>
+
+<style lang="scss">
+  @use "../../styles/helpers/fonts" as *;
+  @use "../../styles/helpers/glass" as *;
+
+  .case-clip {
+    margin: 0;
+  }
+
+  .case-clip__frame {
+    position: relative;
+    overflow: hidden;
+    border-radius: 12px;
+    background: #000;
+
+    video {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* Full screen: the whole picture, letterboxed, not cropped. */
+    &:global(.is-fullscreen) video {
+      object-fit: contain;
+    }
+  }
+
+  /* The play button over the poster, until the clip first plays. */
+  .case-clip__big {
+    @include glass(dark);
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    display: grid;
+    place-items: center;
+    width: 76px;
+    height: 76px;
+    margin: -38px 0 0 -38px;
+    padding: 0;
+    border-radius: 50%;
+    color: #fff;
+    cursor: pointer;
+    transition: transform 160ms ease;
+
+    svg {
+      width: 30px;
+      height: 30px;
+      margin-left: 4px;
+      fill: currentColor;
+    }
+
+    &:hover {
+      transform: scale(1.06);
+    }
+
+    .case-clip__frame:global(.is-started) & {
+      display: none;
+    }
+  }
+
+  /* The bar: a pill of liquid glass along the picture's bottom edge. It
+     shows once the clip has started, and stays up while the clip is paused
+     or a control has focus; while it plays, it rests until the pointer
+     moves over the picture. */
+  .case-clip__bar {
+    @include glass(dark);
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 6px 8px;
+    border-radius: 999px;
+    color: #fff;
+    opacity: 0;
+    transform: translateY(6px);
+    transition:
+      opacity 200ms ease,
+      transform 200ms ease;
+
+    .case-clip__frame:global(.is-started) & {
+      opacity: 1;
+      transform: none;
+    }
+
+    .case-clip__frame:global(.is-started.is-playing:not(:hover):not(:focus-within):not(.is-scrubbing)) & {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+
+    /* A loop is footage first: its bar waits for the pointer or the keys. */
+    .case-clip__frame.is-loop & {
+      opacity: 0;
+    }
+
+    .case-clip__frame.is-loop:hover &,
+    .case-clip__frame.is-loop:focus-within &,
+    .case-clip__frame.is-loop:global(.is-scrubbing) & {
+      opacity: 1;
+      transform: none;
+    }
+
+    /* Before a clip starts, a control the keyboard reached shows its bar. */
+    .case-clip__frame:focus-within & {
+      opacity: 1;
+      transform: none;
+    }
+
+    /* Touch has no hover: a loop's bar stays up there. */
+    @media (hover: none) {
+      .case-clip__frame.is-loop & {
+        opacity: 1;
+        transform: none;
+      }
+    }
+  }
+
+  .case-clip__btn {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: none;
+    color: inherit;
+    cursor: pointer;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.14);
+    }
+
+    &:focus-visible {
+      outline: 2px solid #fff;
+      outline-offset: -2px;
+    }
+  }
+
+  .case-clip__icon {
+    width: 22px;
+    height: 22px;
+    fill: currentColor;
+  }
+
+  .case-clip__icon--pause,
+  .case-clip__frame:global(.is-playing) .case-clip__icon--play {
+    display: none;
+  }
+
+  .case-clip__frame:global(.is-playing) .case-clip__icon--pause {
+    display: block;
+  }
+
+  .case-clip__icon--muted,
+  .case-clip__frame:global(.is-muted) .case-clip__icon--sound {
+    display: none;
+  }
+
+  .case-clip__frame:global(.is-muted) .case-clip__icon--muted {
+    display: block;
+  }
+
+  /* The seek bar: a tall hit area round a thin rail. */
+  .case-clip__scrub {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    height: 40px;
+    padding: 0 6px;
+    cursor: pointer;
+    touch-action: none;
+
+    &:focus-visible {
+      outline: 2px solid #fff;
+      outline-offset: -4px;
+      border-radius: 999px;
+    }
+  }
+
+  .case-clip__rail {
+    position: relative;
+    flex: 1;
+    height: 4px;
+    overflow: hidden;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.22);
+  }
+
+  .case-clip__buffered,
+  .case-clip__fill {
+    position: absolute;
+    inset: 0;
+    transform-origin: 0 50%;
+    transform: scaleX(0);
+  }
+
+  .case-clip__buffered {
+    background: rgba(255, 255, 255, 0.28);
+  }
+
+  .case-clip__fill {
+    background: #fff;
+  }
+
+  .case-clip__time {
+    flex: none;
+    min-width: 6.4em;
+    font: 400 0.6875rem / 1 font-family(fraktion);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.06em;
+    text-align: center;
+  }
+
+  /* A narrow clip (portrait, in a column): the time goes, so the seek bar
+     keeps a usable length; the time is still read out on the bar itself. */
+  @container (max-width: 420px) {
+    .case-clip__time {
+      display: none;
+    }
+  }
+
+  .case-clip__frame {
+    container-type: inline-size;
+  }
+
+  figcaption {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 0.7rem;
+    font: 400 0.8125rem / 1.45 font-family(geist);
+    color: var(--case-soft);
+  }
+
+  .case-clip__len {
+    flex: none;
+    margin-left: auto;
+    font: 400 0.6875rem / 1.9 font-family(fraktion);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--case-soft);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .case-clip__bar,
+    .case-clip__big {
+      transition: none;
+    }
+  }
+</style>

@@ -1,0 +1,204 @@
+---
+interface Props {
+  texts: string[];
+  className?: string;
+}
+
+const { texts = [], className = "" } = Astro.props;
+---
+
+<div
+  class:list={["rolling-text", className]}
+  data-rolling-text
+  aria-live="off"
+>
+  <span class="visually-hidden">{texts.join(", ")}</span>
+  <span class="rolling-text__viewport" aria-hidden="true">
+    {
+      texts.map((text, i) => (
+        <span
+          class:list={["rolling-text__item", i === 0 && "is-current"]}
+          data-index={i}
+        >
+          {text}
+        </span>
+      ))
+    }
+  </span>
+</div>
+
+<script>
+  // One class swap every few seconds. No rAF, no filters, no per-frame work:
+  // the browser composites two transforms and nothing else. Pauses when the
+  // hero leaves the viewport or the tab is hidden, and never starts under
+  // reduced motion.
+  const HOLD_MS = 2600;
+
+  document.querySelectorAll<HTMLElement>("[data-rolling-text]").forEach((root) => {
+    const items = [...root.querySelectorAll<HTMLElement>(".rolling-text__item")];
+    if (items.length < 2) return;
+
+    // An engine with no matchMedia cannot tell us the visitor's answer, and
+    // the safe assumption when the answer is unknown is the one that moves
+    // nothing: a hard jump-cut every 2.6 s is exactly what someone who asked
+    // for reduced motion is trying to avoid, and the reduced-motion stylesheet
+    // only removes the transition, not the swap.
+    if (typeof window.matchMedia !== "function") return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    let index = 0;
+    let timer = 0;
+    let running = false;
+
+    const step = () => {
+      const current = items[index];
+      const next = items[(index + 1) % items.length];
+
+      current.classList.remove("is-current");
+      current.classList.add("is-leaving");
+      next.classList.add("is-current");
+
+      // Clear the outgoing state after its transition, so the element is ready
+      // to enter again from below on the next cycle.
+      window.setTimeout(() => current.classList.remove("is-leaving"), 700);
+
+      index = (index + 1) % items.length;
+    };
+
+    const start = () => {
+      if (running) return;
+      running = true;
+      timer = window.setInterval(step, HOLD_MS);
+    };
+
+    const stop = () => {
+      running = false;
+      window.clearInterval(timer);
+    };
+
+    // The two pause conditions are independent: off screen, and tab hidden.
+    // Keeping the observer's own answer in a variable is what stops the two
+    // paths from disagreeing. The visibilitychange handler used to re-derive
+    // visibility from `bottom > 0` alone, which is only half the test — at a
+    // landscape-phone viewport (measured 844x340: box top 386.9, innerHeight
+    // 340) the line sits entirely below the fold with a positive bottom, so
+    // returning to the tab restarted the roller off screen and the observer,
+    // whose intersection state never changed, never fired again to stop it.
+    const inView = () => {
+      const r = root.getBoundingClientRect();
+      return r.bottom > 0 && r.top < window.innerHeight;
+    };
+    // Read into a boolean rather than branching on `in`: TypeScript narrows
+    // `window` to never in the else arm of the operator form.
+    const hasObserver = typeof IntersectionObserver === "function";
+    let visible = false;
+
+    if (hasObserver) {
+      const io = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            visible = entry.isIntersecting;
+            if (visible && !document.hidden) start();
+            else stop();
+          }
+        },
+        { threshold: 0 },
+      );
+      io.observe(root);
+    } else {
+      // No observer: the rect is the only signal, so it has to be consulted
+      // on the events that can change it. Without this the roller ran from
+      // load on a viewport where the line is below the fold, which is the
+      // invariant this whole block exists to hold.
+      const evaluate = () => {
+        if (inView() && !document.hidden) start();
+        else stop();
+      };
+      evaluate();
+      window.addEventListener("scroll", evaluate, { passive: true });
+      window.addEventListener("resize", evaluate);
+    }
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) stop();
+      // With an observer, its answer is the one that counts: it accounts for
+      // horizontal overlap and for clipping by ancestors that this vertical
+      // rect test does not, so re-deriving here could start the roller on a
+      // line the observer has already called hidden — and the observer, whose
+      // state never changed, would never fire again to stop it. Without an
+      // observer the rect is all there is, and it is measured fresh, because
+      // nothing refreshes it between a scroll and a font reflowing the hero.
+      else if (hasObserver ? visible : inView()) start();
+    });
+  });
+</script>
+
+<style lang="scss">
+  @use "../styles/helpers/fonts" as *;
+
+  .rolling-text {
+    position: relative;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+
+    font-family: font-family(editorial);
+    /* Sized so the longest title fits on one line inside the mask. */
+    font-size: clamp(1.5rem, 4.6vw, 3.75rem);
+    font-weight: 400;
+    line-height: 1.1;
+    text-align: center;
+  }
+
+  .rolling-text__viewport {
+    position: relative;
+    display: block;
+    height: 1.1em;
+    overflow: hidden;
+  }
+
+  .rolling-text__item {
+    position: absolute;
+    inset: 0;
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: clip;
+
+    /* Waiting below the mask. */
+    opacity: 0;
+    transform: translate3d(0, 100%, 0);
+    transition:
+      transform 620ms cubic-bezier(0.16, 1, 0.3, 1),
+      opacity 400ms cubic-bezier(0.16, 1, 0.3, 1);
+
+    &.is-current {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+
+    /* Leaving upward, out of the mask. */
+    &.is-leaving {
+      opacity: 0;
+      transform: translate3d(0, -100%, 0);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .rolling-text__item {
+      transition: none;
+    }
+  }
+
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+</style>

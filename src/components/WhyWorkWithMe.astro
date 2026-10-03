@@ -1,31 +1,32 @@
 ---
 import BentoCard from "./BentoCard.astro";
+import SplitHeading from "./SplitHeading.astro";
 
 const cards = [
   {
     variant: "large" as const,
-    title: "jack of all trades",
-    text: "My background is in systems architecture, giving me a solid understanding of structure and flow. I know JavaScript, TypeScript, and modern frameworks inside out. Expert in animation libraries like GSAP, and comfortable building anything from scratch.",
+    title: "robots, software, learning",
+    text: "I work where robotics, software and machine learning meet. In Prof. Raffaele De Amicis's lab at Oregon State I am building a MuJoCo simulation of a robot arm and hand, with reinforcement learning in MuJoCo Playground, imitation learning with LeRobot and ACT, and VR teleoperation on a Quest through Unity and OpenXR. It is in progress, so there are no results here yet. Before it came a haptic glove, OLED glasses and printed rocket airframes.",
   },
   {
     variant: "medium" as const,
-    title: "detail-oriented craftsman",
-    text: "Every pixel matters. Every transition serves a purpose. I obsess over the small things that most people won't notice, but everyone will feel. Clean code, smooth animations, perfect timing.",
+    title: "24 hours, twice",
+    text: "TouchPoint took 2nd place overall of 71 teams at QuackHacks 3. SPOOT placed 3rd in Google's Best Use of Gemini track at BeaverHacks 2026. Both were built from nothing inside a day, by teams of two and three.",
   },
   {
     variant: "wide" as const,
-    title: "performance first",
-    text: "Beautiful means nothing if it's slow. I optimize ruthlessly—from bundle sizes to render performance, from lazy loading to frame rates. Every millisecond counts. Users don't care about your stack, they care about speed. I build experiences that load fast, feel instant, and never compromise on quality.",
+    title: "measured, not asserted",
+    text: "This site has a performance harness that runs against the production build in three engines and reports frame timing, long tasks, forced reflows and listener growth. Every fix carries its before and after numbers, and the hypotheses that failed are written down. The robot-learning work follows the same rule: nothing about it goes on this page until it has been measured.",
   },
   {
     variant: "small" as const,
-    title: "problem solver at heart",
-    text: "I love nothing more than a good challenge. Complex interactions, scroll-driven narratives, physics-based animations—bring it on. The harder the problem, the more satisfying the solution.",
+    title: "research, written up",
+    text: "URSA Engage funded me to answer one question for Oregon State's remote chemistry labs: which camera can hold a readable feed inside LabVIEW. Four cameras, RGB intensity histograms, one recommendation the lab now builds against.",
   },
   {
     variant: "small" as const,
-    title: "nice human being",
-    text: "I do my best to be a positive, kind, and accommodating person. Good work comes from good relationships. I believe in transparency, honesty, and treating people with respect.",
+    title: "students, taught",
+    text: "I ran a rocket club at a faculty of science and technology, where the job was less about rockets than about a loop a beginner could join: design a part, print it, find out why it failed, do it again.",
   },
 ];
 ---
@@ -36,7 +37,7 @@ const cards = [
   </div>
 
   <div class="bento-header">
-    <h2 class="bento-header__title">Why work with me?</h2>
+    <SplitHeading class="bento-header__title" text="Why work with me?" />
   </div>
 
   <div class="bento-container">
@@ -44,28 +45,45 @@ const cards = [
       {cards.map((card) => (
         <BentoCard variant={card.variant} title={card.title} text={card.text} />
       ))}
-    </div>
 
-    <div class="bento-footer">
-      <h2 class="bento-footer__title">
-        Built for performance. Designed for flexibility.
-      </h2>
-      <p class="bento-footer__text">
-        I build beautiful, high-performing websites with lightning speed. Every
-        component is thoughtfully designed to be flexible, reusable, and
-        accessible.
-      </p>
+      {/* The closing line is the grid's last cell, not a block under it: the
+          last small card leaves four empty columns on a desktop, and the
+          line read as a separate section floating below them. */}
+      <div class="bento-footer">
+        <SplitHeading class="bento-footer__title" text="Software for things that move, and a page that shows the work." />
+        <p class="bento-footer__text">
+          Every project below is something I built and can still explain: the
+          code, the model or the board, the measurement that decided a design,
+          and the limit it has not passed yet. Work still in progress says so.
+        </p>
+      </div>
     </div>
   </div>
 </section>
 
+<script>
+  import { initBentoGlow } from "../utils/BentoGlow";
+  // The spotlight is the anime home's; the tunnel keeps its cards still.
+  if (document.documentElement.classList.contains("theme-anime")) initBentoGlow();
+</script>
+
 <style lang="scss">
+  @use "../styles/helpers/colors" as *;
   @use "../styles/helpers/fonts" as *;
   @use "../styles/helpers/responsive" as *;
 
   .bento-section {
     position: relative;
-    background: #fff2ed;
+    /* The component is shared by both homes, and the colour helper resolves
+       to each page's own theme — on the tunnel that turned the cards near-
+       white under white type (1.1:1). So the section carries its own four
+       colours: the tunnel's literals by default, redefined once under the
+       anime home's theme class. */
+    --bento-ground: #fff2ed;
+    --bento-ink: #000;
+    --bento-soft: rgba(0, 0, 0, 0.7);
+    --bento-card: #000;
+    background: var(--bento-ground);
     padding: 0;
     min-height: 100vh;
     z-index: 20;
@@ -97,14 +115,21 @@ const cards = [
     padding: 0 clamp(1.5rem, 4vw, 3rem) clamp(3rem, 6vh, 4rem);
   }
 
-  .bento-header__title {
+  :global(.bento-header__title) {
     font-family: font-family(editorial);
     font-size: clamp(2.5rem, 6vw, 5rem);
     font-weight: 400;
     line-height: 1.1;
-    color: #000;
+    color: var(--bento-ink);
     margin: 0;
     text-transform: lowercase;
+  }
+
+  :global(.theme-anime) .bento-section {
+    --bento-ground: var(--color-secondary);
+    --bento-ink: var(--color-primary);
+    --bento-soft: var(--color-ink-soft);
+    --bento-card: var(--color-primary);
   }
 
   .bento-container {
@@ -134,7 +159,7 @@ const cards = [
     border: 1px dashed rgba(255, 255, 255, 0.3);
     border-radius: 0.75rem;
     padding: clamp(1.5rem, 3vw, 2.5rem);
-    background: #000;
+    background: var(--bento-card);
     min-height: 200px;
     display: flex;
     flex-direction: column;
@@ -199,6 +224,104 @@ const cards = [
   :global(.corner-plus--bl) { bottom: -12px; left: -12px; }
   :global(.corner-plus--br) { bottom: -12px; right: -12px; }
 
+  /* The light inside a card. The box clips the spot and the beam to the
+     card's own rounded edge; the corner marks are its siblings, outside it. */
+  :global(.bento-card__fx) {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    border-radius: inherit;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  /* The spot: 360px across, moved by the controller's transform, never by a
+     property on the card. Opacity 0 at rest; the controller brings it up on
+     the card under the pointer and down again when it leaves. */
+  :global(.bento-card__spot) {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 360px;
+    height: 360px;
+    border-radius: 50%;
+    opacity: 0;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.16), transparent 62%);
+  }
+
+  /* The beam: four hairline tracks along the edges, each clipping one
+     gradient segment that crosses it in its quarter of a 3.2 s lap. Transform
+     only, and declared only under hover (or once, when the card comes in,
+     for a screen that has no hover), so at rest there is no animation. */
+  :global(.bento-card__beam) {
+    position: absolute;
+    inset: 0;
+  }
+
+  :global(.bento-card__track) {
+    position: absolute;
+    overflow: hidden;
+  }
+
+  :global(.bento-card__track::before) {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+
+  :global(.bento-card__track--t) { top: 0; left: 0; right: 0; height: 1.5px; }
+  :global(.bento-card__track--b) { bottom: 0; left: 0; right: 0; height: 1.5px; }
+  :global(.bento-card__track--r) { top: 0; right: 0; bottom: 0; width: 1.5px; }
+  :global(.bento-card__track--l) { top: 0; left: 0; bottom: 0; width: 1.5px; }
+
+  :global(.bento-card__track--t::before),
+  :global(.bento-card__track--b::before) {
+    width: 40%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, #fff, transparent);
+  }
+
+  :global(.bento-card__track--r::before),
+  :global(.bento-card__track--l::before) {
+    width: 100%;
+    height: 40%;
+    background: linear-gradient(180deg, transparent, #fff, transparent);
+  }
+
+  :global(.bento-card__track--t::before) { transform: translateX(-100%); }
+  :global(.bento-card__track--r::before) { transform: translateY(-100%); }
+  :global(.bento-card__track--b::before) { transform: translateX(250%); }
+  :global(.bento-card__track--l::before) { transform: translateY(250%); }
+
+  /* Each segment crosses its track in one quarter of the lap and waits out
+     of sight for the other three: top, right, bottom, left, clockwise. */
+  @keyframes beam-t { 0% { transform: translateX(-100%); } 25%, 100% { transform: translateX(250%); } }
+  @keyframes beam-r { 0%, 25% { transform: translateY(-100%); } 50%, 100% { transform: translateY(250%); } }
+  @keyframes beam-b { 0%, 50% { transform: translateX(250%); } 75%, 100% { transform: translateX(-100%); } }
+  @keyframes beam-l { 0%, 75% { transform: translateY(250%); } 100% { transform: translateY(-100%); } }
+
+  @media (hover: hover) {
+    :global(.bento-card:hover .bento-card__track--t::before) { animation: beam-t 3.2s linear infinite; }
+    :global(.bento-card:hover .bento-card__track--r::before) { animation: beam-r 3.2s linear infinite; }
+    :global(.bento-card:hover .bento-card__track--b::before) { animation: beam-b 3.2s linear infinite; }
+    :global(.bento-card:hover .bento-card__track--l::before) { animation: beam-l 3.2s linear infinite; }
+  }
+
+  /* The touch ending: one lap as the card comes into view. */
+  @media (hover: none) {
+    :global(.bento-card.is-in .bento-card__track--t::before) { animation: beam-t 3.2s linear 1; }
+    :global(.bento-card.is-in .bento-card__track--r::before) { animation: beam-r 3.2s linear 1; }
+    :global(.bento-card.is-in .bento-card__track--b::before) { animation: beam-b 3.2s linear 1; }
+    :global(.bento-card.is-in .bento-card__track--l::before) { animation: beam-l 3.2s linear 1; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :global(.bento-card__track::before) {
+      animation: none !important;
+    }
+  }
+
   :global(.bento-card__content) {
     position: relative;
     z-index: 1;
@@ -218,7 +341,7 @@ const cards = [
   }
 
   :global(.bento-card__text) {
-    font-family: font-family(fraktion);
+    font-family: font-family(geist);
     font-size: clamp(0.875rem, 1vw, 1rem);
     line-height: 1.65;
     color: rgba(255, 255, 255, 0.75);
@@ -226,32 +349,44 @@ const cards = [
   }
 
   .bento-footer {
+    grid-column: span 4;
+    align-self: center;
+    justify-self: end;
     max-width: 40rem;
-    margin-left: auto;
     text-align: right;
-    padding: 0 clamp(1rem, 2vw, 2rem);
+    padding: clamp(1rem, 2vw, 2rem) clamp(1rem, 2vw, 2rem) 0;
+
+    @media (max-width: 1024px) {
+      grid-column: span 4;
+      padding-top: clamp(1.5rem, 3vh, 2.5rem);
+    }
 
     @media (max-width: 768px) {
+      justify-self: start;
       text-align: left;
-      margin: 0;
+    }
+
+    @media (max-width: 640px) {
+      grid-column: span 1;
+      padding: 1.5rem 0 0;
     }
   }
 
-  .bento-footer__title {
+  :global(.bento-footer__title) {
     font-family: font-family(editorial);
     font-size: clamp(2rem, 5vw, 3.75rem);
     font-weight: 400;
     line-height: 1.15;
-    color: #000;
+    color: var(--bento-ink);
     margin: 0 0 1.5rem 0;
     text-transform: lowercase;
   }
 
   .bento-footer__text {
-    font-family: font-family(fraktion);
+    font-family: font-family(geist);
     font-size: clamp(1rem, 1.2vw, 1.125rem);
     line-height: 1.7;
-    color: rgba(0, 0, 0, 0.7);
+    color: var(--bento-soft);
     margin: 0;
   }
 </style>

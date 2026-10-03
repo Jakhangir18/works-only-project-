@@ -10,6 +10,9 @@ export type WorkPalette = {
 export type WorkCover = {
   src: string;
   alt: string;
+  /** Intrinsic pixel size, so the card reserves the box before the file decodes. */
+  width: number;
+  height: number;
   focalPoint: {
     x: string;
     y: string;
@@ -38,54 +41,116 @@ export type ProjectInfo = {
 
 export const works = [
   {
+    title: "TouchPoint",
+    site: "/work/touchpoint/",
+    blurb:
+      "A haptic glove that lets a deafblind user browse the web by feel — built in 24 hours.",
+    size: "hero",
+    palette: { background: "#1a1206", accent: "#fbbf24" },
+    poster: { mark: "TP", motif: "signal" },
+    cover: {
+      src: "/projects/touchpoint/cover.webp",
+      width: 1125,
+      height: 1500,
+      alt: "The TouchPoint glove wired to its driver board on the hackathon table",
+      focalPoint: { x: "50%", y: "45%" },
+    },
+  },
+  {
+    title: "SPOOT",
+    site: "/work/spoot/",
+    blurb:
+      "AR glasses that show where a sound came from — and whether it is worth turning for.",
+    size: "feature",
+    palette: { background: "#08151f", accent: "#38bdf8" },
+    poster: { mark: "SP", motif: "orbit" },
+    cover: {
+      src: "/projects/spoot/cover.webp",
+      width: 1152,
+      height: 1200,
+      alt: "The SPOOT team on stage receiving third place in Google's Best Use of Gemini track at BeaverHacks 2026",
+      focalPoint: { x: "45%", y: "40%" },
+    },
+  },
+  {
     title: "AMS Tablet",
-    site: "/projects/ams",
+    site: "/projects/ams/",
     blurb:
       "Automated pre-shift inspection and workforce verification at industrial checkpoints.",
-    size: "hero",
+    size: "feature",
     palette: { background: "#080f1a", accent: "#60a5fa" },
     poster: { mark: "AMS", motif: "crosshair" },
     cover: {
-      src: "/projects/ams/images/cover.jpg",
+      src: "/projects/ams/images/cover.webp",
+      width: 1600,
+      height: 952,
       alt: "AMS tablet interface at an industrial inspection checkpoint",
       focalPoint: { x: "50%", y: "44%" },
     },
   },
   {
-    title: "GoChain",
-    site: "/work/gochain",
+    title: "Remote Lab Vision",
+    site: "/work/remote-lab-vision/",
     blurb:
-      "A Web3 platform that turns everyday environmental actions into verifiable on-chain impact.",
-    size: "feature",
-    palette: { background: "#071a0f", accent: "#4ade80" },
-    poster: { mark: "GC", motif: "orbit" },
-  },
-  {
-    title: "Private Clinic Setup",
-    site: "/work/private-clinic",
-    blurb:
-      "Digital, operational and physical infrastructure for a new medical clinic, concept to launch.",
+      "The camera system that lets students run a real chemistry lab from a browser.",
     size: "standard",
-    palette: { background: "#0e0a18", accent: "#a78bfa" },
-    poster: { mark: "PCS", motif: "signal" },
+    palette: { background: "#0a1a14", accent: "#34d399" },
+    poster: { mark: "RLV", motif: "signal" },
+    cover: {
+      src: "/projects/remote-lab-vision/cover.webp",
+      width: 1125,
+      height: 1500,
+      alt: "Two glass columns on an aluminium frame with the control unit of a remote chemistry lab rig",
+      focalPoint: { x: "50%", y: "38%" },
+    },
   },
   {
     title: "Engineering Rocket",
-    site: "/work/engineering-rocket",
+    site: "/work/engineering-rocket/",
     blurb:
-      "Applied aerospace research — propulsion, structural analysis and recovery from first principles.",
+      "A student rocket club in Kazakhstan: 3D-printed airframes, Arduino avionics, launches.",
     size: "standard",
     palette: { background: "#180a06", accent: "#fb923c" },
     poster: { mark: "ER", motif: "trajectory" },
+    cover: {
+      src: "/projects/engineering-rocket/cover.webp",
+      width: 1125,
+      height: 1500,
+      alt: "Holding a printed rocket airframe at the faculty of science and technology",
+      focalPoint: { x: "50%", y: "35%" },
+    },
+  },
+  {
+    title: "Sadap Clinic",
+    site: "/work/private-clinic/",
+    blurb:
+      "A multi-speciality clinic online: doctor search, booking and a corporate portal.",
+    size: "standard",
+    palette: { background: "#0e0a18", accent: "#a78bfa" },
+    poster: { mark: "SC", motif: "signal" },
+    cover: {
+      src: "/projects/private-clinic/cover.webp",
+      width: 1600,
+      height: 1000,
+      alt: "The Sadap Clinic home page with its doctor search",
+      focalPoint: { x: "50%", y: "25%" },
+    },
   },
   {
     title: "Portfolio Rocket",
-    site: "/work/portfolio-rocket",
+    site: "/work/portfolio-rocket/",
     blurb:
-      "This site: 240 scroll-driven frames, GSAP, and a custom sequencing engine in Astro.",
+      "This site: a 240-frame scroll sequence, GSAP, and the performance work behind it.",
     size: "standard",
     palette: { background: "#0d0d0d", accent: "#f5f5f5" },
     poster: { mark: "PR", motif: "crosshair" },
+    cover: {
+      src: "/projects/portfolio-rocket/cover.webp",
+      width: 960,
+      height: 383,
+      alt: "A frame from the scroll sequence: the rocket opened up, avionics board visible",
+      focalPoint: { x: "50%", y: "50%" },
+    },
   },
 ] as const satisfies readonly ProjectInfo[];
 

@@ -1,0 +1,210 @@
+---
+import { picture, video, clipLength } from "../../data/media";
+
+/**
+ * A figure on the Remote Lab Vision page ("The paper"): one picture or one
+ * muted clip from the project's imported media, with its caption, in one of
+ * three places.
+ *   inline  after the paragraph that cites it. A phone reads the page this
+ *           way, and so does a desktop with no script.
+ *   rail    stacked in the sticky figure rail (RlvRail), one shown at a time.
+ *   plate   across the page, for a picture too wide for the margin.
+ *
+ * `n` is never shown: it is the key a paragraph's data-cites names, so the
+ * rail can find the figure that paragraph cites.
+ *
+ * A figure keeps its picture's own shape unless `ratio` (width / height)
+ * crops it at `focal`. `trim` first cuts that fraction off the left edge,
+ * for a photo whose edge holds someone who should not be on the page.
+ * The frame is sized from `--r`, a constant written once per figure, never
+ * per frame. `pan` lets a plate scroll sideways at phone width instead of
+ * shrinking past legibility.
+ */
+interface Props {
+  slug: string;
+  fig: {
+    n: number;
+    id: string;
+    alt: string;
+    caption: string;
+    clip?: boolean;
+    ratio?: number;
+    focal?: string;
+    trim?: number;
+  };
+  mode: "inline" | "rail" | "plate";
+  sizes: string;
+  on?: boolean;
+  pan?: boolean;
+}
+
+const { slug, fig, mode, sizes, on = false, pan = false } = Astro.props;
+const clip = fig.clip ? video(slug, fig.id) : null;
+const pic = fig.clip ? null : picture(slug, fig.id, 1920);
+const natural = clip ? clip.width / clip.height : pic!.width / pic!.height;
+const r = (fig.ratio ?? natural).toFixed(4);
+const t = fig.trim ?? 0;
+const crop = [
+  `object-position:${fig.focal ?? "50% 50%"}`,
+  t ? `width:${(100 / (1 - t)).toFixed(3)}%; margin-left:-${((100 * t) / (1 - t)).toFixed(3)}%` : "",
+]
+  .filter(Boolean)
+  .join("; ");
+const length = clip ? clipLength(clip.duration) : "";
+---
+
+<figure
+  class:list={["rlv-fig", `rlv-fig--${mode}`, { "is-on": on, "rlv-fig--pan": pan }]}
+  style={`--r:${r}`}
+  data-fig={mode === "rail" ? fig.n : undefined}
+  data-reveal={mode === "rail" ? undefined : true}
+>
+  <div
+    class="rlv-fig__frame"
+    tabindex={pan ? 0 : undefined}
+    role={pan ? "region" : undefined}
+    aria-label={pan ? fig.caption : undefined}
+  >
+    {clip ? (
+      <video
+        class={mode === "rail" ? "js-rlv-clip" : "js-case-loop"}
+        src={clip.src}
+        poster={clip.poster}
+        preload="none"
+        muted
+        playsinline
+        loop
+        aria-label={fig.alt}
+        width={clip.width}
+        height={clip.height}
+        style={crop}
+      ></video>
+    ) : (
+      <img src={pic!.src} srcset={pic!.srcset} sizes={sizes} alt={fig.alt} width={pic!.width} height={pic!.height} loading="lazy" decoding="async" style={crop} />
+    )}
+  </div>
+  <figcaption>
+    <span>{fig.caption}</span>
+    {length && <span class="rlv-fig__len">{length}</span>}
+  </figcaption>
+</figure>
+
+<style lang="scss">
+  @use "../../styles/helpers/fonts" as *;
+
+  .rlv-fig {
+    margin: 0;
+  }
+
+  .rlv-fig__frame {
+    aspect-ratio: var(--r);
+    overflow: hidden;
+    border-radius: 10px;
+    background: var(--case-surface);
+
+    img,
+    video {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  figcaption {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+    font: 400 0.8125rem / 1.45 font-family(geist);
+    letter-spacing: 0;
+    color: var(--case-soft);
+  }
+
+  .rlv-fig__len {
+    flex: none;
+    margin-left: auto;
+    font: 400 0.6875rem / 1.9 font-family(fraktion);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--case-soft);
+  }
+
+  /* Inline: the column's width, never taller than most of a screen, so a
+     portrait photo does not push its paragraph's neighbour a page away. */
+  .rlv-fig--inline {
+    margin: 1.75rem 0 2.5rem;
+
+    .rlv-fig__frame {
+      width: min(100%, calc(70svh * var(--r)));
+    }
+  }
+
+  /* Once the rail runs, it carries the figures and the inline copies stand
+     down (display: none, so their lazy images never load). */
+  @media (min-width: 60em) {
+    :global(.js-rlv) .rlv-fig--inline {
+      display: none;
+    }
+  }
+
+  /* Rail: every figure stacked in the stage, sized to fit it whole (the
+     stage is a size container), one shown. The swap is a class toggle; the
+     crossfade is opacity only, and under reduced motion there is none. */
+  /* Only the shown figure is displayed: a stacked figure that is merely
+     transparent still sits in the viewport, so its lazy image loads before
+     the page does (the critical path read 614 KB against a 600 KB budget).
+     The fade-in comes from @starting-style; where that is unsupported the
+     swap is instant. */
+  .rlv-fig--rail {
+    position: absolute;
+    inset: 0;
+    display: none;
+    align-content: center;
+    justify-items: start;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 450ms ease;
+
+    .rlv-fig__frame,
+    figcaption {
+      width: min(100cqw, calc((100cqh - 5.5rem) * var(--r)));
+    }
+  }
+
+  .rlv-fig--rail.is-on {
+    display: grid;
+    opacity: 1;
+    pointer-events: auto;
+
+    @starting-style {
+      opacity: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .rlv-fig--rail {
+      transition: none;
+    }
+  }
+
+  /* Plate: the full width it is given. */
+  .rlv-fig--plate .rlv-fig__frame {
+    width: 100%;
+  }
+
+  /* A panning plate keeps a readable height at phone width and scrolls. */
+  @media (max-width: 47.99em) {
+    .rlv-fig--pan .rlv-fig__frame {
+      aspect-ratio: auto;
+      height: 13rem;
+      overflow-x: auto;
+      overscroll-behavior-x: contain;
+
+      img {
+        width: auto;
+        max-width: none;
+        height: 100%;
+      }
+    }
+  }
+</style>

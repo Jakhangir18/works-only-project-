@@ -1,9 +1,33 @@
 ---
 import AWork from "./AWork.astro";
-import { works } from "../data/works";
+import { works, type ProjectInfo } from "../data/works";
+
+/**
+ * WORK: the letter tunnel. /tunnel/ mounts it with works.ts; the anime home
+ * mounts it with `home` and its own list (data/workCards.ts) — the owner,
+ * 2026-10-03: WORK as it was on Vercel, entered from the star field.
+ *
+ * On the home the section starts one screen early, over the star field's
+ * last screen, and shows nothing until the field hands its letters over
+ * (`is-on`, Space.ts); the container sticks with CSS instead of a
+ * ScrollTrigger pin (no one-frame lag on iOS), and the section's height is
+ * static CSS, so nothing on the page is re-measured after load. The tunnel's
+ * colours come from `theme-contrasted` on the section, because the anime
+ * theme's primary is near-black.
+ */
+interface Props {
+  items?: readonly ProjectInfo[];
+  home?: boolean;
+}
+const { items = works, home = false } = Astro.props;
 ---
 
-<section id="work" class="s-work" data-intersect>
+<section
+  id="work"
+  class:list={["s-work", { "s-work--home theme-contrasted is-far": home }]}
+  data-intersect={home ? undefined : ""}
+  style={home ? `--steps:${items.length}` : undefined}
+>
   <div class="s__outer">
     <div class="s__inner js-container">
       <h2 class="s__title">
@@ -15,15 +39,32 @@ import { works } from "../data/works";
         </span>
       </h2>
 
+      {/* The cards live inside a scroll-driven scene whose contents are skipped
+          (content-visibility) until the tunnel opens, so they are not a reliable
+          tab stop. This list is the keyboard and screen-reader route to the same
+          projects, and it is always present. */}
+      <nav class="s__index js-work-index" aria-label="Projects">
+        <ul>
+          {
+            items.map((work) => (
+              <li>
+                <a href={work.site}>
+                  {work.title} — {work.blurb}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
+
       <div class="s__scene js-scene">
         {
-          works.map((work, index) => (
+          items.map((work) => (
             <AWork
               cssClass="s__scene__work s__scene__work--video js-work"
               caption={work.title}
               site={work.site}
-              index={String(index + 1).padStart(2, "0")}
-              total={String(works.length).padStart(2, "0")}
+              blurb={work.blurb}
               size={work.size}
               palette={work.palette}
               poster={work.poster}
@@ -33,7 +74,11 @@ import { works } from "../data/works";
         }
       </div><!-- .s__scene -->
 
+      {/* Home only: the star field the wall dissolves into, and the dust
+          it dissolves as (WorkDust.ts). */}
+      {home && <div class="s__stars js-stars" aria-hidden="true"></div>}
       <canvas class="s__canvas js-canvas"></canvas>
+      {home && <canvas class="s__dust js-dust" width="0" height="0" aria-hidden="true"></canvas>}
       <div class="s__mask-outer">
         <div class="s__mask js-mask">
           <svg class="s__mask__svg js-mask-svg">
@@ -313,6 +358,152 @@ import { works } from "../data/works";
 
       /* transform is written inline from WorkSection.tick(); phone stays
          static there (iOS jitter) */
+    }
+  }
+
+  /* --- The anime home -------------------------------------------------- */
+
+  /* One screen up, over the star field's last screen; that screen paints
+     nothing until the hand-off, and below it the section is space black.
+     The height is the tunnel's own sum, in svh, as static CSS: the 100svh
+     container, a 140svh intro, one step per project (80svh, 72 on a phone),
+     a 60svh hold, then 100svh where the wall dissolves into stars.
+     WorkSection keeps the same numbers. */
+  .s-work.s-work--home {
+    --step: 80;
+    margin-top: -100svh;
+    height: calc((100 + 140 + var(--steps) * var(--step) + 60 + 100) * 1svh);
+    background: linear-gradient(to bottom, transparent 0 100svh, color(space) 100svh);
+    opacity: 1;
+    transition: none;
+
+    @media (max-width: 575.98px) {
+      --step: 72;
+    }
+
+    &:before {
+      display: none;
+    }
+
+    .s__outer {
+      height: 100%;
+    }
+
+    /* Sticky, not pinned: the star field above is sticky too, and a pin goes
+       fixed a frame late under iOS's native scroll. */
+    .s__inner {
+      position: sticky;
+      top: 0;
+      background: transparent;
+    }
+
+    /* Before the hand-off the star field draws these letters itself. */
+    &:not(.is-on) :is(.s__scene, .s__canvas, .s__mask-outer) {
+      visibility: hidden;
+    }
+
+    /* A screen away, the tunnel's layers leave the tree (invariant 11); the
+       project index stays, it is the keyboard's route. */
+    &.is-far :is(.s__scene, .s__canvas, .s__mask-outer, .s__dust) {
+      display: none;
+    }
+
+    /* The descent's field (AnimeParadise.astro), faded in by WorkDust.ts as
+       the last specks land on its stars. */
+    .s__stars {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      opacity: 0;
+      pointer-events: none;
+      @include star-tiles;
+    }
+
+    /* The grid is drawn once the points have gathered and then only moves:
+       its own layer, one gap wider than the stage for the drift
+       (WorkSection.drawGridHome). */
+    .s__canvas {
+      width: calc(100% + 24px);
+      will-change: transform;
+    }
+
+    /* Its own layer (invariant 13): it redraws with the scroll's progress.
+       Out of the tree outside the dissolve (WorkDust.update sets is-live)
+       and whenever the section is far. */
+    &:not(.is-far) .s__dust:global(.is-live) {
+      display: block;
+    }
+
+    .s__dust {
+      display: none;
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      will-change: transform;
+    }
+
+    /* On a phone the star field sits at z-index 3 over the flight's stage,
+       and this section's first screen lies over its last one. */
+    @media (max-width: 639.98px) {
+      z-index: 4;
+    }
+  }
+
+  /* No star field gathers under reduced motion (Space.ts does not run), so
+     nothing hands the letters over: they are simply there. */
+  @media (prefers-reduced-motion: reduce) {
+    .s-work.s-work--home {
+      margin-top: 0;
+    }
+
+    .s-work.s-work--home:not(.is-on) :is(.s__scene, .s__canvas, .s__mask-outer) {
+      visibility: visible;
+    }
+  }
+
+  /* Keyboard and screen-reader route to the projects. Visually hidden until a
+     link inside it takes focus, so a sighted keyboard user sees what the ring
+     is on instead of seven invisible stops. */
+  .s__index {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 30;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+
+    &:focus-within {
+      width: auto;
+      height: auto;
+      margin: 0;
+      padding: 1rem 1.25rem;
+      overflow: visible;
+      clip-path: none;
+      white-space: normal;
+      background: #000;
+      color: #fff2ed;
+      font: 400 0.8125rem / 1.6 var(--font-family-fraktion), monospace;
+      letter-spacing: 0.06em;
+    }
+
+    ul {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: underline;
+      text-underline-offset: 0.2em;
     }
   }
 </style>

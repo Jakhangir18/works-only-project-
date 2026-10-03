@@ -1,0 +1,299 @@
+---
+import SplitHeading from "./SplitHeading.astro";
+
+/**
+ * The sign-off. Owner's direction (2026-10-02): no resume here; make the end
+ * beautiful instead.
+ *
+ * One line across the width, the email as the largest link with a copy
+ * button beside it, the three public profiles as pills, and where he is right
+ * now. The evening sky it sits in is where the timeline's path ends: the
+ * meadow's day has gone to dusk.
+ *
+ * Profiles confirmed 2026-09-29 against the owner's project inventory.
+ */
+const EMAIL = "tynshimj@oregonstate.edu";
+const profiles = [
+  { href: "https://github.com/Jakhangir18", label: "GitHub", handle: "Jakhangir18" },
+  { href: "https://linkedin.com/in/tynshimov", label: "LinkedIn", handle: "tynshimov" },
+  { href: "https://devpost.com/tynshimj", label: "Devpost", handle: "tynshimj" },
+];
+const YEAR = new Date().getFullYear();
+---
+
+<section class="sign-off" id="contact" aria-label="Contact">
+  <div class="sign-off__inner">
+    <p class="sign-off__label">Contact</p>
+
+    <SplitHeading as="h2" class="sign-off__title" text="Let's build the next one." />
+
+    <div class="sign-off__mail">
+      <a class="sign-off__email" href={`mailto:${EMAIL}`}>{EMAIL}</a>
+      <button class="sign-off__copy js-copy-email" type="button" data-email={EMAIL} data-magnetic>
+        <span class="sign-off__copy-label js-copy-label">Copy</span>
+      </button>
+    </div>
+
+    <ul class="sign-off__profiles">
+      {profiles.map((p) => (
+        <li>
+          <a class="sign-off__pill" href={p.href} target="_blank" rel="noopener noreferrer" data-magnetic>
+            <span class="sign-off__pill-name">{p.label}</span>
+            <span class="sign-off__pill-handle">{p.handle}</span>
+            <span aria-hidden="true">↗</span>
+            <span class="u-sr-only">(opens in a new tab)</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+
+    <p class="sign-off__status">
+      <span class="sign-off__dot" aria-hidden="true"></span>
+      Corvallis, Oregon · <time class="js-local-time">Pacific time</time>
+    </p>
+  </div>
+
+  <footer class="sign-off__footer">
+    <span>© {YEAR} Jakhangir Tynshimov</span>
+    <a href="#home" class="sign-off__top">Back to the top ↑</a>
+  </footer>
+</section>
+
+<script>
+  /* The copy button, and the local clock. The clock writes one string a
+     minute while the page is visible — a timer, not a frame loop — and stops
+     with the tab. */
+  const button = document.querySelector<HTMLButtonElement>(".js-copy-email");
+  const label = document.querySelector<HTMLElement>(".js-copy-label");
+  let reset: ReturnType<typeof setTimeout> | null = null;
+  button?.addEventListener("click", async () => {
+    const email = button.dataset.email || "";
+    try {
+      await navigator.clipboard.writeText(email);
+      if (label) label.textContent = "Copied";
+    } catch {
+      // No clipboard (an insecure origin, an old browser): fall back to mail.
+      window.location.href = `mailto:${email}`;
+    }
+    if (reset) clearTimeout(reset);
+    reset = setTimeout(() => {
+      if (label) label.textContent = "Copy";
+    }, 1600);
+  });
+
+  const time = document.querySelector<HTMLTimeElement>(".js-local-time");
+  const format = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Los_Angeles",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZoneName: "short",
+  });
+  let clock: ReturnType<typeof setInterval> | null = null;
+  const tick = () => {
+    if (time) time.textContent = format.format(new Date());
+  };
+  const startClock = () => {
+    tick();
+    if (!clock) clock = setInterval(tick, 60_000);
+  };
+  const stopClock = () => {
+    if (clock) clearInterval(clock);
+    clock = null;
+  };
+  if (time) {
+    startClock();
+    document.addEventListener("visibilitychange", () => (document.hidden ? stopClock() : startClock()));
+  }
+</script>
+
+<style lang="scss">
+  @use "../styles/helpers/colors" as *;
+  @use "../styles/helpers/fonts" as *;
+
+  .sign-off {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 100svh;
+    padding: clamp(5rem, 14vh, 9rem) clamp(1.25rem, 5vw, 5rem) 2rem;
+    color: #f4f1ff;
+    /* Dusk: the meadow's sky gone to evening, deepening upward, with the
+       last warm light along the bottom edge. */
+    background:
+      radial-gradient(120% 60% at 50% 110%, rgba(255, 168, 104, 0.55), rgba(255, 168, 104, 0) 60%),
+      linear-gradient(to bottom, #0b0a1f 0%, #1b1840 45%, #3b2a5e 78%, #6d3f63 100%);
+    overflow: clip;
+    isolation: isolate;
+
+    /* A few early stars, painted once. */
+    &::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 40%;
+      z-index: -1;
+      background-image:
+        radial-gradient(circle, rgba(255, 255, 255, 0.8) 0.7px, transparent 1.4px),
+        radial-gradient(circle, rgba(255, 230, 200, 0.6) 0.6px, transparent 1.2px);
+      background-size:
+        173px 151px,
+        113px 97px;
+      background-position:
+        23px 41px,
+        71px 13px;
+      opacity: 0.55;
+      mask-image: linear-gradient(to bottom, #000, transparent);
+    }
+  }
+
+  .sign-off__inner {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(1.5rem, 3.5vh, 2.5rem);
+    max-width: 1400px;
+    width: 100%;
+    margin: 0 auto;
+  }
+
+  .sign-off__label {
+    margin: 0;
+    font: 400 0.75rem / 1 font-family(fraktion);
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: rgba(244, 241, 255, 0.6);
+  }
+
+  :global(.sign-off__title) {
+    margin: 0;
+    font: 400 clamp(3.4rem, 11vw, 11rem) / 0.86 font-family(bigger);
+    text-transform: uppercase;
+    letter-spacing: 0.005em;
+    color: #fff;
+  }
+
+  .sign-off__mail {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem 1.5rem;
+  }
+
+  .sign-off__email {
+    font: 400 clamp(1.5rem, 4.2vw, 3.6rem) / 1.1 font-family(editorial);
+    color: #fff;
+    text-decoration: none;
+    overflow-wrap: anywhere;
+    background-image: linear-gradient(currentColor, currentColor);
+    background-size: 0% 2px;
+    background-position: 0 100%;
+    background-repeat: no-repeat;
+    transition: background-size 400ms ease;
+
+    &:hover,
+    &:focus-visible {
+      background-size: 100% 2px;
+    }
+  }
+
+  .sign-off__copy {
+    padding: 0.7rem 1.2rem;
+    border: 1px solid rgba(244, 241, 255, 0.5);
+    border-radius: 999px;
+    background: transparent;
+    color: #fff;
+    font: 700 0.6875rem / 1 font-family(fraktion);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background-color 200ms ease, color 200ms ease;
+
+    &:hover,
+    &:focus-visible {
+      background: #fff;
+      color: #1b1840;
+    }
+  }
+
+  .sign-off__profiles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .sign-off__pill {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    padding: 0.85rem 1.25rem;
+    border: 1px solid rgba(244, 241, 255, 0.28);
+    border-radius: 999px;
+    color: #fff;
+    text-decoration: none;
+    background: rgba(255, 255, 255, 0.04);
+    transition: border-color 200ms ease, background-color 200ms ease;
+
+    &:hover,
+    &:focus-visible {
+      border-color: color(accent);
+      background: rgba(244, 12, 63, 0.12);
+    }
+  }
+
+  .sign-off__pill-name {
+    font: 400 1.05rem / 1 font-family(geist);
+  }
+
+  .sign-off__pill-handle {
+    font: 400 0.75rem / 1 font-family(fraktion);
+    letter-spacing: 0.06em;
+    color: rgba(244, 241, 255, 0.6);
+  }
+
+  .sign-off__status {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin: 0;
+    font: 400 0.75rem / 1.4 font-family(fraktion);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(244, 241, 255, 0.72);
+  }
+
+  .sign-off__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #3fb950;
+    box-shadow: 0 0 0 4px rgba(63, 185, 80, 0.18);
+  }
+
+  .sign-off__footer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 1rem;
+    max-width: 1400px;
+    width: 100%;
+    margin: clamp(4rem, 10vh, 7rem) auto 0;
+    padding-top: 1.25rem;
+    border-top: 1px solid rgba(244, 241, 255, 0.14);
+    font: 400 0.6875rem / 1 font-family(fraktion);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(244, 241, 255, 0.55);
+  }
+
+  .sign-off__top {
+    color: inherit;
+    text-decoration: none;
+
+    &:hover,
+    &:focus-visible {
+      color: #fff;
+    }
+  }
+</style>

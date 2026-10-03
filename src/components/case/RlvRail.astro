@@ -1,0 +1,146 @@
+---
+import RlvFigure from "./RlvFigure.astro";
+
+/**
+ * The figure rail of the Remote Lab Vision page: a sticky stage in the right
+ * margin, beside the paragraphs that cite its figures. Desktop only, and only
+ * once the page's script gate (`js-rlv`) is set; a phone, or a desktop with
+ * no script, reads the inline copies instead.
+ *
+ * Each figure appears twice in the markup, here and inline after the
+ * paragraph that first cites it. Only one copy is ever displayed, and the
+ * hidden copy's lazy image is never fetched.
+ */
+interface Props {
+  slug: string;
+  /** Names the aside for assistive technology, e.g. "Figures: results and
+   *  limits". */
+  label: string;
+  figs: {
+    n: number;
+    id: string;
+    alt: string;
+    caption: string;
+    clip?: boolean;
+    ratio?: number;
+    focal?: string;
+    trim?: number;
+  }[];
+}
+
+const { slug, label, figs } = Astro.props;
+---
+
+<aside class="rlv-rail js-rlv-rail" aria-label={label}>
+  <div class="rlv-rail__stage">
+    {figs.map((fig, i) => <RlvFigure slug={slug} fig={fig} mode="rail" on={i === 0} sizes="(min-width: 60em) 36vw, 100vw" />)}
+  </div>
+</aside>
+
+<script>
+  /**
+   * The rail's one behaviour, event-driven like the rest of the case page
+   * (case.ts): no scroll listener, no frame loop.
+   *
+   * A paragraph that cites a figure carries data-cites, the figure's key
+   * (`n`, never shown), and each rail figure carries the same key as
+   * data-fig. One IntersectionObserver watches those paragraphs against the
+   * reading line, a band one percent tall halfway down the viewport. When a
+   * paragraph crosses it, the rail that holds that figure shows it and drops
+   * the one it showed: a class toggle, and CSS fades opacity. Between
+   * paragraphs, on a heading, or on a paragraph that cites a plate, the rail
+   * keeps what it has.
+   *
+   * A clip in the rail plays only while its figure is shown, the stage is on
+   * screen and the tab is visible, and never under reduced motion (then it
+   * gets controls instead, as case.ts gives its loops).
+   *
+   * The page has no client-side router, so these observers live as long as
+   * the document does and there is nothing to tear down.
+   */
+  function initRail(): void {
+    const figs = new Map<string, HTMLElement>();
+    const shown = new Map<HTMLElement, HTMLElement>();
+    document.querySelectorAll<HTMLElement>(".js-rlv-rail").forEach((rail) => {
+      const items = [...rail.querySelectorAll<HTMLElement>("[data-fig]")];
+      items.forEach((el) => figs.set(el.dataset.fig!, el));
+      const first = items.find((el) => el.classList.contains("is-on")) ?? items[0];
+      if (first) shown.set(rail, first);
+    });
+    if (!figs.size) return;
+
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const clips = [...document.querySelectorAll<HTMLVideoElement>(".js-rlv-clip")];
+    const seen = new Set<HTMLVideoElement>();
+    const sync = (v: HTMLVideoElement) => {
+      const on = v.closest(".is-on") !== null;
+      // An unshown clip with controls must not take keyboard focus.
+      if (reduce) v.tabIndex = on ? 0 : -1;
+      if (on && seen.has(v) && !reduce && !document.hidden) v.play().catch(() => {});
+      else if (!v.paused) v.pause();
+    };
+    if (clips.length) {
+      if (reduce) clips.forEach((v) => (v.controls = true));
+      const watch = new IntersectionObserver((entries) => {
+        for (const entry of entries) {
+          const v = entry.target as HTMLVideoElement;
+          if (entry.isIntersecting) seen.add(v);
+          else seen.delete(v);
+          sync(v);
+        }
+      });
+      clips.forEach((v) => watch.observe(v));
+      document.addEventListener("visibilitychange", () => clips.forEach(sync));
+    }
+
+    const show = (fig: HTMLElement) => {
+      const rail = fig.closest<HTMLElement>(".js-rlv-rail");
+      if (!rail || shown.get(rail) === fig) return;
+      shown.get(rail)?.classList.remove("is-on");
+      fig.classList.add("is-on");
+      shown.set(rail, fig);
+      clips.forEach(sync);
+    };
+
+    let reading: HTMLElement | null = null;
+    const line = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          const p = entry.target as HTMLElement;
+          const fig = figs.get(p.dataset.cites ?? "");
+          if (!fig) continue;
+          reading?.classList.remove("is-reading");
+          p.classList.add("is-reading");
+          reading = p;
+          show(fig);
+        }
+      },
+      { rootMargin: "-50% 0px -49% 0px" },
+    );
+    document.querySelectorAll<HTMLElement>("[data-cites]").forEach((p) => line.observe(p));
+  }
+
+  initRail();
+</script>
+
+<style lang="scss">
+  .rlv-rail {
+    display: none;
+  }
+
+  @media (min-width: 60em) {
+    :global(.js-rlv) .rlv-rail {
+      display: block;
+    }
+  }
+
+  /* Sticks under the case bar and fills the rest of the screen. It is a size
+     container, so each figure can fit itself whole (RlvFigure). */
+  .rlv-rail__stage {
+    position: sticky;
+    top: 4.75rem;
+    height: calc(100svh - 6.5rem);
+    container-type: size;
+  }
+</style>

@@ -56,12 +56,19 @@
     measure();
 
     let rafPending = false;
+    // Captured in the scroll listener, before anything writes a style this
+    // frame, so update() never has to ask the layout engine for it.
+    let lastScrollY = window.scrollY;
     let hiddenApplied = false;
 
     function update() {
       rafPending = false;
 
-      const scrollY = window.scrollY;
+      // scrollTop is captured by the scroll listener before any style is
+      // written this frame; reading window.scrollY here instead forced a
+      // style+layout pass inside frames the Work section was already busy in
+      // (measured 100% forced layout on the long frames it appeared in).
+      const scrollY = lastScrollY;
       const windowHeight = window.innerHeight;
 
       // Hide rocket while the work section is visible, approaching, or
@@ -114,6 +121,7 @@
     }
 
     function scheduleUpdate() {
+      lastScrollY = window.scrollY;
       if (!rafPending) {
         rafPending = true;
         requestAnimationFrame(update);

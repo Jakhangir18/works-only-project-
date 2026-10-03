@@ -17,4 +17,42 @@ $theme-colors: (
     shadow: #4d4040,
     white: #fff0eb,
   ),
+
+  // The light direction. Same three roles as the themes above, inverted:
+  // `secondary` is the page ground and `primary` the ink, so every component
+  // written against color(secondary)/color(primary) lands the right way up
+  // without being rewritten. The red is the one this repo already used as
+  // `primary` in the default theme, kept because it is also the reference's
+  // single accent — it lives under its own key so nothing inherits it by
+  // accident.
+  anime: (
+    primary: #0b0b0c,
+    secondary: #ffffff,
+    shadow: #d8d8d8,
+    white: #0b0b0c,
+    accent: #f40c3f,
+    // The same red is 4.22:1 on white — fine for a heading, short of the 4.5
+    // that 11px labels need. Small type uses this one, measured at 4.94:1.
+    accent-ink: #e00538,
+    ink-soft: #5b5b60,
+    rule: #e2e2e4,
+    // Where the rocket's burst lands: the one black the wipe, the star field
+    // and the work panels all paint, so the hand-off between them has no seam.
+    // Not pure black: a hair of blue keeps the white stars from reading as
+    // holes in the page.
+    space: #08080a,
+    // The ember inside that black — the inner edge of the burst's ring and of
+    // the wipe's flame, between the dark and the accent.
+    space-glow: #3b1409,
+    // The work's dark sheet, in GitHub's dark palette: panels one step
+    // lighter than the canvas (the canvas is `space`), a hairline border,
+    // text in two greys and one green for the live pill. Measured on the
+    // surface: text 15:1, muted 5.7:1, green on its own ground 6.5:1.
+    work-surface: #0e0e10,
+    work-border: #26262a,
+    work-text: #e6e6e9,
+    work-muted: #8b8b93,
+    work-green: #3fb950,
+    work-green-bg: #142318,
+  ),
 );

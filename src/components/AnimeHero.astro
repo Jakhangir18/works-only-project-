@@ -1,0 +1,651 @@
+---
+import { projects } from "../data/projects";
+import { layoutRun, BIGGER_DISPLAY, FRAKTION_MONO, type Cylinder, type Glyph } from "../utils/cylinderText";
+
+/**
+ * The light hero: one huge headline bent along a shallow arc, a slow wheel of
+ * project covers turning behind it, and a slot where the drawn figure will go.
+ *
+ * The reference draws all of this inside a single WebGL canvas. This does not,
+ * deliberately. The headline is SVG text on a path — real glyphs, crisp at any
+ * size, no font atlas to build and no shader to keep in budget — and the wheel
+ * is CSS 3D, which is the same technique the letter tunnel in this repository
+ * already uses. Same picture, a fraction of the cost, and the text stays text.
+ *
+ * The headline is the owner's name, split into HEADLINE_LEFT and
+ * HEADLINE_RIGHT so each word can ride the arc from its own corner. It is the
+ * name because that is the one thing on this page that needs no argument; a
+ * discipline line would be a claim, and claims on this site come from the
+ * fact list.
+ */
+
+/* The three pieces of copy on the first screen, each its own constant so a
+   change of mind is a change of one line. */
+const HEADLINE_LEFT = "JAKHANGIR";
+const HEADLINE_RIGHT = "TYNSHIMOV";
+const LINE_LEFT = "Computer Science, minoring in Physics";
+const LINE_LEFT_2 = "Oregon State University";
+const LINE_RIGHT = "Robotics · Software · ML";
+const PLACE = "Corvallis, Oregon";
+
+/* What turns behind the figure: the project pages themselves, shot at phone
+   size by scripts/shots.mjs. The reference floats app screens; these are the
+   real thing, which means they cannot drift from the site the way a mockup
+   does. A project in src/data/projects.ts joins the wheel by existing; its
+   slug is the name shots.mjs gives its shot (keep ROUTES there in step). */
+const shots = projects.map((project) => ({ title: project.title, slug: project.slug }));
+/* Each project sits on the ring twice. The ring is concave, so only its far
+   half is ever on screen — seven cards on a full circle would show three at a
+   time, and the reference wraps the figure in six. Fourteen slots keep the
+   spin continuous and the visible arc full. */
+const wheel = [...shots, ...shots];
+const step = 360 / Math.max(wheel.length, 1);
+
+/* A phone screenshot is 390x844; the card is drawn at 420 wide. */
+const SHOT_WIDTH = 420;
+const SHOT_HEIGHT = 909;
+
+/* The smallest candidate's own pixels, after the transparent margin was
+   trimmed off, so the box is reserved at the right ratio before the file
+   arrives. He now renders about 245 CSS px wide on a 900px-tall desktop
+   viewport and about 170 on a phone, so 500w covers 2x and 760w covers 3x.
+   Anything larger is bytes the layout cannot use. */
+const FIGURE_WIDTH = 500;
+const FIGURE_HEIGHT = 1214;
+
+/* The name and the two lines, wrapped on the inside of a cylinder like the
+   wheel, and projected at build time into one static SVG glyph each — so the
+   curve costs nothing per frame and the text stays text. See cylinderText.ts
+   for the geometry. Two layouts, because a phone's stage is nearly square and
+   the figure takes half its width: the name rides above his cap there.
+
+   Each layout's viewBox is the stage's own box at a reference width (1440 and
+   390), centred on the perspective origin, so scene units are CSS px at that
+   width and the SVG scales with the stage like everything else in it.
+
+   The name sits deeper than the wheel's far side (depth), on a wider cylinder
+   (radius), so the cards pass in front of it and its middle reads as far away;
+   its ends come forward and grow, the way the edge cards do. The tone follows
+   the same depth: the deepest glyphs are the palest. */
+const STAGE_WIDE = { w: 1440, h: 1440 * 0.44 };
+const STAGE_NARROW = { w: 390, h: 390 * 1.05 };
+
+/* The name's cylinder leans further back than the wheel (tilt), which bends
+   its line into the arch the old textPath drew, now with depth: the middle is
+   deepest, smallest and palest, and the two ends come forward and grow. */
+const NAME_WIDE: Cylinder = { perspective: 1400, tilt: -22, radius: 740, depth: 400, fontSize: 250, condense: 0.7, tracking: 0.03, font: BIGGER_DISPLAY };
+const NAME_NARROW: Cylinder = { perspective: 700, tilt: -32, radius: 230, depth: 150, fontSize: 70, condense: 0.62, tracking: 0.03, font: BIGGER_DISPLAY };
+/* The lines hug the floor in front of the wheel, close to the projection
+   plane, so they stay small and readable rather than receding. */
+const LINES_WIDE: Cylinder = { perspective: 1400, tilt: -9, radius: 1500, depth: 0, fontSize: 16, tracking: 0.08, font: FRAKTION_MONO };
+const LINES_NARROW: Cylinder = { perspective: 700, tilt: -9, radius: 620, depth: 0, fontSize: 11.5, tracking: 0.08, font: FRAKTION_MONO };
+
+type Layout = { key: string; viewBox: string; size: number; glyphs: Glyph[] };
+const box = (stage: { w: number; h: number }) => `${-stage.w / 2} ${-stage.h / 2} ${stage.w} ${stage.h}`;
+
+const names: Layout[] = [
+  {
+    key: "wide",
+    viewBox: box(STAGE_WIDE),
+    size: NAME_WIDE.fontSize,
+    glyphs: [...layoutRun(HEADLINE_LEFT, -0.16, "end", -120, NAME_WIDE), ...layoutRun(HEADLINE_RIGHT, 0.16, "start", -120, NAME_WIDE)],
+  },
+  {
+    key: "narrow",
+    viewBox: box(STAGE_NARROW),
+    size: NAME_NARROW.fontSize,
+    glyphs: [...layoutRun(HEADLINE_LEFT, -0.08, "end", -178, NAME_NARROW), ...layoutRun(HEADLINE_RIGHT, 0.08, "start", -178, NAME_NARROW)],
+  },
+];
+
+/* The lines' SVG sits in flow under the stage and overlaps its bottom edge by
+   the same few units on every width, so its viewBox starts a little above the
+   stage's floor (scene y = h/2) and the negative margin in the stylesheet is
+   that overlap as a fraction of the width. */
+const LINES_TOP_WIDE = STAGE_WIDE.h / 2 - 16;
+const LINES_TOP_NARROW = STAGE_NARROW.h / 2 - 6;
+const lines: Layout[] = [
+  {
+    key: "wide",
+    viewBox: `${-STAGE_WIDE.w / 2} ${LINES_TOP_WIDE} ${STAGE_WIDE.w} 96`,
+    size: LINES_WIDE.fontSize,
+    glyphs: [
+      ...layoutRun(LINE_LEFT.toUpperCase(), -0.1, "end", 352, LINES_WIDE),
+      ...layoutRun(LINE_LEFT_2.toUpperCase(), -0.1, "end", 378, LINES_WIDE),
+      ...layoutRun(LINE_RIGHT.toUpperCase(), 0.1, "start", 352, LINES_WIDE),
+    ],
+  },
+  {
+    key: "narrow",
+    viewBox: `${-STAGE_NARROW.w / 2} ${LINES_TOP_NARROW} ${STAGE_NARROW.w} 84`,
+    size: LINES_NARROW.fontSize,
+    glyphs: [
+      ...layoutRun(LINE_LEFT.toUpperCase(), 0, "center", 226, LINES_NARROW),
+      ...layoutRun(LINE_LEFT_2.toUpperCase(), 0, "center", 244, LINES_NARROW),
+      ...layoutRun(LINE_RIGHT.toUpperCase(), 0, "center", 270, LINES_NARROW),
+    ],
+  },
+];
+/* The glyph index where the right-hand line begins: everything from there on
+   is the discipline line, drawn in full ink; the place lines are soft. Spaces
+   are not glyphs, so the count is of the visible characters only. */
+const visible = (text: string) => [...text].filter((ch) => ch.trim()).length;
+const EMPHASIS_FROM = visible(LINE_LEFT) + visible(LINE_LEFT_2);
+---
+
+<section class="anime-hero" id="home" aria-label="Introduction">
+  <h1 class="u-sr-only">Jakhangir Tynshimov</h1>
+  <p class="u-sr-only">{LINE_RIGHT}. {LINE_LEFT}, {LINE_LEFT_2}.</p>
+
+  <p class="anime-hero__place" aria-hidden="true">{PLACE}</p>
+
+  <div class="anime-hero__stage js-anime-hero">
+    {/* The name, behind the wheel: a sign at the back of the ring that the
+        cards pass in front of. Decorative, because the h1 above carries it. */}
+    {
+      names.map((layout) => (
+        <svg
+          class={`anime-hero__name anime-hero__name--${layout.key}`}
+          viewBox={layout.viewBox}
+          aria-hidden="true"
+          focusable="false"
+        >
+          {layout.glyphs.map((g, i) => (
+            <g transform={`translate(${g.x} ${g.y}) skewY(${g.skew}) scale(${g.sx} ${g.sy})`}>
+              <text
+                font-size={layout.size}
+                fill-opacity={(0.5 + 0.5 * g.near).toFixed(3)}
+                style={`--i:${i}`}
+              >{g.char}</text>
+            </g>
+          ))}
+        </svg>
+      ))
+    }
+
+    <div class="anime-hero__wheel js-anime-wheel" aria-hidden="true">
+      {
+        wheel.map((work, index) => (
+          <div
+            class="anime-hero__screen"
+            style={`--angle:${index * step}; --turn:${index * step}deg;`}
+          >
+            <img
+              src={`/shots/${work.slug}.webp`}
+              alt=""
+              width={SHOT_WIDTH}
+              height={SHOT_HEIGHT}
+              loading="eager"
+              decoding="async"
+            />
+            {/* The same shot, pre-blurred and with the treatment above baked
+                in, faded up as the card turns toward the edge of the screen. */}
+            <img
+              class="anime-hero__screen-blur"
+              src={`/shots/${work.slug}-blur.webp`}
+              alt=""
+              width={SHOT_WIDTH}
+              height={SHOT_HEIGHT}
+              loading="eager"
+              decoding="async"
+            />
+          </div>
+        ))
+      }
+    </div>
+
+    {/* The drawn figure: the owner, standing in front of the headline with the
+        wheel turning behind him. Decorative — the `h1` above carries his name
+        and the headline repeats it — so no alt text, and the slot keeps its
+        `aria-hidden`. Eager and high priority: it is the largest thing on the
+        first screen, so it is the LCP candidate. */}
+    <div class="anime-hero__figure" aria-hidden="true">
+      <img
+        src="/hero/jak-500.webp"
+        srcset="/hero/jak-500.webp 500w, /hero/jak-760.webp 760w"
+        sizes="(max-width: 48em) 170px, 320px"
+        alt=""
+        width={FIGURE_WIDTH}
+        height={FIGURE_HEIGHT}
+        loading="eager"
+        fetchpriority="high"
+        decoding="async"
+      />
+    </div>
+
+  </div>
+
+  {/* The two lines, on the floor of the same cylinder: left of his feet the
+      place, right of them the discipline. Typed in glyph by glyph once the
+      cover lifts. On a phone they stack, centred, under the stage. */}
+  {
+    lines.map((layout) => (
+      <svg
+        class={`anime-hero__lines anime-hero__lines--${layout.key}`}
+        viewBox={layout.viewBox}
+        aria-hidden="true"
+        focusable="false"
+      >
+        {layout.glyphs.map((g, i) => (
+          <g transform={`translate(${g.x} ${g.y}) skewY(${g.skew}) scale(${g.sx} ${g.sy})`}>
+            <text
+              font-size={layout.size}
+              class={i >= EMPHASIS_FROM ? "is-strong" : undefined}
+              style={`--i:${i}`}
+            >{g.char}</text>
+          </g>
+        ))}
+      </svg>
+    ))
+  }
+
+  <a class="anime-hero__explore" href="#work" data-magnetic>
+    Explore
+    <span aria-hidden="true">↓</span>
+  </a>
+</section>
+
+<script>
+  import { initAnimeHero } from "../utils/AnimeHero";
+  initAnimeHero();
+</script>
+
+<style lang="scss">
+  @use "../styles/helpers/colors" as *;
+  @use "../styles/helpers/fonts" as *;
+  @use "../styles/helpers/responsive" as *;
+
+  .anime-hero {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    /* Small viewport units: the address bar on a phone must not be able to
+       push the Explore link off the bottom of the first screen. */
+    min-height: 100svh;
+    /* No side padding: the stage runs edge to edge, so the wheel dissolves
+       into the screen's own edges instead of stopping at a gutter. */
+    padding: 6rem 0 3rem;
+
+    background: color(secondary);
+    color: color(primary);
+    overflow: hidden;
+  }
+
+  .anime-hero__stage {
+    position: relative;
+    width: 100%;
+    /* Edge to edge: the ring is meant to wrap the whole first screen, so the
+       stage no longer stops at a reading measure. */
+    max-width: none;
+    /* Wider than tall: the ring is a shallow ellipse on screen, so a squarer
+       stage only adds empty ground under it. */
+    aspect-ratio: 1000 / 440;
+
+    /* The wheel's children are laid out in 3D against this. */
+    perspective: 1400px;
+
+    /* A static haze at each screen edge, above the wheel and below the
+       figure: the outermost cards fade into the page rather than being cut
+       by it. Painted once; nothing here moves. */
+    &::before,
+    &::after {
+      content: "";
+      position: absolute;
+      z-index: 2;
+      top: -12%;
+      bottom: -6%;
+      width: clamp(16px, 6vw, 110px);
+      pointer-events: none;
+    }
+
+    &::before {
+      left: 0;
+      background: linear-gradient(to right, color(secondary) 8%, rgba(255, 255, 255, 0));
+    }
+
+    &::after {
+      right: 0;
+      background: linear-gradient(to left, color(secondary) 8%, rgba(255, 255, 255, 0));
+    }
+  }
+
+  /* Out of the tree while the hero is more than a screen away; the
+     controller sets is-far from an IntersectionObserver. */
+  .anime-hero__stage:global(.is-far) .anime-hero__wheel {
+    display: none;
+  }
+
+  .anime-hero__wheel {
+    position: absolute;
+    z-index: 1;
+    inset: 0;
+    transform-style: preserve-3d;
+
+    /* Only the tilt lives here, and it is a transform rather than a custom
+       property: a property set on an ancestor invalidates the style of every
+       node beneath it, which is the most expensive mistake this repository has
+       made. A transform does not. The turn itself is written on each card.
+       The base of -9 degrees lays the ring slightly away from the viewer so it
+       reads as a wheel rather than a flat circle of cards. */
+    /* The controller replaces this whole declaration each frame. The resting
+       value has to match its BASE_TILT or the first written frame jumps. */
+    transform: rotateX(-9deg);
+    will-change: transform;
+    /* Decoration, and hidden from assistive tech already. The near half of
+       the ring is faded to nothing but still a box, 4-5x magnified, and it
+       passed over the Explore link often enough to swallow most clicks on it
+       — every click under reduced motion, where the ring never turns. */
+    pointer-events: none;
+  }
+
+  .anime-hero__screen {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    /* Laid out at the size the card reaches at the edge of the visible arc
+       (1.4x the centre), then statically scaled down to 0.715 in the transform
+       below, so the GPU only ever downsamples the raster — invariant 7. The
+       centre card renders at 176px on a wide desktop. */
+    width: clamp(134px, 16.1vw, 246px);
+    /* Half the width, so the card's own centre sits on the ring's axis. The
+       three clamp bounds have to stay in step with the width above. */
+    margin-left: clamp(-123px, -8.05vw, -67px);
+
+    /* A concave ring: the circle's centre sits in front of the stage, so the
+       arc the viewer sees is its far side — the middle card is deepest and the
+       cards at the edges come forward and grow, the way the reference's
+       phones wrap around the figure. Step forward by the radius, turn to this
+       card's place, step back along the turned z, and leave it turned: on the
+       far side of that circle a card's front faces the centre, so the viewer
+       sees every screen's face while the ones at the edges angle inward —
+       the inside of a half-cylinder, not a row of billboards. The near half
+       of the circle would land between the viewer and the figure: its faces
+       point away, so backface-visibility drops it in every engine, and the
+       cos() ramp fades the cards out before they get there where the engine
+       has trig. `--turn` is the card's own angle plus the wheel's rotation,
+       and the controller writes it here, on the leaf that consumes it. */
+    --ring: clamp(300px, 36vw, 560px);
+    transform: translateY(-50%) translateZ(var(--ring)) rotateY(var(--turn, 0deg))
+      translateZ(calc(-1 * var(--ring))) scale(0.715);
+    transform-style: preserve-3d;
+    backface-visibility: hidden;
+    opacity: clamp(0, cos(var(--turn, 0deg)) * 2.2, 1);
+
+    /* The phone is drawn here rather than baked into the screenshot: a CSS
+       bezel costs no bytes, stays crisp at any size, and follows the theme.
+       Layout values are the rendered ones divided by the 0.715 static scale:
+       8px of bezel renders as 5.7, the 22px corner as 15.7 and the image's
+       14px corner as 10, concentric with it. The edge is the first shadow, a
+       hairline ring, so there is no border to add to the box; the outer
+       shadow's extent is unchanged, so the layer's bounds do not grow. The
+       image keeps its own radius and the card has no overflow rule, so
+       nothing here is a clip layer. */
+    padding: 8px;
+    border-radius: 22px;
+    background: color(secondary);
+    box-shadow:
+      0 0 0 1.4px rgba(11, 11, 12, 0.07),
+      0 1px 2px rgba(11, 11, 12, 0.05),
+      0 10px 24px rgba(11, 11, 12, 0.06);
+
+    img {
+      display: block;
+      width: 100%;
+      height: auto;
+      border-radius: 14px;
+      /* Scenery, not the subject. These pages are dark-themed, so against a
+         white hero they arrive as black bricks: drained, lifted hard and held
+         well back, they read as pale ghosts the way the reference's screens
+         do, while still being distinguishable from one another. */
+      filter: grayscale(0.9) brightness(1.9) contrast(0.62);
+      opacity: 0.42;
+    }
+
+    /* The blurred twin covers the sharp shot as the card turns away from
+       the middle: clear inside 30 degrees, fully soft by 55. It is opaque
+       (the treatment above is baked into it by scripts/shots.mjs), so at
+       full strength it hides the sharp shot rather than doubling it. Its
+       opacity follows the card's own --turn, which the controller already
+       writes on this card each frame — no new write — and it is its own
+       layer so the change is a composite, not a repaint of the card. */
+    .anime-hero__screen-blur {
+      position: absolute;
+      inset: 8px;
+      width: calc(100% - 16px);
+      height: auto;
+      filter: none;
+      opacity: 0;
+      will-change: opacity;
+    }
+  }
+
+  @supports (opacity: cos(0deg)) {
+    .anime-hero__screen .anime-hero__screen-blur {
+      opacity: clamp(0, (1 - cos(var(--turn, 0deg))) * 3.38 - 0.453, 1);
+    }
+  }
+
+  .anime-hero__figure {
+    position: absolute;
+    z-index: 3;
+    left: 50%;
+    /* Sized by height, not width: a standing person in a stage that is wider
+       than it is tall, and at this ratio (0.41) a width rule would decide his
+       height for him. Two bounds: the viewport, so he stays the subject of the
+       first screen, and the stage, so a tall narrow window (a portrait tablet,
+       where the stage is short) cannot send him through the arc and out of
+       the hero's clipped top — 140% of the stage keeps his cap just above
+       it. 74svh puts his cap about 40px under the top of a 900px-tall
+       screen, over the arc rather than through its edge; 80 clipped the
+       crown. 760px is the ceiling because the source is 1535px tall: at 2x
+       anything larger would be upsampled. He stands on the stage's floor
+       and the controller tilts him a few degrees after the pointer, pivoting
+       at the feet, so the lean reads as balance rather than as a hinge at
+       the waist. */
+    height: clamp(360px, min(74svh, 140%), 760px);
+    bottom: 0;
+    transform: translateX(-50%);
+    transform-origin: 50% 100%;
+
+    /* Promoted only where the tilt runs: a hovering, fine pointer, and no
+       request for reduced motion. On touch, or under that setting, the
+       controller writes nothing here and the layer would be a cost for no
+       motion. */
+    @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+      will-change: transform;
+    }
+
+    img {
+      display: block;
+      height: 100%;
+      width: auto;
+    }
+  }
+
+  /* The name: one static SVG per layout, behind the wheel. The glyphs are
+     already placed and scaled by the build; the stylesheet only colours them
+     and brings them in once. */
+  .anime-hero__name {
+    position: absolute;
+    z-index: 0;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    pointer-events: none;
+
+    text {
+      font-family: font-family(bigger);
+      text-anchor: middle;
+      fill: color(primary);
+      /* So a percentage in the entrance's transform is the glyph's own
+         height, not the viewBox's. */
+      transform-box: fill-box;
+    }
+  }
+
+  .anime-hero__name--narrow {
+    display: none;
+  }
+
+  .anime-hero__lines {
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+    pointer-events: none;
+
+    text {
+      font-family: font-family(fraktion);
+      text-anchor: middle;
+      fill: color(ink-soft);
+    }
+
+    text.is-strong {
+      fill: color(primary);
+    }
+  }
+
+  /* The SVG overlaps the stage's floor by the 16 scene units its viewBox
+     starts above it, as a fraction of the width. */
+  .anime-hero__lines--wide {
+    margin-top: calc(-16 / 1440 * 100%);
+  }
+
+  .anime-hero__lines--narrow {
+    display: none;
+    margin-top: calc(-6 / 390 * 100%);
+  }
+
+  /* The entrance: the name rises letter by letter and the lines type in,
+     once, when the cover lifts — which is the moment the page drops
+     is-scroll-blocked. Transitions rather than keyframes, so the resting
+     state is the default and nothing is hidden if the class never changes
+     back; under reduced motion there is no travel and no delay. */
+  @media (prefers-reduced-motion: no-preference) {
+    .anime-hero__name text {
+      transition:
+        opacity 700ms ease,
+        transform 1100ms cubic-bezier(0.2, 0.8, 0.2, 1);
+      transition-delay: calc(120ms + var(--i) * 45ms);
+    }
+
+    .anime-hero__lines text {
+      transition: opacity 90ms linear;
+      transition-delay: calc(700ms + var(--i) * 16ms);
+    }
+
+    :global(.is-scroll-blocked) .anime-hero__name text {
+      opacity: 0;
+      transform: translateY(26%);
+    }
+
+    :global(.is-scroll-blocked) .anime-hero__lines text {
+      opacity: 0;
+    }
+  }
+
+  .anime-hero__place {
+    position: absolute;
+    /* Above the stage's edge haze, which reaches up past the stage. */
+    z-index: 5;
+    top: 1.75rem;
+    left: 1.75rem;
+    margin: 0;
+
+    font: 400 0.6875rem / 1 font-family(fraktion);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: color(ink-soft);
+  }
+
+  .anime-hero__explore {
+    position: relative;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 2rem;
+    padding: 0.75rem 1.25rem;
+    /* Clips the shimmer band to the pill. */
+    overflow: hidden;
+
+    border: 1px solid color(primary);
+    border-radius: 999px;
+
+    font: 700 0.6875rem / 1 font-family(fraktion);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    text-decoration: none;
+    color: color(primary);
+
+    transition: background-color 240ms ease, color 240ms ease;
+
+    &:hover,
+    &:focus-visible {
+      background: color(primary);
+      color: color(secondary);
+    }
+
+    /* The shimmer: one band of light crossing the button once on hover or
+       focus, a compositor transform on a pseudo-element and nothing else. It
+       exists only under those states, so at rest nothing runs. */
+    &::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(115deg, transparent 38%, rgba(255, 255, 255, 0.45) 50%, transparent 62%);
+      transform: translateX(-130%);
+      pointer-events: none;
+    }
+
+    &:hover::after,
+    &:focus-visible::after {
+      animation: shimmer 900ms ease-out 1;
+    }
+  }
+
+  @keyframes shimmer {
+    to {
+      transform: translateX(130%);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .anime-hero__explore::after {
+      animation: none;
+    }
+  }
+
+  @include mq(phone) {
+    /* Room above the stage for the name, which rides above his cap here
+       and clears the place label in the corner. */
+    .anime-hero {
+      padding-top: 6.25rem;
+    }
+
+    .anime-hero__stage {
+      aspect-ratio: 1 / 1.05;
+    }
+
+    .anime-hero__name--wide,
+    .anime-hero__lines--wide {
+      display: none;
+    }
+
+    .anime-hero__name--narrow,
+    .anime-hero__lines--narrow {
+      display: block;
+    }
+
+    /* A phone is tall and narrow: the same fraction of the viewport would put
+       his cap through the top edge, so he is a little shorter here. */
+    .anime-hero__figure {
+      height: clamp(240px, min(46svh, 118%), 480px);
+    }
+
+  }
+</style>

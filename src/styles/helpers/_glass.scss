@@ -1,0 +1,52 @@
+/**
+ * Liquid glass, for small controls and panels only: the video bar, the
+ * picker's bar, the case pages' bar and back link, the contact buttons. The
+ * owner, 2026-10-03: controls and panels, never a large or moving surface,
+ * because a backdrop filter re-filters its whole area whenever anything
+ * under it moves.
+ *
+ * Every engine gets a translucent fill over a blurred, saturated backdrop, a
+ * hairline edge and an inset highlight. No blurred box-shadow (invariant 12).
+ * Chromium also bends the backdrop at the rim through the SVG displacement
+ * map in GlassFilter.astro; WebKit cannot (bug 245510), so html.has-refraction
+ * is set only where `navigator.userAgentData` exists, which WebKit and Gecko
+ * lack. With no backdrop filter at all, the fill turns solid.
+ */
+/* $global: true inside an is:global stylesheet, where :global() is not
+   understood; scoped component styles keep the default. */
+@mixin glass($tone: dark, $global: false) {
+  @if $tone == dark {
+    background: rgba(16, 16, 20, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.28),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.18);
+  } @else {
+    background: rgba(255, 255, 255, 0.56);
+    /* A dark hairline: white glass on a white page needs an edge to exist. */
+    border: 1px solid rgba(17, 17, 20, 0.12);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.9),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.06);
+  }
+  -webkit-backdrop-filter: blur(10px) saturate(1.6);
+  backdrop-filter: blur(10px) saturate(1.6);
+
+  @if $global {
+    html.has-refraction & {
+      backdrop-filter: url(#lg-refract) blur(3px) saturate(1.7);
+    }
+  } @else {
+    :global(html.has-refraction) & {
+      backdrop-filter: url(#lg-refract) blur(3px) saturate(1.7);
+    }
+  }
+
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    @if $tone == dark {
+      background: rgb(30, 30, 34);
+    } @else {
+      background: rgb(246, 246, 248);
+    }
+  }
+}

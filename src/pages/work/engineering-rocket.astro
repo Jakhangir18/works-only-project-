@@ -1,15 +1,519 @@
 ---
-import ProjectLayout from "../../components/ProjectLayout.astro";
+import CaseLayout from "../../layouts/CaseLayout.astro";
+import CaseMeta from "../../components/case/CaseMeta.astro";
+import CaseFigure from "../../components/case/CaseFigure.astro";
+import CaseClip from "../../components/case/CaseClip.astro";
+import RocketStrip from "../../components/case/RocketStrip.astro";
+import { picture } from "../../data/media";
+import { projects } from "../../data/projects";
+
+/**
+ * Rocket club, "Launch log" (docs/portfolio-v4-design.md): a dark page that
+ * shows stills before it says anything (artemartemartem.com). The hero on a
+ * strip of film, then the title and one count line; why, in one sentence;
+ * the build as a horizontal film strip, CAD to print to bench
+ * (gilhuybrecht.com); the avionics, with the telemetry and the
+ * thrust-vectoring clips as the centrepiece, timed (michaelgatt.com); launch
+ * day; and the loop the club was for, last.
+ *
+ * Facts: the resume (president, Mangystau region, 2022-2024), the earlier
+ * site copy (Fusion, Cura, bench-tested Arduino avionics, hand assembly, the
+ * learning loop) and what the media shows. Left out on purpose: the club's
+ * name, member counts, other people's names, the propellant work, and any
+ * flight result. The launch-day rockets are not confirmed as the club's, so
+ * that clip is captioned for what it shows. The certificate thanks him for
+ * youth policy work in the region, not for the club, so it closes the page
+ * as a postscript with a neutral caption.
+ */
+const slug = "engineering-rocket";
+const p = projects.find((x) => x.slug === slug)!;
+const hero = picture(slug, "hero", 1600);
+
+const build = [
+  { id: "g01", alt: "Nose cone sections modelled as separate parts, open in the Cura slicer on a laptop screen", caption: "Nose cone sections, modelled as separate parts, in the slicer." },
+  { id: "g05", alt: "The bench: the white airframe tube, the avionics bay, printed rings, precision screwdrivers and a tool case", caption: "The bench: the airframe tube, the avionics bay, printed rings and tools." },
+  { id: "g04", alt: "A white 3D-printed sled holding an Arduino board and a 9 V battery", caption: "A printed sled holds the Arduino and a 9 V battery." },
+  { id: "g02", alt: "The Arduino avionics powered on the bench, LEDs lit, a battery attached and servo leads trailing", caption: "The avionics powered on the bench, LEDs lit, battery attached." },
+  { id: "g06", alt: "The avionics bay fitted between two airframe sections, the whole body held upright in one hand", caption: "The avionics bay, fitted between two airframe sections." },
+];
+
+/* Everything the page shows after the hero, in page order. The count line
+   is read from here, so it cannot drift from the page. */
+const shown = [...build.map((f) => f.id), "g03", "telemetry", "tvc-demo", "pads", "g07"];
+const clips = ["telemetry", "tvc-demo", "pads"];
+const photos = 1 + shown.filter((id) => !clips.includes(id)).length; // + the hero
+const words = ["No", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"];
+
+/* What the serial monitor streams in the telemetry clip. */
+const readout = [
+  { name: "Accelerometer", detail: "X · Y · Z" },
+  { name: "Temperature" },
+  { name: "Pressure" },
+  { name: "Altitude" },
+];
+
+/* The loop, clockwise from the top left. */
+const loop = ["Design a part", "Print it", "Find out why it failed", "Do it again"];
 ---
 
-<ProjectLayout
-  title="Engineering Rocket Project"
-  number="04"
-  accentColor="#fb923c"
-  heroColor="#1a0e0a"
-  intro="An applied aerospace research project exploring small-scale rocket propulsion, structural analysis, and systems integration — combining engineering fundamentals with original experimental design at Oregon State University."
-  problem="Existing student rocketry projects at the university level often followed prescriptive kits with limited opportunities for original engineering work. The challenge was to design and analyze a rocket system from first principles — addressing propulsion selection, structural load analysis, guidance considerations, and recovery systems — under real engineering constraints and a defined performance envelope."
-  approach="The project began with a target flight profile: a sub-orbital vehicle capable of stable flight to 1,500 feet AGL with a controlled recovery. I applied finite element analysis to the airframe, modeled thrust curves against drag coefficients, and iterated on fin geometry for passive stability. All computational work was validated against published small-rocket test data and supplemented with CAD modeling and simulation."
-  solution="The final design document covers the complete vehicle system: propulsion stage selection and verification, structural analysis under max-Q conditions, stability margin calculations via Barrowman equations, and a dual-event recovery sequence (drogue at apogee, main at 500 AGL). Simulated flights using OpenRocket matched the target altitude within 4% error."
-  outcome="The project was reviewed and approved by the university's aeronautical engineering faculty, earning distinction for its systematic approach to uncertainty quantification and documentation quality. The design serves as a reference model in the undergraduate rocketry curriculum and has been cited by two subsequent student teams as a baseline for their own projects."
-/>
+<CaseLayout slug={slug} title={p.title} description={p.line} theme="dark" shareCard="/projects/engineering-rocket/og.jpg">
+  <header class="rk-open">
+    <figure class="rk-still">
+      <img src={hero.src} srcset={hero.srcset} sizes="100vw" alt="The printed avionics bay held open in one hand, wired boards inside, with the servo mount and the white nose cone beside it" width={hero.width} height={hero.height} fetchpriority="high" decoding="async" />
+    </figure>
+
+    <div class="rk-head case-section">
+      <div class="rk-head__title">
+        <p class="case-label">Launch log · {p.kind}</p>
+        <h1 class="case-title">Rocket club</h1>
+        <p class="rk-count">
+          {[p.when, p.role, `${clips.length} clips`, `${photos} photos`].map((item) => (
+            <span>{item}</span>
+          ))}
+        </p>
+      </div>
+      <div class="rk-head__side">
+        <p class="case-lede">A student rocket club in the Mangystau region of Kazakhstan. I was its president.</p>
+        <CaseMeta
+          rows={[
+            { label: "Role", value: p.role },
+            { label: "Where", value: p.where },
+            { label: "Built with", value: "Fusion (CAD), Cura, 3D printing, Arduino" },
+          ]}
+        />
+      </div>
+    </div>
+  </header>
+
+  <section class="case-section rk-why">
+    <p class="case-label" data-reveal>Why</p>
+    <div class="rk-why__body">
+      <h2 class="rk-why__line" data-reveal>The job was less about rockets than about a loop a beginner could join.</h2>
+      <div class="case-prose" data-reveal>
+        <p>How the rocket on this page was built: airframe sections modelled in Fusion and printed as separate parts from Cura, Arduino avionics tested on the bench before they went inside, and the whole thing assembled by hand.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="case-section rk-build">
+    <div class="rk-build__head" data-reveal>
+      <p class="case-label">The build</p>
+      <h2 class="case-h2">CAD, print, bench</h2>
+      <p class="case-prose">Each section of the airframe was its own part: modelled in CAD, sliced, printed, then fitted by hand. The electronics got printed parts of their own. {words[build.length] ?? build.length} frames, from the slicer to the bay in hand.</p>
+    </div>
+    <RocketStrip slug={slug} label="The build, from the slicer to the bench" frames={build} />
+  </section>
+
+  <section class="case-section rk-av">
+    <div class="rk-av__head" data-reveal>
+      <p class="case-label">Avionics</p>
+      <h2 class="case-h2">Bench first</h2>
+      <p class="case-prose">An Arduino Nano with sensor boards and servo leads on a perfboard, tested on the bench before it went into the airframe.</p>
+    </div>
+    <CaseFigure slug={slug} id="g03" alt="Top-down view of the avionics perfboard: an Arduino Nano, sensor boards and servo leads, a finger pointing at the Nano" caption="The board from above: an Arduino Nano, sensor boards, servo leads." ratio="1 / 1" sizes="(max-width: 56em) 80vw, 20vw" class="rk-av__board" />
+    <CaseClip slug={slug} id="telemetry" label="The avionics board held in front of a laptop; the serial monitor streams accelerometer, temperature, pressure and altitude readings as the board moves" caption="Live telemetry: the serial monitor streams accelerometer, temperature, pressure and altitude as the board moves." loop class="rk-av__telemetry" />
+    <aside class="rk-readout" aria-labelledby="rk-readout-title" data-reveal>
+      <p class="case-label" id="rk-readout-title">On the serial monitor</p>
+      <ol>
+        {readout.map((r) => (
+          <li>
+            <span class="rk-readout__name">{r.name}</span>
+            {r.detail && <span class="rk-readout__detail">{r.detail}</span>}
+          </li>
+        ))}
+      </ol>
+    </aside>
+    <div class="rk-av__tvc-text" data-reveal>
+      <h3 class="case-h3">Thrust vectoring</h3>
+      <p class="case-prose">The same board drives two servos on a 3D-printed gimbal. Tilt the board, and the gimbal follows.</p>
+    </div>
+    <CaseClip slug={slug} id="tvc-demo" label="The avionics board driving two servos on a 3D-printed thrust-vectoring gimbal; tilting the board moves the gimbal" caption="Thrust vectoring: two servos on a printed gimbal follow the board as it tilts." loop class="rk-av__tvc" />
+  </section>
+
+  <section class="case-section rk-launch">
+    <div class="rk-launch__text" data-reveal>
+      <h2 class="case-title rk-launch__title">Launch day</h2>
+      <p class="case-prose">A school yard, rockets on the pads. Near the end of the clip, one climbs on a smoke trail.</p>
+    </div>
+    <CaseClip slug={slug} id="pads" label="A school yard with rockets standing on launch pads, then a launch: a rocket climbs on a smoke trail" caption="Launch day: the rockets on their pads, then up." class="rk-launch__clip" />
+  </section>
+
+  <section class="case-section rk-loop">
+    <div class="rk-loop__grid">
+      <div class="rk-loop__text">
+        <p class="case-label" data-reveal>The loop</p>
+        <h2 class="case-h2" data-reveal>What a beginner joined</h2>
+        <ol class="rk-cycle" data-reveal>
+          {loop.map((step) => (
+            <li>
+              <span class="rk-cycle__step">{step}</span>
+            </li>
+          ))}
+        </ol>
+      </div>
+      <CaseFigure slug={slug} id="g07" alt="A framed certificate of thanks («Алғыс») made out to Jakhangir Tynshimov for contributing to youth policy in the Mangystau region, 2024" caption="A certificate of thanks, Mangystau region, 2024." sizes="(max-width: 56em) 100vw, 36vw" class="rk-loop__photo" />
+    </div>
+
+  </section>
+</CaseLayout>
+
+<style lang="scss">
+  @use "../../styles/helpers/fonts" as *;
+
+  /* One perforation, as on the build strip. */
+  $perf: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='14'%3E%3Crect x='6' y='2' width='12' height='10' rx='2.5' fill='%2326262a'/%3E%3C/svg%3E");
+
+  /* The hero still, on a band of film: perforations above and below. */
+  .rk-still {
+    margin: 0;
+    padding: 26px 0;
+    background:
+      $perf repeat-x 0 6px,
+      $perf repeat-x 0 calc(100% - 6px),
+      #000;
+
+    img {
+      display: block;
+      width: 100%;
+      height: min(56.25vw, 68svh);
+      object-fit: cover;
+      object-position: 50% 55%;
+    }
+
+    @media (max-width: 48em) {
+      img {
+        height: auto;
+        aspect-ratio: 4 / 3;
+        object-position: 28% 50%;
+      }
+    }
+  }
+
+  .rk-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    gap: clamp(2rem, 5vw, 5rem);
+    align-items: end;
+    padding-top: clamp(2.5rem, 7vh, 5rem);
+
+    @media (max-width: 56em) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .rk-head__title {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+  }
+
+  /* The count line breaks between items, never inside one. Each dot sits in
+     the gap before its item; a dot that would start a line falls outside
+     the box and is clipped away. */
+  .rk-count {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem 1.6em;
+    margin: 0.4rem 0 0;
+    padding-top: 1rem;
+    border-top: 1px solid var(--case-rule);
+    overflow: clip;
+    font: 400 0.8125rem / 1.5 font-family(fraktion);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+
+    > span {
+      position: relative;
+      white-space: nowrap;
+    }
+
+    > span + span::before {
+      position: absolute;
+      /* Centred in the gap, which ends in the item's trailing letter-spacing. */
+      left: calc(-0.87em - 0.5ch);
+      content: "·";
+      content: "·" / "";
+      color: var(--case-soft);
+    }
+  }
+
+  .rk-head__side {
+    display: flex;
+    flex-direction: column;
+    gap: 2.25rem;
+  }
+
+  /* Why: one sentence, set large, and the build in a paragraph under it. */
+  .rk-why {
+    display: grid;
+    grid-template-columns: minmax(9rem, 0.25fr) minmax(0, 1fr);
+    gap: 1.5rem clamp(2rem, 5vw, 5rem);
+    border-top: 1px solid var(--case-rule);
+
+    @media (max-width: 56em) {
+      grid-template-columns: 1fr;
+    }
+
+    .case-label {
+      padding-top: 0.9rem;
+    }
+  }
+
+  .rk-why__line {
+    max-width: 24ch;
+    margin: 0 0 2rem;
+    font: 400 clamp(2rem, 4.4vw, 4.25rem) / 1.08 font-family(editorial);
+    text-wrap: balance;
+  }
+
+  /* The build: its head inside the gutter, the strip from edge to edge. */
+  .rk-build {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .rk-build__head,
+  .rk-av__head {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+
+    .case-h2,
+    .case-prose {
+      margin: 0;
+    }
+  }
+
+  .rk-build__head {
+    max-width: calc(60rem + 2 * var(--case-gutter));
+    margin-bottom: 2.25rem;
+    padding: 0 var(--case-gutter);
+  }
+
+  /* Avionics: the board and the head, then the telemetry clip beside what
+     it streams, then the thrust-vectoring clip beside its note. */
+  .rk-av {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: clamp(2rem, 4vw, 3.5rem) clamp(1rem, 2.5vw, 2rem);
+    align-items: start;
+
+    @media (max-width: 56em) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .rk-av__head {
+    grid-column: 1 / span 7;
+    align-self: center;
+  }
+
+  :global(.rk-av__board) {
+    grid-column: 10 / span 3;
+  }
+
+  :global(.rk-av__telemetry) {
+    grid-column: 1 / span 8;
+  }
+
+  .rk-readout {
+    grid-column: 9 / span 4;
+    align-self: center;
+
+    ol {
+      margin: 1rem 0 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    li {
+      display: flex;
+      align-items: baseline;
+      gap: 1rem;
+      padding: 0.9rem 0;
+      border-top: 1px solid var(--case-rule);
+
+      &:last-child {
+        border-bottom: 1px solid var(--case-rule);
+      }
+    }
+  }
+
+  .rk-readout__name {
+    font: 400 clamp(1.25rem, 1.8vw, 1.6rem) / 1.2 font-family(editorial);
+  }
+
+  .rk-readout__detail {
+    margin-left: auto;
+    font: 400 0.6875rem / 1 font-family(fraktion);
+    letter-spacing: 0.14em;
+    color: var(--case-soft);
+  }
+
+  .rk-av__tvc-text {
+    grid-column: 1 / span 4;
+    align-self: center;
+  }
+
+  :global(.rk-av__tvc) {
+    grid-column: 5 / span 8;
+  }
+
+  @media (max-width: 56em) {
+    .rk-av__head,
+    :global(.rk-av__board),
+    :global(.rk-av__telemetry),
+    .rk-readout,
+    .rk-av__tvc-text,
+    :global(.rk-av__tvc) {
+      grid-column: 1 / -1;
+    }
+
+    :global(.rk-av__board) {
+      max-width: 24rem;
+    }
+  }
+
+  /* Launch day: the word large, the upright clip beside it. */
+  .rk-launch {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(16rem, 23rem);
+    gap: clamp(2rem, 6vw, 6rem);
+    align-items: end;
+    border-top: 1px solid var(--case-rule);
+
+    @media (max-width: 48em) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .rk-launch__text {
+    display: flex;
+    flex-direction: column;
+    gap: 1.4rem;
+    padding-bottom: 2.6rem;
+
+    @media (max-width: 48em) {
+      padding-bottom: 0;
+    }
+  }
+
+  .rk-launch__title {
+    font-size: clamp(3.5rem, 11vw, 11.5rem);
+  }
+
+  :global(.rk-launch__clip) {
+    width: 100%;
+    max-width: 23rem;
+  }
+
+  /* The loop: four steps, clockwise, beside the people and the rocket. */
+  .rk-loop {
+    border-top: 1px solid var(--case-rule);
+  }
+
+  .rk-loop__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+    gap: clamp(2.5rem, 6vw, 6rem);
+    align-items: center;
+
+    @media (max-width: 56em) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .rk-loop__text {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .rk-cycle {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas:
+      "a b"
+      "d c";
+    gap: 2.4rem;
+    max-width: 38rem;
+    margin: 1.25rem 0 0;
+    padding: 0;
+    list-style: none;
+
+    li {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      min-height: 8.5rem;
+      padding: 1.1rem 1.2rem 1.25rem;
+      border: 1px solid var(--case-rule);
+      border-radius: 12px;
+
+      /* The arrow to the next step, in the gap: right, down, left, up. */
+      &::after {
+        position: absolute;
+        font: 400 1rem / 1 font-family(fraktion);
+        color: var(--case-accent);
+      }
+
+      &:nth-child(1) {
+        grid-area: a;
+
+        &::after {
+          content: "→";
+          top: 50%;
+          right: -1.75rem;
+          transform: translateY(-50%);
+        }
+      }
+
+      &:nth-child(2) {
+        grid-area: b;
+
+        &::after {
+          content: "↓";
+          left: 50%;
+          bottom: -1.85rem;
+          transform: translateX(-50%);
+        }
+      }
+
+      &:nth-child(3) {
+        grid-area: c;
+
+        &::after {
+          content: "←";
+          top: 50%;
+          left: -1.75rem;
+          transform: translateY(-50%);
+        }
+      }
+
+      &:nth-child(4) {
+        grid-area: d;
+
+        &::after {
+          content: "↑";
+          left: 50%;
+          top: -1.85rem;
+          transform: translateX(-50%);
+        }
+      }
+    }
+  }
+
+  .rk-cycle__step {
+    font: 400 clamp(1.25rem, 2vw, 1.75rem) / 1.15 font-family(editorial);
+  }
+
+  :global(.rk-loop__photo) {
+    max-width: 34rem;
+    justify-self: end;
+
+    @media (max-width: 56em) {
+      justify-self: start;
+    }
+  }
+
+</style>

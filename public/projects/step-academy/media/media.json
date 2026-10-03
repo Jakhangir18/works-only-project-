@@ -1,0 +1,18 @@
+{
+  "thumb-src": {
+    "kind": "image",
+    "width": 1012,
+    "height": 675,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/step-academy/media/thumb-src-640.webp"
+      },
+      {
+        "w": 1012,
+        "src": "/projects/step-academy/media/thumb-src-1012.webp"
+      }
+    ],
+    "thumb": "/projects/step-academy/media/thumb-src-thumb.webp"
+  }
+}

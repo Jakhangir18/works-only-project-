@@ -1,0 +1,303 @@
+{
+  "cover": {
+    "kind": "image",
+    "width": 1040,
+    "height": 2133,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/remote-lab-vision/media/cover-640.webp"
+      },
+      {
+        "w": 1040,
+        "src": "/projects/remote-lab-vision/media/cover-1040.webp"
+      }
+    ],
+    "thumb": "/projects/remote-lab-vision/media/cover-thumb.webp"
+  },
+  "hero": {
+    "kind": "image",
+    "width": 1600,
+    "height": 1200,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/remote-lab-vision/media/hero-640.webp"
+      },
+      {
+        "w": 1280,
+        "src": "/projects/remote-lab-vision/media/hero-1280.webp"
+      },
+      {
+        "w": 1600,
+        "src": "/projects/remote-lab-vision/media/hero-1600.webp"
+      }
+    ],
+    "thumb": "/projects/remote-lab-vision/media/hero-thumb.webp"
+  },
+  "g01": {
+    "kind": "image",
+    "width": 1600,
+    "height": 2133,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/remote-lab-vision/media/g01-640.webp"
+      },
+      {
+        "w": 1280,
+        "src": "/projects/remote-lab-vision/media/g01-1280.webp"
+      },
+      {
+        "w": 1600,
+        "src": "/projects/remote-lab-vision/media/g01-1600.webp"
+      }
+    ],
+    "thumb": "/projects/remote-lab-vision/media/g01-thumb.webp"
+  },
+  "g02": {
+    "kind": "image",
+    "width": 2400,
+    "height": 3200,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/remote-lab-vision/media/g02-640.webp"
+      },
+      {
+        "w": 1280,
+        "src": "/projects/remote-lab-vision/media/g02-1280.webp"
+      },
+      {
+        "w": 1920,
+        "src": "/projects/remote-lab-vision/media/g02-1920.webp"
+      },
+      {
+        "w": 2400,
+        "src": "/projects/remote-lab-vision/media/g02-2400.webp"
+      }
+    ],
+    "thumb": "/projects/remote-lab-vision/media/g02-thumb.webp"
+  },
+  "walk": {
+    "kind": "video",
+    "width": 406,
+    "height": 720,
+    "duration": 31.2,
+    "bytes": 2287923,
+    "src": "/projects/remote-lab-vision/media/walk.mp4",
+    "poster": "/projects/remote-lab-vision/media/walk-poster.webp"
+  },
+  "g04": {
+    "kind": "image",
+    "width": 1600,
+    "height": 1200,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/remote-lab-vision/media/g04-640.webp"
+      },
+      {
+        "w": 1280,
+        "src": "/projects/remote-lab-vision/media/g04-1280.webp"
+      },
+      {
+        "w": 1600,
+        "src": "/projects/remote-lab-vision/media/g04-1600.webp"
+      }
+    ],
+    "thumb": "/projects/remote-lab-vision/media/g04-thumb.webp"
+  },
+  "g05": {
+    "kind": "image",
+    "width": 1600,
+    "height": 1200,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/remote-lab-vision/media/g05-640.webp"
+      },
+      {
+        "w": 1280,
+        "src": "/projects/remote-lab-vision/media/g05-1280.webp"
+      },
+      {
+        "w": 1600,
+        "src": "/projects/remote-lab-vision/media/g05-1600.webp"
+      }
+    ],
+    "thumb": "/projects/remote-lab-vision/media/g05-thumb.webp"
+  },
+  "g06": {
+    "kind": "image",
+    "width": 2400,
+    "height": 3200,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/remote-lab-vision/media/g06-640.webp"
+      },
+      {
+        "w": 1280,
+        "src": "/projects/remote-lab-vision/media/g06-1280.webp"
+      },
+      {
+        "w": 1920,
+        "src": "/projects/remote-lab-vision/media/g06-1920.webp"
+      },
+      {
+        "w": 2400,
+        "src": "/projects/remote-lab-vision/media/g06-2400.webp"
+      }
+    ],
+    "thumb": "/projects/remote-lab-vision/media/g06-thumb.webp"
+  },
+  "g07": {
+    "kind": "image",
+    "width": 4725,
+    "height": 1952,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/remote-lab-vision/media/g07-640.webp"
+      },
+      {
+        "w": 1280,
+        "src": "/projects/remote-lab-vision/media/g07-1280.webp"
+      },
+      {
+        "w": 1920,
+        "src": "/projects/remote-lab-vision/media/g07-1920.webp"
+      },
+      {
+        "w": 4725,
+        "src": "/projects/remote-lab-vision/media/g07-4725.webp"
+      }
+    ],
+    "thumb": "/projects/remote-lab-vision/media/g07-thumb.webp"
+  },
+  "g08": {
+    "kind": "image",
+    "width": 1040,
+    "height": 2133,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/remote-lab-vision/media/g08-640.webp"
+      },
+      {
+        "w": 1040,
+        "src": "/projects/remote-lab-vision/media/g08-1040.webp"
+      }
+    ],
+    "thumb": "/projects/remote-lab-vision/media/g08-thumb.webp"
+  },
+  "poster": {
+    "kind": "image",
+    "width": 2400,
+    "height": 1879,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/remote-lab-vision/media/poster-640.webp"
+      },
+      {
+        "w": 1280,
+        "src": "/projects/remote-lab-vision/media/poster-1280.webp"
+      },
+      {
+        "w": 1920,
+        "src": "/projects/remote-lab-vision/media/poster-1920.webp"
+      },
+      {
+        "w": 2400,
+        "src": "/projects/remote-lab-vision/media/poster-2400.webp"
+      }
+    ],
+    "thumb": "/projects/remote-lab-vision/media/poster-thumb.webp"
+  },
+  "poster-objectives": {
+    "kind": "image",
+    "width": 1835,
+    "height": 1385,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/remote-lab-vision/media/poster-objectives-640.webp"
+      },
+      {
+        "w": 1280,
+        "src": "/projects/remote-lab-vision/media/poster-objectives-1280.webp"
+      },
+      {
+        "w": 1835,
+        "src": "/projects/remote-lab-vision/media/poster-objectives-1835.webp"
+      }
+    ],
+    "thumb": "/projects/remote-lab-vision/media/poster-objectives-thumb.webp"
+  },
+  "poster-cameras": {
+    "kind": "image",
+    "width": 2670,
+    "height": 590,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/remote-lab-vision/media/poster-cameras-640.webp"
+      },
+      {
+        "w": 1280,
+        "src": "/projects/remote-lab-vision/media/poster-cameras-1280.webp"
+      },
+      {
+        "w": 1920,
+        "src": "/projects/remote-lab-vision/media/poster-cameras-1920.webp"
+      },
+      {
+        "w": 2670,
+        "src": "/projects/remote-lab-vision/media/poster-cameras-2670.webp"
+      }
+    ],
+    "thumb": "/projects/remote-lab-vision/media/poster-cameras-thumb.webp"
+  },
+  "poster-histograms": {
+    "kind": "image",
+    "width": 2045,
+    "height": 1957,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/remote-lab-vision/media/poster-histograms-640.webp"
+      },
+      {
+        "w": 1280,
+        "src": "/projects/remote-lab-vision/media/poster-histograms-1280.webp"
+      },
+      {
+        "w": 1920,
+        "src": "/projects/remote-lab-vision/media/poster-histograms-1920.webp"
+      }
+    ],
+    "thumb": "/projects/remote-lab-vision/media/poster-histograms-thumb.webp"
+  },
+  "poster-conclusion": {
+    "kind": "image",
+    "width": 1855,
+    "height": 1105,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/remote-lab-vision/media/poster-conclusion-640.webp"
+      },
+      {
+        "w": 1280,
+        "src": "/projects/remote-lab-vision/media/poster-conclusion-1280.webp"
+      },
+      {
+        "w": 1855,
+        "src": "/projects/remote-lab-vision/media/poster-conclusion-1855.webp"
+      }
+    ],
+    "thumb": "/projects/remote-lab-vision/media/poster-conclusion-thumb.webp"
+  }
+}

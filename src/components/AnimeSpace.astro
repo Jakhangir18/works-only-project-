@@ -1,0 +1,183 @@
+---
+/**
+ * Where the flame hands the page over: a star field that comes in where the
+ * rocket went down and slides right to left, and the constellation: the
+ * rocket's sparks and the stars gather into the word WORK, stacked the way
+ * the WORK section opens (owner's choice, 2026-10-03).
+ *
+ * The section starts one viewport early, on top of the flight, and is three
+ * viewports tall; a sticky stage holds the screen for the last two. While
+ * the wipe runs, the stage is already in place over the flight, so the stars
+ * can appear exactly where the wipe has already painted black — the
+ * controller keeps them invisible until then. From there the field drifts
+ * across the held screen, the constellation gathers over the second half,
+ * and the WORK section takes over its letters on the frame this one lets go.
+ *
+ * The stars are one SVG written at build time — a fixed field rather than a
+ * random one, so the page looks the same on every load and nothing has to be
+ * generated in the browser. Two layers travel at different speeds on scroll,
+ * which is the whole of the parallax: two transforms, no canvas, no loop.
+ */
+
+/* A deterministic field. A seeded generator rather than Math.random so the
+   markup is byte-identical between builds and diffs stay readable. */
+function field(count: number, seed: number) {
+  let state = seed;
+  const next = () => {
+    // Numerical Recipes' LCG: small, well-distributed enough for scatter.
+    state = (state * 1664525 + 1013904223) % 4294967296;
+    return state / 4294967296;
+  };
+  return Array.from({ length: count }, () => ({
+    x: Number((next() * 100).toFixed(2)),
+    y: Number((next() * 100).toFixed(2)),
+    r: Number((0.5 + next() * 1.3).toFixed(2)),
+    o: Number((0.25 + next() * 0.6).toFixed(2)),
+  }));
+}
+
+/* Each layer is laid out wider than the stage by its own travel (45% and 15%
+   of the width, below), so the counts grow with the boxes: 46 -> 66 and
+   120 -> 138 keep the density the field had. */
+const far = field(138, 20260911);
+const near = field(66, 7734121);
+---
+
+<section class="space" id="space">
+  <div class="space__stage">
+    <div class="space__layer space__layer--far js-space-far" aria-hidden="true">
+      <svg viewBox="0 0 100 100" preserveAspectRatio="none" focusable="false">
+        {far.map((s) => <circle cx={s.x} cy={s.y} r={s.r / 10} opacity={s.o} />)}
+      </svg>
+    </div>
+
+    <div class="space__layer space__layer--near js-space-near" aria-hidden="true">
+      <svg viewBox="0 0 100 100" preserveAspectRatio="none" focusable="false">
+        {near.map((s) => <circle cx={s.x} cy={s.y} r={s.r / 8} opacity={s.o} />)}
+      </svg>
+    </div>
+
+    {/* The constellation: the sparks and the stars gathering into WORK
+        (Constellation.ts). Blank until the controller sizes it. */}
+    <canvas class="space__constellation js-space-constellation" width="0" height="0" aria-hidden="true"></canvas>
+  </div>
+</section>
+
+<script>
+  import { initSpace } from "../utils/Space";
+  initSpace();
+</script>
+
+<style lang="scss">
+  @use "../styles/helpers/colors" as *;
+
+  .space {
+    position: relative;
+    /* One viewport up, over the flight, and three viewports tall: the first
+       is the flight's, shared, where the stage rides along under the wipe;
+       the other two are the stage's own, where it holds the screen while the
+       field drifts and the constellation gathers. The first viewport paints
+       nothing, so the flight shows through and the finished wipe is the
+       ground the stars sit on; the rest is the same black, so the hand-off
+       has no seam. */
+    margin-top: -100svh;
+    height: 300svh;
+    background: linear-gradient(to bottom, transparent 0 100svh, color(space) 100svh);
+    /* clip, not hidden: hidden would make this a scroll container and the
+       stage would stick to it instead of to the viewport. */
+    overflow: clip;
+    /* Nothing here is for the pointer, and the upper half lies over the
+       flight. */
+    pointer-events: none;
+    isolation: isolate;
+  }
+
+  .space__stage {
+    position: sticky;
+    top: 0;
+    height: 100svh;
+    overflow: clip;
+  }
+
+  .space__layer {
+    position: absolute;
+    left: 0;
+    z-index: 0;
+
+    /* The controller writes a transform and an opacity here and nothing else;
+       until it does, the field is there and still. */
+    will-change: transform;
+
+    svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    circle {
+      fill: #fff;
+    }
+  }
+
+  /* Each layer is overscanned by exactly its travel, right to left and ten
+     degrees down, so it still fills the stage when it has slid all the way:
+     45% of the width for the near field (44.3vw across, 7.8vw down), 15% for
+     the far one (14.8vw across, 2.6vw down). */
+  .space__layer--near {
+    top: -7.8vw;
+    width: calc(100% + 44.3vw);
+    height: calc(100% + 7.8vw);
+  }
+
+  .space__layer--far {
+    top: -2.6vw;
+    width: calc(100% + 14.8vw);
+    height: calc(100% + 2.6vw);
+  }
+
+  .space__layer--near circle {
+    fill: #ffd9a8;
+  }
+
+  /* Its own layer (invariant 13): it redraws with the scroll's progress,
+     and inside the stage's layer each redraw would raster the stage too. */
+  .space__constellation {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    will-change: transform;
+  }
+
+  /* On a phone the flight's stage paints in front of the content (z-index 2,
+     AnimeRocket.astro), and the sparks leave from it: the section has to sit
+     above it. It is transparent over the flight and takes no pointer. */
+  @media (max-width: 639.98px) {
+    .space {
+      z-index: 3;
+    }
+  }
+
+  /* Stillness, not absence: one plain screen of black with the field at rest
+     and fully there, in flow after the flight — which does not fly either —
+     and nothing sticks or slides. */
+  @media (prefers-reduced-motion: reduce) {
+    .space {
+      margin-top: 0;
+      height: 100svh;
+      background: color(space);
+    }
+
+    .space__stage {
+      position: static;
+    }
+
+    .space__layer {
+      will-change: auto;
+    }
+
+    .space__constellation {
+      display: none;
+    }
+  }
+</style>

@@ -1,0 +1,464 @@
+---
+import { picture } from "../../data/media";
+
+/**
+ * The rocket club's build as a strip of 35 mm film: frames at one height and
+ * their own widths, perforations along both edges, the captions as a legend
+ * under the strip in the frames' order (after gilhuybrecht.com's frames).
+ * Native scroll moves it: touch, trackpad, keyboard (the track is focusable,
+ * and so is every frame) and the two buttons.
+ *
+ * A frame is a link to its largest file, so without JS it still opens the
+ * picture. With JS it opens in a lightbox that grows out of the frame (FLIP,
+ * the script below).
+ */
+interface Props {
+  slug: string;
+  /** Names the strip for assistive tech. */
+  label: string;
+  frames: { id: string; alt: string; caption: string }[];
+  class?: string;
+}
+const { slug, label, frames, class: className } = Astro.props;
+
+/* The strip's frame height at 36rem (576px) on a desktop and about 70vw on a
+   phone (the CSS below), so `sizes` can name each frame's real width. */
+const tiles = frames.map((f) => {
+  const pic = picture(slug, f.id, 640);
+  const ratio = pic.width / pic.height;
+  return {
+    ...f,
+    ...pic,
+    full: picture(slug, f.id, 4000).src,
+    sizes: `(max-width: 48em) ${Math.min(82, Math.round(ratio * 70))}vw, ${Math.round(ratio * 576)}px`,
+  };
+});
+const first = tiles[0];
+---
+
+<div class:list={["rk-strip js-rk-strip", className]}>
+  <figure class="rk-strip__figure">
+    <div class="rk-strip__track js-rk-track" tabindex="0" role="region" aria-label={`${label}: ${tiles.length} frames, scrolls sideways`}>
+      <ol class="rk-strip__film">
+        {tiles.map((t) => (
+          <li class="rk-strip__frame">
+            <a class="rk-strip__open js-rk-open" href={t.full} aria-haspopup="dialog" data-srcset={t.srcset} data-w={t.width} data-h={t.height} data-caption={t.caption}>
+              <img src={t.src} srcset={t.srcset} sizes={t.sizes} alt={t.alt} width={t.width} height={t.height} loading="lazy" decoding="async" />
+            </a>
+          </li>
+        ))}
+      </ol>
+    </div>
+
+    <div class="rk-strip__bar">
+      <button type="button" class="rk-strip__btn js-rk-prev" aria-label="Scroll the strip back">←</button>
+      <button type="button" class="rk-strip__btn js-rk-next" aria-label="Scroll the strip on">→</button>
+      <p class="rk-strip__hint">Scroll sideways · open a frame to see it whole</p>
+    </div>
+
+    <figcaption>
+      <ol class="rk-strip__legend">
+        {tiles.map((t) => (
+          <li>{t.caption}</li>
+        ))}
+      </ol>
+    </figcaption>
+  </figure>
+
+  <dialog class="rk-box js-rk-box" aria-labelledby="rk-box-caption">
+    <div class="rk-box__scrim js-rk-scrim"></div>
+    <img class="rk-box__img js-rk-img" src={first.src} alt={first.alt} loading="lazy" decoding="async" />
+    <button type="button" class="rk-box__close js-rk-close" autofocus>Close <span aria-hidden="true">×</span></button>
+    <p class="rk-box__caption js-rk-caption" id="rk-box-caption"></p>
+  </dialog>
+</div>
+
+<script>
+  /**
+   * The strip's one behaviour: a frame opens in a lightbox that grows out of
+   * it (FLIP). The open image is laid out at its full size and starts scaled
+   * down onto the frame, so its scale approaches 1 from below and the bitmap
+   * is only ever downsampled (CLAUDE.md, invariant 7). Only transform and
+   * opacity move, through the Web Animations API, so there is no frame loop
+   * here. Each open and close reads its geometry first and writes after.
+   *
+   * The native modal dialog does the rest: the page behind it is inert and
+   * Tab is held on the close button, so focus stays inside; Escape closes it
+   * (its cancel event); focus goes back to the frame it came from. Under reduced motion nothing travels: the
+   * lightbox only fades.
+   */
+  type Box = { left: number; top: number; width: number; height: number };
+
+  const EASE_OUT = "cubic-bezier(0.2, 0.8, 0.2, 1)";
+  const EASE_BACK = "cubic-bezier(0.55, 0, 0.2, 1)";
+
+  /** The open image's box: as large as the screen allows, under the close
+   *  button and over the caption. */
+  function fit(w: number, h: number, vw: number, vh: number): Box {
+    const narrow = vw < 640;
+    const top = narrow ? 64 : 76;
+    const bottom = narrow ? 96 : 100;
+    const side = narrow ? 16 : 48;
+    const s = Math.min((vw - side * 2) / w, (vh - top - bottom) / h);
+    const width = w * s;
+    const height = h * s;
+    return { left: (vw - width) / 2, top: top + (vh - top - bottom - height) / 2, width, height };
+  }
+
+  /** The transform that lays an image boxed at `to` over `from`. */
+  function onto(from: DOMRect, to: Box): string {
+    const s = Math.min(from.width / to.width, from.height / to.height);
+    const dx = from.left + from.width / 2 - (to.left + to.width / 2);
+    const dy = from.top + from.height / 2 - (to.top + to.height / 2);
+    return `translate(${dx}px, ${dy}px) scale(${s})`;
+  }
+
+  const fade = (el: Element, from: number, to: number, duration: number, delay = 0) =>
+    el.animate([{ opacity: from }, { opacity: to }], { duration, delay, easing: "ease", fill: "both" });
+
+  document.querySelectorAll<HTMLElement>(".js-rk-strip").forEach((root) => {
+    const track = root.querySelector<HTMLElement>(".js-rk-track");
+    const box = root.querySelector<HTMLDialogElement>(".js-rk-box");
+    const img = root.querySelector<HTMLImageElement>(".js-rk-img");
+    const scrim = root.querySelector<HTMLElement>(".js-rk-scrim");
+    const caption = root.querySelector<HTMLElement>(".js-rk-caption");
+    const close = root.querySelector<HTMLElement>(".js-rk-close");
+    if (!track || !box || !img || !scrim || !caption || !close || typeof box.showModal !== "function") return;
+
+    const html = document.documentElement;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let open: HTMLAnchorElement | null = null; // the frame on show
+    let openedAt = 0;
+    let at: Box | null = null; // where its image is laid out
+    let closing = false;
+    let running: Animation[] = [];
+
+    const place = (b: Box) => {
+      img.style.left = `${b.left}px`;
+      img.style.top = `${b.top}px`;
+      img.style.width = `${b.width}px`;
+      img.style.height = `${b.height}px`;
+    };
+    const stop = () => {
+      running.forEach((a) => a.cancel());
+      running = [];
+    };
+    const size = (a: HTMLAnchorElement) => fit(Number(a.dataset.w), Number(a.dataset.h), html.clientWidth, html.clientHeight);
+
+    function show(a: HTMLAnchorElement) {
+      const tile = a.querySelector("img");
+      if (!tile) return;
+      // Read: the frame's box and the viewport, before anything is written.
+      const from = tile.getBoundingClientRect();
+      const to = size(a);
+
+      // Write. The frame's own pixels go in first, already decoded, so the
+      // image never travels empty.
+      stop();
+      img.removeAttribute("srcset");
+      img.src = tile.currentSrc || tile.src;
+      img.alt = tile.alt;
+      caption.textContent = a.dataset.caption ?? "";
+      place(to);
+      a.classList.add("is-lifted");
+      box.showModal();
+      openedAt = performance.now();
+      open = a;
+      at = to;
+      closing = false;
+
+      const still = reduce.matches;
+      running = [
+        still ? fade(img, 0, 1, 200) : img.animate([{ transform: onto(from, to) }, { transform: "none" }], { duration: 620, easing: EASE_OUT, fill: "both" }),
+        fade(scrim, 0, 1, still ? 200 : 420),
+        fade(caption, 0, 1, 280, still ? 0 : 320),
+        fade(close, 0, 1, 280, still ? 0 : 320),
+      ];
+
+      // Then the file that suits the open size, decoded off-screen and
+      // swapped in only when it can paint at once.
+      const srcset = a.dataset.srcset;
+      if (!srcset) return;
+      const sharp = new Image();
+      sharp.sizes = `${Math.ceil(to.width)}px`;
+      sharp.srcset = srcset;
+      sharp.decode().then(
+        () => {
+          if (open === a && sharp.currentSrc) img.src = sharp.currentSrc;
+        },
+        () => {},
+      );
+    }
+
+    function hide() {
+      if (!open || !at || closing) return;
+      closing = true;
+      const done = () => box.close();
+
+      // Still opening: run the same animations back to where they began.
+      if (running.some((a) => a.playState === "running")) {
+        running.forEach((a) => a.reverse());
+        Promise.all(running.map((a) => a.finished)).then(done, done);
+        return;
+      }
+
+      // Read: where the frame is now (the page can scroll under the dialog).
+      const from = open.querySelector("img")!.getBoundingClientRect();
+      const seen = from.bottom > 0 && from.top < html.clientHeight && from.right > 0 && from.left < html.clientWidth;
+      const travel = seen && !reduce.matches;
+
+      // Write.
+      stop();
+      running = [
+        travel ? img.animate([{ transform: "none" }, { transform: onto(from, at) }], { duration: 460, easing: EASE_BACK, fill: "forwards" }) : fade(img, 1, 0, 200),
+        fade(scrim, 1, 0, travel ? 460 : 200),
+        fade(caption, 1, 0, 160),
+        fade(close, 1, 0, 160),
+      ];
+      Promise.all(running.map((a) => a.finished)).then(done, done);
+    }
+
+    // Every way out ends here: the button, a click anywhere, Escape, or a
+    // close the browser does on its own.
+    box.addEventListener("close", () => {
+      stop();
+      const a = open;
+      open = null;
+      at = null;
+      closing = false;
+      if (!a) return;
+      a.classList.remove("is-lifted");
+      a.focus({ preventScroll: true });
+    });
+    box.addEventListener("cancel", (e) => {
+      e.preventDefault();
+      hide();
+    });
+    // The second click of a double click lands on the dialog it just opened;
+    // a click within 350 ms of opening is that, not a request to close.
+    box.addEventListener("click", (e) => {
+      if (e.detail > 1 || performance.now() - openedAt < 350) return;
+      hide();
+    });
+    // The modal dialog makes the page inert, but Tab would still leave for
+    // the browser's own controls. Close is the one control here: Tab stays.
+    box.addEventListener("keydown", (e) => {
+      if (e.key !== "Tab") return;
+      e.preventDefault();
+      close.focus();
+    });
+
+    track.addEventListener("click", (e) => {
+      const a = (e.target as Element).closest<HTMLAnchorElement>(".js-rk-open");
+      if (!a || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      e.preventDefault();
+      show(a);
+    });
+
+    window.addEventListener(
+      "resize",
+      () => {
+        if (!open || closing) return;
+        at = size(open);
+        place(at);
+      },
+      { passive: true },
+    );
+
+    const page = (dir: number) => track.scrollBy({ left: dir * track.clientWidth * 0.8, behavior: reduce.matches ? "auto" : "smooth" });
+    root.querySelector(".js-rk-prev")?.addEventListener("click", () => page(-1));
+    root.querySelector(".js-rk-next")?.addEventListener("click", () => page(1));
+  });
+</script>
+
+<style lang="scss">
+  @use "../../styles/helpers/fonts" as *;
+
+  /* One perforation, repeated along both edges of the film. */
+  $perf: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='14'%3E%3Crect x='6' y='2' width='12' height='10' rx='2.5' fill='%2326262a'/%3E%3C/svg%3E");
+
+  .rk-strip {
+    /* The frame height: 36rem on a desktop, about 70vw on a phone. A static
+       value on the strip, never written per frame. */
+    --rk-frame: clamp(16rem, min(58svh, 70vw), 36rem);
+  }
+
+  .rk-strip__figure {
+    margin: 0;
+  }
+
+  .rk-strip__track {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: var(--case-gutter);
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+
+    &:focus-visible {
+      outline-offset: -2px;
+    }
+  }
+
+  .rk-strip__film {
+    display: flex;
+    gap: 14px;
+    width: max-content;
+    margin: 0;
+    padding: 2.75rem var(--case-gutter) 1.9rem;
+    list-style: none;
+    background:
+      $perf repeat-x 0 6px,
+      $perf repeat-x 0 calc(100% - 6px),
+      #000;
+  }
+
+  .rk-strip__frame {
+    position: relative;
+    flex: none;
+    scroll-snap-align: start;
+  }
+
+  .rk-strip__open {
+    display: block;
+    border-radius: 2px;
+
+    img {
+      display: block;
+      width: auto;
+      height: var(--rk-frame);
+      /* A frame never fills the screen: the next one always shows. */
+      max-width: calc(100vw - 2 * var(--case-gutter) - 2.5rem);
+      object-fit: cover;
+      border-radius: 2px;
+    }
+
+    &:hover img {
+      outline: 1px solid var(--case-accent);
+      outline-offset: 4px;
+    }
+
+    &.is-lifted img {
+      opacity: 0;
+    }
+  }
+
+  .rk-strip__bar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 1.1rem;
+    padding: 0 var(--case-gutter);
+  }
+
+  .rk-strip__btn {
+    width: 2.6rem;
+    height: 2.6rem;
+    border: 1px solid var(--case-rule);
+    border-radius: 50%;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      border-color: var(--case-accent);
+    }
+  }
+
+  .rk-strip__hint {
+    margin: 0 0 0 auto;
+    font: 400 0.6875rem / 1.3 font-family(fraktion);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--case-soft);
+    text-align: right;
+  }
+
+  .rk-strip__legend {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    gap: 0.9rem 2rem;
+    margin: 1.75rem 0 0;
+    padding: 1.25rem var(--case-gutter) 0;
+    border-top: 1px solid var(--case-rule);
+    list-style: none;
+
+    li {
+      font: 400 0.875rem / 1.5 font-family(geist);
+      color: var(--case-soft);
+    }
+  }
+
+  /* The lightbox: the whole screen, its image placed in pixels by the
+     script so the FLIP knows both ends without measuring the dialog. */
+  .rk-box {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    overflow: hidden;
+    background: transparent;
+    color: var(--case-ink);
+
+    &::backdrop {
+      background: transparent;
+    }
+  }
+
+  .rk-box__scrim {
+    position: absolute;
+    inset: 0;
+    background: rgba(5, 5, 7, 0.97);
+  }
+
+  .rk-box__img {
+    position: absolute;
+    display: block;
+    border-radius: 4px;
+    cursor: zoom-out;
+  }
+
+  .rk-box__close {
+    position: absolute;
+    top: 1rem;
+    right: var(--case-gutter);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.7rem 1rem;
+    border: 1px solid var(--case-rule);
+    border-radius: 999px;
+    background: transparent;
+    color: inherit;
+    font: 400 0.75rem / 1 font-family(fraktion);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      border-color: var(--case-accent);
+    }
+  }
+
+  .rk-box__caption {
+    position: absolute;
+    left: 50%;
+    bottom: 1.5rem;
+    width: min(64ch, calc(100% - 2 * var(--case-gutter)));
+    margin: 0;
+    transform: translateX(-50%);
+    font: 400 0.875rem / 1.5 font-family(geist);
+    text-align: center;
+  }
+</style>

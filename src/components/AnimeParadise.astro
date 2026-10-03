@@ -1,0 +1,733 @@
+---
+import { timeline, KIND_LABEL, span } from "../data/timeline";
+
+/**
+ * The timeline, as a walk. Owner's direction (2026-10-02): from space, down
+ * onto a paradise land — sun rays, living grass — with the path of his
+ * timeline lying on the grass.
+ *
+ * Two parts:
+ *   1. The descent (the owner, 2026-10-03: space, then the Earth, then the
+ *      grass): a sticky stage where the planet grows out of the dark, its
+ *      horizon comes up, the painted morning sky takes over, clouds rush
+ *      past and the meadow rises into place with its path running to the
+ *      sun. Then the title. The grass at the front of the meadow is a
+ *      canvas the pointer presses down (GrassField.ts).
+ *   2. The walk: the meadow goes on down the page, and the path winds through
+ *      it from 2022 at the top to now at the bottom, a signpost at every
+ *      stop. A firefly walks the path with the reader; the grass at its
+ *      edges sways while the meadow is on screen.
+ *
+ * Paradise.ts drives both from scroll. Per frame: the descent's layers (a
+ * transform and an opacity each, through writeIfChanged, only inside their
+ * windows) and the firefly's transform. The path is computed here at build
+ * time and handed to the controller as sampled points, so nothing is
+ * sampled in the browser. The sky (2026-10-02) and the Earth (2026-10-03)
+ * are paintings generated for this page with agy-image; the meadow, hills
+ * and path are vector.
+ */
+
+const stops = timeline
+  .filter((entry) => !entry.draft)
+  .slice()
+  .sort((a, b) => a.start.localeCompare(b.start));
+
+const N = stops.length;
+
+/* The trail through the stops: a uniform Catmull-Rom through one waypoint per
+   stop, in a viewBox 100 wide and 100 per stop tall. The wide trail weaves
+   down the middle, swinging toward each signpost; the narrow one keeps to a
+   phone's left gutter. */
+type P = [number, number];
+function catmull(points: P[]) {
+  const at = (i: number) => points[Math.max(0, Math.min(points.length - 1, i))];
+  const segments: [P, P, P, P][] = [];
+  for (let i = 0; i < points.length - 1; i++) {
+    const [p0, p1, p2, p3] = [at(i - 1), at(i), at(i + 1), at(i + 2)];
+    segments.push([
+      p1,
+      [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6],
+      [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6],
+      p2,
+    ]);
+  }
+  const f = (p: P) => `${p[0].toFixed(2)} ${p[1].toFixed(2)}`;
+  const d = `M ${f(segments[0][0])}` + segments.map((s) => ` C ${f(s[1])} ${f(s[2])} ${f(s[3])}`).join("");
+  // Evenly spaced samples along the length, normalised to 0..1 both ways.
+  const dense: P[] = [segments[0][0]];
+  for (const s of segments) {
+    for (let k = 1; k <= 24; k++) {
+      const t = k / 24;
+      const u = 1 - t;
+      dense.push([
+        u * u * u * s[0][0] + 3 * u * u * t * s[1][0] + 3 * u * t * t * s[2][0] + t * t * t * s[3][0],
+        u * u * u * s[0][1] + 3 * u * u * t * s[1][1] + 3 * u * t * t * s[2][1] + t * t * t * s[3][1],
+      ]);
+    }
+  }
+  const cum = [0];
+  for (let i = 1; i < dense.length; i++) cum.push(cum[i - 1] + Math.hypot(dense[i][0] - dense[i - 1][0], dense[i][1] - dense[i - 1][1]));
+  const total = cum[cum.length - 1];
+  const samples: string[] = [];
+  let j = 1;
+  for (let i = 0; i <= 160; i++) {
+    const target = (total * i) / 160;
+    while (j < cum.length - 1 && cum[j] < target) j++;
+    const k = (target - cum[j - 1]) / (cum[j] - cum[j - 1] || 1);
+    const x = dense[j - 1][0] + (dense[j][0] - dense[j - 1][0]) * k;
+    const y = dense[j - 1][1] + (dense[j][1] - dense[j - 1][1]) * k;
+    samples.push(`${(x / 100).toFixed(4)},${(y / (N * 100)).toFixed(4)}`);
+  }
+  return { d, samples: samples.join(" ") };
+}
+
+const H = N * 100;
+const wide = catmull([[50, 0], ...stops.map((_, i): P => [i % 2 ? 61 : 39, i * 100 + 50]), [50, H]]);
+const narrow = catmull([[10, 0], ...stops.map((_, i): P => [i % 2 ? 12.5 : 7.5, i * 100 + 50]), [10, H]]);
+
+/* Tufts along the walk, deterministic so builds are byte-identical. */
+function seeded(seed: number) {
+  let s = seed;
+  return () => ((s = (s * 1664525 + 1013904223) % 4294967296), s / 4294967296);
+}
+const rnd = seeded(20261002);
+const tufts = Array.from({ length: N * 2 }, (_, i) => ({
+  side: i % 2 ? "right" : "left",
+  top: ((Math.floor(i / 2) + 0.15 + rnd() * 0.7) / N) * 100,
+  delay: (rnd() * -4).toFixed(2),
+  scale: (0.7 + rnd() * 0.6).toFixed(2),
+}));
+
+const SKY_W = 1376;
+const SKY_H = 768;
+---
+
+<section class="paradise" id="timeline" aria-labelledby="paradise-title">
+  <div class="paradise__descent js-par-descent">
+    <div class="paradise__stage" aria-hidden="true">
+      {/* The planet, then its horizon: laid out at their largest and scaled
+          down at the start, so they only ever downsample (invariant 7). */}
+      <img class="paradise__earth js-par-earth" src="/paradise/earth-disc.webp" alt="" width="1024" height="1024" loading="lazy" decoding="async" />
+      {/* Wide or tall by the screen's shape, not its density: with width
+          descriptors a 3x phone took the wide cuts, and the land's tall cut
+          is what the grass maps its path through (GrassField.ts). */}
+      <picture>
+        <source media="(max-aspect-ratio: 3/4)" srcset="/paradise/earth-horizon-tall.webp" width="768" height="1376" />
+        <img class="paradise__horizon js-par-horizon" src="/paradise/earth-horizon.webp" alt="" width="1376" height="768" loading="lazy" decoding="async" />
+      </picture>
+      <picture>
+        <source media="(max-aspect-ratio: 3/4)" srcset="/paradise/sky-tall.webp" width="768" height="1376" />
+        <img class="paradise__sky js-par-sky" src="/paradise/sky-wide.webp" alt="" width={SKY_W} height={SKY_H} loading="lazy" decoding="async" />
+      </picture>
+      {/* The ground, painted in the sky's own hand (Gemini, 2026-10-03): the
+          meadow, the path and the sun it leads to. It comes in while the
+          camera is inside the clouds, so the cut from the sky to it is hidden. */}
+      <picture>
+        <source media="(max-aspect-ratio: 3/4)" srcset="/paradise/land-tall.webp" width="768" height="1376" />
+        <img class="paradise__land js-par-land" src="/paradise/land-wide.webp" alt="" width={SKY_W} height={SKY_H} loading="lazy" decoding="async" />
+      </picture>
+      <div class="paradise__rays js-par-rays"></div>
+
+      {/* Cloud banks the camera falls through on the way down. */}
+      <div class="paradise__cloud paradise__cloud--a js-par-cloud" data-x="-18" data-speed="1"></div>
+      <div class="paradise__cloud paradise__cloud--b js-par-cloud" data-x="22" data-speed="1.25"></div>
+      <div class="paradise__cloud paradise__cloud--c js-par-cloud" data-x="-4" data-speed="1.5"></div>
+
+      <div class="paradise__ground js-par-meadow">
+      {/* The grass the pointer presses down, inside the meadow's box so the
+          meadow's rise carries it. */}
+      <canvas class="paradise__grass js-par-grass" width="0" height="0"></canvas>
+      </div>
+
+      <div class="paradise__title js-par-title">
+        <p class="paradise__kicker">Timeline</p>
+        <p class="paradise__heading" role="presentation">The way here</p>
+        <p class="paradise__sub">2022 → now · follow the path</p>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="u-sr-only" id="paradise-title">Timeline</h2>
+
+  <div class="paradise__walk js-par-walk" style={`--n:${N}`}>
+    <svg class="paradise__trail paradise__trail--wide" viewBox={`0 0 100 ${H}`} preserveAspectRatio="none" aria-hidden="true" focusable="false">
+      <path class="paradise__trail-edge" d={wide.d} />
+      <path class="paradise__trail-core" d={wide.d} />
+    </svg>
+    <svg class="paradise__trail paradise__trail--narrow" viewBox={`0 0 100 ${H}`} preserveAspectRatio="none" aria-hidden="true" focusable="false">
+      <path class="paradise__trail-edge" d={narrow.d} />
+      <path class="paradise__trail-core" d={narrow.d} />
+    </svg>
+
+    {tufts.map((t) => (
+      <span class={`paradise__tuft paradise__tuft--${t.side}`} style={`top:${t.top.toFixed(2)}%; --s:${t.scale}; animation-delay:${t.delay}s`} aria-hidden="true"></span>
+    ))}
+
+    <span class="paradise__firefly js-par-firefly" data-wide={wide.samples} data-narrow={narrow.samples} aria-hidden="true"></span>
+
+    <ol class="paradise__stops">
+      {stops.map((entry, i) => {
+        const d = span(entry);
+        return (
+          <li class:list={["paradise__stop js-par-stop", i % 2 ? "is-right" : "is-left"]}>
+            <article class="paradise__sign">
+              <p class="paradise__when">
+                <time datetime={entry.start}>{d.text}</time>
+              </p>
+              <h3 class="paradise__name">{entry.title}</h3>
+              <p class="paradise__org">
+                {entry.org}
+                <span class="paradise__kind">{KIND_LABEL[entry.kind]}</span>
+                {entry.campus && <span class="paradise__osu">Oregon State</span>}
+                {entry.status && <span class="paradise__live">{entry.status}</span>}
+              </p>
+              <p class="paradise__summary">{entry.summary}</p>
+              {entry.href && (
+                <a class="paradise__link" href={entry.href}>
+                  Open the case <span aria-hidden="true">→</span>
+                </a>
+              )}
+            </article>
+            <span class="paradise__post" aria-hidden="true"></span>
+          </li>
+        );
+      })}
+    </ol>
+  </div>
+</section>
+
+<script>
+  import { initParadise } from "../utils/Paradise";
+  initParadise();
+</script>
+
+<style lang="scss">
+  @use "../styles/helpers/colors" as *;
+  @use "../styles/helpers/fonts" as *;
+
+  .paradise {
+    position: relative;
+    background: color(space);
+    isolation: isolate;
+  }
+
+  /* --- 1. The descent ----------------------------------------------------- */
+
+  .paradise__descent {
+    position: relative;
+    height: 400svh;
+  }
+
+  .paradise__stage {
+    position: sticky;
+    top: 0;
+    height: 100svh;
+    overflow: clip;
+    /* Space, until the sky comes up behind the black thinning out: the
+       same star field WORK's wall dissolves into (helpers/_stars.scss). */
+    @include star-tiles;
+    background-color: color(space);
+  }
+
+  /* The planet, laid out at its largest (about 1.2 times the screen's short
+     side, well under the review's cap of 1.2 diagonals) and scaled down from
+     there; a radial mask keeps its painted black square out of the stars. */
+  .paradise__earth {
+    position: absolute;
+    left: 50%;
+    top: 52%;
+    width: min(120vmin, 1024px);
+    height: min(120vmin, 1024px);
+    margin: calc(min(120vmin, 1024px) / -2) 0 0 calc(min(120vmin, 1024px) / -2);
+    mask-image: radial-gradient(circle, #000 0 58%, transparent 70.5%);
+    -webkit-mask-image: radial-gradient(circle, #000 0 58%, transparent 70.5%);
+    opacity: 0;
+    will-change: transform, opacity;
+  }
+
+  /* The horizon, laid out a fifth larger than the stage all round and
+     scaled down to it at the start; as the camera drops it grows back to
+     its own size and rises. */
+  .paradise__horizon {
+    position: absolute;
+    inset: -20%;
+    width: 140%;
+    height: 140%;
+    object-fit: cover;
+    object-position: 50% 60%;
+    opacity: 0;
+    will-change: transform, opacity;
+  }
+
+  .paradise__sky {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    /* The painting's sun sits at 50% 76%: keep it in frame on any aspect. */
+    object-position: 50% 70%;
+    opacity: 0;
+    transform-origin: 50% 70%;
+    will-change: transform, opacity;
+  }
+
+  /* The painted meadow: the same picture as the sky above its horizon, so
+     its top meets the sky's without a seam; the sun sits at 56% of its
+     height (50% in the tall one, below). */
+  .paradise__land {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 56%;
+    /* No mask on its top edge: by the time the clouds clear it is within
+       about 1% of its place, over the sky's same clouds. */
+    opacity: 0;
+    will-change: transform, opacity;
+  }
+
+  /* Slow rays from the painting's sun, on top of the painted ones: a conic
+     fan masked to a disc, turning on the compositor while the stage is on
+     screen. */
+  .paradise__rays {
+    position: absolute;
+    left: 50%;
+    top: 56%;
+    width: 160vmax;
+    height: 160vmax;
+    margin: -80vmax 0 0 -80vmax;
+    background: repeating-conic-gradient(from 0deg, rgba(255, 244, 214, 0.22) 0deg 3deg, rgba(255, 244, 214, 0) 3deg 14deg);
+    mask-image: radial-gradient(circle, #000 0%, rgba(0, 0, 0, 0.5) 22%, transparent 55%);
+    opacity: 0;
+    animation: paradise-rays 140s linear infinite;
+    animation-play-state: paused;
+    will-change: transform;
+  }
+
+  .paradise:global(.is-live) .paradise__rays {
+    animation-play-state: running;
+  }
+
+  @keyframes paradise-rays {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .paradise__cloud {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 120vmax;
+    height: 60vmax;
+    margin: -30vmax 0 0 -60vmax;
+    background:
+      radial-gradient(closest-side at 30% 55%, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0) 100%),
+      radial-gradient(closest-side at 55% 45%, rgba(255, 250, 240, 0.95), rgba(255, 250, 240, 0) 100%),
+      radial-gradient(closest-side at 75% 60%, rgba(245, 240, 255, 0.9), rgba(245, 240, 255, 0) 100%);
+    opacity: 0;
+    transform: translate3d(0, 100vh, 0);
+    will-change: transform, opacity;
+    pointer-events: none;
+  }
+
+  .paradise__ground {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 46%;
+    transform: translate3d(0, 105%, 0);
+    opacity: 0;
+    will-change: transform;
+  }
+
+  /* The front of the meadow: the blades stand in the lowest third. Its own
+     layer: drawn into the meadow's layer, every redraw of the blades made
+     the whole meadow SVG raster again, and a phone at 4x CPU spent 30-40
+     long tasks on one descent (traced 2026-10-03: 0 with the canvas
+     hidden). */
+  .paradise__grass {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 40%;
+    will-change: transform;
+  }
+
+  @media (max-aspect-ratio: 3/4) {
+    .paradise__land {
+      object-position: 50% 50%;
+    }
+
+    .paradise__rays {
+      top: 50%;
+    }
+  }
+
+  .paradise__title {
+    position: absolute;
+    left: 50%;
+    top: 14%;
+    width: min(92vw, 1100px);
+    transform: translate(-50%, 0);
+    text-align: center;
+    color: #fff;
+    text-shadow: 0 2px 30px rgba(32, 40, 90, 0.35);
+    opacity: 0;
+  }
+
+  .paradise__kicker,
+  .paradise__sub {
+    margin: 0;
+    font: 400 0.75rem / 1.4 font-family(fraktion);
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+  }
+
+  .paradise__heading {
+    margin: 0.4rem 0 0.6rem;
+    font: 400 clamp(3.6rem, 12vw, 11rem) / 0.86 font-family(bigger);
+    text-transform: uppercase;
+  }
+
+  /* --- 2. The walk -------------------------------------------------------- */
+
+  .paradise__walk {
+    --row: clamp(360px, 50svh, 500px);
+    position: relative;
+    padding: 4rem 0 14rem;
+    /* The meadow goes on, painted (a seamless tile from the same hand as the
+       descent's picture), a shade deeper down the page, and at the very end
+       the evening the sign-off sits in. The tile is fetched once the section
+       is near (is-live). */
+    background: linear-gradient(to bottom, #4f8a3a 0%, #3f7634 70%, #2f5d3f 88%, #1b1d3f 100%);
+    /* Across only: the fringe below reaches up over the land's bottom edge. */
+    overflow-x: clip;
+  }
+
+  /* The seam with the painted land above: the walk's grass reaches up over
+     the land's foreground and fades out, so no straight edge shows. */
+  .paradise:global(.is-live) .paradise__walk::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 100%;
+    height: 14svh;
+    background: url("/paradise/walk-tile.webp") 50% 100% / 600px auto repeat;
+    mask-image: linear-gradient(to top, #000 0, rgba(0, 0, 0, 0.6) 45%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to top, #000 0, rgba(0, 0, 0, 0.6) 45%, transparent 100%);
+    pointer-events: none;
+  }
+
+  .paradise:global(.is-live) .paradise__walk {
+    background:
+      linear-gradient(to bottom, rgba(27, 29, 63, 0) 0%, rgba(20, 44, 18, 0.18) 60%, rgba(27, 29, 63, 0.55) 86%, #1b1d3f 100%),
+      url("/paradise/walk-tile.webp") 50% 0 / 600px auto repeat,
+      #4f8a3a;
+  }
+
+  .paradise__trail {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    top: 4rem;
+    height: calc(var(--row) * var(--n));
+    overflow: visible;
+    pointer-events: none;
+  }
+
+  .paradise__trail path {
+    fill: none;
+    stroke-linecap: round;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .paradise__trail-edge {
+    stroke: #c9a46b;
+    stroke-width: 54px;
+  }
+
+  .paradise__trail-core {
+    stroke: #f2dcac;
+    stroke-width: 40px;
+  }
+
+  .paradise__trail--narrow {
+    display: none;
+  }
+
+  .paradise__firefly {
+    position: absolute;
+    top: 4rem;
+    left: 0;
+    width: 22px;
+    height: 22px;
+    margin: -11px 0 0 -11px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #fffbe0 0 30%, rgba(255, 230, 120, 0.8) 45%, rgba(255, 220, 90, 0) 72%);
+    box-shadow: 0 0 24px 8px rgba(255, 230, 120, 0.45);
+    will-change: transform;
+    pointer-events: none;
+  }
+
+  .paradise__tuft {
+    position: absolute;
+    width: 46px;
+    height: 54px;
+    margin-top: -27px;
+    background: no-repeat bottom / contain
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 46 54'%3E%3Cpath fill='%23467f30' d='M2 54C6 40 8 26 6 10c6 12 8 26 7 44zm9 0c2-16 6-30 14-44-4 16-6 30-5 44zm9 0c1-14 0-28-6-42 9 12 12 26 12 42zm8 0c2-12 7-22 16-30-6 10-9 20-9 30z'/%3E%3C/svg%3E");
+    transform: scale(var(--s));
+    transform-origin: 50% 100%;
+    animation: paradise-sway 3.8s ease-in-out infinite alternate;
+    animation-play-state: paused;
+    pointer-events: none;
+  }
+
+  .paradise__tuft--left {
+    left: 4vw;
+  }
+
+  .paradise__tuft--right {
+    right: 4vw;
+  }
+
+  .paradise:global(.is-live) .paradise__tuft {
+    animation-play-state: running;
+  }
+
+  @keyframes paradise-sway {
+    from {
+      transform: scale(var(--s)) skewX(-5deg);
+    }
+    to {
+      transform: scale(var(--s)) skewX(5deg);
+    }
+  }
+
+  .paradise__stops {
+    position: relative;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .paradise__stop {
+    position: relative;
+    display: flex;
+    align-items: center;
+    height: var(--row);
+    padding: 0 clamp(1rem, 4vw, 4rem);
+
+    &.is-left {
+      justify-content: flex-start;
+    }
+
+    &.is-right {
+      justify-content: flex-end;
+    }
+  }
+
+  .paradise__sign {
+    position: relative;
+    z-index: 1;
+    width: min(34vw, 430px);
+    padding: 1.3rem 1.4rem 1.2rem;
+    border-radius: 16px;
+    background: #fffaf0;
+    color: #20201c;
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.8) inset,
+      0 18px 30px rgba(20, 60, 20, 0.25);
+    transition:
+      opacity 600ms ease,
+      transform 700ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  /* Hidden only once the reveal script runs, so without it the signs are
+     simply there. */
+  :global(.js-reveal) .paradise__stop:not(:global(.is-in)) .paradise__sign {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+
+  /* The signpost's leg, into the grass under the card. */
+  .paradise__post {
+    position: absolute;
+    top: calc(50% + 2rem);
+    width: 10px;
+    height: 34%;
+    border-radius: 3px;
+    background: linear-gradient(to right, #8a5a2b, #6b431f);
+  }
+
+  .is-left .paradise__post {
+    left: calc(clamp(1rem, 4vw, 4rem) + min(17vw, 215px) - 5px);
+  }
+
+  .is-right .paradise__post {
+    right: calc(clamp(1rem, 4vw, 4rem) + min(17vw, 215px) - 5px);
+  }
+
+  .paradise__when {
+    margin: 0 0 0.35rem;
+    font: 700 0.75rem / 1 font-family(fraktion);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #a3361a;
+  }
+
+  .paradise__name {
+    margin: 0 0 0.35rem;
+    font: 400 clamp(1.5rem, 2.2vw, 2.1rem) / 1.05 font-family(editorial);
+  }
+
+  .paradise__org {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem 0.5rem;
+    margin: 0 0 0.6rem;
+    font: 400 0.9rem / 1.35 font-family(geist);
+    color: #4a4a42;
+  }
+
+  .paradise__kind,
+  .paradise__osu,
+  .paradise__live {
+    padding: 0.2em 0.55em;
+    border-radius: 999px;
+    font: 400 0.625rem / 1.3 font-family(fraktion);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border: 1px solid #d9d2bd;
+    color: #5a5648;
+  }
+
+  .paradise__osu {
+    border-color: #f2b38a;
+    color: #9a3d12;
+  }
+
+  .paradise__live {
+    border-color: #9fd6a6;
+    color: #1f6b2a;
+  }
+
+  .paradise__summary {
+    margin: 0;
+    font: 400 0.95rem / 1.55 font-family(geist);
+    color: #33332d;
+  }
+
+  .paradise__link {
+    display: inline-block;
+    margin-top: 0.8rem;
+    font: 700 0.6875rem / 1 font-family(fraktion);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #a3361a;
+    text-decoration: none;
+
+    &:hover,
+    &:focus-visible {
+      text-decoration: underline;
+    }
+  }
+
+  @media (max-width: 767.98px) {
+    .paradise__trail--wide {
+      display: none;
+    }
+
+    .paradise__trail--narrow {
+      display: block;
+    }
+
+    .paradise__walk {
+      --row: auto;
+    }
+
+    .paradise__trail {
+      height: calc(100% - 18rem);
+    }
+
+    .paradise__stop,
+    .paradise__stop.is-right {
+      height: auto;
+      min-height: 46svh;
+      justify-content: flex-end;
+      padding: 1.5rem 1rem 1.5rem 22vw;
+    }
+
+    .paradise__sign {
+      width: 100%;
+    }
+
+    .paradise__post {
+      display: none;
+    }
+
+    .paradise__tuft--left {
+      display: none;
+    }
+
+    .paradise__tuft--right {
+      right: 1vw;
+    }
+  }
+
+  /* Stillness, not absence: the descent's end state as one plain screen, the
+     signs already up, the firefly gone, the grass still. */
+  @media (prefers-reduced-motion: reduce) {
+    .paradise__descent {
+      height: 100svh;
+    }
+
+    .paradise__stage {
+      position: relative;
+    }
+
+    .paradise__sky,
+    .paradise__land,
+    .paradise__title {
+      opacity: 1;
+    }
+
+    .paradise__walk {
+      background:
+        linear-gradient(to bottom, rgba(27, 29, 63, 0) 0%, rgba(20, 44, 18, 0.18) 60%, rgba(27, 29, 63, 0.55) 86%, #1b1d3f 100%),
+        url("/paradise/walk-tile.webp") 50% 0 / 600px auto repeat,
+        #4f8a3a;
+    }
+
+    .paradise__ground {
+      transform: none;
+      opacity: 1;
+    }
+
+    .paradise__earth,
+    .paradise__horizon,
+    .paradise__rays,
+    .paradise__firefly,
+    .paradise__cloud {
+      display: none;
+    }
+
+    .paradise__tuft {
+      animation: none;
+    }
+
+    .paradise__sign {
+      opacity: 1;
+      transform: none;
+      transition: none;
+    }
+  }
+</style>

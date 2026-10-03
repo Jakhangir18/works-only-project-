@@ -1,0 +1,412 @@
+---
+/**
+ * The rocket that keeps the reader company through "Why work with me?", and
+ * the crash that opens space.
+ *
+ * Owner's direction (2026-10-02): the rocket travels with us down the whole
+ * bento section, looping beside it; when we reach the bottom it flies on a
+ * little, then crashes, and space appears.
+ *
+ * The section's children come in through the slot, so the flight zone wraps
+ * them: a sticky, viewport-sized stage rides at the top of the zone for its
+ * whole length, behind the bento's content (the cards pass in front of the
+ * rocket, the text is never covered), and the runway — one empty viewport
+ * after the bento — is where it dives and hits. The crash (owner, 2026-10-03:
+ * "a flash across the whole screen", nothing left frozen) plays once in time,
+ * not with the scroll: a white-hot core and a flash over the full width,
+ * debris and embers that fly out and always end invisible. Under it a
+ * full-screen black, following the runway's progress, takes the page to
+ * space. No disc and no ring, so no edge shows against the page.
+ *
+ * The route lives in viewport space: the controller builds it in pixels from
+ * the stage's size on every resize (so a loop stays a circle at any aspect),
+ * samples it once, and from then on only looks points up. Every per-frame
+ * write is a transform or an opacity on the leaf that shows it. The hidden
+ * path below is the route itself, kept in the document so it can be sampled
+ * and checked.
+ */
+
+/* Smoke behind the rocket: lagged copies of its own position, shrinking and
+   fading. Eight are enough to read as a trail at any speed it flies. */
+const PUFFS = 8;
+/* Debris from the impact: fixed directions in a fan that opens upward, so the
+   pieces fly out of the ground rather than into it. */
+const SHARDS = Array.from({ length: 10 }, (_, i) => {
+  const angle = (-170 + (160 / 9) * i) * (Math.PI / 180);
+  return { dx: Math.cos(angle).toFixed(3), dy: Math.sin(angle).toFixed(3), spin: ((i % 2 ? 1 : -1) * (220 + i * 37)).toFixed(0) };
+});
+/* Embers: small glowing dots on a wider, seeded fan, each its own reach. */
+const EMBERS = Array.from({ length: 18 }, (_, i) => {
+  const angle = (-185 + (190 / 17) * i + ((i * 37) % 11) - 5) * (Math.PI / 180);
+  return { dx: Math.cos(angle).toFixed(3), dy: Math.sin(angle).toFixed(3), reach: (0.45 + ((i * 53) % 50) / 100).toFixed(2) };
+});
+---
+
+<div class="flight-zone">
+  <div class="flight-stage js-flight-stage" aria-hidden="true">
+    <svg class="flight-stage__route" focusable="false">
+      <path class="rocket-flight__trail js-rocket-trail" d="M 0 0" fill="none"></path>
+    </svg>
+
+    {Array.from({ length: PUFFS }, (_, i) => (
+      <span class="flight-stage__puff js-rocket-puff" style={`--k:${i + 1}`}></span>
+    ))}
+
+    <div class="rocket-flight__craft js-rocket-craft">
+      <div class="rocket-flight__flame">
+        <span class="rocket-flight__flame__tongue"></span>
+        <span class="rocket-flight__flame__tongue"></span>
+        <span class="rocket-flight__flame__tongue"></span>
+      </div>
+
+      {/* Flat, three colours, no gradient — the anime read comes from the hard
+          edges and the single highlight, not from rendering. */}
+      <svg class="rocket-flight__body" viewBox="0 0 64 128" focusable="false">
+        <path
+          class="rocket-flight__hull"
+          d="M32 2c12 14 18 32 18 52v34H14V54C14 34 20 16 32 2Z"></path>
+        <path class="rocket-flight__fin" d="M14 66 2 104l12-6V66Z"></path>
+        <path class="rocket-flight__fin" d="M50 66l12 38-12-6V66Z"></path>
+        <circle class="rocket-flight__port" cx="32" cy="48" r="10"></circle>
+        <path
+          class="rocket-flight__shine"
+          d="M26 20c-3 8-4 17-4 26h5c0-9 1-18 3-26Z"></path>
+        <path class="rocket-flight__skirt" d="M14 88h36v10H14Z"></path>
+      </svg>
+    </div>
+
+    {/* The impact: everything below is born at the crash point (placed by the
+        controller with one translate on .flight-stage__impact) and is zero
+        at rest. */}
+    {/* The black that takes the page to space, and the flash over it: both
+        full screen, so no edge of either ever shows. */}
+    <div class="flight-stage__dark js-rocket-dark"></div>
+    <div class="flight-stage__flash js-rocket-flash"></div>
+
+    <div class="flight-stage__impact js-rocket-impact">
+      <div class="flight-stage__core js-rocket-core"></div>
+      {EMBERS.map((e) => (
+        <span class="flight-stage__ember js-rocket-ember" data-dx={e.dx} data-dy={e.dy} data-reach={e.reach}></span>
+      ))}
+      {SHARDS.map((s) => (
+        <span class="flight-stage__shard js-rocket-shard" data-dx={s.dx} data-dy={s.dy} data-spin={s.spin}></span>
+      ))}
+    </div>
+  </div>
+
+  <slot />
+
+  {/* The runway: one empty viewport after the bento, where the rocket flies
+      on, dives and hits. Space starts one viewport early, on top of it. */}
+  <section class="rocket-flight" aria-hidden="true"></section>
+</div>
+
+<script>
+  import { initRocketFlight } from "../utils/RocketFlight";
+  initRocketFlight();
+</script>
+
+<style lang="scss">
+  @use "../styles/helpers/colors" as *;
+
+  .flight-zone {
+    position: relative;
+    background: color(secondary);
+
+    /* The bento paints no ground of its own inside the zone, so the stage
+       under it shows through its gaps and margins; its content sits above
+       the stage. */
+    :global(.bento-section) {
+      position: relative;
+      z-index: 1;
+      background: transparent;
+    }
+  }
+
+  /* One viewport, stuck to the top of the screen for the whole zone, taking
+     no room in the flow (the negative margin gives its height back). Under
+     the bento's content: the rocket weaves behind the cards and never covers
+     a line of text. Clipped to itself, so the flash and the debris cannot widen
+     the page. */
+  .flight-stage {
+    position: sticky;
+    top: 0;
+    z-index: 0;
+    height: 100svh;
+    margin-bottom: -100svh;
+    overflow: clip;
+    pointer-events: none;
+  }
+
+  /* On a phone the cards fill the width, so the stage comes in front and the
+     route keeps to the edge lanes, outside the text. Same breakpoint as
+     NARROW_BELOW in RocketFlight.ts. */
+  @media (max-width: 639.98px) {
+    .flight-stage {
+      z-index: 2;
+    }
+  }
+
+  .flight-stage__route {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    /* The route is data, not decoration: it is sampled, never painted. */
+    visibility: hidden;
+  }
+
+  .rocket-flight {
+    position: relative;
+    z-index: 1;
+    height: 100svh;
+  }
+
+  .rocket-flight__craft {
+    position: absolute;
+    top: 0;
+    left: 0;
+    /* The transform below positions it; these centre its own box on the
+       point the controller writes. */
+    margin-left: calc(clamp(34px, 4.4vw, 62px) / -2);
+    margin-top: calc(clamp(34px, 4.4vw, 62px) * -1);
+    width: clamp(34px, 4.4vw, 62px);
+    transform: translate3d(var(--x, 0px), var(--y, 0px), 0) rotate(var(--a, 0deg));
+    transform-origin: 50% 50%;
+    will-change: transform;
+  }
+
+  .rocket-flight__body {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .rocket-flight__hull {
+    fill: color(secondary);
+    stroke: color(primary);
+    stroke-width: 3.5;
+    stroke-linejoin: round;
+  }
+
+  .rocket-flight__fin {
+    fill: color(accent);
+    stroke: color(primary);
+    stroke-width: 3.5;
+    stroke-linejoin: round;
+  }
+
+  .rocket-flight__port {
+    fill: color(secondary);
+    stroke: color(primary);
+    stroke-width: 3.5;
+  }
+
+  .rocket-flight__shine {
+    fill: color(primary);
+    opacity: 0.14;
+  }
+
+  .rocket-flight__skirt {
+    fill: color(primary);
+  }
+
+  .rocket-flight__flame {
+    position: absolute;
+    top: 96%;
+    left: 50%;
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    transform: translateX(-50%);
+  }
+
+  .rocket-flight__flame__tongue {
+    width: 26%;
+    height: 0;
+    margin: 0 2%;
+    /* A tongue of flame is a triangle with a rounded base; three of them at
+       different phases read as one flickering exhaust. */
+    border-left: 0.22em solid transparent;
+    border-right: 0.22em solid transparent;
+    border-top: 1.1em solid color(accent);
+    border-radius: 0 0 40% 40%;
+    animation: rocket-flame 420ms steps(3, end) infinite;
+    /* Running only while the zone is on screen: the controller sets
+       is-flying on the stage from its trigger's toggle. */
+    animation-play-state: paused;
+
+    &:nth-child(2) {
+      border-top-width: 1.8em;
+      border-top-color: #ff8a3d;
+      animation-duration: 300ms;
+    }
+
+    &:nth-child(3) {
+      animation-delay: 150ms;
+    }
+  }
+
+  .flight-stage:global(.is-flying) .rocket-flight__flame__tongue {
+    animation-play-state: running;
+  }
+
+  @keyframes rocket-flame {
+    0% {
+      transform: scaleY(1);
+      opacity: 1;
+    }
+    50% {
+      transform: scaleY(0.62);
+      opacity: 0.82;
+    }
+    100% {
+      transform: scaleY(1);
+      opacity: 1;
+    }
+  }
+
+  /* Smoke: soft grey discs, each a step further back along the route and a
+     step smaller and fainter. The controller writes their transform only. */
+  .flight-stage__puff {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: clamp(14px, 1.6vw, 22px);
+    height: clamp(14px, 1.6vw, 22px);
+    margin: calc(clamp(14px, 1.6vw, 22px) / -2) 0 0 calc(clamp(14px, 1.6vw, 22px) / -2);
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(11, 11, 12, 0.16), rgba(11, 11, 12, 0) 70%);
+    opacity: calc(1 - var(--k) / 9);
+    transform: translate3d(-200px, -200px, 0);
+    will-change: transform;
+  }
+
+  .flight-stage:global(.is-crashed) .flight-stage__puff,
+  .flight-stage:global(.is-crashed) .rocket-flight__craft {
+    visibility: hidden;
+  }
+
+  /* The impact point: a zero-size box the controller places once per resize;
+     everything inside is centred on it. */
+  .flight-stage__impact {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 0;
+  }
+
+  /* The white-hot core at the impact: laid out at its largest, popped in
+     from small and faded (scale <= 1, invariant 7). */
+  .flight-stage__core {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 60vmin;
+    height: 60vmin;
+    margin: -30vmin 0 0 -30vmin;
+    border-radius: 50%;
+    background: radial-gradient(circle, #fff 0%, #fff4e6 22%, #ffd9a8 40%, rgba(255, 138, 61, 0.5) 58%, rgba(255, 138, 61, 0) 70%);
+    transform: scale(0);
+    opacity: 0;
+  }
+
+  /* The flash: the whole screen, white-hot at the impact and warm to every
+     edge. Opacity only; its gradient is fixed, so it rasters once. The
+     centre is the impact (IMPACT in RocketFlight.ts). */
+  .flight-stage__flash {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+      circle at 80% 72%,
+      #fff 0%,
+      #fff7ec 10%,
+      #ffe3bd 24%,
+      #ffb978 46%,
+      #ff7a4a 72%,
+      #e8344f 100%
+    );
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* Space black over the whole stage, written from the runway's progress. */
+  .flight-stage__dark {
+    position: absolute;
+    inset: 0;
+    background: color(space);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  @media (max-width: 639.98px) {
+    .flight-stage__flash {
+      background: radial-gradient(
+        circle at 78% 72%,
+        #fff 0%,
+        #fff7ec 12%,
+        #ffe3bd 28%,
+        #ffb978 50%,
+        #ff7a4a 76%,
+        #e8344f 100%
+      );
+    }
+  }
+
+  .flight-stage__ember {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 6px;
+    height: 6px;
+    margin: -3px 0 0 -3px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #fff7ec 0%, #ffb978 45%, rgba(255, 122, 74, 0) 100%);
+    opacity: 0;
+  }
+
+  .flight-stage__shard {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 10px;
+    height: 16px;
+    margin: -8px 0 0 -5px;
+    background: color(primary);
+    clip-path: polygon(50% 0, 100% 70%, 30% 100%, 0 40%);
+    transform: scale(0);
+    opacity: 0;
+
+    &:nth-child(3n) {
+      background: color(accent);
+    }
+
+    &:nth-child(3n + 1) {
+      background: #ff8a3d;
+    }
+  }
+
+  /* Stillness, not absence: the stage is not stuck, the rocket rests at the
+     start of its route beside the bento, the flame holds one shape, there is
+     no smoke and no crash, and the star field simply follows the runway. */
+  @media (prefers-reduced-motion: reduce) {
+    .flight-stage {
+      position: absolute;
+      inset: 0 0 auto 0;
+      margin-bottom: 0;
+    }
+
+    .rocket-flight__flame__tongue {
+      animation: none;
+    }
+
+    .flight-stage__puff,
+    .flight-stage__impact,
+    .flight-stage__flash,
+    .flight-stage__dark {
+      display: none;
+    }
+  }
+</style>

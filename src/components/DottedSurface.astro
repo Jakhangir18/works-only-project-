@@ -5,18 +5,51 @@ const { className = "" } = Astro.props;
 <div class:list={["dotted-surface", className]} data-dotted-surface></div>
 
 <script>
-  import * as THREE from "three";
+  import type * as THREEType from "three";
+
+  // Three.js is imported at runtime rather than at parse time. The whole
+  // library rides on WebGLRenderer — 491 KB raw, 123 KB gzipped, and named
+  // imports do not shrink it — and this field is decoration behind the hero
+  // type. Loading it with the page put it on the critical path ahead of
+  // everything the visitor actually reads. It now arrives once the browser is
+  // idle, and the hero is complete without it.
+  let THREE: typeof THREEType;
+
+  /**
+   * True when this browser will actually hand out a WebGL context. Covers an
+   * old machine, a blocklisted driver, WebGL switched off in settings, and a
+   * headless run. The probe canvas is thrown away immediately.
+   */
+  function hasWebGL(): boolean {
+    try {
+      const canvas = document.createElement("canvas");
+      const gl =
+        canvas.getContext("webgl2") ||
+        canvas.getContext("webgl") ||
+        canvas.getContext("experimental-webgl");
+      if (!gl) return false;
+      const lose = (gl as WebGLRenderingContext).getExtension("WEBGL_lose_context");
+      lose?.loseContext();
+      return true;
+    } catch {
+      return false;
+    }
+  }
 
   const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
   class DottedSurfaceAnimation {
     container: HTMLElement;
-    scene!: THREE.Scene;
-    camera!: THREE.PerspectiveCamera;
-    renderer!: THREE.WebGLRenderer;
-    points!: THREE.Points;
-    geometry!: THREE.BufferGeometry;
-    material!: THREE.PointsMaterial;
+    scene!: THREEType.Scene;
+    camera!: THREEType.PerspectiveCamera;
+    renderer!: THREEType.WebGLRenderer;
+    destroyed = false;
+    contextLost = false;
+    /** False when WebGL is unavailable; every entry point then does nothing. */
+    supported = false;
+    points!: THREEType.Points;
+    geometry!: THREEType.BufferGeometry;
+    material!: THREEType.PointsMaterial;
     animationId: number;
     count: number;
     frameCount: number;
@@ -32,13 +65,22 @@ const { className = "" } = Astro.props;
       this.animationId = 0;
       this.frameCount = 0;
 
-      this.initScene();
+      this.supported = this.initScene();
+      if (!this.supported) return;
+
       this.createParticles();
       this.bindEvents();
       this.animate();
     }
 
-    initScene() {
+    /**
+     * Returns false when this browser cannot give us a WebGL context — an old
+     * machine, a blocklisted driver, WebGL switched off, or a headless run.
+     * Three.js logs its own console error and throws in that case; the hero
+     * has its type and its background without us, so the honest response is
+     * to leave the field out rather than to fail loudly.
+     */
+    initScene(): boolean {
       this.scene = new THREE.Scene();
 
       this.camera = new THREE.PerspectiveCamera(
@@ -50,11 +92,20 @@ const { className = "" } = Astro.props;
       this.camera.position.set(0, 355, 1220);
 
       // Safari gets a lighter renderer setup to keep the background smooth.
-      this.renderer = new THREE.WebGLRenderer({
-        alpha: true,
-        antialias: !isSafari, // Antialias triggers extra GPU passes in Safari
-        powerPreference: isSafari ? "default" : "high-performance",
-      });
+      // Ask for a context ourselves first. Three.js logs its own console
+      // error before it throws, so catching the throw is not enough to keep
+      // the console clean on a machine without WebGL.
+      if (!hasWebGL()) return false;
+
+      try {
+        this.renderer = new THREE.WebGLRenderer({
+          alpha: true,
+          antialias: !isSafari, // Antialias triggers extra GPU passes in Safari
+          powerPreference: isSafari ? "default" : "high-performance",
+        });
+      } catch {
+        return false;
+      }
       // Cap pixel ratio at 1 on Safari to halve GPU fill-rate
       this.renderer.setPixelRatio(
         Math.min(window.devicePixelRatio, isSafari ? 1 : 2),
@@ -63,6 +114,8 @@ const { className = "" } = Astro.props;
       this.renderer.setClearColor(0x000000, 0);
 
       this.container.appendChild(this.renderer.domElement);
+      this.watchContext();
+      return true;
     }
 
     createParticles() {
@@ -105,15 +158,49 @@ const { className = "" } = Astro.props;
     }
 
     pause() {
-      if (this.paused) return;
+      if (!this.supported || this.paused) return;
       this.paused = true;
       cancelAnimationFrame(this.animationId);
     }
 
     resume() {
+      if (!this.supported || this.destroyed || this.contextLost) return;
       if (!this.paused) return;
       this.paused = false;
       this.animate();
+    }
+
+    /**
+     * A frozen page can have its GPU context reclaimed — iOS Safari does this
+     * routinely — and rendering into a lost context produces a warning every
+     * frame and no pixels. preventDefault on the loss is what makes a restore
+     * possible at all; until it arrives there is nothing to draw.
+     */
+    watchContext() {
+      const canvas = this.renderer.domElement;
+      canvas.addEventListener("webglcontextlost", this.onContextLost);
+      canvas.addEventListener("webglcontextrestored", this.onContextRestored);
+    }
+
+    onContextLost = (event: Event) => {
+      event.preventDefault();
+      this.contextLost = true;
+      this.pause();
+    };
+
+    onContextRestored = () => {
+      this.contextLost = false;
+      // Only if the hero is actually on screen. A restore that arrives while
+      // the visitor is down in the Work section would otherwise start a
+      // full-viewport render loop nobody can see, and the observer will not
+      // fire again to stop it — its intersection state never changed.
+      if (!document.hidden && this.isOnScreen()) this.resume();
+    };
+
+    /** The one on-screen test, so the three callers cannot drift apart. */
+    isOnScreen() {
+      const rect = this.container.getBoundingClientRect();
+      return rect.bottom > 0 && rect.top < window.innerHeight;
     }
 
     animate = () => {
@@ -156,14 +243,27 @@ const { className = "" } = Astro.props;
     }
 
     destroy() {
+      // Nothing was ever created when WebGL is unavailable, so there is
+      // nothing to tear down and no renderer to dispose.
+      if (!this.supported || this.destroyed) return;
+      // The pagehide listener is no longer once-only, because it now has to
+      // tell a freeze from an unload. A second unload — a cache eviction
+      // followed by a real one — would otherwise re-enter here, dispose what
+      // is already disposed and throw NotFoundError out of removeChild,
+      // aborting the rest of the teardown.
+      this.destroyed = true;
+      this.paused = true;
+
       window.removeEventListener("resize", this.handleResize);
+      this.renderer.domElement.removeEventListener("webglcontextlost", this.onContextLost);
+      this.renderer.domElement.removeEventListener("webglcontextrestored", this.onContextRestored);
       cancelAnimationFrame(this.animationId);
 
-      this.scene.traverse((object: THREE.Object3D) => {
+      this.scene.traverse((object: THREEType.Object3D) => {
         if (object instanceof THREE.Points) {
           object.geometry.dispose();
           if (Array.isArray(object.material)) {
-            object.material.forEach((mat: THREE.Material) => mat.dispose());
+            object.material.forEach((mat: THREEType.Material) => mat.dispose());
           } else {
             object.material.dispose();
           }
@@ -178,11 +278,21 @@ const { className = "" } = Astro.props;
     }
   }
 
-  const mount = () => {
+  const mount = async () => {
     const container = document.querySelector(
       "[data-dotted-surface]",
     ) as HTMLElement;
     if (!container) {
+      return;
+    }
+
+    // Nothing below can run without a context, and asking first means a
+    // machine without WebGL never downloads the library at all.
+    if (!hasWebGL()) return;
+
+    try {
+      THREE = await import("three");
+    } catch {
       return;
     }
 
@@ -197,38 +307,63 @@ const { className = "" } = Astro.props;
     });
     observer.observe(container);
 
-    document.addEventListener("visibilitychange", () => {
-      if (document.hidden) {
-        animation.pause();
-      } else {
-        const rect = container.getBoundingClientRect();
-        if (rect.bottom > 0 && rect.top < window.innerHeight)
-          animation.resume();
-      }
-    });
+    const onVisibilityChange = () => {
+      if (document.hidden) animation.pause();
+      else if (animation.isOnScreen()) animation.resume();
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
 
-    window.addEventListener(
-      "pagehide",
-      () => {
-        observer.disconnect();
-        animation.destroy();
-      },
-      { once: true },
-    );
+    const onPageShow = (event: Event) => {
+      if (!(event as PageTransitionEvent).persisted) return;
+      if (!document.hidden && animation.isOnScreen()) animation.resume();
+    };
+    window.addEventListener("pageshow", onPageShow);
 
-    return () => {
+    // Everything this closure attached, taken back off in one place, so the
+    // two callers below cannot get it half right.
+    const teardown = () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("pageshow", onPageShow);
+      window.removeEventListener("pagehide", onPageHide);
+      observer.disconnect();
       animation.destroy();
     };
+
+    // pagehide fires both when the page is really going away and when it is
+    // being frozen into the back/forward cache. Tearing down on both meant a
+    // visitor who opened a project and pressed Back — the exact journey the
+    // dive is built for, and the default on iOS Safari — came back to a hero
+    // with no field and nothing left to rebuild it. Destroy only on a real
+    // unload; a frozen page runs no rAF anyway, so pausing is enough.
+    function onPageHide(event: Event) {
+      if ((event as PageTransitionEvent).persisted) {
+        animation.pause();
+        return;
+      }
+      teardown();
+    }
+    window.addEventListener("pagehide", onPageHide);
+
+    return teardown;
   };
 
-  // Mount only after the component is in the DOM so the canvas has a container.
+  // Mount once the page has settled: the field is decoration, and fetching
+  // half a megabyte of library before the hero has painted is the wrong order.
   if (typeof window !== "undefined") {
-    if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", mount, { once: true });
-    } else {
-      // DOM already loaded, mount immediately
-      setTimeout(mount, 0);
-    }
+    const start = () => {
+      if ("requestIdleCallback" in window) {
+        (
+          window as Window & {
+            requestIdleCallback: (cb: () => void, o?: { timeout: number }) => number;
+          }
+        ).requestIdleCallback(() => void mount(), { timeout: 2500 });
+      } else {
+        setTimeout(() => void mount(), 400);
+      }
+    };
+
+    if (document.readyState === "complete") start();
+    else window.addEventListener("load", start, { once: true });
   }
 </script>
 

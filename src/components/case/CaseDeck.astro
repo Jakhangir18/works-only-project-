@@ -1,0 +1,115 @@
+---
+/**
+ * Slides or pages on a horizontal track: native scroll-snap does the moving,
+ * so it works by touch, trackpad, keyboard (the track is focusable) and the
+ * two buttons; case.ts keeps the progress line under it honest. Each page is
+ * an image the import rendered from a PDF.
+ */
+interface Props {
+  label: string;
+  pages: { src: string; width: number; height: number; alt: string }[];
+  download?: { href: string; label: string };
+  class?: string;
+}
+const { label, pages, download, class: className } = Astro.props;
+---
+
+<section class:list={["case-deck js-case-deck", className]} aria-label={label}>
+  <div class="case-deck__track js-case-deck-track" tabindex="0">
+    {pages.map((p, i) => (
+      <figure class="case-deck__page">
+        <img src={p.src} alt={p.alt} width={p.width} height={p.height} loading="lazy" decoding="async" />
+      </figure>
+    ))}
+  </div>
+  <div class="case-deck__bar">
+    <button type="button" class="case-deck__btn js-case-deck-prev" aria-label="Previous page">←</button>
+    <span class="case-deck__progress" aria-hidden="true"><span class="case-deck__fill js-case-deck-fill" style={`transform: scaleX(${1 / pages.length})`}></span></span>
+    <button type="button" class="case-deck__btn js-case-deck-next" aria-label="Next page">→</button>
+    {download && <a class="case-deck__download" href={download.href}>{download.label}</a>}
+  </div>
+</section>
+
+<style lang="scss">
+  @use "../../styles/helpers/fonts" as *;
+
+  .case-deck__track {
+    display: flex;
+    gap: 1rem;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    border-radius: 12px;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  .case-deck__page {
+    flex: 0 0 min(100%, 960px);
+    margin: 0;
+    scroll-snap-align: start;
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--case-surface);
+    border: 1px solid var(--case-rule);
+
+    img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+  }
+
+  .case-deck__bar {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 0.9rem;
+    font: 400 0.75rem / 1 font-family(fraktion);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .case-deck__btn {
+    width: 2.6rem;
+    height: 2.6rem;
+    border: 1px solid var(--case-rule);
+    border-radius: 50%;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      border-color: var(--case-accent);
+    }
+  }
+
+  /* How far through the deck the track is: one line, filled by a scaleX
+     that case.ts writes only when the page changes. */
+  .case-deck__progress {
+    flex: 0 1 8rem;
+    height: 2px;
+    overflow: hidden;
+    background: var(--case-rule);
+  }
+
+  .case-deck__fill {
+    display: block;
+    height: 100%;
+    background: var(--case-accent);
+    transform-origin: 0 50%;
+    transition: transform 300ms ease;
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none;
+    }
+  }
+
+  .case-deck__download {
+    margin-left: auto;
+    color: inherit;
+  }
+</style>

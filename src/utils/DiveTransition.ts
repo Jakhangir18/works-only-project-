@@ -1,6 +1,14 @@
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { projects } from "../data/works";
+import { getSmoothScroll } from "./SmoothScroll";
+
+/**
+ * Where the anime home parks the dive's offset for the trip back
+ * (AnimeSite.ts reads it). Its own key: /tunnel/'s SiteController writes
+ * "returnScrollY" on every case link, and the home must not jump to the
+ * tunnel's offset.
+ */
+export const HOME_RETURN_KEY = "returnScrollY:/";
 
 /**
  * Dive-into-image transition for the Work cards.
@@ -47,6 +55,8 @@ const LAYERS = [
   { name: "fore", growth: 8.0 }, // index, cta and the card frame
 ] as const;
 
+type LayerName = (typeof LAYERS)[number]["name"];
+
 const depthOf = (growth: number) =>
   (growth * DOLLY) / (growth - 1) - PERSPECTIVE;
 
@@ -76,6 +86,8 @@ function prefersReducedMotion() {
 type PausableSection = {
   isPaused: boolean;
   setPausedState(isPaused: boolean): void;
+  /** The anime home's WORK (WorkSection.home): it parks its own key. */
+  home?: boolean;
 };
 
 /**
@@ -119,16 +131,47 @@ type CardReading = {
   boxWidth: number;
   boxHeight: number;
   background: string;
+  /** The same colour as bare "r, g, b", for the text plate's rgba(). */
+  backgroundChannels: string;
   accent: string;
   coverSrc: string;
   coverPosition: string;
   posterMark: string;
   posterMotif: string;
-  indexText: string;
+  blurb: string;
   titleText: string;
   ctaText: string;
   href: string;
 };
+
+/**
+ * Whether this engine implements <link rel="prefetch">. WebKit does not, and
+ * the answer cannot change during a session, so it is worked out once rather
+ * than allocating a throwaway element per dive.
+ */
+let prefetchLinkSupported: boolean | null = null;
+function supportsPrefetchLink(): boolean {
+  if (prefetchLinkSupported === null) {
+    prefetchLinkSupported = !!document
+      .createElement("link")
+      .relList?.supports?.("prefetch");
+  }
+  return prefetchLinkSupported;
+}
+
+/**
+ * A same-origin test that is actually a same-origin test. `startsWith("/")`
+ * lets a protocol-relative //host/path through, and `!startsWith("http")`
+ * lets it through too.
+ */
+function isSameOrigin(href: string): boolean {
+  if (!href) return false;
+  try {
+    return new URL(href, location.href).origin === location.origin;
+  } catch {
+    return false;
+  }
+}
 
 class DiveTransition {
   scene: HTMLElement | null = null;
@@ -146,12 +189,12 @@ class DiveTransition {
   posterMark!: HTMLElement;
   glow!: HTMLElement;
   vignette!: HTMLElement;
-  indexEl!: HTMLElement;
+  titleText!: HTMLElement;
+  ctaText!: HTMLElement;
   titleEl!: HTMLElement;
   ctaEl!: HTMLElement;
   frameEl!: HTMLElement;
   teaser!: HTMLElement;
-  teaserEyebrow!: HTMLElement;
   teaserTitle!: HTMLElement;
   teaserBlurb!: HTMLElement;
   teaserLink!: HTMLAnchorElement;
@@ -160,6 +203,8 @@ class DiveTransition {
   tl: gsap.core.Timeline | null = null;
   state: DiveState = "closed";
   sourceCard: HTMLElement | null = null;
+  prefetchLink: HTMLLinkElement | null = null;
+  prefetchAbort: AbortController | null = null;
   sectionWasPaused = false;
   lockedScrollY = 0;
 
@@ -189,7 +234,9 @@ class DiveTransition {
 
   build() {
     const root = document.createElement("div");
-    root.className = "dive";
+    // The tunnel's colours: the anime home's theme has a near-black primary,
+    // and the dive reads primary for its title and close button.
+    root.className = "dive theme-contrasted";
     root.setAttribute("aria-hidden", "true");
     root.innerHTML = `
       <div class="dive__backdrop"></div>
@@ -208,11 +255,10 @@ class DiveTransition {
               <div class="dive__grid"></div>
             </div>
             <div class="dive__layer dive__layer--near">
-              <div class="dive__title"></div>
+              <div class="dive__title"><span></span></div>
             </div>
             <div class="dive__layer dive__layer--fore">
-              <div class="dive__index"></div>
-              <div class="dive__cta"></div>
+              <div class="dive__cta"><span></span></div>
               <div class="dive__frame"></div>
             </div>
           </div>
@@ -222,7 +268,6 @@ class DiveTransition {
       <button class="dive__close" type="button" aria-label="Close">&#10005;</button>
       <div class="dive__teaser">
         <div class="dive__teaser__inner">
-          <p class="dive__teaser__eyebrow"></p>
           <h2 class="dive__teaser__title"></h2>
           <p class="dive__teaser__blurb"></p>
           <a class="dive__teaser__link" href="/">View full project &#8594;</a>
@@ -244,12 +289,14 @@ class DiveTransition {
     this.posterMark = q(".dive__poster-mark");
     this.glow = q(".dive__glow");
     this.vignette = q(".dive__vignette");
-    this.indexEl = q(".dive__index");
     this.titleEl = q(".dive__title");
     this.ctaEl = q(".dive__cta");
+    // The text lives in a span so it can carry the same plate the card's text
+    // carries. The colour stays on the block, as it does on the card.
+    this.titleText = q(".dive__title span");
+    this.ctaText = q(".dive__cta span");
     this.frameEl = q(".dive__frame");
     this.teaser = q(".dive__teaser");
-    this.teaserEyebrow = q(".dive__teaser__eyebrow");
     this.teaserTitle = q(".dive__teaser__title");
     this.teaserBlurb = q(".dive__teaser__blurb");
     this.teaserLink = q<HTMLAnchorElement>(".dive__teaser__link");
@@ -266,7 +313,16 @@ class DiveTransition {
       ) as HTMLElement;
       this.layers[layer.name] = el;
 
-      // The image plane is laid out per dive instead — see layoutFarPlane().
+      // The image plane is laid out per dive instead — see layoutPlane().
+      //
+      // The other three are deliberately NOT laid out that way. Applying the
+      // same end-size layout to them was measured and rejected: their growth
+      // factors (2.6, 4.5, 8.0) turn the layout box into 3744, 6480 and 11520
+      // px wide, and rastering layers that size stalls the dive outright —
+      // the timeline had not reached onComplete 2.6 s after the click, so the
+      // teaser and the close button never faded in. Their contents are
+      // magnified (mid 8.5x, near 14.7x, fore 26.2x accumulated at dive end)
+      // and that softness is the accepted cost.
       if (layer.name === "far") continue;
 
       // A layer sits at -depth: positive depth is behind the camera plane,
@@ -328,8 +384,12 @@ class DiveTransition {
    * to progress 0. Save the pre-lock offset here, which is where they were
    * standing when they dived.
    */
-  onTeaserLinkClick = () => {
-    sessionStorage.setItem("returnScrollY", String(this.lockedScrollY));
+  onTeaserLinkClick = (event: MouseEvent) => {
+    // A modified click opens the case in another tab or window, and this
+    // tab stays where it is: there is nothing to return to.
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    const key = this.section?.home ? HOME_RETURN_KEY : "returnScrollY";
+    sessionStorage.setItem(key, String(this.lockedScrollY));
   };
 
   onKeyDown = (event: KeyboardEvent) => {
@@ -350,15 +410,29 @@ class DiveTransition {
    */
   onWindowResize = () => {
     this.resizedWhileOpen = true;
-    if (this.state === "open") {
-      gsap.set(this.flip, {
-        scale: this.endScale(this.cardBoxWidth, this.cardBoxHeight),
-      });
-      // endScale moved, so the image plane's layout/static-scale split has to
-      // move with it or the plane stops resolving to 1.0 at rest.
-      this.layoutFarPlane(this.cardBoxWidth, this.cardBoxHeight);
-    }
+    if (this.state === "open") this.settleToViewport();
+    // Mid-exit there is nothing to re-target: the destination was read from
+    // the card before the viewport moved. Finishing the timeline immediately
+    // puts the overlay away and hands the page back at the size it now is,
+    // which is the only correct end state available.
+    else if (this.state === "closing" && this.tl) this.tl.progress(1);
   };
+
+  /**
+   * Re-derive the two things a viewport change invalidates while the dive is
+   * up: the flip plane's resting scale, and the depth planes' layout. Called
+   * from the resize handler when the dive is already open, and from each
+   * entry timeline's onComplete when the resize arrived mid-entry and the
+   * handler had to refuse it.
+   */
+  settleToViewport() {
+    gsap.set(this.flip, {
+      scale: this.endScale(this.cardBoxWidth, this.cardBoxHeight),
+    });
+    // endScale moved, so the image plane's layout/static-scale split has to
+    // move with it or the plane stops resolving to 1.0 at rest.
+    this.layoutPlanes(this.cardBoxWidth, this.cardBoxHeight);
+  }
 
   /* ----------------------------------------------------------------- read */
 
@@ -376,7 +450,6 @@ class DiveTransition {
     const { scale, rotationY } = projectionOf(work);
 
     const coverEl = card.querySelector(".a__card__cover") as HTMLImageElement | null;
-    const indexEl = card.querySelector(".a__card__index") as HTMLElement | null;
     const titleEl = card.querySelector(".a__card__title") as HTMLElement | null;
     const ctaEl = card.querySelector(".a__card__cta") as HTMLElement | null;
 
@@ -390,7 +463,11 @@ class DiveTransition {
       // The card writes its palette inline, so this needs no getComputedStyle
       // and no second copy of the colour map.
       background: card.style.background || "#111111",
-      accent: indexEl?.style.color || "#ffffff",
+      backgroundChannels:
+        card.style.getPropertyValue("--card-bg-rgb").trim() || "17, 17, 17",
+      // The card's accent and one-line blurb ride on the <a-work> element
+      // (AWork.astro), so the dive needs no copy of the project list.
+      accent: work.dataset.accent || "#ffffff",
       coverSrc:
         work.dataset.coverState === "ready"
           ? coverEl?.currentSrc || coverEl?.src || ""
@@ -398,7 +475,7 @@ class DiveTransition {
       coverPosition: coverEl?.style.objectPosition || "50% 50%",
       posterMark: work.dataset.posterMark || "",
       posterMotif: work.dataset.posterMotif || "crosshair",
-      indexText: indexEl?.textContent?.trim() || "",
+      blurb: work.dataset.blurb || "",
       titleText: titleEl?.textContent?.trim() || "",
       ctaText: ctaEl?.textContent?.trim() || "View project →",
       href,
@@ -426,8 +503,18 @@ class DiveTransition {
     // Nothing is navigating, so leaving the key set would make the next real
     // load skip the loader and jump.
     sessionStorage.removeItem("returnScrollY");
+    // A teaser opened in a new tab parked an offset this tab never used.
+    sessionStorage.removeItem(HOME_RETURN_KEY);
 
     this.fill(reading);
+
+    // Both of these belong to the click's own task: priming keeps the eight
+    // gsap.set writes out of a second task after the decode await, and the
+    // prefetch turns the dive's 1.15 s of animation into network time for the
+    // page it is about to open. Without it nothing was requested during the
+    // dive at all, and the destination load only began on the second click.
+    if (!prefersReducedMotion()) this.primeFull(reading);
+    this.prefetchDestination(reading.href);
 
     if (reading.coverSrc) {
       // Free in practice — Step 0 measured 0.1-0.2 ms once the card has been
@@ -486,17 +573,26 @@ class DiveTransition {
     this.glow.style.display = reading.coverSrc ? "none" : "";
     this.glow.style.setProperty("--dive-accent", reading.accent);
 
-    this.indexEl.textContent = reading.indexText;
-    this.indexEl.style.color = reading.accent;
-    this.titleEl.textContent = reading.titleText;
-    this.ctaEl.textContent = reading.ctaText;
+    this.titleText.textContent = reading.titleText;
+    this.ctaText.textContent = reading.ctaText;
     this.ctaEl.style.color = reading.accent;
 
-    const project = projects.find((p) => p.site === reading.href);
-    this.teaserEyebrow.textContent = reading.indexText;
-    this.teaserEyebrow.style.color = reading.accent;
-    this.teaserTitle.textContent = project?.title || reading.titleText;
-    this.teaserBlurb.textContent = project?.blurb || "";
+    // The overlay is the card at full bleed, so it needs the card's own plate
+    // colour and, when a cover is showing, the card's edge scrim. Without them
+    // the white-on-white the card was just fixed for comes straight back the
+    // moment the visitor clicks: measured 1.06:1 on the clinic cover.
+    // Written on the two subtrees that consume it rather than on the overlay's
+    // root: a custom property inherits, so a write at the top invalidates the
+    // style of everything beneath it, and this lands inside the click task the
+    // whole dive is budgeted around. The camera holds the three text spans and
+    // the far layer's scrim; the teaser is a sibling branch and holds the
+    // eyebrow's plate, which is why it needs its own write.
+    this.camera.style.setProperty("--card-bg-rgb", reading.backgroundChannels);
+    this.teaser.style.setProperty("--card-bg-rgb", reading.backgroundChannels);
+    this.camera.classList.toggle("is-cover-ready", !!reading.coverSrc);
+
+    this.teaserTitle.textContent = reading.titleText;
+    this.teaserBlurb.textContent = reading.blurb;
     this.teaserLink.href = reading.href;
     this.teaserLink.style.color = reading.accent;
 
@@ -508,7 +604,7 @@ class DiveTransition {
     this.cardBoxWidth = reading.boxWidth;
     this.cardBoxHeight = reading.boxHeight;
 
-    this.layoutFarPlane(reading.boxWidth, reading.boxHeight);
+    this.layoutPlanes(reading.boxWidth, reading.boxHeight);
   }
 
   /**
@@ -542,8 +638,7 @@ class DiveTransition {
    * split between them moves. On-screen size at z=0 still lands exactly on
    * the card, which is what keeps frame one a match.
    */
-  layoutFarPlane(boxWidth: number, boxHeight: number) {
-    const growth = LAYERS[0].growth;
+  layoutPlane(name: LayerName, growth: number, boxWidth: number, boxHeight: number) {
     const e = this.endScale(boxWidth, boxHeight);
     const w = boxWidth * e * growth;
     const h = boxHeight * e * growth;
@@ -552,15 +647,20 @@ class DiveTransition {
     // z = 0, and resolves to an accumulated scale of exactly 1 at z = DOLLY.
     const s = compensationOf(growth) / (e * growth);
 
-    const far = this.layers.far;
-    far.style.width = `${w.toFixed(1)}px`;
-    far.style.height = `${h.toFixed(1)}px`;
+    const el = this.layers[name];
+    el.style.width = `${w.toFixed(1)}px`;
+    el.style.height = `${h.toFixed(1)}px`;
     // Centred by box geometry rather than a percentage translate, because a
     // percentage translate resolves against the unscaled border box and would
     // drift once the static scale is applied.
-    far.style.left = `${((boxWidth - w) / 2).toFixed(1)}px`;
-    far.style.top = `${((boxHeight - h) / 2).toFixed(1)}px`;
-    far.style.transform = `translateZ(${(-depthOf(growth)).toFixed(2)}px) scale(${s.toFixed(5)})`;
+    el.style.left = `${((boxWidth - w) / 2).toFixed(1)}px`;
+    el.style.top = `${((boxHeight - h) / 2).toFixed(1)}px`;
+    el.style.transform = `translateZ(${(-depthOf(growth)).toFixed(2)}px) scale(${s.toFixed(5)})`;
+  }
+
+  /** Only the image plane; see the note in build() for why. */
+  layoutPlanes(boxWidth: number, boxHeight: number) {
+    this.layoutPlane(LAYERS[0].name, LAYERS[0].growth, boxWidth, boxHeight);
   }
 
   play(reading: CardReading) {
@@ -601,7 +701,18 @@ class DiveTransition {
       onComplete: () => {
         flip.style.willChange = "";
         backdrop.style.willChange = "";
+        this.glow.style.willChange = "";
+        this.vignette.style.willChange = "";
         this.state = "open";
+        // onWindowResize only re-settles while state === "open", so a resize
+        // that lands during the 1.15 s entry sets the flag and returns. The
+        // entry's own end value was computed for the old viewport: measured
+        // 1440x900 -> 900x700 mid-entry left flip at scale 3.2727 against a
+        // correct 2.0455, and a landscape-to-portrait rotation left 3.2727
+        // against 0.8864 with the far plane painting 1613x1008 px inside a
+        // 390 px viewport. Settling once here is the same work the handler
+        // would have done, at the first moment it is allowed to run.
+        if (this.resizedWhileOpen) this.settleToViewport();
       },
     });
 
@@ -615,8 +726,42 @@ class DiveTransition {
     return tl;
   }
 
-  playFull(reading: CardReading) {
+  /**
+   * Every starting value the dive needs, written in one go. Split out of
+   * playFull so open() can run it in the same task as the geometry reads:
+   * left after `await cover.decode()` these eight gsap.set calls landed in a
+   * second main-thread task (measured 67 ms, 26.4 ms of it style recalc)
+   * between the click and the first dive frame.
+   */
+  primeFull(reading: CardReading) {
     const { flip, camera, backdrop, teaser, closeButton, layers, cover } = this;
+
+    gsap.set(flip, {
+      x: reading.centerX - window.innerWidth / 2,
+      y: reading.centerY - window.innerHeight / 2,
+      scale: reading.scale,
+      rotationY: reading.rotationY,
+      // closeReduced() tweens this plane to opacity 0 and nothing else ever
+      // puts it back. Without this line, one dive taken with reduced motion on
+      // leaves every later full-motion dive invisible for the rest of the
+      // session: backdrop, teaser and close button appear over a black
+      // rectangle where the photo, plate, grid and title should be. Measured
+      // over three consecutive dives after the switch — inline opacity "0"
+      // every time. primeFull is the full path's rest state, so it has to
+      // write every property the reduced path writes.
+      opacity: 1,
+    });
+    gsap.set(camera, { xPercent: -50, yPercent: -50, z: 0 });
+    gsap.set([layers.far, layers.mid, layers.near, layers.fore], { opacity: 1 });
+    gsap.set(cover, { opacity: 1 });
+    gsap.set([this.glow, this.vignette], { opacity: 0 });
+    gsap.set(backdrop, { opacity: 0 });
+    gsap.set(teaser, { opacity: 0, y: 24 });
+    gsap.set(closeButton, { opacity: 0 });
+  }
+
+  playFull(reading: CardReading) {
+    const { flip, camera, backdrop, teaser, closeButton, layers } = this;
 
     // will-change goes on only while the dive runs; the layers that stay at
     // constant opacity never get it.
@@ -626,20 +771,16 @@ class DiveTransition {
     layers.fore.style.willChange = "opacity";
     layers.near.style.willChange = "opacity";
     layers.mid.style.willChange = "opacity";
+    // The glow and the vignette are full-viewport gradients tweened on
+    // opacity, and they were the only tweened layers without a hint: raster
+    // measured 1242 ms with them unhinted and 836 ms with them hinted at
+    // 1440x900 (-33%), 415 ms -> 118 ms at 390x844 (-72%).
+    this.glow.style.willChange = "opacity";
+    this.vignette.style.willChange = "opacity";
 
-    gsap.set(flip, {
-      x: reading.centerX - window.innerWidth / 2,
-      y: reading.centerY - window.innerHeight / 2,
-      scale: reading.scale,
-      rotationY: reading.rotationY,
-    });
-    gsap.set(camera, { xPercent: -50, yPercent: -50, z: 0 });
-    gsap.set([layers.far, layers.mid, layers.near, layers.fore], { opacity: 1 });
-    gsap.set(cover, { opacity: 1 });
-    gsap.set([this.glow, this.vignette], { opacity: 0 });
-    gsap.set(backdrop, { opacity: 0 });
-    gsap.set(teaser, { opacity: 0, y: 24 });
-    gsap.set(closeButton, { opacity: 0 });
+    // open() already primed in the click's task; this covers every other
+    // caller (resize replay, keyboard entry) and is idempotent.
+    this.primeFull(reading);
 
     const tl = gsap.timeline({
       onComplete: () => {
@@ -649,7 +790,12 @@ class DiveTransition {
         layers.mid.style.willChange = "";
         flip.style.willChange = "";
         backdrop.style.willChange = "";
+        this.glow.style.willChange = "";
+        this.vignette.style.willChange = "";
         this.state = "open";
+        // See playReduced's onComplete: a resize during the entry is recorded
+        // and, until the state flips to "open", refused. This is that moment.
+        if (this.resizedWhileOpen) this.settleToViewport();
       },
     });
 
@@ -731,11 +877,78 @@ class DiveTransition {
     if (this.tl) this.tl.kill();
 
     document.removeEventListener("keydown", this.onKeyDown);
-    window.removeEventListener("resize", this.onWindowResize);
+    // The resize listener stays until teardown. The exit bakes the card's
+    // rect, scale and rotation at the moment Escape is pressed and then flies
+    // to them for 700 ms; a resize inside that window moves the card and
+    // leaves the composition flying to a position the card no longer
+    // occupies, snapping visibly when the card is made visible again. It also
+    // used to leave resizedWhileOpen false, so the ScrollTrigger refresh that
+    // exists for exactly this case was skipped too. buildOnClosed() removes
+    // the listener.
 
     const onDone = this.buildOnClosed();
 
     this.tl = prefersReducedMotion() ? this.closeReduced(onDone) : this.closeFull(onDone);
+  }
+
+  /**
+   * Warm the destination while the dive plays. One request per dive, replaced
+   * rather than accumulated, and dropped when the dive closes without
+   * navigating so a browsed-and-backed-out card leaves nothing behind.
+   *
+   * Two mechanisms because <link rel="prefetch"> has never shipped in WebKit:
+   * measured on click, Chromium and Firefox each issue a document request for
+   * /work/touchpoint/ while the dive runs and Safari issues none — so on the
+   * one platform where the dive is slowest, the 1.15 s of animation bought no
+   * head start at all. relList.supports is the honest test (Safari answers
+   * false), and the fallback is a same-origin fetch at low priority, aborted
+   * on close exactly like the link element is removed.
+   */
+  prefetchDestination(href: string) {
+    if (!isSameOrigin(href)) return;
+    this.dropPrefetch();
+
+    if (supportsPrefetchLink()) {
+      const link = document.createElement("link");
+      link.rel = "prefetch";
+      link.href = href;
+      document.head.appendChild(link);
+      this.prefetchLink = link;
+      return;
+    }
+
+    const controller = new AbortController();
+    this.prefetchAbort = controller;
+    // Best effort, and honestly so. The Accept header is the string a document
+    // navigation actually sends, so an edge that varies on Accept stores the
+    // entry under the key the navigation will look for — an abbreviated one
+    // guarantees the miss it was added to prevent. Sec-Fetch-Dest cannot be
+    // set from script, so a Vary on that defeats this and the dive is simply
+    // back where it started. The body is read to completion — these pages are
+    // about 10 KB — because an unread stream can stall on backpressure and a
+    // partial body is not guaranteed to reach the cache. priority is a hint
+    // no engine on this path implements yet; it costs nothing and says what
+    // is meant.
+    fetch(href, {
+      credentials: "same-origin",
+      signal: controller.signal,
+      priority: "low",
+      headers: {
+        Accept:
+          "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+      },
+    } as RequestInit)
+      .then((response) => response.arrayBuffer())
+      .catch(() => {
+        /* aborted, offline, or 404 — the navigation will handle it */
+      });
+  }
+
+  dropPrefetch() {
+    this.prefetchLink?.remove();
+    this.prefetchLink = null;
+    this.prefetchAbort?.abort();
+    this.prefetchAbort = null;
   }
 
   /**
@@ -746,7 +959,7 @@ class DiveTransition {
    * between the two.
    */
   buildOnClosed() {
-    const { flip, camera, backdrop, teaser, closeButton, layers } = this;
+    const { flip, camera, backdrop, layers } = this;
     const card = this.sourceCard;
 
     return () => {
@@ -768,6 +981,14 @@ class DiveTransition {
       layers.fore.style.willChange = "";
       layers.near.style.willChange = "";
       layers.mid.style.willChange = "";
+      this.glow.style.willChange = "";
+      this.vignette.style.willChange = "";
+
+      this.dropPrefetch();
+      // Removed here rather than in close(), so a resize that lands during the
+      // 700 ms exit is still seen: it finishes the timeline and it sets the
+      // flag the ScrollTrigger refresh below reads.
+      window.removeEventListener("resize", this.onWindowResize);
 
       if (card) card.style.visibility = "";
       this.sourceCard = null;
@@ -825,6 +1046,13 @@ class DiveTransition {
     layers.fore.style.willChange = "opacity";
     layers.near.style.willChange = "opacity";
     layers.mid.style.willChange = "opacity";
+    // The exit tweens the same two full-viewport gradients the entry does, so
+    // it pays the same raster cost without the same hint: measured at 390x844
+    // DPR 2, 97.5 ms of RasterTask per close unhinted against 31.6 ms hinted,
+    // 7 of 7 pairs, ranges non-overlapping. buildOnClosed() already clears
+    // both, so this adds no new teardown path.
+    this.glow.style.willChange = "opacity";
+    this.vignette.style.willChange = "opacity";
 
     const tl = gsap.timeline({ onComplete });
 
@@ -862,6 +1090,9 @@ class DiveTransition {
   lockScroll() {
     this.lockedScrollY = window.scrollY;
     document.documentElement.style.overflow = "hidden";
+    // Lenis (the anime home) scrolls with window.scrollTo, which overflow:
+    // hidden does not stop, and it takes the wheel before the cancels below.
+    getSmoothScroll()?.stop();
 
     // overflow: hidden on <html> is enough on desktop Chrome and Firefox, and
     // Step 0 measured it holding scrollY, the pin and the geometry cache.
@@ -874,6 +1105,7 @@ class DiveTransition {
 
   unlockScroll() {
     document.documentElement.style.overflow = "";
+    getSmoothScroll()?.start();
     window.removeEventListener("wheel", this.onLockedScroll);
     window.removeEventListener("touchmove", this.onLockedScroll);
 

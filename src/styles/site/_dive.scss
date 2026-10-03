@@ -312,16 +312,62 @@
   }
 }
 
-.dive__index,
 .dive__cta {
   font: 700 11px / 1 font-family(fraktion);
   text-transform: uppercase;
 }
 
-.dive__index {
-  letter-spacing: 0.2em;
-  opacity: 0.7;
+/* The same plate the card's text carries, for the same reason: the overlay is
+   the card at full bleed, and a project's cover can be anything — the clinic's
+   is a screenshot of a white web page. One strip per line, in the card's own
+   colour, carried in on --card-bg-rgb by fill(). */
+.dive__title span,
+.dive__cta span {
+  // Opaque for the same reason as the card's: overlapping strips on a wrapped
+  // title would otherwise composite into a visible band.
+  background: rgb(var(--card-bg-rgb, 17, 17, 17));
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  padding: 0 0.34em;
+  margin: 0 -0.34em;
 }
+
+// See AWork: letter-spacing's trailing space is inside the painted box, so the
+// right padding is reduced rather than the margin pulled back.
+.dive__cta span {
+  padding-right: calc(0.34em - 0.15em);
+}
+
+/* And the card's edge scrim, only where there is a cover to darken. It goes on
+   the far layer rather than the plate, because the plate is a sibling that
+   paints below the cover; the layer's own ::after comes after every child.
+
+   The stops are the card's exactly. At frame one the far plane is laid out at
+   the card's own size, so any difference here is a visible step the moment the
+   visitor clicks — and frame one matching the card is the invariant the whole
+   rig is built on. The plane settles 12% oversize, which does put its own
+   edges off screen and leaves the wash a little shallower at rest than on the
+   card; that is the lesser of the two, and fixing it properly needs the stops
+   to move with the timeline rather than being deeper throughout. */
+.dive__camera.is-cover-ready .dive__layer--far::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(var(--card-bg-rgb, 17, 17, 17), 0.55) 0%,
+      rgba(var(--card-bg-rgb, 17, 17, 17), 0) 22%
+    ),
+    linear-gradient(
+      to top,
+      rgba(var(--card-bg-rgb, 17, 17, 17), 0.55) 0%,
+      rgba(var(--card-bg-rgb, 17, 17, 17), 0) 26%
+    );
+}
+
 
 .dive__cta {
   letter-spacing: 0.15em;
@@ -344,10 +390,22 @@
 
   padding: 4rem 3rem 3rem;
 
+  // The teaser sits over the project's own cover at full bleed, and a cover can
+  // be a screenshot of a white web page. The old ramp reached almost nothing by
+  // the top of the block, which is where the eyebrow numeral lives: measured
+  // 1.28:1 over the clinic cover. Carrying the wash further up puts every
+  // string in the block above its threshold without hiding the picture, which
+  // still has the top two thirds of the screen to itself.
   background: linear-gradient(
     to top,
-    rgba(0, 0, 0, 0.92) 0%,
-    rgba(0, 0, 0, 0.72) 45%,
+    rgba(0, 0, 0, 0.94) 0%,
+    rgba(0, 0, 0, 0.88) 50%,
+    rgba(0, 0, 0, 0.62) 78%,
+    // Above the interpolation line the neighbouring stops would draw, so the
+    // ramp actually softens here rather than stepping: linear between 0.62 and
+    // 0 puts 0.28 at this point, which would have been a stop that changed
+    // nothing.
+    rgba(0, 0, 0, 0.4) 90%,
     rgba(0, 0, 0, 0) 100%
   );
 
@@ -360,6 +418,7 @@
 
 .dive__teaser__inner {
   max-width: 46rem;
+
   margin: 0 auto;
 
   text-align: left;
@@ -369,13 +428,6 @@
   }
 }
 
-.dive__teaser__eyebrow {
-  margin: 0 0 0.75rem;
-
-  font: 700 11px / 1 font-family(fraktion);
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-}
 
 .dive__teaser__title {
   margin: 0 0 0.75rem;
