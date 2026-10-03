@@ -48,7 +48,12 @@ A personal portfolio site built with **Astro**, animation-heavy. Two homes ship:
 
 Stack: Astro components (`.astro`) + TypeScript controllers, **Three.js**
 (`DottedSurface`, `/tunnel/` only), **GSAP + ScrollTrigger**, **Lenis**.
-Deployed on Vercel from `main`, which does not have the anime home yet.
+Deployed on Vercel from `main`. Since 15a1432 (2026-10-03, the owner's
+word) `main` carries v6 as one commit cut like `preview/portfolio`: the
+site's sources only, never a merge of this branch. Vercel built it as a
+Production deployment, but works-only-project.vercel.app kept serving the
+July deployment (alias not reassigned; no Vercel CLI or login on this
+host), so the owner promotes it in the Vercel dashboard.
 
 The animation systems were built separately and later composed onto the same page.
 That composition is where every performance bug in this project has come from, and
