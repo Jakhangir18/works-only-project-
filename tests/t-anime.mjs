@@ -4,6 +4,38 @@
 // The tunnel-era suites moved to /tunnel/ when this page took over `/`. This
 // one is about what replaced them.
 import { chromium, webkit } from 'playwright';
+import { createRequire } from 'node:module';
+const sharp = createRequire(new URL('../package.json', import.meta.url))('sharp');
+
+/* The letters on a screenshot: runs of rows with bright ink (the letters are
+   #fff2ed on near-black; the dimmed star field stays far below the bar),
+   each with its left and right ink edge. */
+async function inkRowsOf(png) {
+  const { data, info } = await sharp(png).greyscale().raw().toBuffer({ resolveWithObject: true });
+  const runs = [];
+  let cur = null;
+  for (let y = 0; y < info.height; y++) {
+    let l = -1;
+    let r = -1;
+    for (let x = 0; x < info.width; x++) {
+      if (data[y * info.width + x] > 200) {
+        if (l < 0) l = x;
+        r = x;
+      }
+    }
+    if (l >= 0) {
+      if (cur && y - cur.bottom <= 2) {
+        cur.bottom = y;
+        cur.left = Math.min(cur.left, l);
+        cur.right = Math.max(cur.right, r);
+      } else {
+        cur = { top: y, bottom: y, left: l, right: r };
+        runs.push(cur);
+      }
+    }
+  }
+  return runs.filter((r) => r.bottom - r.top > 10);
+}
 import { BASE, check, summarize } from './lib.mjs';
 
 const results = [];
@@ -165,36 +197,37 @@ for (const [ename, engine] of Object.entries({ chromium, webkit })) {
     results.push(check(`${tag} every project has a way in`, sections.links.length === 7 && sections.links.every((h) => h && h.startsWith('/')), sections.links.join(',')));
     results.push(check(`${tag} no "0n / 0n" counter in WORK`, sections.counters.length === 0, sections.counters.join(', ')));
 
-    // 5b. The hand-off: where the star field lets go, WORK's own letters
-    //     stand where the constellation drew them (utils/workStack.ts). The
-    //     stylesheet repeats the stack's numbers; this holds them together.
-    const stack = await page.evaluate(async () => {
-      const work = document.querySelector('.anime-work');
-      if (!work) return null;
-      const top = work.getBoundingClientRect().top + scrollY;
-      window.scrollTo(0, top + 2);
-      await new Promise((r) => setTimeout(r, 700));
-      window.scrollTo(0, top + 2);
-      await new Promise((r) => setTimeout(r, 700));
-      const w = innerWidth;
-      const h = document.querySelector('.js-work-stage').clientHeight;
-      const size = Math.min(190, Math.max(56, Math.min(0.19 * h, 0.3 * w)));
-      const rowH = (h * 0.88) / 4;
-      const off = [...document.querySelectorAll('.js-work-centre')].map((el, i) => {
-        const r = el.getBoundingClientRect();
-        return Math.round(Math.max(Math.abs(r.left + r.width / 2 - w / 2), Math.abs(r.top + r.height / 2 - (h * 0.06 + (i + 0.5) * rowH)), Math.abs(r.height - size)));
-      });
-      const shown = getComputedStyle(document.querySelector('.js-work-centre')).visibility;
-      return { off, shown };
+    // 5b. The hand-off, by pixels: the last frame the star field draws (its
+    //     canvas letters) and the first frame WORK shows (its own DOM
+    //     letters) must put the four letters on the same pixels. Measured on
+    //     screenshots, not from either side's formula.
+    const hand = await page.evaluate(() => {
+      const space = document.querySelector('.space');
+      const stage = document.querySelector('.space__stage');
+      if (!space || !stage) return null;
+      // The star field lets go where WORK pins: a stage's height above its bottom.
+      return { end: Math.round(space.getBoundingClientRect().top + scrollY + space.offsetHeight - stage.clientHeight), w: innerWidth, h: innerHeight };
     });
-    results.push(check(`${tag} WORK's letters stand where the constellation drew them`, !!stack && stack.off.length === 4 && stack.off.every((d) => d <= 3) && stack.shown === 'visible', stack ? `${stack.off.join('/')} px off, ${stack.shown}` : 'missing'));
+    let handOff = null;
+    if (hand) {
+      const shotAt = async (y) => {
+        for (let i = 0; i < 2; i++) {
+          await page.evaluate((y) => window.scrollTo(0, y), y);
+          await page.waitForTimeout(700);
+        }
+        return page.screenshot({ clip: { x: Math.round(hand.w / 2 - 140), y: 0, width: 280, height: hand.h } });
+      };
+      const before = await inkRowsOf(await shotAt(hand.end - 3));
+      const after = await inkRowsOf(await shotAt(hand.end + 3));
+      const off = before.length === after.length ? before.map((b, i) => Math.max(...['top', 'bottom', 'left', 'right'].map((k) => Math.abs(b[k] - after[i][k])))) : null;
+      handOff = { before: before.length, after: after.length, off };
+    }
+    results.push(check(`${tag} WORK's letters land on the constellation's pixels`, !!handOff && handOff.before === 4 && handOff.after === 4 && handOff.off.every((d) => d <= 3), handOff ? `${handOff.before} then ${handOff.after} letters, ${handOff.off ? handOff.off.join('/') + ' px' : 'unmatched'}` : 'missing'));
     results.push(check(`${tag} every stop on the walk is dated`, sections.notes === 10 && sections.notes === sections.pins, `${sections.notes} stops, ${sections.pins} dated`));
     // The one entry whose role is still unconfirmed must not reach the page;
     // GDG and Rowerlab were confirmed by the owner on 2026-10-02.
     const leaked = sections.drafts.filter((t) => /STEP Academy/i.test(t));
     results.push(check(`${tag} unconfirmed entries stay off the walk`, leaked.length === 0, leaked.join(', ')));
-
-    results.push(check(`${tag} no runtime errors`, errors.length === 0, errors.slice(0, 2).join(' | ')));
 
     // 5c. No machine numbering on the case pages (the owner, 2026-10-03),
     //     and the player on the SPOOT walk: it opens at its start point and
@@ -226,6 +259,8 @@ for (const [ename, engine] of Object.entries({ chromium, webkit })) {
         results.push(check(`${tag} the seek bar seeks back`, sought > 8 && sought < 16, `at ${sought.toFixed(2)} s`));
       }
     }
+    // After the case pages too, which the page's listeners have been hearing.
+    results.push(check(`${tag} no runtime errors`, errors.length === 0, errors.slice(0, 2).join(' | ')));
     await ctx.close();
   }
 
