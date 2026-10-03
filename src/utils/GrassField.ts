@@ -2,8 +2,10 @@ import { gsap } from "gsap";
 
 /**
  * Grass that the pointer presses down (the owner, 2026-10-03: "трава под
- * нашей мышкой приминалась"). One canvas along the bottom of the meadow,
- * inside the meadow's box, so the meadow's own transform carries it.
+ * нашей мышкой приминалась"). One canvas along the bottom of the painted
+ * land, inside the ground's box, so the land's settle carries it. Its
+ * greens are the painting's own, sampled from its foreground, and no blade
+ * stands on the painted path.
  *
  * Each blade is a tapered quadratic curve on a damped spring. A pointer
  * within reach pushes the blades near it away from itself and down; let go,
@@ -28,7 +30,9 @@ import { gsap } from "gsap";
 
 type Blade = { x: number; y: number; h: number; w: number; band: number; bend: number; v: number; rest: number };
 
-const COLOURS = ["#2a6430", "#3a8238", "#55a346", "#76c058"];
+/* Darkest at the front, as in the painting: its foreground greens (the
+   quintiles, sampled), a step lighter so a blade sits in its light. */
+const COLOURS = ["#3d5c31", "#55753b", "#6d8f44", "#8eab52", "#b4c66c"];
 const SPRING = 0.075;
 const DAMPING = 0.82;
 /* How far a blade can be pressed over, in radians from upright. */
@@ -39,10 +43,11 @@ let ctx: CanvasRenderingContext2D | null = null;
 let blades: Blade[] = [];
 let W = 0;
 let H = 0;
-/* The meadow box's size: the path is drawn in its SVG (1440 x 520 viewBox,
-   xMidYMax slice), and no blade grows on the path. */
-let groundW = 0;
-let groundH = 0;
+/* The stage's size and which picture it shows (the tall one under 3:4),
+   to find the painted path under a blade. */
+let stageW = 0;
+let stageH = 0;
+let tall = false;
 let dpr = 1;
 /* The canvas's top-left inside the stage, read on resize. */
 let left = 0;
@@ -69,20 +74,32 @@ function rng(seed: number): () => number {
   };
 }
 
-/* True where a blade's foot would stand on the path. The path's edges in the
-   meadow SVG run from x 575-885 at its bottom (y 520) to 712-728 at the hill
-   line (y 316); a few units of verge either side stay clear too. */
+/* The painted path as a corridor in each picture's own units (0..1 across
+   and down), from its bottom edge up to where the far meadow takes it: wide
+   at the bottom, narrow at `from`. Measured on the two pictures
+   (public/paradise/land-*.webp) and generous, since the path winds. The
+   pictures are laid out with object-fit: cover at these object-positions
+   (AnimeParadise.astro, .paradise__land). */
+const PATH = {
+  wide: { w: 1376, h: 768, posY: 0.56, from: 0.76, top: [0.45, 0.55], bottom: [0.36, 0.63] },
+  tall: { w: 768, h: 1376, posY: 0.5, from: 0.76, top: [0.42, 0.58], bottom: [0.25, 0.7] },
+} as const;
+
+/* True where a blade's foot would stand on the path. The canvas's place in
+   the stage is the land's at rest. */
 function onPath(x: number, y: number): boolean {
-  if (!groundW || !groundH) return false;
-  const s = Math.max(groundW / 1440, groundH / 520);
-  const svgX = (x - (groundW - 1440 * s) / 2) / s;
-  const svgY = 520 - (H - y) / s;
-  const t = Math.min(1, Math.max(0, (520 - svgY) / (520 - 316)));
-  return svgX > 575 + 137 * t - 8 && svgX < 885 - 157 * t + 8;
+  if (!stageW || !stageH) return false;
+  const pic = tall ? PATH.tall : PATH.wide;
+  const s = Math.max(stageW / pic.w, stageH / pic.h);
+  const u = (left + x - (stageW - pic.w * s) / 2) / (pic.w * s);
+  const v = (top + y - (stageH - pic.h * s) * pic.posY) / (pic.h * s);
+  if (v < pic.from) return false;
+  const t = Math.min(1, (v - pic.from) / (1 - pic.from));
+  return u > pic.top[0] + (pic.bottom[0] - pic.top[0]) * t && u < pic.top[1] + (pic.bottom[1] - pic.top[1]) * t;
 }
 
 function build(): void {
-  const count = W < 640 ? 140 : Math.min(520, Math.round(W / 2.8));
+  const count = W < 640 ? 110 : Math.min(400, Math.round(W / 3.6));
   const r = rng(519);
   blades = Array.from({ length: count }, () => {
     // Depth: 0 is the back of the strip, 1 the front edge.
@@ -176,8 +193,10 @@ export function resizeGrass(): void {
   if (!canvas) return;
   W = canvas.clientWidth;
   H = canvas.clientHeight;
-  groundW = canvas.parentElement?.clientWidth ?? W;
-  groundH = canvas.parentElement?.clientHeight ?? H;
+  const stage = canvas.closest<HTMLElement>(".paradise__stage");
+  stageW = stage?.clientWidth ?? W;
+  stageH = stage?.clientHeight ?? H;
+  tall = window.matchMedia("(max-aspect-ratio: 3/4)").matches;
   dpr = Math.min(2, window.devicePixelRatio || 1);
   canvas.width = Math.round(W * dpr);
   canvas.height = Math.round(H * dpr);

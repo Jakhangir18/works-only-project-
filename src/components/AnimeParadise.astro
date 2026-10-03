@@ -85,19 +85,12 @@ const H = N * 100;
 const wide = catmull([[50, 0], ...stops.map((_, i): P => [i % 2 ? 61 : 39, i * 100 + 50]), [50, H]]);
 const narrow = catmull([[10, 0], ...stops.map((_, i): P => [i % 2 ? 12.5 : 7.5, i * 100 + 50]), [10, H]]);
 
-/* Flowers on the meadow and tufts along the walk, deterministic so builds
-   are byte-identical. */
+/* Tufts along the walk, deterministic so builds are byte-identical. */
 function seeded(seed: number) {
   let s = seed;
   return () => ((s = (s * 1664525 + 1013904223) % 4294967296), s / 4294967296);
 }
 const rnd = seeded(20261002);
-const flowers = Array.from({ length: 70 }, () => ({
-  x: Math.round(rnd() * 1440),
-  y: Math.round(330 + rnd() * 185),
-  r: (1.4 + rnd() * 2.4).toFixed(1),
-  c: ["#fff7e8", "#ffd1e3", "#ffe58a", "#ffffff"][Math.floor(rnd() * 4)],
-}));
 const tufts = Array.from({ length: N * 2 }, (_, i) => ({
   side: i % 2 ? "right" : "left",
   top: ((Math.floor(i / 2) + 0.15 + rnd() * 0.7) / N) * 100,
@@ -137,6 +130,20 @@ const SKY_H = 768;
         loading="lazy"
         decoding="async"
       />
+      {/* The ground, painted in the sky's own hand (Gemini, 2026-10-03): the
+          meadow, the path and the sun it leads to. It comes in while the
+          camera is inside the clouds, so the cut from the sky to it is hidden. */}
+      <img
+        class="paradise__land js-par-land"
+        src="/paradise/land-wide.webp"
+        srcset="/paradise/land-tall.webp 768w, /paradise/land-wide.webp 1376w"
+        sizes="(max-aspect-ratio: 3/4) 768px, 1376px"
+        alt=""
+        width={SKY_W}
+        height={SKY_H}
+        loading="lazy"
+        decoding="async"
+      />
       <div class="paradise__rays js-par-rays"></div>
 
       {/* Cloud banks the camera falls through on the way down. */}
@@ -145,37 +152,6 @@ const SKY_H = 768;
       <div class="paradise__cloud paradise__cloud--c js-par-cloud" data-x="-4" data-speed="1.5"></div>
 
       <div class="paradise__ground js-par-meadow">
-      <svg class="paradise__meadow" viewBox="0 0 1440 520" preserveAspectRatio="xMidYMax slice" focusable="false">
-        <defs>
-          <linearGradient id="par-far" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stop-color="#79b79a" />
-            <stop offset="1" stop-color="#4f9474" />
-          </linearGradient>
-          <linearGradient id="par-mid" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stop-color="#6cbf5f" />
-            <stop offset="1" stop-color="#3f8d47" />
-          </linearGradient>
-          <linearGradient id="par-near" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stop-color="#a3dc72" />
-            <stop offset="0.55" stop-color="#7cc45c" />
-            <stop offset="1" stop-color="#5aa84a" />
-          </linearGradient>
-          <linearGradient id="par-path" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stop-color="#fbe8bf" />
-            <stop offset="1" stop-color="#f0d39a" />
-          </linearGradient>
-        </defs>
-        <path fill="url(#par-far)" d="M0 210 C 120 170 230 175 330 195 C 450 220 520 160 640 170 C 760 180 820 215 930 200 C 1050 185 1150 150 1260 175 C 1340 192 1400 190 1440 185 L 1440 520 L 0 520 Z" />
-        <path fill="url(#par-mid)" d="M0 265 C 140 230 260 250 380 268 C 520 290 600 245 720 252 C 860 260 950 290 1080 270 C 1200 252 1320 240 1440 262 L 1440 520 L 0 520 Z" />
-        <path fill="url(#par-near)" d="M0 330 C 220 300 420 318 600 312 C 760 306 900 300 1080 316 C 1240 330 1360 322 1440 316 L 1440 520 L 0 520 Z" />
-        {/* The path, from the reader's feet to the foot of the sun. */}
-        <path fill="#d9b67c" d="M 560 520 C 640 450 700 400 712 316 L 728 316 C 744 400 820 450 900 520 Z" />
-        <path fill="url(#par-path)" d="M 590 520 C 660 452 708 402 715 316 L 725 316 C 734 402 800 452 870 520 Z" />
-        {flowers.map((f) => <circle cx={f.x} cy={f.y} r={f.r} fill={f.c} />)}
-        {/* Grass along the bottom edge, darker, in front of everything. */}
-        <path fill="#3f8a3c" d="M0 520 L0 470 C 14 488 20 448 28 472 C 36 440 44 476 52 456 C 60 482 70 444 78 470 C 90 450 96 484 106 466 C 118 492 124 456 134 480 C 146 460 150 494 160 520 Z" />
-        <path fill="#3f8a3c" d="M1440 520 L1440 466 C 1426 486 1420 450 1412 474 C 1404 446 1396 478 1388 458 C 1380 486 1370 448 1362 472 C 1350 454 1344 486 1334 468 C 1322 494 1316 458 1306 482 C 1294 462 1290 494 1280 520 Z" />
-      </svg>
       {/* The grass the pointer presses down, inside the meadow's box so the
           meadow's rise carries it. */}
       <canvas class="paradise__grass js-par-grass" width="0" height="0"></canvas>
@@ -265,12 +241,10 @@ const SKY_H = 768;
     top: 0;
     height: 100svh;
     overflow: clip;
-    /* Space, until the sky comes up behind the black thinning out. The
-       controller fades this ground's star layer, not the ground. */
-    background:
-      radial-gradient(circle, rgba(255, 255, 255, 0.7) 0.6px, transparent 1.3px) 17px 23px / 137px 149px,
-      radial-gradient(circle, rgba(255, 217, 168, 0.55) 0.8px, transparent 1.6px) 89px 61px / 211px 173px,
-      color(space);
+    /* Space, until the sky comes up behind the black thinning out: the
+       same star field WORK's wall dissolves into (helpers/_stars.scss). */
+    @include star-tiles;
+    background-color: color(space);
   }
 
   /* The planet, laid out at its largest (about 1.2 times the screen's short
@@ -316,12 +290,30 @@ const SKY_H = 768;
     will-change: transform, opacity;
   }
 
-  /* Slow rays from the sun, on top of the painted ones: a conic fan masked
-     to a disc, turning on the compositor while the stage is on screen. */
+  /* The painted meadow: the same picture as the sky above its horizon, so
+     its top meets the sky's without a seam; the sun sits at 56% of its
+     height (50% in the tall one, below). */
+  .paradise__land {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 56%;
+    /* Its top fades into the sky's same clouds while it settles from low. */
+    mask-image: linear-gradient(to bottom, transparent 0, #000 10%);
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 10%);
+    opacity: 0;
+    will-change: transform, opacity;
+  }
+
+  /* Slow rays from the painting's sun, on top of the painted ones: a conic
+     fan masked to a disc, turning on the compositor while the stage is on
+     screen. */
   .paradise__rays {
     position: absolute;
     left: 50%;
-    top: 66%;
+    top: 56%;
     width: 160vmax;
     height: 160vmax;
     margin: -80vmax 0 0 -80vmax;
@@ -367,14 +359,8 @@ const SKY_H = 768;
     bottom: 0;
     height: 46%;
     transform: translate3d(0, 105%, 0);
+    opacity: 0;
     will-change: transform;
-  }
-
-  .paradise__meadow {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
   }
 
   /* The front of the meadow: the blades stand in the lowest third. Its own
@@ -388,8 +374,18 @@ const SKY_H = 768;
     right: 0;
     bottom: 0;
     width: 100%;
-    height: 34%;
+    height: 50%;
     will-change: transform;
+  }
+
+  @media (max-aspect-ratio: 3/4) {
+    .paradise__land {
+      object-position: 50% 50%;
+    }
+
+    .paradise__rays {
+      top: 50%;
+    }
   }
 
   .paradise__title {
@@ -424,13 +420,35 @@ const SKY_H = 768;
     --row: clamp(360px, 50svh, 500px);
     position: relative;
     padding: 4rem 0 14rem;
-    /* The meadow goes on: the near hill's green, deepening down the page, and
-       at the very end the evening the sign-off sits in. */
+    /* The meadow goes on, painted (a seamless tile from the same hand as the
+       descent's picture), a shade deeper down the page, and at the very end
+       the evening the sign-off sits in. The tile is fetched once the section
+       is near (is-live). */
+    background: linear-gradient(to bottom, #4f8a3a 0%, #3f7634 70%, #2f5d3f 88%, #1b1d3f 100%);
+    /* Across only: the fringe below reaches up over the land's bottom edge. */
+    overflow-x: clip;
+  }
+
+  /* The seam with the painted land above: the walk's grass reaches up over
+     the land's foreground and fades out, so no straight edge shows. */
+  .paradise:global(.is-live) .paradise__walk::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 100%;
+    height: 14svh;
+    background: url("/paradise/walk-tile.webp") 50% 100% / 600px auto repeat;
+    mask-image: linear-gradient(to top, #000 0, rgba(0, 0, 0, 0.6) 45%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to top, #000 0, rgba(0, 0, 0, 0.6) 45%, transparent 100%);
+    pointer-events: none;
+  }
+
+  .paradise:global(.is-live) .paradise__walk {
     background:
-      radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.07) 0 1.5px, transparent 2px) 0 0 / 46px 52px,
-      radial-gradient(circle at 70% 60%, rgba(30, 80, 30, 0.12) 0 1.5px, transparent 2px) 0 0 / 38px 44px,
-      linear-gradient(to bottom, #5aa84a 0%, #4f9a45 35%, #3f8640 70%, #2f5d3f 88%, #1b1d3f 100%);
-    overflow: clip;
+      linear-gradient(to bottom, rgba(27, 29, 63, 0) 0%, rgba(20, 44, 18, 0.18) 60%, rgba(27, 29, 63, 0.55) 86%, #1b1d3f 100%),
+      url("/paradise/walk-tile.webp") 50% 0 / 600px auto repeat,
+      #4f8a3a;
   }
 
   .paradise__trail {
@@ -483,7 +501,7 @@ const SKY_H = 768;
     height: 54px;
     margin-top: -27px;
     background: no-repeat bottom / contain
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 46 54'%3E%3Cpath fill='%23357a37' d='M2 54C6 40 8 26 6 10c6 12 8 26 7 44zm9 0c2-16 6-30 14-44-4 16-6 30-5 44zm9 0c1-14 0-28-6-42 9 12 12 26 12 42zm8 0c2-12 7-22 16-30-6 10-9 20-9 30z'/%3E%3C/svg%3E");
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 46 54'%3E%3Cpath fill='%23467f30' d='M2 54C6 40 8 26 6 10c6 12 8 26 7 44zm9 0c2-16 6-30 14-44-4 16-6 30-5 44zm9 0c1-14 0-28-6-42 9 12 12 26 12 42zm8 0c2-12 7-22 16-30-6 10-9 20-9 30z'/%3E%3C/svg%3E");
     transform: scale(var(--s));
     transform-origin: 50% 100%;
     animation: paradise-sway 3.8s ease-in-out infinite alternate;
@@ -696,12 +714,21 @@ const SKY_H = 768;
     }
 
     .paradise__sky,
+    .paradise__land,
     .paradise__title {
       opacity: 1;
     }
 
+    .paradise__walk {
+      background:
+        linear-gradient(to bottom, rgba(27, 29, 63, 0) 0%, rgba(20, 44, 18, 0.18) 60%, rgba(27, 29, 63, 0.55) 86%, #1b1d3f 100%),
+        url("/paradise/walk-tile.webp") 50% 0 / 600px auto repeat,
+        #4f8a3a;
+    }
+
     .paradise__ground {
       transform: none;
+      opacity: 1;
     }
 
     .paradise__earth,

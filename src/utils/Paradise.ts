@@ -7,10 +7,12 @@ import { initGrass, resizeGrass, placeGrass, destroyGrass } from "./GrassField";
  * The timeline's descent and walk.
  *
  * The descent: one ScrollTrigger over the sticky stage's wrapper. The Earth
- * grows out of the dark and gives way to its horizon, which rises as the
- * camera drops; the sky fades in over it and settles from a little low and
- * a little large; three cloud banks rush up past the camera; the meadow
- * rises into place; the title comes in last. Each layer is one transform
+ * grows out of the star field WORK dissolved into and gives way to its
+ * horizon, which rises as the camera drops; the sky fades in over it and
+ * settles from a little low and a little large; three cloud banks rush up
+ * past the camera, and while they are thickest the painted land (the same
+ * picture as the sky, with the meadow and the path) takes over and settles
+ * with the grass at its front; the title comes in last. Each layer is one transform
  * and one opacity, written through writeIfChanged, so outside its window a
  * layer is not written. The planet and the horizon are laid out at their
  * largest and only ever scaled down (invariant 7).
@@ -39,9 +41,14 @@ const HORIZON_OUT = [0.42, 0.52] as const;
 const HORIZON_FROM = 1 / 1.4;
 const SKY_IN = [0.38, 0.52] as const;
 const SKY_SETTLE = [0.38, 0.86] as const;
-const RAYS_IN = [0.55, 0.85] as const;
+const RAYS_IN = [0.6, 0.85] as const;
+const RAYS_MAX = 0.55;
 const CLOUDS = [0.34, 0.72] as const;
-const MEADOW = [0.6, 0.9] as const;
+/* The clouds are thickest around 0.47-0.53: the land comes in behind them. */
+const LAND_IN = [0.46, 0.56] as const;
+const LAND_SETTLE = [0.46, 0.9] as const;
+/* How far below its place the land starts, as a fraction of the stage. */
+const LAND_DROP = 0.12;
 const TITLE = [0.88, 0.96] as const;
 const NARROW_BELOW = 768;
 
@@ -53,11 +60,12 @@ let section: HTMLElement | null = null;
 let sky: HTMLElement | null = null;
 let rays: HTMLElement | null = null;
 let meadow: HTMLElement | null = null;
+let land: HTMLElement | null = null;
+let stage: HTMLElement | null = null;
+let stageH = 0;
 let earth: HTMLElement | null = null;
 let horizon: HTMLElement | null = null;
 let grass: HTMLCanvasElement | null = null;
-/* The meadow box's height, for the grass's pointer mapping. */
-let groundH = 0;
 let title: HTMLElement | null = null;
 let clouds: { el: HTMLElement; x: number; speed: number }[] = [];
 let walk: HTMLElement | null = null;
@@ -93,7 +101,7 @@ function stageTopAt(scroll: number): number {
 
 function measure(): void {
   narrow = window.innerWidth < NARROW_BELOW;
-  if (meadow) groundH = meadow.offsetHeight;
+  if (stage) stageH = stage.clientHeight;
   if (walk) walkW = walk.clientWidth;
   const trail = walk?.querySelector<SVGSVGElement>(narrow ? ".paradise__trail--narrow" : ".paradise__trail--wide");
   // The firefly is laid out at the trail's top-left, so the trail's own
@@ -119,7 +127,8 @@ function applyDescent(p: number): void {
     writeIfChanged(sky, "opacity", ramp(p, SKY_IN[0], SKY_IN[1]).toFixed(3));
     writeIfChanged(sky, "transform", `translate3d(0, ${((1 - settle) * 22).toFixed(2)}%, 0) scale(${(1.18 - 0.18 * settle).toFixed(4)})`);
   }
-  if (rays) writeIfChanged(rays, "opacity", ramp(p, RAYS_IN[0], RAYS_IN[1]).toFixed(3));
+  // The painting has rays of its own: these only stir them.
+  if (rays) writeIfChanged(rays, "opacity", (RAYS_MAX * ramp(p, RAYS_IN[0], RAYS_IN[1])).toFixed(3));
 
   const c = ramp(p, CLOUDS[0], CLOUDS[1]);
   for (const cloud of clouds) {
@@ -131,9 +140,19 @@ function applyDescent(p: number): void {
     writeIfChanged(cloud.el, "opacity", live ? Math.sin(Math.PI * t).toFixed(3) : "0");
   }
 
-  const down = (1 - easeOut(ramp(p, MEADOW[0], MEADOW[1]))) * 105;
-  if (meadow) writeIfChanged(meadow, "transform", `translate3d(0, ${down.toFixed(2)}%, 0)`);
-  placeGrass((down / 100) * groundH);
+  // The land and the grass at its front settle together, the grass in the
+  // land's own light: it is there only as much as the land is.
+  const drop = (1 - easeOut(ramp(p, LAND_SETTLE[0], LAND_SETTLE[1]))) * LAND_DROP * stageH;
+  const landIn = ramp(p, LAND_IN[0], LAND_IN[1]).toFixed(3);
+  if (land) {
+    writeIfChanged(land, "opacity", landIn);
+    writeIfChanged(land, "transform", `translate3d(0, ${drop.toFixed(1)}px, 0)`);
+  }
+  if (meadow) {
+    writeIfChanged(meadow, "opacity", landIn);
+    writeIfChanged(meadow, "transform", `translate3d(0, ${drop.toFixed(1)}px, 0)`);
+  }
+  placeGrass(drop);
 
   if (title) {
     const t = ramp(p, TITLE[0], TITLE[1]);
@@ -163,6 +182,8 @@ export function initParadise(): void {
   sky = document.querySelector<HTMLElement>(".js-par-sky");
   rays = document.querySelector<HTMLElement>(".js-par-rays");
   meadow = document.querySelector<HTMLElement>(".js-par-meadow");
+  land = document.querySelector<HTMLElement>(".js-par-land");
+  stage = document.querySelector<HTMLElement>(".paradise__stage");
   earth = document.querySelector<HTMLElement>(".js-par-earth");
   horizon = document.querySelector<HTMLElement>(".js-par-horizon");
   grass = document.querySelector<HTMLCanvasElement>(".js-par-grass");
@@ -215,7 +236,7 @@ export function initParadise(): void {
     onRefresh: (self) => {
       // The grass's canvas follows the meadow's box, once per refresh.
       resizeGrass();
-      if (meadow) groundH = meadow.offsetHeight;
+      if (stage) stageH = stage.clientHeight;
       applyDescent(self.progress);
     },
   });
@@ -242,9 +263,10 @@ export function destroyParadise(): void {
   stopObserver?.disconnect();
   liveObserver = stopObserver = null;
   destroyGrass();
-  for (const el of [earth, horizon, sky, rays, meadow, title, firefly, ...clouds.map((c) => c.el)]) if (el) forgetLeaf(el);
+  for (const el of [earth, horizon, sky, rays, land, meadow, title, firefly, ...clouds.map((c) => c.el)]) if (el) forgetLeaf(el);
   section?.classList.remove("is-live");
-  section = sky = rays = meadow = title = walk = firefly = earth = horizon = null;
+  section = sky = rays = land = stage = meadow = title = walk = firefly = earth = horizon = null;
+  stageH = 0;
   grass = null;
   clouds = [];
   trails = { wide: [], narrow: [] };
