@@ -118,3 +118,34 @@ the player need t-case, screenshots, and `shots.mjs` for any changed first scree
 ## Progress
 - W0 (2026-10-03 00:35): 11 idle sessions exported to `~/work/<project>/docs/sessions/`
   and killed with `csess kill` (resumable). Available memory 3.1 → 6.1 GB.
+- W1 1074f0d: Co-President since spring 2026; GDG figures 200+ / 22 meetings / 6 → 70;
+  TouchPoint "2nd place overall of 71 teams, 250+ hackers". Discord post updated.
+- W5 7e6f922: impact at [0.8, 0.72] / [0.78, 0.72], wipe sized in px, debris clamped.
+  Phone x4 rocket-down 13-17 frames over 50 ms against a base of 16 (noisy host).
+- W4 0626c76 (Opus agent, checked page by page): no Fig. n, no 0n / 0n, no Log 0n.
+- W2 9df6664 (media: playFrom, audio, blur, --ids) and 7749f95 (player + glass).
+  The SPOOT walk opens at 0:26 with sound; the launch at 0:10, 17.8-19.2 s blurred.
+- W3 b67b3a8: the picker (Opus agent + its own reviewer), live as the user unit
+  `portfolio-picker` on :4401; pool of 101 items, 0 deny-list hits.
+- W6 00e4e73 and W7 f262b63 (+ cc4cde2 tests, 6f9079a clip fix, d8926e2 shots).
+  The first grass leaned with the scroll inside the meadow's layer: phone x4 30-38
+  long tasks per descent; traced to the canvas (0 with it hidden); own layer 20;
+  no scroll redraw 0. CLAUDE.md invariant 13.
+- /code-review high on eb96b5e..6f9079a: 10 findings + 2 weaker, all acted on
+  (37a1176, 8f322e2, e129907, 69a74e7, bfbfd03). Plus 410cc58 (AMS notes at 1:1
+  contrast after the numbering removal) and the critical path: the WORK preview
+  fetched a cover at load, 635 KB → 503 KB.
+- Full suite after the fixes: 1172/1173; the one failure (t-work, a tunnel card's
+  contrast over its photo, 4.29:1) is on an untouched page and passed twice on rerun.
+- W6 and W7 detail:
+  - `src/utils/workStack.ts` is the stack's one source; `Constellation.ts` draws the
+    sparks and the gathering on one canvas; `WorkRows.ts` drives the rows and
+    previews; `WorkCarousel.ts` is deleted.
+  - Hand-off: Space.ts calls `showWorkStack(spaceP >= 1)`, because ScrollTrigger
+    counts a trigger active only strictly inside its range, so on the boundary
+    scroll neither section was active and the word blinked out.
+  - Phone: `.space` z-index 3 (over the flight stage) and `.anime-work` z-index 4
+    (its first screen lies over space's last one).
+  - The descent is 400svh: Earth disc (agy-image, the Americas side) → horizon →
+    clouds → sky → meadow; `GrassField.ts` canvas in the meadow, blades off the path.
+  - Harness: paradise phase 4.4 screens; new `grass-pointer` phase (desktop only).

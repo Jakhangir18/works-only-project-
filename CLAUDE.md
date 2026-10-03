@@ -6,24 +6,32 @@ Read this before doing anything in this repository.
 
 A personal portfolio site built with **Astro**, animation-heavy. Two homes ship:
 
-- `/` is the **anime home** (v4, branch `feat/portfolio-v4`). The sections:
+- `/` is the **anime home** (v5, branch `feat/portfolio-v5`, from v4). The sections:
   - `AnimeIntro`: the opening cover.
   - `AnimeHero`: the name and the two lines on a cylinder, projected at build
     time by `src/utils/cylinderText.ts`, behind a CSS 3D wheel of the seven
     case-page shots, each with a pre-blurred twin.
   - `AnimeRocket` wraps `WhyWorkWithMe`. A sticky stage flies the rocket beside
-    the bento, then crashes it into the wipe.
-  - `AnimeSpace`: the star field.
-  - `AnimeWork`: the WORK letter rings, then a 3D carousel of
-    `src/data/projects.ts`.
-  - `AnimeParadise`: the timeline. A descent onto a meadow with a painted sky,
-    then a walk along a trail.
+    the bento, then crashes it on the right into the wipe.
+  - `AnimeSpace`: the star field, then the constellation (`Constellation.ts`,
+    one canvas): the sparks and stars gather into a vertical W/O/R/K stack.
+  - `AnimeWork`: the word rows (`WorkRows.ts`). The stack opens into four rows
+    of letters with the seven projects of `src/data/projects.ts` as photographs
+    in them; at each stop one preview grows out into a card. The stack's
+    geometry has one source, `src/utils/workStack.ts`, shared with the canvas.
+  - `AnimeParadise`: the timeline. A descent from space past the Earth and its
+    horizon onto a meadow with a painted sky and grass the pointer presses down
+    (`GrassField.ts`), then a walk along a trail.
   - `AnimeContact`: no resume link, by the owner's choice.
   - Lenis smooth scroll runs on the home only, off on touch and under reduced
     motion.
   - The seven case pages use `src/layouts/CaseLayout.astro` and
     `src/components/case/`. Each page has its own composition.
-  - Design, decisions and progress: `docs/portfolio-v4-design.md`.
+  - Case-page clips play in `CaseClip.astro` + `src/utils/player.ts` (seek,
+    sound, full screen, a `playFrom` start point); controls and the case bar are
+    liquid glass (`src/styles/helpers/_glass.scss`, refraction on Chromium only).
+  - Design, decisions and progress: `docs/portfolio-v5-design.md` (v4's:
+    `docs/portfolio-v4-design.md`).
 - `/tunnel/` is the previous home, kept until the owner decides its fate: a
   Three.js hero background, a scroll-driven 240-frame JPG sequence, and a
   pinned "Work" letter tunnel that expands and rotates to reveal project cards.
@@ -305,6 +313,16 @@ The measurement harness lives in `perf/` (`harness.mjs`, `regression.mjs`,
   has a fix applied but **unverified on iOS**.
 - Running notes and rejected hypotheses live in `PERF-NOTES.md`. Read it before
   re-proposing something that was already tried.
+- **v5 numbers** (2026-10-03, chromium headless, software raster, `wheelScale` 2 / 1;
+  base = v4 measured the same morning; frames over 50 ms, phone x4 two runs):
+  - Phone x4: medians 16.7 everywhere but rocket (33.3), as in v4. Work phases
+    0-3 (base 0-1); rocket-down 17-18 (base 16); rocket-up 10-14 (base 7);
+    space-down 1-5 (base 0); paradise 1-4 (base 0; the descent is a screen longer).
+  - Desktop: work phases 1-7 (base 5-14); hero-pointer 7 (base 17); paradise 7-8
+    (base 2-7); grass-pointer 8 (new, median 33.4 like the other pointer phases).
+  - Heap flat across cycles (2.5 MB phone, 2.8 MB desktop); 0 console errors.
+  - Run-to-run spread on this host is wide: the same build's phone rocket-down
+    read 5 at v4's close and 16 this morning. Compare ranges, never one run.
 - **v4 numbers** (2026-10-02, chromium headless, software raster, no GPU,
   `wheelScale` 2 / 1; commit messages carry each block's before/after):
   - Desktop: idle-top 33.3 / 50 (was 50.0 / 66.7 before the backdrop-filter
@@ -363,11 +381,29 @@ The measurement harness lives in `perf/` (`harness.mjs`, `regression.mjs`,
   - Pages read the files through `src/data/media.ts` (`picture`, `video`,
     `slides`), never by hard-coded paths: a small source has fewer widths.
   - iPhone clips are HDR (HLG). Convert them to SDR before the import.
+  - A video entry may carry `keepAudio`, `playFrom` (where playback starts in
+    the imported file; the poster is taken there) and `blur: [[from, to]]` (a
+    privacy cut). Re-import single entries with `--only=<slug> --ids=<id>
+    --force`.
+- **The photo picker** (owner only, never in the build): `node
+  scripts/pick-server.mjs` serves `dist/` on http://100.122.188.86:4401/ (open it
+  by IP: Host and Origin are checked) and injects `scripts/pick/picker.js`. The
+  candidate pool is `~/work/works-only/in/pick-pool/` (`scripts/pick-pool.mjs`,
+  privacy deny list `docs/pick-deny.json`). His choices arrive as
+  `docs/picks/<time>.json`; `scripts/pin-picks.mjs <file> --dry-run` shows the
+  manifest changes, then run the import commands it prints and rebuild. HDR
+  masters it tone-mapped sit in `pick-pool/_sdr/`: move a pinned one into
+  `prepared/` before relying on it.
+- **ScrollTrigger counts a trigger active only strictly inside its range**
+  (progress > 0 and < 1). Two sections that hand over on one scroll position
+  are both inactive there; let the leaving one hand over explicitly (Space.ts
+  calls `showWorkStack(spaceP >= 1)`).
 - **Held back for the owner.** Each item is built and switched off:
   - the GDG impact report (`SHOW_REPORT` in `src/pages/work/gdg.astro`);
   - AMS deck page 7 (the filter in `src/pages/projects/ams/index.astro`);
   - `touchpoint-19` and `IMG_9344`, which show a "Track: Google — TouchPoint"
-    slide.
+    slide. The owner (2026-10-03) chose not to claim the Google track: the
+    official winners page lists "Find It" for it.
   His open questions are in the v4 report and in `docs/facts-to-confirm.md`.
 - **Prizes are settled against the official pages** (2026-09-29): TouchPoint
   placed 2nd overall of 71 teams at QuackHacks 3 and did not win the Google
@@ -383,7 +419,17 @@ The measurement harness lives in `perf/` (`harness.mjs`, `regression.mjs`,
   353f6da. `t-anime` runs a reduced-motion context per engine since. The
   suite is 1130+ checks; `tests/lib.mjs` ignores the engines' own aborts
   (`ERR_ABORTED`, `NS_BINDING_ABORTED`, "cancelled").
+- **GDG facts** (2026-10-03): he is one of two Co-Presidents
+  (gdgc-osu.com/officers), elected in spring 2026. 200+ registered is his
+  figure; 22 meetings in 2025-26 and 6 → 70 members in the first year come
+  from the chapter's shared Drive (sources in `src/pages/work/gdg.astro`).
 - Branch history:
+  - `feat/portfolio-v5` (2026-10-03, local, not pushed) is v5, from
+    `feat/portfolio-v4` @ eb96b5e. The GitHub repo is public and Vercel builds a
+    preview for every pushed branch, so a push would also publish
+    `docs/media-picks.md` and the other private curation notes; the owner
+    decides how the preview goes out (a Vercel login on this host, or a push
+    with those docs moved out).
   - `feat/portfolio-v4` (2026-10-02, local, not pushed) is v4. It branches
     from `night/restore-2026-09-30` at 401a391.
   - `night/restore-2026-09-30` is `feat/anime` (425f3e0,
