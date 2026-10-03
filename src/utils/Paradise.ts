@@ -61,9 +61,6 @@ let sky: HTMLElement | null = null;
 let rays: HTMLElement | null = null;
 let meadow: HTMLElement | null = null;
 let land: HTMLElement | null = null;
-/* The land is in place and opaque: the sky under it and its own top fade
-   are dropped (two full-screen layers fewer while the meadow is on). */
-let landSettled = false;
 let stage: HTMLElement | null = null;
 let stageH = 0;
 let earth: HTMLElement | null = null;
@@ -125,11 +122,9 @@ function applyDescent(p: number): void {
     writeIfChanged(horizon, "transform", `translate3d(0, ${(-drop * 12).toFixed(2)}%, 0) scale(${scale.toFixed(4)})`);
     writeIfChanged(horizon, "opacity", (ramp(p, HORIZON_IN[0], HORIZON_IN[1]) * (1 - ramp(p, HORIZON_OUT[0], HORIZON_OUT[1]))).toFixed(3));
   }
-  const settledNow = p >= LAND_SETTLE[1] && p >= LAND_IN[1];
-  if (land && settledNow !== landSettled) {
-    landSettled = settledNow;
-    land.classList.toggle("is-settled", settledNow);
-  }
+  // The land in place and opaque: the sky under it is not drawn (a
+  // full-screen blend fewer while the meadow is on).
+  const landSettled = p >= LAND_SETTLE[1] && p >= LAND_IN[1];
   if (sky) {
     const settle = easeOut(ramp(p, SKY_SETTLE[0], SKY_SETTLE[1]));
     writeIfChanged(sky, "opacity", landSettled ? "0" : ramp(p, SKY_IN[0], SKY_IN[1]).toFixed(3));
@@ -275,7 +270,6 @@ export function destroyParadise(): void {
   section?.classList.remove("is-live");
   section = sky = rays = land = stage = meadow = title = walk = firefly = earth = horizon = null;
   stageH = 0;
-  landSettled = false;
   grass = null;
   clouds = [];
   trails = { wide: [], narrow: [] };

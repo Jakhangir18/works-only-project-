@@ -1,3 +1,5 @@
+import { writeIfChanged } from "./leafWrite";
+
 /**
  * WORK's wall dissolving into stars (the owner, 2026-10-03: "стена
  * рассыпается в звёзды"), on the anime home only.
@@ -16,9 +18,10 @@
  * WorkSection's tick on the GSAP ticker, on a canvas of its own layer
  * (invariant 13), into buffers allocated once per sample. The glyphs are
  * sampled once per layout, during the hold before the segment, where the
- * letters stand still: WorkSection calls measure() at the top of its tick,
- * before anything is written (invariant 3), and the offscreen drawing and
- * the pixel scan run in an idle callback of their own, not in a frame.
+ * letters stand still: WorkSection calls measure() early in its tick,
+ * before its own writes (the scrub's may come first: one layout at most,
+ * once), and the offscreen drawing and the pixel scan run in an idle
+ * callback of their own, not in a frame.
  * Sizing the canvas resets its context, and its state is set again in the
  * same function (invariant 8).
  */
@@ -48,7 +51,9 @@ const MAX_DELAY = 0.36;
 const STARS_IN = [0.86, 0.98] as const;
 const DUST_OUT = [0.7, 0.96] as const;
 
-type Tile = { x: number; y: number; w: number; h: number };
+/* A tile whose computed background did not parse is kept, as null, so the
+   others keep their index into LOOKS. */
+type Tile = { x: number; y: number; w: number; h: number } | null;
 
 type Speck = {
   x0: number;
@@ -114,8 +119,6 @@ export class WorkDust {
   generation = 0;
   blank = true;
   last = -1;
-  sceneOpacity = "";
-  starsOpacity = "";
   shown = false;
 
   constructor(canvas: HTMLCanvasElement, scene: HTMLElement, stars: HTMLElement, glyphs: () => Glyph[]) {
@@ -141,9 +144,10 @@ export class WorkDust {
     const cs = getComputedStyle(this.stars);
     const pos = pairs(cs.backgroundPosition);
     const size = pairs(cs.backgroundSize);
-    this.tiles = LOOKS.map((_, i) => ({ x: pos[i]?.[0], y: pos[i]?.[1], w: size[i]?.[0], h: size[i]?.[1] })).filter(
-      (t) => [t.x, t.y, t.w, t.h].every((n) => Number.isFinite(n)) && t.w > 0 && t.h > 0,
-    );
+    this.tiles = LOOKS.map((_, i) => {
+      const t = { x: pos[i]?.[0], y: pos[i]?.[1], w: size[i]?.[0], h: size[i]?.[1] };
+      return [t.x, t.y, t.w, t.h].every((n) => Number.isFinite(n)) && t.w > 0 && t.h > 0 ? t : null;
+    });
     this.forget();
   }
 
@@ -160,6 +164,7 @@ export class WorkDust {
   starCentres(): { x: number; y: number; tile: number }[] {
     const out: { x: number; y: number; tile: number }[] = [];
     this.tiles.forEach((t, tile) => {
+      if (!t) return;
       const cx = (((t.x + t.w / 2) % t.w) + t.w) % t.w;
       const cy = (((t.y + t.h / 2) % t.h) + t.h) % t.h;
       for (let x = cx; x < this.W; x += t.w) {
@@ -302,15 +307,16 @@ export class WorkDust {
     if (rd === this.last) return;
     this.last = rd;
 
-    this.write(this.scene, "sceneOpacity", (1 - ramp(rd, LETTERS_OUT[0], LETTERS_OUT[1])).toFixed(3));
-    this.write(this.stars, "starsOpacity", ramp(rd, STARS_IN[0], STARS_IN[1]).toFixed(3));
+    writeIfChanged(this.scene, "opacity", (1 - ramp(rd, LETTERS_OUT[0], LETTERS_OUT[1])).toFixed(3));
+    writeIfChanged(this.stars, "opacity", ramp(rd, STARS_IN[0], STARS_IN[1]).toFixed(3));
 
     // Outside the segment the canvas leaves the tree: a full-screen layer,
-    // blank or not, is composited on every frame WORK scrolls.
+    // blank or not, is composited on every frame WORK scrolls. A class, not
+    // an inline display, so the section's is-far still takes it out.
     const shown = rd > 0 && rd < 1;
     if (shown !== this.shown) {
       this.shown = shown;
-      this.canvas.style.display = shown ? "block" : "none";
+      this.canvas.classList.toggle("is-live", shown);
     }
 
     const ctx = this.ctx;
@@ -367,11 +373,5 @@ export class WorkDust {
       }
     }
     ctx.globalAlpha = 1;
-  }
-
-  write(el: HTMLElement, key: "sceneOpacity" | "starsOpacity", value: string): void {
-    if (this[key] === value) return;
-    this[key] = value;
-    el.style.opacity = value;
   }
 }

@@ -428,7 +428,12 @@ const { items = works, home = false } = Astro.props;
     }
 
     /* Its own layer (invariant 13): it redraws with the scroll's progress.
-       Out of the tree until the dissolve starts (WorkDust.update). */
+       Out of the tree outside the dissolve (WorkDust.update sets is-live)
+       and whenever the section is far. */
+    &:not(.is-far) .s__dust:global(.is-live) {
+      display: block;
+    }
+
     .s__dust {
       display: none;
       position: absolute;

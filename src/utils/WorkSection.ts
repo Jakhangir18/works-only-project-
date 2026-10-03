@@ -1,6 +1,7 @@
 import Emitter from "./Emitter";
 import Ticker from "./Ticker";
 import { WorkDust } from "./WorkDust";
+import { writeIfChanged, forgetLeaf } from "./leafWrite";
 
 import { gsap } from "gsap";
 import { SlowMo } from "gsap/EasePack";
@@ -133,10 +134,7 @@ class Section {
   /** Timeline time where the dissolve starts, and the per-card step. */
   dissolveAt = Infinity;
   workStepVh = DESKTOP_WORK_STEP_VH;
-  /** Home only: the grid's last opacity and transform, and whether its
-   *  settled picture is on the canvas. */
-  gridOpacity = "";
-  gridTransform = "";
+  /** Home only: whether the grid's settled picture is on the canvas. */
   gridSettled = false;
 
   constructor() {
@@ -454,8 +452,11 @@ class Section {
     this.speed = Math.hypot(this.bounding.width, this.bounding.height) * 4;
 
     // Phone keeps the canvas static (iOS jitter); drop any stale inline
-    // transform when resizing across the breakpoint.
+    // transform when resizing across the breakpoint. (On the home the
+    // grid's drift is its transform at every width: the next tick writes
+    // it again, its leaf cache forgotten here.)
     if (this.bounding.width < 576) this.canvas.style.transform = "";
+    if (this.home) forgetLeaf(this.canvas);
     this.last.scrollProgress = null;
   }
 
@@ -938,10 +939,7 @@ class Section {
     const opacity = (
       Math.min(1, pointsProgress * 4) * Math.max(0, 1 - this.dissolve * 2)
     ).toFixed(3);
-    if (opacity !== this.gridOpacity) {
-      this.gridOpacity = opacity;
-      this.canvas.style.opacity = opacity;
-    }
+    writeIfChanged(this.canvas, "opacity", opacity);
     if (opacity === "0.000") return;
 
     const settled = pointsProgress === 1;
@@ -964,7 +962,9 @@ class Section {
 
   tick() {
     // The dissolve's glyphs, read in the middle of the hold, where the
-    // letters stand still, and before this tick writes anything.
+    // letters stand still, before this tick's own writes. GSAP's scrub may
+    // have written already this frame, so the reads can cost one layout:
+    // once per layout, in the hold, not per frame.
     if (
       this.dust &&
       !this.dust.measured &&
@@ -1008,11 +1008,11 @@ class Section {
       // The drift and the parallax, as the grid layer's one transform.
       const x = this.pointsProgress === 1 ? this.flowX : 0;
       const y = this.bounding.width >= 576 ? sp * -0.05 * this.bounding.height : 0;
-      const transform = `translate3d(${x.toFixed(2)}px, ${y.toFixed(2)}px, 0)`;
-      if (transform !== this.gridTransform) {
-        this.gridTransform = transform;
-        this.canvas.style.transform = transform;
-      }
+      writeIfChanged(
+        this.canvas,
+        "transform",
+        `translate3d(${x.toFixed(2)}px, ${y.toFixed(2)}px, 0)`,
+      );
       this.drawGridHome();
     } else {
       this.drawPoints();

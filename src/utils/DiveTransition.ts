@@ -86,6 +86,8 @@ function prefersReducedMotion() {
 type PausableSection = {
   isPaused: boolean;
   setPausedState(isPaused: boolean): void;
+  /** The anime home's WORK (WorkSection.home): it parks its own key. */
+  home?: boolean;
 };
 
 /**
@@ -383,7 +385,7 @@ class DiveTransition {
    * standing when they dived.
    */
   onTeaserLinkClick = () => {
-    const key = document.querySelector(".s-work--home") ? HOME_RETURN_KEY : "returnScrollY";
+    const key = this.section?.home ? HOME_RETURN_KEY : "returnScrollY";
     sessionStorage.setItem(key, String(this.lockedScrollY));
   };
 
@@ -498,6 +500,8 @@ class DiveTransition {
     // Nothing is navigating, so leaving the key set would make the next real
     // load skip the loader and jump.
     sessionStorage.removeItem("returnScrollY");
+    // A teaser opened in a new tab parked an offset this tab never used.
+    sessionStorage.removeItem(HOME_RETURN_KEY);
 
     this.fill(reading);
 

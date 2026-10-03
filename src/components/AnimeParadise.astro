@@ -282,18 +282,10 @@ const SKY_H = 768;
     height: 100%;
     object-fit: cover;
     object-position: 50% 56%;
-    /* Its top fades into the sky's same clouds while it settles from low. */
-    mask-image: linear-gradient(to bottom, transparent 0, #000 10%);
-    -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 10%);
+    /* No mask on its top edge: by the time the clouds clear it is within
+       about 1% of its place, over the sky's same clouds. */
     opacity: 0;
     will-change: transform, opacity;
-  }
-
-  /* In place: the sky under it is hidden (Paradise.ts) and the fade goes,
-     its top being the sky's own clouds. */
-  .paradise__land:global(.is-settled) {
-    mask-image: none;
-    -webkit-mask-image: none;
   }
 
   /* Slow rays from the painting's sun, on top of the painted ones: a conic

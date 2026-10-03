@@ -5,8 +5,9 @@
  * field across the seam where WORK scrolls away.
  *
  * WorkDust.ts lands its last specks on these stars' centres (each tile's
- * offset plus half its size), from its own copy of the numbers: keep TILES
- * there in step with this.
+ * offset plus half its size), reading the offsets and sizes from
+ * `.s__stars`'s computed background; their colours and alphas it keeps in
+ * LOOKS, in this order.
  */
 @mixin star-tiles {
   background-image:
