@@ -1,10 +1,9 @@
 import { gsap } from "gsap";
-import { impactAt } from "./RocketFlight";
 import { STACK, workStack } from "./workStack";
 
 /**
- * The constellation: the rocket's sparks and the star field gather into the
- * word WORK, the way the WORK section opens (the owner's choice, 2026-10-03).
+ * The constellation: the star field gathers into the word WORK, the way the
+ * WORK section opens (the owner's choice, 2026-10-03).
  *
  * One canvas over the space stage. Space.ts owns the triggers and hands this
  * module two progress values: the runway's (the rocket's crash lives there)
@@ -13,14 +12,11 @@ import { STACK, workStack } from "./workStack";
  * of them changed (the dirty flag), from the GSAP ticker, and only while the
  * space or runway trigger is active. Nothing animates on its own.
  *
- *   - Sparks: SPARKS stars leave the impact point once the flash has gone
- *     and fly out over the rest of the runway, in viewport space (the
- *     flight stage is sticky). The space stage under them is still
- *     scrolling up until the runway ends, so their stage position subtracts
- *     its offset, and their climb is capped so none rises past the stage's
- *     top edge, where it would be cut off.
- *   - The field: the other stars fade in as the wipe completes, at fixed
- *     places of a seeded scatter.
+ *   - The field: the stars fade in as the page finishes turning to space,
+ *     at fixed places of a seeded scatter. (v5 also flew sparks out of the
+ *     impact here; scrubbed by the scroll, they hung still whenever the
+ *     reader stopped, and the owner read them as frozen debris. The crash
+ *     plays in time now, in RocketFlight.ts.)
  *   - The gathering: over the second half of the held screen each star, on
  *     its own staggered clock, eases to a point sampled from the stack's
  *     glyphs; then solid letters, drawn with the same font at the same
@@ -32,22 +28,17 @@ import { STACK, workStack } from "./workStack";
  * device pixel ratio is capped at 2.
  */
 
-const SPARKS = 60;
 const STARS_WIDE = 420;
 const STARS_NARROW = 220;
 const NARROW_BELOW = 640;
 const BANDS = 4;
-/* In the runway's progress: the sparks leave once the flash is fading. */
-const SPARK_FROM = 0.6;
+/* In the runway's progress: the field comes in as the black completes. */
+const FIELD_FROM = 0.9;
 
 type Star = {
-  /* Field position, or the spark's launch direction and reach. */
+  /* Field position. */
   x: number;
   y: number;
-  dx: number;
-  dy: number;
-  reach: number;
-  spark: boolean;
   /* Target on the glyphs, and this star's slot in the gathering. */
   tx: number;
   ty: number;
@@ -80,7 +71,6 @@ function ramp(p: number, from: number, to: number): number {
 }
 
 const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
-const easeOut = (t: number) => 1 - (1 - t) * (1 - t) * (1 - t);
 
 /* Numerical Recipes' LCG, seeded, so the scatter is the same on every load. */
 function rng(seed: number): () => number {
@@ -153,27 +143,15 @@ async function sampleTargets(gen: number): Promise<void> {
 function build(): void {
   const n = W < NARROW_BELOW ? STARS_NARROW : STARS_WIDE;
   const r = rng(20261003);
-  stars = Array.from({ length: n }, (_, i) => {
-    const spark = i < SPARKS;
-    // Sparks fan out to the left, a little up or down: the impact is near
-    // the right edge. When they leave, the stage's top edge is 0.4 of the
-    // screen above the impact's 0.72, so no climb goes past 0.3 of it.
-    const angle = ((140 + r() * 90) * Math.PI) / 180;
-    const reach = (0.25 + r() * 0.55) * Math.min(W, H);
-    return {
-      x: r() * W,
-      y: r() * H,
-      dx: Math.cos(angle),
-      dy: Math.max(Math.sin(angle), (-0.3 * H) / reach),
-      reach,
-      spark,
-      tx: W / 2,
-      ty: H / 2,
-      delay: r(),
-      size: spark ? 2 + r() * 1.5 : 1 + r() * 1.6,
-      base: spark ? 0.9 : 0.25 + r() * 0.6,
-    };
-  });
+  stars = Array.from({ length: n }, () => ({
+    x: r() * W,
+    y: r() * H,
+    tx: W / 2,
+    ty: H / 2,
+    delay: r(),
+    size: 1 + r() * 1.6,
+    base: 0.25 + r() * 0.6,
+  }));
 }
 
 /* The canvas at the stage's size. Assigning width or height resets the
@@ -206,42 +184,25 @@ function draw(): void {
   // is cleared for WORK: a blank frame after a blank frame touches nothing.
   // (The space section's own progress is already moving over the runway, so
   // only the gathering's start says the field has anything to gather.)
-  const nothing = space >= 1 || (runway < SPARK_FROM && space < gatherFrom);
+  const nothing = space >= 1 || (runway < FIELD_FROM && space < gatherFrom);
   if (nothing && blank) return;
   ctx.clearRect(0, 0, W, H);
   blank = true;
   if (nothing) return;
   blank = false;
 
-  const impact = impactAt(W, H);
-  const burst = easeOut(ramp(runway, SPARK_FROM, 1));
-  const sparkAlpha = ramp(runway, SPARK_FROM, SPARK_FROM + 0.03);
-  // The space stage still scrolls up over the runway until it sticks: it is
-  // this far below the top of the screen.
-  const stageTop = (1 - Math.min(1, runway)) * H;
-  const fieldIn = ramp(runway, 0.9, 1);
+  const fieldIn = ramp(runway, FIELD_FROM, 1);
   const gather = sampled ? ramp(space, gatherFrom, GATHER_TO) : 0;
   const window_ = 0.55;
   const solid = sampled ? ramp(space, GATHER_TO - 0.03, 0.985) : 0;
   const dotsOut = 1 - ramp(space, 0.95, 0.995);
 
   const bands: number[][] = Array.from({ length: BANDS }, () => []);
-  const warm: number[] = [];
   for (const s of stars) {
-    let x: number;
-    let y: number;
-    let a: number;
-    if (s.spark) {
-      if (sparkAlpha <= 0) continue;
-      x = impact.x + s.dx * s.reach * burst;
-      y = impact.y + s.dy * s.reach * burst + 0.12 * H * burst * burst - stageTop;
-      a = sparkAlpha * (0.55 + 0.45 * (1 - burst)) * s.base;
-    } else {
-      if (fieldIn <= 0) continue;
-      x = s.x;
-      y = s.y;
-      a = fieldIn * s.base;
-    }
+    if (fieldIn <= 0) continue;
+    let x = s.x;
+    let y = s.y;
+    let a = fieldIn * s.base;
     if (gather > 0) {
       const t = easeInOut(ramp(gather, s.delay * (1 - window_), s.delay * (1 - window_) + window_));
       x += (s.tx - x) * t;
@@ -251,7 +212,7 @@ function draw(): void {
     a *= dotsOut;
     if (a <= 0.02 || x < -8 || y < -8 || x > W + 8 || y > H + 8) continue;
     const size = gather > 0 ? s.size + 0.6 * gather : s.size;
-    const list = s.spark && gather < 0.5 ? warm : bands[Math.min(BANDS - 1, Math.floor(a * BANDS))];
+    const list = bands[Math.min(BANDS - 1, Math.floor(a * BANDS))];
     list.push(x - size / 2, y - size / 2, size);
   }
 
@@ -262,13 +223,6 @@ function draw(): void {
     ctx.fillStyle = "#fff2ed";
     ctx.beginPath();
     for (let i = 0; i < list.length; i += 3) ctx.rect(list[i], list[i + 1], list[i + 2], list[i + 2]);
-    ctx.fill();
-  }
-  if (warm.length) {
-    ctx.globalAlpha = sparkAlpha;
-    ctx.fillStyle = "#ffd9a8";
-    ctx.beginPath();
-    for (let i = 0; i < warm.length; i += 3) ctx.rect(warm[i], warm[i + 1], warm[i + 2], warm[i + 2]);
     ctx.fill();
   }
 

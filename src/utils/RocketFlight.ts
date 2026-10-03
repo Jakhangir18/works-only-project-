@@ -11,8 +11,11 @@ import { writeIfChanged, forgetLeaf } from "./leafWrite";
  *     moment of impact, the rocket rides a route laid out in the sticky
  *     stage's own pixels — loops in the margins, sweeps behind the cards, a
  *     last arc over the runway and a dive;
- *   - the crash, in the runway's own progress: a flash, ten pieces of debris,
- *     the burst ring, and the wipe that takes the screen to space black.
+ *   - the crash: crossing the impact point downward plays a one-shot
+ *     timeline in time, not with the scroll (a white-hot core, a flash over
+ *     the whole screen, debris and embers that always end invisible, so
+ *     nothing is ever left frozen where the scroll stopped); a full-screen
+ *     black, written from the runway's own progress, takes the page to space.
  *
  * Measured once per refresh (resize, font load): the stage's size, the route
  * built for it and sampled into SAMPLES points, and the scroll positions of
@@ -24,12 +27,16 @@ import { writeIfChanged, forgetLeaf } from "./leafWrite";
 
 /* In the runway's progress (its top entering at the bottom of the screen = 0,
    its bottom reaching the bottom of the screen = 1): where the rocket hits,
-   where the wipe starts. Exported: the star field reveals on the wipe. */
+   where the page starts turning to space. Exported: the star field reveals
+   on that, and the stars arrive at 0.9, by which the black is near full. */
 export const CRASH_AT = 0.55;
 export const WIPE_STARTS = 0.6;
-const FLASH = [CRASH_AT, 0.64] as const;
-const DEBRIS = [CRASH_AT, 0.8] as const;
-const BURST = [0.56, 0.74] as const;
+const DARK = [WIPE_STARTS, 0.88] as const;
+/* A downward crossing plays the crash; a jump that lands further past it
+   than this shows the crash's end state (all gone) instead. Scrolling back
+   above the impact by RESET resets it. */
+const PLAY_WITHIN = 0.15;
+const RESET = 0.02;
 /* The last stretch of the route, as a fraction of its length, over which the
    rocket tumbles: one and a half turns on top of its heading. */
 const TUMBLE_FROM = 0.93;
@@ -122,10 +129,15 @@ let craft: HTMLElement | null = null;
 let trail: SVGPathElement | null = null;
 let impact: HTMLElement | null = null;
 let flash: HTMLElement | null = null;
-let wipe: HTMLElement | null = null;
-let burst: HTMLElement | null = null;
+let dark: HTMLElement | null = null;
+let core: HTMLElement | null = null;
 let puffs: HTMLElement[] = [];
 let shards: { el: HTMLElement; dx: number; dy: number; spin: number }[] = [];
+let embers: { el: HTMLElement; dx: number; dy: number; reach: number }[] = [];
+/* The crash, built per refresh (its reach depends on the stage), and the
+   runway progress of the previous frame, to tell a crossing from a jump. */
+let boom: gsap.core.Timeline | null = null;
+let lastR = -1;
 let onResize: (() => void) | null = null;
 let resizeTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -249,17 +261,7 @@ function measure(): void {
   const end = points[points.length - 1];
   endX = end.x;
   if (impact) impact.style.transform = `translate3d(${end.x.toFixed(1)}px, ${end.y.toFixed(1)}px, 0)`;
-  // The wipe is centred on the impact and its flat core (88% of the radius)
-  // has to reach the farthest corner of the stage from there. Sized here, in
-  // pixels, because the impact is off-centre: a fixed vmax size that covers
-  // the worst case is a quarter more pixels than a phone needs.
-  if (wipe) {
-    const d = Math.max(Math.hypot(end.x, end.y), Math.hypot(W - end.x, end.y), Math.hypot(end.x, H - end.y), Math.hypot(W - end.x, H - end.y));
-    const size = Math.ceil((2 * d) / 0.88);
-    writeIfChanged(wipe, "width", `${size}px`);
-    writeIfChanged(wipe, "height", `${size}px`);
-    writeIfChanged(wipe, "margin", `${-size / 2}px 0 0 ${-size / 2}px`);
-  }
+  buildCrash();
 
   if (trigger) {
     zoneStart = trigger.start;
@@ -309,55 +311,84 @@ function apply(scroll: number): void {
     stage.classList.toggle("is-crashed", crashed);
   }
 
-  if (flash) {
-    const t = ramp(r, FLASH[0], FLASH[1]);
-    const live = t > 0 && t < 1;
-    writeIfChanged(flash, "transform", `scale(${live ? (0.25 + 1.5 * (1 - (1 - t) * (1 - t))).toFixed(3) : 0})`);
-    writeIfChanged(flash, "opacity", live ? (1 - t * t).toFixed(3) : "0");
-    // Its own layer only while it moves, so the gradient is rastered once
-    // and scaled, not repainted every frame of the crash.
-    writeIfChanged(flash, "will-change", live ? "transform, opacity" : "auto");
+  if (dark) {
+    const t = ramp(r, DARK[0], DARK[1]);
+    // Smoothstep: no step at either end of the turn to black.
+    writeIfChanged(dark, "opacity", (t * t * (3 - 2 * t)).toFixed(3));
   }
 
-  if (shards.length) {
-    const t = ramp(r, DEBRIS[0], DEBRIS[1]);
-    const live = t > 0 && t < 1;
-    const reach = 0.3 * Math.min(W, H);
-    // The impact is near the right edge: pieces flying right travel no
-    // further than 90% of the room there, so the stage never clips them.
-    const right = Math.min(reach, 0.9 * (W - endX));
-    const left = Math.min(reach, 0.9 * endX);
-    const fall = 0.35 * H;
-    const out = 1 - (1 - t) * (1 - t);
-    for (const s of shards) {
-      const across = s.dx * (s.dx > 0 ? right : left) * out;
-      writeIfChanged(
-        s.el,
-        "transform",
-        live
-          ? `translate3d(${across.toFixed(1)}px, ${(s.dy * reach * out + fall * t * t).toFixed(1)}px, 0) rotate(${(s.spin * t).toFixed(0)}deg)`
-          : "scale(0)",
-      );
-      writeIfChanged(s.el, "opacity", live ? (1 - t).toFixed(3) : "0");
-      writeIfChanged(s.el, "will-change", live ? "transform, opacity" : "auto");
+  // The crash itself runs in time. A crossing on the way down plays it; a
+  // jump that lands well past the impact (a reload, a long scroll) shows its
+  // end, which is nothing; coming back up above the impact resets it.
+  if (boom) {
+    const before = lastR;
+    if (r >= CRASH_AT && before >= 0 && before < CRASH_AT) {
+      if (r < CRASH_AT + PLAY_WITHIN) boom.restart();
+      else boom.progress(1).pause();
+    } else if (r >= CRASH_AT && before < 0) {
+      boom.progress(1).pause();
+    } else if (r < CRASH_AT - RESET && before >= CRASH_AT - RESET) {
+      resetCrash();
     }
   }
+  lastR = r;
+}
 
-  if (burst) {
-    const b = ramp(r, BURST[0], BURST[1]);
-    writeIfChanged(burst, "--burst", b.toFixed(3));
-    // Promoted only while it is moving: a standing layer of this size is
-    // memory the rest of the page would pay for.
-    const active = b > 0 && b < 1 ? "transform, opacity" : "";
-    if (burst.style.willChange !== active) burst.style.willChange = active;
-  }
+/* Everything the crash shows, back to hidden and ready to play. */
+function resetCrash(): void {
+  if (!boom) return;
+  boom.pause(0);
+  const els = [flash, core, ...shards.map((s) => s.el), ...embers.map((e) => e.el)].filter(Boolean);
+  gsap.set(els, { opacity: 0, willChange: "auto" });
+}
 
-  if (wipe) {
-    const w = ramp(r, WIPE_STARTS, 1);
-    writeIfChanged(wipe, "--wipe", w.toFixed(3));
-    const active = w > 0 && w < 1 ? "transform" : "";
-    if (wipe.style.willChange !== active) wipe.style.willChange = active;
+/* The one-shot crash: about 1.2 s, every piece ending at opacity 0. Built
+   for the current stage on every refresh; reach is in the stage's pixels,
+   and a piece flying right gets at most 90% of the room left to the edge. */
+function buildCrash(): void {
+  const wasDone = !!boom && boom.progress() === 1;
+  boom?.kill();
+  boom = null;
+  if (!flash || !core) return;
+  const reach = 0.3 * Math.min(W, H);
+  const right = Math.min(reach, 0.9 * (W - endX));
+  const left = Math.min(reach, 0.9 * endX);
+  const pieces = [flash, core, ...shards.map((s) => s.el), ...embers.map((e) => e.el)];
+  const tl = gsap.timeline({
+    paused: true,
+    onStart: () => {
+      gsap.set(pieces, { willChange: "transform, opacity" });
+    },
+    onComplete: () => {
+      gsap.set(pieces, { willChange: "auto" });
+    },
+  });
+  tl.fromTo(core, { scale: 0.08, opacity: 1 }, { scale: 1, opacity: 0, duration: 0.55, ease: "power2.out" }, 0);
+  tl.fromTo(flash, { opacity: 0 }, { opacity: 1, duration: 0.08, ease: "power1.out" }, 0.02);
+  tl.to(flash, { opacity: 0, duration: 0.95, ease: "power2.in" }, 0.16);
+  for (const sh of shards) {
+    const x = sh.dx * (sh.dx > 0 ? right : left);
+    tl.fromTo(
+      sh.el,
+      { x: 0, y: 0, rotation: 0, scale: 1, opacity: 1 },
+      { x, y: sh.dy * reach + 0.35 * H, rotation: sh.spin, opacity: 0, duration: 1.15, ease: "power2.out" },
+      0.02,
+    );
   }
+  for (const em of embers) {
+    const r = em.reach * reach;
+    const x = em.dx * (em.dx > 0 ? Math.min(r, 0.9 * (W - endX)) : Math.min(r, 0.9 * endX));
+    tl.fromTo(
+      em.el,
+      { x: 0, y: 0, opacity: 1 },
+      { x, y: em.dy * r + 0.12 * H, opacity: 0, duration: 0.9, ease: "power3.out" },
+      0,
+    );
+  }
+  boom = tl;
+  // A rebuild after the crash keeps it finished, not replayable by a resize.
+  if (wasDone || lastR >= CRASH_AT) boom.progress(1).pause();
+  else resetCrash();
 }
 
 /* The resting pose under reduced motion: the rocket at the start of its route,
@@ -387,8 +418,14 @@ export function initRocketFlight(): void {
   trail = document.querySelector<SVGPathElement>(".js-rocket-trail");
   impact = document.querySelector<HTMLElement>(".js-rocket-impact");
   flash = document.querySelector<HTMLElement>(".js-rocket-flash");
-  wipe = document.querySelector<HTMLElement>(".js-rocket-wipe");
-  burst = document.querySelector<HTMLElement>(".js-rocket-burst");
+  dark = document.querySelector<HTMLElement>(".js-rocket-dark");
+  core = document.querySelector<HTMLElement>(".js-rocket-core");
+  embers = [...document.querySelectorAll<HTMLElement>(".js-rocket-ember")].map((el) => ({
+    el,
+    dx: Number(el.dataset.dx) || 0,
+    dy: Number(el.dataset.dy) || 0,
+    reach: Number(el.dataset.reach) || 0.5,
+  }));
   puffs = [...document.querySelectorAll<HTMLElement>(".js-rocket-puff")];
   shards = [...document.querySelectorAll<HTMLElement>(".js-rocket-shard")].map((el) => ({
     el,
@@ -443,7 +480,10 @@ export function destroyRocketFlight(): void {
     clearTimeout(resizeTimer);
     resizeTimer = null;
   }
-  for (const el of [craft, flash, wipe, burst, ...puffs, ...shards.map((s) => s.el)]) if (el) forgetLeaf(el);
+  boom?.kill();
+  boom = null;
+  lastR = -1;
+  for (const el of [craft, dark, ...puffs]) if (el) forgetLeaf(el);
   stage?.classList.remove("is-flying", "is-crashed");
   restBox = { w: 0, h: 0 };
   crashed = false;
@@ -453,8 +493,9 @@ export function destroyRocketFlight(): void {
   trail = null;
   impact = null;
   flash = null;
-  wipe = null;
-  burst = null;
+  dark = null;
+  core = null;
+  embers = [];
   puffs = [];
   shards = [];
   points = [];

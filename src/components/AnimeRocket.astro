@@ -11,9 +11,12 @@
  * them: a sticky, viewport-sized stage rides at the top of the zone for its
  * whole length, behind the bento's content (the cards pass in front of the
  * rocket, the text is never covered), and the runway — one empty viewport
- * after the bento — is where it dives and hits. The crash's flash, debris,
- * burst and wipe are born at the impact point in the same stage, so the
- * black that takes the screen is exactly where the rocket went down.
+ * after the bento — is where it dives and hits. The crash (owner, 2026-10-03:
+ * "a flash across the whole screen", nothing left frozen) plays once in time,
+ * not with the scroll: a white-hot core and a flash over the full width,
+ * debris and embers that fly out and always end invisible. Under it a
+ * full-screen black, following the runway's progress, takes the page to
+ * space. No disc and no ring, so no edge shows against the page.
  *
  * The route lives in viewport space: the controller builds it in pixels from
  * the stage's size on every resize (so a loop stays a circle at any aspect),
@@ -31,6 +34,11 @@ const PUFFS = 8;
 const SHARDS = Array.from({ length: 10 }, (_, i) => {
   const angle = (-170 + (160 / 9) * i) * (Math.PI / 180);
   return { dx: Math.cos(angle).toFixed(3), dy: Math.sin(angle).toFixed(3), spin: ((i % 2 ? 1 : -1) * (220 + i * 37)).toFixed(0) };
+});
+/* Embers: small glowing dots on a wider, seeded fan, each its own reach. */
+const EMBERS = Array.from({ length: 18 }, (_, i) => {
+  const angle = (-185 + (190 / 17) * i + ((i * 37) % 11) - 5) * (Math.PI / 180);
+  return { dx: Math.cos(angle).toFixed(3), dy: Math.sin(angle).toFixed(3), reach: (0.45 + ((i * 53) % 50) / 100).toFixed(2) };
 });
 ---
 
@@ -70,10 +78,16 @@ const SHARDS = Array.from({ length: 10 }, (_, i) => {
     {/* The impact: everything below is born at the crash point (placed by the
         controller with one translate on .flight-stage__impact) and is zero
         at rest. */}
+    {/* The black that takes the page to space, and the flash over it: both
+        full screen, so no edge of either ever shows. */}
+    <div class="flight-stage__dark js-rocket-dark"></div>
+    <div class="flight-stage__flash js-rocket-flash"></div>
+
     <div class="flight-stage__impact js-rocket-impact">
-      <div class="rocket-flight__wipe js-rocket-wipe"></div>
-      <div class="rocket-flight__burst js-rocket-burst"></div>
-      <div class="flight-stage__flash js-rocket-flash"></div>
+      <div class="flight-stage__core js-rocket-core"></div>
+      {EMBERS.map((e) => (
+        <span class="flight-stage__ember js-rocket-ember" data-dx={e.dx} data-dy={e.dy} data-reach={e.reach}></span>
+      ))}
       {SHARDS.map((s) => (
         <span class="flight-stage__shard js-rocket-shard" data-dx={s.dx} data-dy={s.dy} data-spin={s.spin}></span>
       ))}
@@ -112,7 +126,7 @@ const SHARDS = Array.from({ length: 10 }, (_, i) => {
   /* One viewport, stuck to the top of the screen for the whole zone, taking
      no room in the flow (the negative margin gives its height back). Under
      the bento's content: the rocket weaves behind the cards and never covers
-     a line of text. Clipped to itself, so the wipe and the burst cannot widen
+     a line of text. Clipped to itself, so the flash and the debris cannot widen
      the page. */
   .flight-stage {
     position: sticky;
@@ -284,16 +298,72 @@ const SHARDS = Array.from({ length: 10 }, (_, i) => {
     height: 0;
   }
 
-  .flight-stage__flash {
+  /* The white-hot core at the impact: laid out at its largest, popped in
+     from small and faded (scale <= 1, invariant 7). */
+  .flight-stage__core {
     position: absolute;
     left: 0;
     top: 0;
-    width: 70vmin;
-    height: 70vmin;
-    margin: -35vmin 0 0 -35vmin;
+    width: 60vmin;
+    height: 60vmin;
+    margin: -30vmin 0 0 -30vmin;
     border-radius: 50%;
-    background: radial-gradient(circle, #fff 0%, #fff4e6 18%, #ffd9a8 34%, rgba(255, 138, 61, 0.55) 52%, rgba(255, 138, 61, 0) 70%);
+    background: radial-gradient(circle, #fff 0%, #fff4e6 22%, #ffd9a8 40%, rgba(255, 138, 61, 0.5) 58%, rgba(255, 138, 61, 0) 70%);
     transform: scale(0);
+    opacity: 0;
+  }
+
+  /* The flash: the whole screen, white-hot at the impact and warm to every
+     edge. Opacity only; its gradient is fixed, so it rasters once. The
+     centre is the impact (IMPACT in RocketFlight.ts). */
+  .flight-stage__flash {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+      circle at 80% 72%,
+      #fff 0%,
+      #fff7ec 10%,
+      #ffe3bd 24%,
+      #ffb978 46%,
+      #ff7a4a 72%,
+      #e8344f 100%
+    );
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* Space black over the whole stage, written from the runway's progress. */
+  .flight-stage__dark {
+    position: absolute;
+    inset: 0;
+    background: color(space);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  @media (max-width: 639.98px) {
+    .flight-stage__flash {
+      background: radial-gradient(
+        circle at 78% 72%,
+        #fff 0%,
+        #fff7ec 12%,
+        #ffe3bd 28%,
+        #ffb978 50%,
+        #ff7a4a 76%,
+        #e8344f 100%
+      );
+    }
+  }
+
+  .flight-stage__ember {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 6px;
+    height: 6px;
+    margin: -3px 0 0 -3px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #fff7ec 0%, #ffb978 45%, rgba(255, 122, 74, 0) 100%);
     opacity: 0;
   }
 
@@ -318,58 +388,6 @@ const SHARDS = Array.from({ length: 10 }, (_, i) => {
     }
   }
 
-  .rocket-flight__burst {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 180vmax;
-    height: 180vmax;
-    margin: -90vmax 0 0 -90vmax;
-    /* `--burst` runs 0 -> 1 just ahead of the wipe. Scale carries the ring
-       outward; opacity takes it away as the wipe arrives behind it. */
-    transform: scale(var(--burst, 0));
-    /* Zero at rest, then squared, so the ring stays bright through most of
-       its travel and lets go only at the end. */
-    opacity: calc(clamp(0, var(--burst, 0) * 10, 1) * (1 - var(--burst, 0) * var(--burst, 0)));
-    border-radius: 50%;
-    background: radial-gradient(
-      circle at 50% 50%,
-      #fff4e6 0%,
-      #ffd9a8 8%,
-      transparent 18%,
-      transparent 56%,
-      color(accent) 64%,
-      color(accent) 72%,
-      #ff8a3d 86%,
-      #ffd9a8 93%,
-      transparent 100%
-    );
-  }
-
-  /* The wipe, centred on the impact. Its flat core has to reach the farthest
-     corner of the screen from there; the impact is on the right, so
-     RocketFlight.measure() sizes it in pixels from the stage on every
-     refresh. The 210vmax here only holds the box until it has. */
-  .rocket-flight__wipe {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 210vmax;
-    height: 210vmax;
-    margin: -105vmax 0 0 -105vmax;
-    transform: scale(var(--wipe, 0));
-    border-radius: 50%;
-    background: radial-gradient(
-      circle at 50% 50%,
-      color(space) 0%,
-      color(space) 88%,
-      color(space-glow) 92%,
-      color(accent) 95%,
-      #ff8a3d 98%,
-      #ffd9a8 100%
-    );
-  }
-
   /* Stillness, not absence: the stage is not stuck, the rocket rests at the
      start of its route beside the bento, the flame holds one shape, there is
      no smoke and no crash, and the star field simply follows the runway. */
@@ -385,7 +403,9 @@ const SHARDS = Array.from({ length: 10 }, (_, i) => {
     }
 
     .flight-stage__puff,
-    .flight-stage__impact {
+    .flight-stage__impact,
+    .flight-stage__flash,
+    .flight-stage__dark {
       display: none;
     }
   }
