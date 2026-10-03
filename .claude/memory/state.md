@@ -1,4 +1,4 @@
 # Project state
-Updated: 2026-09-30 00:01
+Updated: 2026-10-02 22:26
 
-night/restore-2026-09-30 checked out in repo, local only, 1120/1120, preview unit portfolio-preview on tailnet :4400; main 3f6e954 untouched
+feat/portfolio-v4 @ e835887 (local, not pushed), 1142/1142, preview :4400 serving the final build; main untouched
