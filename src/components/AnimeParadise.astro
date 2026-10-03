@@ -108,42 +108,24 @@ const SKY_H = 768;
       {/* The planet, then its horizon: laid out at their largest and scaled
           down at the start, so they only ever downsample (invariant 7). */}
       <img class="paradise__earth js-par-earth" src="/paradise/earth-disc.webp" alt="" width="1024" height="1024" loading="lazy" decoding="async" />
-      <img
-        class="paradise__horizon js-par-horizon"
-        src="/paradise/earth-horizon.webp"
-        srcset="/paradise/earth-horizon-tall.webp 768w, /paradise/earth-horizon.webp 1376w"
-        sizes="(max-aspect-ratio: 3/4) 768px, 1376px"
-        alt=""
-        width="1376"
-        height="768"
-        loading="lazy"
-        decoding="async"
-      />
-      <img
-        class="paradise__sky js-par-sky"
-        src="/paradise/sky-wide.webp"
-        srcset="/paradise/sky-tall.webp 768w, /paradise/sky-wide.webp 1376w"
-        sizes="(max-aspect-ratio: 3/4) 768px, 1376px"
-        alt=""
-        width={SKY_W}
-        height={SKY_H}
-        loading="lazy"
-        decoding="async"
-      />
+      {/* Wide or tall by the screen's shape, not its density: with width
+          descriptors a 3x phone took the wide cuts, and the land's tall cut
+          is what the grass maps its path through (GrassField.ts). */}
+      <picture>
+        <source media="(max-aspect-ratio: 3/4)" srcset="/paradise/earth-horizon-tall.webp" width="768" height="1376" />
+        <img class="paradise__horizon js-par-horizon" src="/paradise/earth-horizon.webp" alt="" width="1376" height="768" loading="lazy" decoding="async" />
+      </picture>
+      <picture>
+        <source media="(max-aspect-ratio: 3/4)" srcset="/paradise/sky-tall.webp" width="768" height="1376" />
+        <img class="paradise__sky js-par-sky" src="/paradise/sky-wide.webp" alt="" width={SKY_W} height={SKY_H} loading="lazy" decoding="async" />
+      </picture>
       {/* The ground, painted in the sky's own hand (Gemini, 2026-10-03): the
           meadow, the path and the sun it leads to. It comes in while the
           camera is inside the clouds, so the cut from the sky to it is hidden. */}
-      <img
-        class="paradise__land js-par-land"
-        src="/paradise/land-wide.webp"
-        srcset="/paradise/land-tall.webp 768w, /paradise/land-wide.webp 1376w"
-        sizes="(max-aspect-ratio: 3/4) 768px, 1376px"
-        alt=""
-        width={SKY_W}
-        height={SKY_H}
-        loading="lazy"
-        decoding="async"
-      />
+      <picture>
+        <source media="(max-aspect-ratio: 3/4)" srcset="/paradise/land-tall.webp" width="768" height="1376" />
+        <img class="paradise__land js-par-land" src="/paradise/land-wide.webp" alt="" width={SKY_W} height={SKY_H} loading="lazy" decoding="async" />
+      </picture>
       <div class="paradise__rays js-par-rays"></div>
 
       {/* Cloud banks the camera falls through on the way down. */}
