@@ -94,7 +94,6 @@ function stageTopAt(scroll: number): number {
 function measure(): void {
   narrow = window.innerWidth < NARROW_BELOW;
   if (meadow) groundH = meadow.offsetHeight;
-  resizeGrass();
   if (walk) walkW = walk.clientWidth;
   const trail = walk?.querySelector<SVGSVGElement>(narrow ? ".paradise__trail--narrow" : ".paradise__trail--wide");
   // The firefly is laid out at the trail's top-left, so the trail's own
@@ -214,7 +213,9 @@ export function initParadise(): void {
     end: "bottom bottom",
     onUpdate: (self) => applyDescent(self.progress),
     onRefresh: (self) => {
-      measure();
+      // The grass's canvas follows the meadow's box, once per refresh.
+      resizeGrass();
+      if (meadow) groundH = meadow.offsetHeight;
       applyDescent(self.progress);
     },
   });

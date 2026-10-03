@@ -215,7 +215,15 @@ export function initGrass(el: HTMLCanvasElement, stageTopNow: () => number): voi
     "pointermove",
     (e) => {
       if (!visible || e.pointerType === "touch") return;
-      pointer = { x: e.clientX - left, y: e.clientY - stageTop() - top - lift };
+      const x = e.clientX - left;
+      const y = e.clientY - stageTop() - top - lift;
+      // Only a pointer over the grass, or near it, presses anything; one
+      // elsewhere on the screen leaves the field alone (and asleep).
+      if (y < -reach || y > H + reach || x < -reach || x > W + reach) {
+        pointer = null;
+        return;
+      }
+      pointer = { x, y };
       movedAt = performance.now();
       start();
     },
