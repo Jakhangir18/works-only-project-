@@ -61,9 +61,7 @@ function totalOf(p: Player): number {
 }
 
 function drawTime(p: Player): void {
-  // Before the first play nothing has loaded and currentTime reads 0: the
-  // bar shows where the clip will start.
-  const t = !p.started && p.video.currentTime < 0.5 ? p.from : p.video.currentTime;
+  const t = shownTime(p);
   const total = totalOf(p);
   if (p.fill) writeIfChanged(p.fill, "transform", `scaleX(${total ? Math.min(1, t / total).toFixed(4) : 0})`);
   const second = Math.floor(t);
@@ -133,6 +131,12 @@ function play(p: Player): void {
   ready?.catch(() => drawState(p));
 }
 
+/* The time the bar shows: before the first play nothing has loaded and
+   currentTime reads 0, so the clip's start point stands in. */
+function shownTime(p: Player): number {
+  return !p.started && p.video.currentTime < 0.5 ? p.from : p.video.currentTime;
+}
+
 function seekTo(p: Player, seconds: number): void {
   const total = totalOf(p);
   p.started = true;
@@ -191,7 +195,8 @@ function bindScrub(p: Player): void {
     "keydown",
     (e) => {
       const step = { ArrowLeft: -5, ArrowRight: 5, ArrowDown: -5, ArrowUp: 5 }[e.key];
-      if (step !== undefined) seekTo(p, p.video.currentTime + step);
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (step !== undefined) seekTo(p, shownTime(p) + step);
       else if (e.key === "Home") seekTo(p, 0);
       else if (e.key === "End") seekTo(p, totalOf(p));
       else return;
@@ -261,12 +266,15 @@ function bind(root: HTMLElement): Player | null {
     "keydown",
     (e) => {
       if (e.target instanceof HTMLElement && e.target.closest(".js-player-scrub")) return;
+      // The browser's and the system's own shortcuts pass through.
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
       const key = e.key.toLowerCase();
+      // Space on a focused button presses that button (mute, full screen).
+      if (key === " " && e.target instanceof HTMLButtonElement) return;
       if (key === " " || key === "k") toggle();
       else if (key === "m" && p.mute) p.mute.click();
       else if (key === "f") fullscreen(p);
       else return;
-      // Space on a focused button would click it again on keyup.
       e.preventDefault();
     },
     { signal },

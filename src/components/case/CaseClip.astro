@@ -202,6 +202,12 @@ const start = clipLength(from);
       transform: none;
     }
 
+    /* Before a clip starts, a control the keyboard reached shows its bar. */
+    .case-clip__frame:focus-within & {
+      opacity: 1;
+      transform: none;
+    }
+
     /* Touch has no hover: a loop's bar stays up there. */
     @media (hover: none) {
       .case-clip__frame.is-loop & {
