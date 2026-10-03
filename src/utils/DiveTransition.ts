@@ -384,7 +384,10 @@ class DiveTransition {
    * to progress 0. Save the pre-lock offset here, which is where they were
    * standing when they dived.
    */
-  onTeaserLinkClick = () => {
+  onTeaserLinkClick = (event: MouseEvent) => {
+    // A modified click opens the case in another tab or window, and this
+    // tab stays where it is: there is nothing to return to.
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     const key = this.section?.home ? HOME_RETURN_KEY : "returnScrollY";
     sessionStorage.setItem(key, String(this.lockedScrollY));
   };
