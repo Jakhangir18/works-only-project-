@@ -39,7 +39,7 @@ const build = [
 
 /* Everything the page shows after the hero, in page order. The count line
    is read from here, so it cannot drift from the page. */
-const shown = [...build.map((f) => f.id), "g03", "telemetry", "tvc-demo", "pads", "g07", "g09"];
+const shown = [...build.map((f) => f.id), "g03", "telemetry", "tvc-demo", "pads", "g07"];
 const clips = ["telemetry", "tvc-demo", "pads"];
 const photos = 1 + shown.filter((id) => !clips.includes(id)).length; // + the hero
 const words = ["No", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"];
@@ -151,12 +151,9 @@ const loop = ["Design a part", "Print it", "Find out why it failed", "Do it agai
           ))}
         </ol>
       </div>
-      <CaseFigure slug={slug} id="g07" alt="Jakhangir holding the assembled white rocket, a second club member beside him holding its avionics board" caption="The assembled rocket, its avionics board alongside." sizes="(max-width: 56em) 100vw, 36vw" class="rk-loop__photo" />
+      <CaseFigure slug={slug} id="g07" alt="A framed certificate of thanks («Алғыс») made out to Jakhangir Tynshimov for contributing to youth policy in the Mangystau region, 2024" caption="A certificate of thanks, Mangystau region, 2024." sizes="(max-width: 56em) 100vw, 36vw" class="rk-loop__photo" />
     </div>
 
-    <div class="rk-ps">
-      <CaseFigure slug={slug} id="g09" alt="A framed certificate of thanks («Алғыс») made out to Jakhangir Tynshimov for contributing to youth policy in the Mangystau region, 2024" caption="A certificate of thanks, Mangystau region, 2024." sizes="(max-width: 48em) 50vw, 14rem" class="rk-ps__figure" />
-    </div>
   </section>
 </CaseLayout>
 
@@ -519,14 +516,4 @@ const loop = ["Design a part", "Print it", "Find out why it failed", "Do it agai
     }
   }
 
-  /* A postscript, set apart: small, and under its own rule. */
-  .rk-ps {
-    margin-top: clamp(4rem, 10vh, 7rem);
-    padding-top: 1.5rem;
-    border-top: 1px solid var(--case-rule);
-  }
-
-  :global(.rk-ps__figure) {
-    max-width: 14rem;
-  }
 </style>

@@ -1,0 +1,16 @@
+{
+  "receivedAt": "2026-10-03T06:21:53.802Z",
+  "page": "/work/touchpoint/",
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Safari/605.1.15",
+  "sentAt": "2026-10-03T06:21:53.605Z",
+  "picks": {
+    "touchpoint/g08": {
+      "pool": "touchpoint-07",
+      "star": false
+    },
+    "touchpoint/g02": {
+      "pool": "touchpoint-20",
+      "star": false
+    }
+  }
+}

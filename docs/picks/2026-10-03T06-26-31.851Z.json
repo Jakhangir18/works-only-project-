@@ -1,0 +1,24 @@
+{
+  "receivedAt": "2026-10-03T06:26:31.851Z",
+  "page": "/",
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Safari/605.1.15",
+  "sentAt": "2026-10-03T06:26:31.719Z",
+  "picks": {
+    "engineering-rocket/cover": {
+      "pool": "engineering-rocket-09",
+      "star": false
+    },
+    "remote-lab-vision/cover": {
+      "pool": "remote-lab-vision-01-crop",
+      "star": false
+    },
+    "zyp/cover": {
+      "pool": "zyp-hero",
+      "star": false
+    },
+    "touchpoint/cover": {
+      "pool": "touchpoint-01",
+      "star": false
+    }
+  }
+}

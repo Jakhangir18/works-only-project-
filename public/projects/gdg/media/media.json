@@ -73,8 +73,8 @@
   },
   "g03": {
     "kind": "image",
-    "width": 2160,
-    "height": 2880,
+    "width": 1800,
+    "height": 1012,
     "files": [
       {
         "w": 640,
@@ -85,12 +85,8 @@
         "src": "/projects/gdg/media/g03-1280.webp"
       },
       {
-        "w": 1920,
-        "src": "/projects/gdg/media/g03-1920.webp"
-      },
-      {
-        "w": 2160,
-        "src": "/projects/gdg/media/g03-2160.webp"
+        "w": 1800,
+        "src": "/projects/gdg/media/g03-1800.webp"
       }
     ],
     "thumb": "/projects/gdg/media/g03-thumb.webp"

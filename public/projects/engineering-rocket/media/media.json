@@ -1,16 +1,20 @@
 {
   "cover": {
     "kind": "image",
-    "width": 1200,
-    "height": 1600,
+    "width": 1600,
+    "height": 2844,
     "files": [
       {
         "w": 640,
         "src": "/projects/engineering-rocket/media/cover-640.webp"
       },
       {
-        "w": 1200,
-        "src": "/projects/engineering-rocket/media/cover-1200.webp"
+        "w": 1280,
+        "src": "/projects/engineering-rocket/media/cover-1280.webp"
+      },
+      {
+        "w": 1600,
+        "src": "/projects/engineering-rocket/media/cover-1600.webp"
       }
     ],
     "thumb": "/projects/engineering-rocket/media/cover-thumb.webp"
@@ -153,16 +157,20 @@
   },
   "g07": {
     "kind": "image",
-    "width": 1200,
-    "height": 1600,
+    "width": 1600,
+    "height": 2133,
     "files": [
       {
         "w": 640,
         "src": "/projects/engineering-rocket/media/g07-640.webp"
       },
       {
-        "w": 1200,
-        "src": "/projects/engineering-rocket/media/g07-1200.webp"
+        "w": 1280,
+        "src": "/projects/engineering-rocket/media/g07-1280.webp"
+      },
+      {
+        "w": 1600,
+        "src": "/projects/engineering-rocket/media/g07-1600.webp"
       }
     ],
     "thumb": "/projects/engineering-rocket/media/g07-thumb.webp"

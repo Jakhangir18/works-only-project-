@@ -1,12 +1,16 @@
 {
   "cover": {
     "kind": "image",
-    "width": 675,
+    "width": 1440,
     "height": 900,
     "files": [
       {
         "w": 640,
         "src": "/projects/zyp/media/cover-640.webp"
+      },
+      {
+        "w": 1440,
+        "src": "/projects/zyp/media/cover-1440.webp"
       }
     ],
     "thumb": "/projects/zyp/media/cover-thumb.webp"

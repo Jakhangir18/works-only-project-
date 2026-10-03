@@ -1,7 +1,7 @@
 {
   "cover": {
     "kind": "image",
-    "width": 1600,
+    "width": 1040,
     "height": 2133,
     "files": [
       {
@@ -9,12 +9,8 @@
         "src": "/projects/remote-lab-vision/media/cover-640.webp"
       },
       {
-        "w": 1280,
-        "src": "/projects/remote-lab-vision/media/cover-1280.webp"
-      },
-      {
-        "w": 1600,
-        "src": "/projects/remote-lab-vision/media/cover-1600.webp"
+        "w": 1040,
+        "src": "/projects/remote-lab-vision/media/cover-1040.webp"
       }
     ],
     "thumb": "/projects/remote-lab-vision/media/cover-thumb.webp"

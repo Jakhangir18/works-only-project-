@@ -3,10 +3,11 @@
     "slug": "zyp",
     "id": "cover",
     "kind": "image",
-    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/prepared/zyp/zyp-cover.png",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/prepared/zyp/zyp-hero.png",
     "widths": [
       640
-    ]
+    ],
+    "note": "picked by the owner (2026-10-03T06:27:35Z) from pool item zyp/zyp-hero"
   },
   {
     "slug": "zyp",

@@ -1,0 +1,16 @@
+{
+  "receivedAt": "2026-10-03T06:23:58.691Z",
+  "page": "/work/gdg/",
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Safari/605.1.15",
+  "sentAt": "2026-10-03T06:23:58.468Z",
+  "picks": {
+    "gdg/g02": {
+      "pool": "ext-003",
+      "star": false
+    },
+    "gdg/g03": {
+      "pool": "img-2953",
+      "star": false
+    }
+  }
+}

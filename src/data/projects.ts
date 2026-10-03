@@ -60,8 +60,8 @@ export const projects: readonly Project[] = [
     line: "A device that plays Braille through vibration motors, so a blind user can browse the web by touch.",
     cover: {
       ...picture("touchpoint", "cover", 640),
-      alt: "Both TouchPoint gloves with fingertip vibration motors, the Raspberry Pi and the palm buttons",
-      focal: "58% 42%",
+      alt: "The TouchPoint desk at QuackHacks 3: the interface on the monitor, the laptop, the wired gloves and the Raspberry Pi",
+      focal: "50% 55%",
     },
     links: [
       { label: "Official project page", href: "https://2026.quackhacks.org/projects/touchpoint" },
@@ -104,8 +104,8 @@ export const projects: readonly Project[] = [
     line: "The motion and the 3D on zyp.co: a scroll-scrubbed hero, a canvas globe of payment arcs, tests that hold it together.",
     cover: {
       ...picture("zyp", "cover", 640),
-      alt: "The zyp.co home page",
-      focal: "50% 30%",
+      alt: "The zyp.co hero: an office with a laptop on a white desk, under 'The back office management platform for global companies'",
+      focal: "50% 45%",
     },
     links: [{ label: "zyp.co", href: "https://www.zyp.co" }],
     sources: ["resume", "owner"],
@@ -139,8 +139,8 @@ export const projects: readonly Project[] = [
     line: "Which camera can hold a readable feed for a remote chemistry lab: four cameras measured in LabVIEW, one chosen and mounted.",
     cover: {
       ...picture("remote-lab-vision", "cover", 640),
-      alt: "One of the two remote lab rigs: flow controllers, glass columns and the control box",
-      focal: "45% 50%",
+      alt: "Jakhangir at one of the remote lab rigs, the control screen beside him",
+      focal: "60% 40%",
     },
     links: [],
     sources: ["owner", "media"],
@@ -173,8 +173,8 @@ export const projects: readonly Project[] = [
     line: "Led a student rocket club: airframes modelled in CAD and printed in sections, Arduino avionics tested on the bench.",
     cover: {
       ...picture("engineering-rocket", "cover", 640),
-      alt: "The assembled rocket with its avionics board alongside",
-      focal: "55% 45%",
+      alt: "The printed avionics bay held in hand beside the white nose cone",
+      focal: "45% 50%",
     },
     links: [],
     sources: ["resume", "owner", "media"],

@@ -1,0 +1,16 @@
+{
+  "receivedAt": "2026-10-03T06:20:23.324Z",
+  "page": "/work/engineering-rocket/",
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Safari/605.1.15",
+  "sentAt": "2026-10-03T06:20:23.075Z",
+  "picks": {
+    "engineering-rocket/hero": {
+      "pool": "engineering-rocket-09-band",
+      "star": false
+    },
+    "engineering-rocket/g07": {
+      "pool": "engineering-rocket-20",
+      "star": false
+    }
+  }
+}
