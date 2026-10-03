@@ -1,0 +1,120 @@
+# Portfolio v5: design and progress
+
+Branch `feat/portfolio-v5`, from `feat/portfolio-v4` @ eb96b5e. Local only. The preview is
+:4400 (production `dist/`); the photo picker will be :4401.
+
+The approved plan, with the owner's answers and the facts gathered on 2026-10-03:
+`~/.claude/plans/glittery-whistling-moon.md`. Read it first. This file holds what the
+plan does not: the review's required changes, decisions made while building, and
+progress. The owner is flying (2026-10-03). Work runs autonomously and ends in a
+Russian report.
+
+## Workstreams and order
+W0 memory (done) → W1 facts → W5 rocket right → W4 numbering (case pages) → W2 player
+and glass → W3 picker → W6 constellation and word rows → W7 earth and grass → W8
+verification → Vercel **preview** of this branch (owner's OK, 2026-10-03). Never
+production, never main.
+
+## Required changes from the plan review (Opus, 2026-10-03)
+Each one replaces the plan's wording where they differ.
+
+### W5, rocket on the right
+- Impact at about [0.8, 0.72] on both routes. `CRASH_AT = 0.55` puts the runway's top at
+  0.45H at impact, so a higher impact lands under the last bento card. On desktop the
+  stage paints under the bento; on a phone it paints over text (z-index 2).
+- Size the wipe in `measure()`: d = distance from the impact to the farthest corner;
+  width = height = 2d/0.88 px, margin -d/0.88. This replaces the fixed 210vmax, which
+  assumed a centred impact.
+- Keep debris on screen: clamp reach to the right to 0.9·(W − end.x), or fan it up-left.
+  Update the centred-impact comments in RocketFlight.ts and AnimeRocket.astro.
+- Export a pure `impactAt(w, h)` plus `CRASH_AT` from RocketFlight, so Space places the
+  sparks by arithmetic, not by trigger refresh order.
+
+### W6, constellation and word rows
+- Phone: `.space { z-index: 3 }` below 640 px, or the flight stage paints over the sparks.
+- Hand-off: AnimeWork gets `margin-top: -100svh` with a transparent first screen (the
+  AnimeSpace pattern), so WORK pins on the scroll where Space releases. The Space
+  canvas draws the final solid letters itself (`fillText`) and hides on leave. WorkRows
+  keeps its DOM stack `visibility: hidden` until its trigger is active. A t-anime check:
+  DOM letter centres match the sampled centroids within 3 px.
+- One source of the stack geometry: a TS `workStack(w, h)` feeds the sampler; the CSS
+  follows it with a comment. The DOM letters are `display: none` when far, so they
+  cannot be measured.
+- Font for canvas: read the resolved family with `getComputedStyle`, then
+  `await document.fonts.load(...)`. Shrink the offscreen canvas to 0×0 after
+  `getImageData` (iOS canvas memory cap).
+- Convergence window derived from `moveFrom` (e.g. [moveFrom + 0.5·(1−moveFrom), 0.95]).
+  Dim the SVG star layers toward 0.15 while converging.
+- Canvas drawing: positions are a pure function of progress; one path per alpha bucket;
+  squares or one sprite; no shadowBlur; DPR ≤ 2; ticker callback added on toggle and
+  removed on leave.
+- Keep the `.anime-work` class and `#work` id: the harness anchors on them.
+- Rows: letters in fixed-width cells (em); slots get explicit boxes (height = cell, width
+  = height × photo aspect from media.json). Cache positions with offsetLeft/offsetTop,
+  re-measure in the near-observer callback. `is-far` only drops `will-change` on the
+  rows: the tiles are the keyboard path.
+- Preview: uniform scale ≤ 1 only. The slot's aspect equals the preview image's, same
+  `object-position`. Title and meta are children that fade in at scale ≥ 0.9.
+- Decode: near WORK, slot thumbnails go `loading=eager` and `decode()`. Two preview
+  elements alternate (current, next); each opens on the decoded 480w thumb and swaps to
+  the 1280 srcset after `decode()` resolves, never mid-grow.
+
+### W4 ordering
+- The home's "no 0n / 0n" assertion lands with W6, which deletes the counter.
+- CaseClip's `n` prop goes before or inside the W2 rewrite.
+
+### W2, player and media
+- `record` in import-media.mjs and `VideoEntry` in media.ts gain `playFrom` and `audio`;
+  the probe checks for an audio stream. `posterAt` defaults to `playFrom` (seconds of
+  the trimmed output). Add `--ids=` to import-media; re-imports need `--force`.
+- One owner of playback: a clip the visitor paused or unmuted gets `data-user`; the
+  observer and the visibility resume in case.ts still pause it off screen but never
+  restart it. Bar state comes only from media events. The scrub fill moves on the GSAP
+  ticker as `scaleX`, only while playing and on screen. Space on a focused button:
+  `preventDefault`. Scrub bar `touch-action: none`. Starting a clip with sound pauses
+  the others.
+- iPhone: `requestFullscreen` only when `document.fullscreenEnabled`, else
+  `video.webkitEnterFullscreen()` and resync on `webkitendfullscreen`. Keep
+  `preload="none"`; start offset by media fragment (`…mp4#t=26`); total time from
+  media.json `duration`. Setting currentTime on loadedmetadata flashes frame 0 on iOS.
+- Glass: `has-refraction` when `'userAgentData' in navigator` (CSS.supports lies in
+  WebKit). Glass on the home's contact buttons needs an idle-top and contact
+  measurement before and after.
+
+### W3, picker (adopted simplification)
+- No second build. The pick server serves the production `dist/` and injects
+  `<script src="/__pick/picker.js">` into each HTML response. The picker finds slots by
+  their media URLs (`/projects/<slug>/media/<id>-…`). Production has no picker code by
+  construction.
+- Server: bind 100.122.188.86 only; HTTP Range (206) for MP4 on iPhone (use `sirv`);
+  `/__pool/` paths confined to the pool dir; POST needs `application/json` and an
+  `Origin` equal to its own, body ≤ 256 KB, schema-checked, file named from server time.
+  `pin-picks` rejects any `src` outside `in/pick-pool`. A photo swap clears `srcset`.
+
+### W7, earth and grass
+- No idle sway on the canvas (it would redraw whenever visible): sway the canvas element
+  with CSS, or not at all.
+- Touch: lean blades with scroll velocity (pointermove stops at pointercancel once a pan
+  starts).
+- Pointer mapped through the cached document offset, the scroll, and the meadow's known
+  translateY. Canvas inside the meadow so the meadow's transform carries it.
+- Remove the tufts' `is-live` sway in the same commit; `destroyParadise` destroys the
+  grass (invariant 4).
+- Earth's layout size ≤ 1.2× the viewport diagonal (raster size at DPR 3).
+- The Earth phase changes every descent constant and outgrows the harness's 3.2-screen
+  paradise phase: extend it and add a grass pointer phase.
+
+### Measurement per workstream
+Phone ×4 and desktop harness before each commit of W5, the home glass, W6a, W6b
+(work ×3 and space again) and W7, same `binary`, `headless`, `wheelScale`. W1, W4 and
+the player need t-case, screenshots, and `shots.mjs` for any changed first screen.
+
+## Decisions while building
+- GDG copy names him on the stage photos (cover, g01); the lectern photo (g03) stays
+  unnamed: the owner confirmed the stage photos only.
+- GDG figures are the chapter's history, worded as the chapter's, not as his
+  achievements: 70 members by May 2024 and +100% in 2024-25 predate his term.
+
+## Progress
+- W0 (2026-10-03 00:35): 11 idle sessions exported to `~/work/<project>/docs/sessions/`
+  and killed with `csess kill` (resumable). Available memory 3.1 → 6.1 GB.
