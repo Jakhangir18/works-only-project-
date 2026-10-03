@@ -71,6 +71,8 @@ let gatherFrom = 0.6;
 const GATHER_TO = 0.93;
 let dirty = false;
 let ticking = false;
+/* The canvas holds nothing: a frame with nothing to draw skips the clear. */
+let blank = true;
 let generation = 0;
 
 function ramp(p: number, from: number, to: number): number {
@@ -183,6 +185,7 @@ export function resizeConstellation(w: number, h: number): void {
   dpr = Math.min(2, window.devicePixelRatio || 1);
   canvas.width = Math.round(w * dpr);
   canvas.height = Math.round(h * dpr);
+  blank = true;
   ctx = canvas.getContext("2d");
   if (ctx) {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -199,8 +202,16 @@ export function resizeConstellation(w: number, h: number): void {
 
 function draw(): void {
   if (!ctx || !canvas) return;
+  // Across most of the runway nothing is out yet, and at the end the canvas
+  // is cleared for WORK: a blank frame after a blank frame touches nothing.
+  // (The space section's own progress is already moving over the runway, so
+  // only the gathering's start says the field has anything to gather.)
+  const nothing = space >= 1 || (runway < SPARK_FROM && space < gatherFrom);
+  if (nothing && blank) return;
   ctx.clearRect(0, 0, W, H);
-  if (space >= 1) return;
+  blank = true;
+  if (nothing) return;
+  blank = false;
 
   const impact = impactAt(W, H);
   const burst = easeOut(ramp(runway, SPARK_FROM, 1));
