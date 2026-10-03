@@ -100,6 +100,10 @@ let onFocusIn: ((e: FocusEvent) => void) | null = null;
 let onFocusOut: (() => void) | null = null;
 let focusedStop = -1;
 let hiddenStop = -1;
+/* Within a screen of the section (the near observer). The previews fetch
+   their photographs only from then on: at load they would put a cover on
+   the home's critical path (t-routes caught 132 KB of it). */
+let nearby = false;
 /* The stack's centre letters show while the star field has handed over
    (Space.ts, at its progress 1) or while this section is past its start.
    Two sources because ScrollTrigger counts a trigger active only strictly
@@ -141,7 +145,8 @@ function stopAt(i: number): number {
    keyframes, carrying on at the last segment's speed after the last one. */
 function rowX(row: Row, p: number): number {
   const k = row.keys;
-  if (p <= k[0][0]) return 0;
+  // A row with no photograph has only the opening's keyframe: it stays.
+  if (k.length < 2 || p <= k[0][0]) return 0;
   for (let i = 1; i < k.length; i++) {
     if (p <= k[i][0]) {
       const t = (p - k[i - 1][0]) / (k[i][0] - k[i - 1][0]);
@@ -264,6 +269,7 @@ function apply(p: number): void {
   const up = easeInOut(1 - ramp(best, HOLD, HOLD + GROW));
   const pv = previews[near % previews.length];
   const other = previews[(near + 1) % previews.length];
+  if (!nearby) return;
   if (pv && pv.stop !== near) fill(pv, near);
   // The next stop's card fills ahead, so its photograph is decoding before
   // it is needed.
@@ -367,6 +373,7 @@ export function initWorkRows(): void {
     (entries) => {
       for (const entry of entries) {
         section?.classList.toggle("is-far", !entry.isIntersecting);
+        nearby = entry.isIntersecting;
         if (!entry.isIntersecting) continue;
         for (const s of slots) {
           if (!s.img) continue;
@@ -432,4 +439,5 @@ export function destroyWorkRows(): void {
   focusedStop = -1;
   hiddenStop = -1;
   shownByRows = false;
+  nearby = false;
 }
