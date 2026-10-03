@@ -142,16 +142,52 @@ for (const [ename, engine] of Object.entries({ chromium, webkit })) {
       results.push(check(`${tag} the rocket sits on its route`, onLine <= 6, `${onLine} px off the line`));
     }
 
-    // 5. The work carousel and the timeline walk.
+    // 4b. The rocket hits on the right (the owner, 2026-10-03).
+    const impact = await page.evaluate(() => {
+      const el = document.querySelector('.js-rocket-impact');
+      const stage = document.querySelector('.js-flight-stage');
+      const m = /translate3d\(([-\d.]+)px/.exec(el?.style.transform || '');
+      return m && stage ? { x: Number(m[1]), w: stage.clientWidth } : null;
+    });
+    results.push(check(`${tag} the rocket hits on the right`, !!impact && impact.x > 0.6 * impact.w, impact ? `x ${impact.x} of ${impact.w}` : 'no impact point'));
+
+    // 5. The work rows and the timeline walk.
     const sections = await page.evaluate(() => ({
-      panels: document.querySelectorAll('.anime-work__card').length,
-      links: [...document.querySelectorAll('.anime-work__card')].map((a) => a.getAttribute('href')),
+      panels: document.querySelectorAll('.js-work-slot').length,
+      links: [...document.querySelectorAll('.js-work-slot')].map((a) => a.getAttribute('href')),
+      listed: document.querySelectorAll('.anime-work__list a').length,
+      counters: (document.querySelector('.anime-work')?.textContent || '').match(/(?<![:\d])0\d\s*\/\s*0?\d(?![:\d])/g) || [],
       notes: document.querySelectorAll('.paradise__stop').length,
       pins: document.querySelectorAll('.paradise__stop time[datetime]').length,
       drafts: [...document.querySelectorAll('.paradise__name')].map((n) => n.textContent.trim()),
     }));
-    results.push(check(`${tag} a card for every project`, sections.panels === 7, `${sections.panels} cards`));
-    results.push(check(`${tag} every card has a way in`, sections.links.length === 7 && sections.links.every((h) => h && h.startsWith('/')), sections.links.join(',')));
+    results.push(check(`${tag} a photograph in the rows for every project`, sections.panels === 7 && sections.listed === 7, `${sections.panels} in the rows, ${sections.listed} listed`));
+    results.push(check(`${tag} every project has a way in`, sections.links.length === 7 && sections.links.every((h) => h && h.startsWith('/')), sections.links.join(',')));
+    results.push(check(`${tag} no "0n / 0n" counter in WORK`, sections.counters.length === 0, sections.counters.join(', ')));
+
+    // 5b. The hand-off: where the star field lets go, WORK's own letters
+    //     stand where the constellation drew them (utils/workStack.ts). The
+    //     stylesheet repeats the stack's numbers; this holds them together.
+    const stack = await page.evaluate(async () => {
+      const work = document.querySelector('.anime-work');
+      if (!work) return null;
+      const top = work.getBoundingClientRect().top + scrollY;
+      window.scrollTo(0, top + 2);
+      await new Promise((r) => setTimeout(r, 700));
+      window.scrollTo(0, top + 2);
+      await new Promise((r) => setTimeout(r, 700));
+      const w = innerWidth;
+      const h = document.querySelector('.js-work-stage').clientHeight;
+      const size = Math.min(190, Math.max(56, Math.min(0.19 * h, 0.3 * w)));
+      const rowH = (h * 0.88) / 4;
+      const off = [...document.querySelectorAll('.js-work-centre')].map((el, i) => {
+        const r = el.getBoundingClientRect();
+        return Math.round(Math.max(Math.abs(r.left + r.width / 2 - w / 2), Math.abs(r.top + r.height / 2 - (h * 0.06 + (i + 0.5) * rowH)), Math.abs(r.height - size)));
+      });
+      const shown = getComputedStyle(document.querySelector('.js-work-centre')).visibility;
+      return { off, shown };
+    });
+    results.push(check(`${tag} WORK's letters stand where the constellation drew them`, !!stack && stack.off.length === 4 && stack.off.every((d) => d <= 3) && stack.shown === 'visible', stack ? `${stack.off.join('/')} px off, ${stack.shown}` : 'missing'));
     results.push(check(`${tag} every stop on the walk is dated`, sections.notes === 10 && sections.notes === sections.pins, `${sections.notes} stops, ${sections.pins} dated`));
     // The one entry whose role is still unconfirmed must not reach the page;
     // GDG and Rowerlab were confirmed by the owner on 2026-10-02.
@@ -159,6 +195,37 @@ for (const [ename, engine] of Object.entries({ chromium, webkit })) {
     results.push(check(`${tag} unconfirmed entries stay off the walk`, leaked.length === 0, leaked.join(', ')));
 
     results.push(check(`${tag} no runtime errors`, errors.length === 0, errors.slice(0, 2).join(' | ')));
+
+    // 5c. No machine numbering on the case pages (the owner, 2026-10-03),
+    //     and the player on the SPOOT walk: it opens at its start point and
+    //     seeks. Once per engine, at the desktop size. A clip's time ("0:00 /
+    //     0:30") is not a counter, so a number next to a colon does not count.
+    if (size === 'desktop') {
+      for (const path of ['/work/touchpoint/', '/work/spoot/', '/work/zyp/', '/work/gdg/', '/work/remote-lab-vision/', '/projects/ams/', '/work/engineering-rocket/']) {
+        await page.goto(BASE + path, { waitUntil: 'load' });
+        const hits = await page.evaluate(() => (document.body.innerText.match(/Fig\.\s*\d+|(?<![:\d])0\d\s*\/\s*0?\d(?![:\d])/g) || []));
+        results.push(check(`${tag} ${path} has no figure numbers or counters`, hits.length === 0, hits.slice(0, 3).join(', ')));
+      }
+      await page.goto(BASE + '/work/spoot/', { waitUntil: 'load' });
+      const frame = page.locator('.js-player').filter({ has: page.locator('video[src*="walk"]') }).first();
+      await frame.scrollIntoViewIfNeeded();
+      const shownStart = await frame.locator('.js-player-time').textContent();
+      results.push(check(`${tag} the walk's player shows its start point`, /^0:26 \//.test(shownStart || ''), shownStart));
+      if (ename === 'chromium') {
+        await frame.locator('.js-player-big').click();
+        await page.waitForTimeout(1500);
+        const played = await frame.evaluate((r) => r.querySelector('video').currentTime);
+        results.push(check(`${tag} the walk plays from 0:26`, played >= 25.5, `at ${played.toFixed(2)} s`));
+        // The bar rests while a clip plays; the pointer brings it up.
+        await frame.hover();
+        await page.waitForTimeout(400);
+        const box = await frame.locator('.js-player-scrub').boundingBox();
+        await page.mouse.click(box.x + box.width * 0.25, box.y + box.height / 2);
+        await page.waitForTimeout(500);
+        const sought = await frame.evaluate((r) => r.querySelector('video').currentTime);
+        results.push(check(`${tag} the seek bar seeks back`, sought > 8 && sought < 16, `at ${sought.toFixed(2)} s`));
+      }
+    }
     await ctx.close();
   }
 
