@@ -13,7 +13,19 @@ import { join } from "node:path";
 
 export type ImageFile = { w: number; src: string };
 export type ImageEntry = { kind: "image"; width: number; height: number; files: ImageFile[]; thumb: string };
-export type VideoEntry = { kind: "video"; width: number; height: number; duration: number; bytes: number; src: string; poster: string };
+export type VideoEntry = {
+  kind: "video";
+  width: number;
+  height: number;
+  duration: number;
+  bytes: number;
+  src: string;
+  poster: string;
+  /** Where playback starts, in seconds of the file; the visitor can still seek back. */
+  playFrom?: number;
+  /** The file carries a sound track. */
+  audio?: boolean;
+};
 export type SlidesEntry = { kind: "slides"; pages: { page: number; src: string; width: number; height: number }[] };
 type Entry = ImageEntry | VideoEntry | SlidesEntry;
 

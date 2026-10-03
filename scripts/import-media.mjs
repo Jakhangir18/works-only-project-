@@ -1,10 +1,16 @@
 // Turns the owner's picked media into the files the project pages serve.
 //
-//   node scripts/import-media.mjs <manifest.json> [--only=<slug>] [--force]
+//   node scripts/import-media.mjs <manifest.json> [--only=<slug>] [--ids=<id>,<id>] [--force]
 //
 // The manifest is a list of entries. Each entry is one of:
 //   { slug, id, kind: "image", src, widths?: [640, 1280, 1920] }
-//   { slug, id, kind: "video", src, maxHeight?: 720, start?: seconds, duration?: seconds }
+//   { slug, id, kind: "video", src, maxHeight?: 720, start?: seconds, duration?: seconds,
+//     keepAudio?: true, playFrom?: seconds }
+//   `start`/`duration` trim the source; `playFrom` is where playback begins in the
+//   trimmed file (the visitor can still seek back), and the poster is taken there.
+//   `blur: [[from, to], ...]` blurs the whole frame over those seconds of the
+//   trimmed file: a privacy cut for a pan across people who did not agree to be
+//   on the site, which reads as motion blur.
 //   { slug, id, kind: "slides", src, pages: [1, 3, 4], width?: 1600 }
 //
 // Output lands under public/projects/<slug>/media/:
@@ -27,9 +33,11 @@ import sharp from "sharp";
 const args = process.argv.slice(2);
 const manifestPath = args.find((a) => !a.startsWith("--"));
 const only = args.find((a) => a.startsWith("--only="))?.slice(7);
+// Re-encoding a whole slug with x264 slow takes minutes; --ids picks entries.
+const ids = args.find((a) => a.startsWith("--ids="))?.slice(6).split(",");
 const force = args.includes("--force");
 if (!manifestPath) {
-  console.error("usage: node scripts/import-media.mjs <manifest.json> [--only=<slug>] [--force]");
+  console.error("usage: node scripts/import-media.mjs <manifest.json> [--only=<slug>] [--ids=<id>,<id>] [--force]");
   process.exit(2);
 }
 
@@ -93,7 +101,8 @@ function probe(src) {
   const s = j.streams[0];
   const rot = Math.abs(Number(s.side_data_list?.find((d) => "rotation" in d)?.rotation ?? 0));
   const turned = rot === 90 || rot === 270;
-  return { width: turned ? s.height : s.width, height: turned ? s.width : s.height, duration: Number(j.format.duration) };
+  const audio = execFileSync("ffprobe", ["-v", "error", "-select_streams", "a", "-show_entries", "stream=index", "-of", "csv=p=0", src]).toString().trim() !== "";
+  return { width: turned ? s.height : s.width, height: turned ? s.width : s.height, duration: Number(j.format.duration), audio };
 }
 
 async function video(e) {
@@ -109,7 +118,10 @@ async function video(e) {
     execFileSync("ffmpeg", [
       "-y", "-v", "error", ...trim, "-i", e.src,
       // Even dimensions, height capped; a portrait clip is capped by its height too.
-      "-vf", `scale=-2:'min(${maxH},ih)'`,
+      "-vf", [
+        `scale=-2:'min(${maxH},ih)'`,
+        ...(e.blur ?? []).map(([a, b]) => `boxblur=luma_radius=24:chroma_radius=12:enable='between(t,${a},${b})'`),
+      ].join(","),
       "-c:v", "libx264", "-preset", "slow", "-crf", String(e.crf ?? 28), "-pix_fmt", "yuv420p",
       "-movflags", "+faststart",
       ...(e.keepAudio ? ["-c:a", "aac", "-b:a", "96k"] : ["-an"]),
@@ -117,7 +129,7 @@ async function video(e) {
     ], { stdio: "inherit" });
   }
   if (!fresh(poster)) {
-    const at = String(e.posterAt ?? 0.5);
+    const at = String(e.posterAt ?? e.playFrom ?? 0.5);
     const png = join(tmpdir(), `${e.slug}-${e.id}-poster.png`);
     execFileSync("ffmpeg", ["-y", "-v", "error", "-ss", at, "-i", file, "-frames:v", "1", png]);
     await sharp(png).webp({ quality: 78 }).toFile(poster);
@@ -132,6 +144,8 @@ async function video(e) {
     bytes: statSync(file).size,
     src: `/projects/${e.slug}/media/${e.id}.mp4`,
     poster: `/projects/${e.slug}/media/${e.id}-poster.webp`,
+    ...(e.playFrom != null ? { playFrom: e.playFrom } : {}),
+    ...(p.audio ? { audio: true } : {}),
   });
 }
 
@@ -155,6 +169,7 @@ async function slides(e) {
 
 for (const e of entries) {
   if (only && e.slug !== only) continue;
+  if (ids && !ids.includes(e.id)) continue;
   if (!existsSync(e.src)) {
     console.error(`missing source: ${e.slug}/${e.id}: ${e.src}`);
     process.exitCode = 1;

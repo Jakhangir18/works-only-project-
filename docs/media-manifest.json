@@ -101,8 +101,9 @@
     "id": "walk",
     "kind": "video",
     "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/_web/spoot/spoot-04.mp4",
-    "posterAt": 42,
-    "note": "walk to the stage, muted"
+    "note": "walk to the stage, with sound, starts at 0:26 (he stands up)",
+    "keepAudio": true,
+    "playFrom": 26
   },
   {
     "slug": "spoot",
@@ -364,8 +365,15 @@
     "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-02/_web/engineering-rocket/engineering-rocket-31.mp4",
     "start": 0,
     "duration": 29,
-    "posterAt": 12,
-    "note": "trimmed to 0:00-0:29, muted"
+    "note": "trimmed to 0:00-0:29 (schoolchildren after that), with sound, starts at 0:10 (rockets on the pads); 17.8-19.2 s blurred (a pan across the schoolchildren)",
+    "keepAudio": true,
+    "playFrom": 10,
+    "blur": [
+      [
+        17.8,
+        19.2
+      ]
+    ]
   },
   {
     "slug": "engineering-rocket",

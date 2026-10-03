@@ -64,9 +64,11 @@
     "width": 544,
     "height": 720,
     "duration": 44.6,
-    "bytes": 3376189,
+    "bytes": 3947126,
     "src": "/projects/spoot/media/walk.mp4",
-    "poster": "/projects/spoot/media/walk-poster.webp"
+    "poster": "/projects/spoot/media/walk-poster.webp",
+    "playFrom": 26,
+    "audio": true
   },
   "g03": {
     "kind": "image",

@@ -172,9 +172,11 @@
     "width": 408,
     "height": 720,
     "duration": 29,
-    "bytes": 1616081,
+    "bytes": 1906936,
     "src": "/projects/engineering-rocket/media/pads.mp4",
-    "poster": "/projects/engineering-rocket/media/pads-poster.webp"
+    "poster": "/projects/engineering-rocket/media/pads-poster.webp",
+    "playFrom": 10,
+    "audio": true
   },
   "g09": {
     "kind": "image",
