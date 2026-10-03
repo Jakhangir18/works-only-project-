@@ -490,6 +490,11 @@ const motifClass = `a__card__poster--${poster.motif}`;
     // element's background box — they only move the line.
     .a__card__cta span {
       padding-right: calc(0.34em - 0.15em);
+      // The call to action is one line, so it can have the vertical padding a
+      // wrapped title cannot: on a turned card over a light cover (Zyp's
+      // office) the plate then fills the glyphs' whole box, and the text
+      // measured 3.9-4.2:1 against what showed around a plate this tall.
+      padding-block: 0.3em;
     }
 
     /* A light edge scrim still, because a plate the width of the words leaves
