@@ -289,6 +289,13 @@ const SKY_H = 768;
     will-change: transform, opacity;
   }
 
+  /* In place: the sky under it is hidden (Paradise.ts) and the fade goes,
+     its top being the sky's own clouds. */
+  .paradise__land:global(.is-settled) {
+    mask-image: none;
+    -webkit-mask-image: none;
+  }
+
   /* Slow rays from the painting's sun, on top of the painted ones: a conic
      fan masked to a disc, turning on the compositor while the stage is on
      screen. */
@@ -356,7 +363,7 @@ const SKY_H = 768;
     right: 0;
     bottom: 0;
     width: 100%;
-    height: 50%;
+    height: 40%;
     will-change: transform;
   }
 
