@@ -346,13 +346,10 @@ const SHARDS = Array.from({ length: 10 }, (_, i) => {
     );
   }
 
-  /* The wipe, centred on the impact. Its flat core has to reach the far
-     corner of the screen from there: the impact sits at 86% of the height
-     and in the middle, so the far corners are sqrt((W/2)^2 + (0.86H)^2)
-     away — 1057px at 1440x900 and 752px at 390x844. With the core flat to
-     88% of the radius that needs a diameter of 167vmax and 202vmax; 210vmax
-     covers both and is a third smaller than the corner-born wipe it
-     replaces, which had to cross the whole diagonal. */
+  /* The wipe, centred on the impact. Its flat core has to reach the farthest
+     corner of the screen from there; the impact is on the right, so
+     RocketFlight.measure() sizes it in pixels from the stage on every
+     refresh. The 210vmax here only holds the box until it has. */
   .rocket-flight__wipe {
     position: absolute;
     left: 0;

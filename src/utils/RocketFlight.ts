@@ -25,7 +25,7 @@ import { writeIfChanged, forgetLeaf } from "./leafWrite";
 /* In the runway's progress (its top entering at the bottom of the screen = 0,
    its bottom reaching the bottom of the screen = 1): where the rocket hits,
    where the wipe starts. Exported: the star field reveals on the wipe. */
-const CRASH_AT = 0.55;
+export const CRASH_AT = 0.55;
 export const WIPE_STARTS = 0.6;
 const FLASH = [CRASH_AT, 0.64] as const;
 const DEBRIS = [CRASH_AT, 0.8] as const;
@@ -47,8 +47,13 @@ type Waypoint = [number, number] | { loop: [number, number]; r: number; from: nu
    (-1 anticlockwise on screen). On a desktop the lanes are the page margins
    outside the bento's 1400px column, so the rocket is seen there and its
    loops swing half behind the cards. Both routes end on the impact point,
-   in the middle of the screen and 86% of the way down. Keep NARROW_BELOW in
-   step with the stage's z-index rule in AnimeRocket.astro. */
+   on the right and 72% of the way down (the owner, 2026-10-03: "explode on
+   the right"). Not higher: at the moment of impact the runway's top edge is
+   at 1 - CRASH_AT = 45% of the screen, so a higher point would land under
+   the last card on a desktop and over text on a phone. The last arc comes in
+   from the left. Keep NARROW_BELOW in step with the stage's z-index rule in
+   AnimeRocket.astro, and IMPACT with each route's last point. */
+const IMPACT = { wide: [0.8, 0.72], narrow: [0.78, 0.72] } as const;
 const ROUTE_WIDE: Waypoint[] = [
   [0.95, 0.97],
   [0.972, 0.8],
@@ -69,9 +74,10 @@ const ROUTE_WIDE: Waypoint[] = [
   [0.9, 0.17],
   [0.66, 0.12],
   [0.46, 0.2],
-  [0.37, 0.4],
-  [0.42, 0.63],
-  [0.5, 0.86],
+  [0.36, 0.38],
+  [0.44, 0.58],
+  [0.62, 0.69],
+  [...IMPACT.wide],
 ];
 /* On a phone the stage rides above the content (the cards fill the width, so
    behind them the rocket would only ever peek out), and the route keeps to
@@ -94,11 +100,20 @@ const ROUTE_NARROW: Waypoint[] = [
   [0.955, 0.66],
   [0.9, 0.36],
   [0.6, 0.26],
-  [0.4, 0.4],
-  [0.42, 0.62],
-  [0.5, 0.86],
+  [0.36, 0.42],
+  [0.46, 0.6],
+  [0.64, 0.7],
+  [...IMPACT.narrow],
 ];
 const NARROW_BELOW = 640;
+
+/* Where the rocket hits, in a stage of w x h pixels: the route's last point,
+   in plain arithmetic, so the star field can place the sparks from it
+   without waiting for this module's refresh. */
+export function impactAt(w: number, h: number): { x: number; y: number } {
+  const [fx, fy] = w < NARROW_BELOW ? IMPACT.narrow : IMPACT.wide;
+  return { x: fx * w, y: fy * h };
+}
 
 let trigger: ScrollTrigger | null = null;
 let zone: HTMLElement | null = null;
@@ -124,6 +139,8 @@ let runwayStart = 0;
 let crashed = false;
 /* The box the resting pose was measured against, for reduced motion. */
 let restBox = { w: 0, h: 0 };
+/* The impact's x, for keeping the debris on screen. */
+let endX = 0;
 
 /* A linear 0..1 ramp between two progress values, clamped at both ends. */
 function ramp(progress: number, from: number, to: number): number {
@@ -230,7 +247,19 @@ function measure(): void {
   // The impact point is the route's last point: everything born there sits
   // in one box placed once.
   const end = points[points.length - 1];
+  endX = end.x;
   if (impact) impact.style.transform = `translate3d(${end.x.toFixed(1)}px, ${end.y.toFixed(1)}px, 0)`;
+  // The wipe is centred on the impact and its flat core (88% of the radius)
+  // has to reach the farthest corner of the stage from there. Sized here, in
+  // pixels, because the impact is off-centre: a fixed vmax size that covers
+  // the worst case is a quarter more pixels than a phone needs.
+  if (wipe) {
+    const d = Math.max(Math.hypot(end.x, end.y), Math.hypot(W - end.x, end.y), Math.hypot(end.x, H - end.y), Math.hypot(W - end.x, H - end.y));
+    const size = Math.ceil((2 * d) / 0.88);
+    writeIfChanged(wipe, "width", `${size}px`);
+    writeIfChanged(wipe, "height", `${size}px`);
+    writeIfChanged(wipe, "margin", `${-size / 2}px 0 0 ${-size / 2}px`);
+  }
 
   if (trigger) {
     zoneStart = trigger.start;
@@ -294,14 +323,19 @@ function apply(scroll: number): void {
     const t = ramp(r, DEBRIS[0], DEBRIS[1]);
     const live = t > 0 && t < 1;
     const reach = 0.3 * Math.min(W, H);
+    // The impact is near the right edge: pieces flying right travel no
+    // further than 90% of the room there, so the stage never clips them.
+    const right = Math.min(reach, 0.9 * (W - endX));
+    const left = Math.min(reach, 0.9 * endX);
     const fall = 0.35 * H;
     const out = 1 - (1 - t) * (1 - t);
     for (const s of shards) {
+      const across = s.dx * (s.dx > 0 ? right : left) * out;
       writeIfChanged(
         s.el,
         "transform",
         live
-          ? `translate3d(${(s.dx * reach * out).toFixed(1)}px, ${(s.dy * reach * out + fall * t * t).toFixed(1)}px, 0) rotate(${(s.spin * t).toFixed(0)}deg)`
+          ? `translate3d(${across.toFixed(1)}px, ${(s.dy * reach * out + fall * t * t).toFixed(1)}px, 0) rotate(${(s.spin * t).toFixed(0)}deg)`
           : "scale(0)",
       );
       writeIfChanged(s.el, "opacity", live ? (1 - t).toFixed(3) : "0");
