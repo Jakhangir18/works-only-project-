@@ -9,9 +9,9 @@ import { projects } from "../../data/projects";
 /**
  * TouchPoint, "The plate" (docs/portfolio-v4-design.md): a white page whose
  * title is spelled in Braille cells first, the glove up close, the driver
- * board's schematic as one large numbered plate, three questions instead of
- * Problem / Approach / Solution, the event as a numbered contact sheet, and
- * the talk to finish.
+ * board's schematic as one large plate with its four parts marked, three
+ * questions instead of Problem / Approach / Solution, the event as a contact
+ * sheet, and the talk to finish.
  *
  * Facts: the official QuackHacks 3 pages (2026.quackhacks.org: "250+
  * PARTICIPANTS", "2nd Place Overall"), the repository README, the owner's
@@ -30,11 +30,13 @@ const BRAILLE: Record<string, number[]> = {
 const cells = [..."touchpoint"].map((ch) => BRAILLE[ch]);
 const dot = (n: number) => ({ x: n <= 3 ? 0 : 1, y: (n - 1) % 3 });
 
+/* The four parts of the board, marked on the plate where the schematic draws
+   them; the legend names each by the labels the schematic prints. */
 const callouts = [
-  { n: 1, x: 47, y: 21, title: "Eight motor channels", text: "MOT1 to MOT8: a MOSFET module per vibration motor, switched from the Pi's GPIO. Six of them drive the fingertips, three per hand." },
-  { n: 2, x: 42, y: 43, title: "Five keys", text: "KEY1 to KEY5, the thumb joystick and its buttons, each on its own input with a 100 Ω resistor to ground." },
-  { n: 3, x: 31, y: 60, title: "Raspberry Pi 5", text: "P1 to P8 out to the drivers and B1 to B5 in from the keys, on one header." },
-  { n: 4, x: 21, y: 54, title: "One supply", text: "A single VCC and ground rail feeds the drivers, the keys and the Pi." },
+  { x: 47, y: 21, title: "Eight motor channels", text: "MOT1 to MOT8: a MOSFET module per vibration motor, switched from the Pi's GPIO. Six of them drive the fingertips, three per hand." },
+  { x: 42, y: 43, title: "Five keys", text: "KEY1 to KEY5, the thumb joystick and its buttons, each on its own input with a 100 Ω resistor to ground." },
+  { x: 31, y: 60, title: "Raspberry Pi 5", text: "P1 to P8 out to the drivers and B1 to B5 in from the keys, on one header." },
+  { x: 21, y: 54, title: "One supply", text: "A single VCC and ground rail feeds the drivers, the keys and the Pi." },
 ];
 ---
 
@@ -76,7 +78,7 @@ const callouts = [
   </section>
 
   <section class="tp-loop">
-    <CaseClip slug="touchpoint" id="demo-loop" label="Close-up of a finger pressing the palm buttons on the TouchPoint glove" caption="The thumb walks the page; the fingertips answer in Braille." n={1} loop />
+    <CaseClip slug="touchpoint" id="demo-loop" label="Close-up of a finger pressing the palm buttons on the TouchPoint glove" caption="The thumb walks the page; the fingertips answer in Braille." loop />
   </section>
 
   <section class="case-section tp-plate">
@@ -89,16 +91,13 @@ const callouts = [
       <div class="tp-plate__frame">
         <img src={plate.src} srcset={plate.srcset} sizes="(max-width: 64em) 100vw, 70vw" alt="Schematic: eight MOSFET motor driver modules, five keys with 100 ohm resistors, and a Raspberry Pi 5 GPIO header" width={plate.width} height={plate.height} loading="lazy" decoding="async" />
         {callouts.map((c) => (
-          <span class="tp-plate__pin" style={`left:${c.x}%; top:${c.y}%`} aria-hidden="true">{c.n}</span>
+          <span class="tp-plate__pin" style={`left:${c.x}%; top:${c.y}%`} aria-hidden="true"></span>
         ))}
       </div>
       <figcaption>
         <ol class="tp-plate__legend">
           {callouts.map((c) => (
-            <li>
-              <span class="tp-plate__n" aria-hidden="true">{c.n}</span>
-              <span><strong>{c.title}.</strong> {c.text}</span>
-            </li>
+            <li><strong>{c.title}.</strong> {c.text}</li>
           ))}
         </ol>
         <a class="tp-plate__pdf" href="/projects/touchpoint/docs/driver-board-schematic.pdf">Schematic (PDF) ↓</a>
@@ -115,18 +114,18 @@ const callouts = [
           <p>So the page becomes a tree. A Playwright and Gemini extractor fetches it, strips it to its skeleton and summarises each branch. The fingers receive: six vibration motors, three on each hand, play the current word in Grade 1 Braille. The thumb navigates: a joystick and buttons under the right palm move up and down through siblings and in and out through depth.</p>
         </div>
       </div>
-      <CaseFigure slug="touchpoint" id="g04" alt="Both gloves worn, coin motors on three fingertips of each hand, the Raspberry Pi and the palm buttons" caption="Six motors, three per hand, play Grade 1 Braille." n={2} sizes="(max-width: 56em) 100vw, 40vw" class="tp-how__tall" />
-      <CaseFigure slug="touchpoint" id="g02" alt="The parts on the table: the Raspberry Pi in its case, the thumb joystick, driver modules and a breadboard" caption="The parts: a Raspberry Pi and a thumb joystick for navigation." n={3} sizes="(max-width: 56em) 100vw, 50vw" class="tp-how__wide" />
+      <CaseFigure slug="touchpoint" id="g04" alt="Both gloves worn, coin motors on three fingertips of each hand, the Raspberry Pi and the palm buttons" caption="Six motors, three per hand, play Grade 1 Braille." sizes="(max-width: 56em) 100vw, 40vw" class="tp-how__tall" />
+      <CaseFigure slug="touchpoint" id="g02" alt="The parts on the table: the Raspberry Pi in its case, the thumb joystick, driver modules and a breadboard" caption="The parts: a Raspberry Pi and a thumb joystick for navigation." sizes="(max-width: 56em) 100vw, 50vw" class="tp-how__wide" />
     </div>
   </section>
 
   <section class="case-section tp-sheet">
     <h2 class="case-h2" data-reveal>Twenty-four hours, in four frames</h2>
     <div class="tp-sheet__grid">
-      <CaseFigure slug="touchpoint" id="g01" alt="Jakhangir at the team desk with the interface on the monitor" caption="At the desk, the interface on the monitor." n={4} ratio="3 / 4" focal="50% 40%" sizes="(max-width: 48em) 50vw, 24vw" />
-      <CaseFigure slug="touchpoint" id="g06" alt="A teammate wearing the glove explains it to a visitor while Jakhangir stands beside them" caption="Demoing TouchPoint to a visitor." n={5} ratio="3 / 4" focal="50% 45%" sizes="(max-width: 48em) 50vw, 24vw" />
-      <CaseFigure slug="touchpoint" id="g07" alt="Jakhangir explaining the project to two visitors, the hardware on the table behind" caption="Web browsing by touch, explained." n={6} ratio="3 / 4" focal="45% 50%" sizes="(max-width: 48em) 50vw, 24vw" />
-      <CaseFigure slug="touchpoint" id="g08" alt="The team on stage holding their prize vouchers; the slide reads 2nd Overall, TouchPoint" caption="2nd place overall of 71 teams." n={7} ratio="3 / 4" focal="50% 50%" sizes="(max-width: 48em) 50vw, 24vw" />
+      <CaseFigure slug="touchpoint" id="g01" alt="Jakhangir at the team desk with the interface on the monitor" caption="At the desk, the interface on the monitor." ratio="3 / 4" focal="50% 40%" sizes="(max-width: 48em) 50vw, 24vw" />
+      <CaseFigure slug="touchpoint" id="g06" alt="A teammate wearing the glove explains it to a visitor while Jakhangir stands beside them" caption="Demoing TouchPoint to a visitor." ratio="3 / 4" focal="50% 45%" sizes="(max-width: 48em) 50vw, 24vw" />
+      <CaseFigure slug="touchpoint" id="g07" alt="Jakhangir explaining the project to two visitors, the hardware on the table behind" caption="Web browsing by touch, explained." ratio="3 / 4" focal="45% 50%" sizes="(max-width: 48em) 50vw, 24vw" />
+      <CaseFigure slug="touchpoint" id="g08" alt="The team on stage holding their prize vouchers; the slide reads 2nd Overall, TouchPoint" caption="2nd place overall of 71 teams." ratio="3 / 4" focal="50% 50%" sizes="(max-width: 48em) 50vw, 24vw" />
     </div>
   </section>
 
@@ -144,7 +143,7 @@ const callouts = [
           ))}
         </ul>
       </div>
-      <CaseClip slug="touchpoint" id="talk" label="Jakhangir explaining TouchPoint on camera, with sound" caption="Me, explaining it at the table. With sound." n={8} />
+      <CaseClip slug="touchpoint" id="talk" label="Jakhangir explaining TouchPoint on camera, with sound" caption="Me, explaining it at the table. With sound." />
     </div>
   </section>
 </CaseLayout>
@@ -241,17 +240,14 @@ const callouts = [
     }
   }
 
+  /* A mark on each part: a dot and a pale ring, no label of its own. */
   .tp-plate__pin {
     position: absolute;
-    display: grid;
-    place-items: center;
-    width: 2rem;
-    height: 2rem;
-    margin: -1rem 0 0 -1rem;
+    width: 0.875rem;
+    height: 0.875rem;
+    margin: -0.4375rem 0 0 -0.4375rem;
     border-radius: 50%;
     background: var(--case-accent);
-    color: #fff;
-    font: 700 0.875rem / 1 font-family(fraktion);
     box-shadow: 0 0 0 6px rgba(224, 5, 56, 0.18);
   }
 
@@ -264,23 +260,9 @@ const callouts = [
     list-style: none;
 
     li {
-      display: flex;
-      gap: 0.75rem;
       font-size: 0.95rem;
       line-height: 1.5;
     }
-  }
-
-  .tp-plate__n {
-    flex: none;
-    display: grid;
-    place-items: center;
-    width: 1.6rem;
-    height: 1.6rem;
-    border-radius: 50%;
-    background: var(--case-accent);
-    color: #fff;
-    font: 700 0.75rem / 1 font-family(fraktion);
   }
 
   .tp-plate__pdf {

@@ -2,13 +2,16 @@
 import { picture, video, clipLength } from "../../data/media";
 
 /**
- * A numbered figure on the Remote Lab Vision page ("The paper"): one picture
- * or one muted clip from the project's imported media, captioned "Fig. n",
- * in one of three places.
+ * A figure on the Remote Lab Vision page ("The paper"): one picture or one
+ * muted clip from the project's imported media, with its caption, in one of
+ * three places.
  *   inline  after the paragraph that cites it. A phone reads the page this
  *           way, and so does a desktop with no script.
  *   rail    stacked in the sticky figure rail (RlvRail), one shown at a time.
  *   plate   across the page, for a picture too wide for the margin.
+ *
+ * `n` is never shown: it is the key a paragraph's data-cites names, so the
+ * rail can find the figure that paragraph cites.
  *
  * A figure keeps its picture's own shape unless `ratio` (width / height)
  * crops it at `focal`. `trim` first cuts that fraction off the left edge,
@@ -60,7 +63,7 @@ const length = clip ? clipLength(clip.duration) : "";
     class="rlv-fig__frame"
     tabindex={pan ? 0 : undefined}
     role={pan ? "region" : undefined}
-    aria-label={pan ? `Fig. ${fig.n}` : undefined}
+    aria-label={pan ? fig.caption : undefined}
   >
     {clip ? (
       <video
@@ -81,7 +84,6 @@ const length = clip ? clipLength(clip.duration) : "";
     )}
   </div>
   <figcaption>
-    <span class="rlv-fig__n">Fig. {fig.n}</span>
     <span>{fig.caption}</span>
     {length && <span class="rlv-fig__len">{length}</span>}
   </figcaption>
@@ -118,17 +120,12 @@ const length = clip ? clipLength(clip.duration) : "";
     color: var(--case-soft);
   }
 
-  .rlv-fig__n,
   .rlv-fig__len {
     flex: none;
+    margin-left: auto;
     font: 400 0.6875rem / 1.9 font-family(fraktion);
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: var(--case-ink);
-  }
-
-  .rlv-fig__len {
-    margin-left: auto;
     color: var(--case-soft);
   }
 

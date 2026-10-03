@@ -8,8 +8,8 @@ import { projects } from "../../data/projects";
 /**
  * Remote Lab Vision, "The paper" (docs/portfolio-v4-design.md): a title page
  * with no picture (the title, an abstract, the author line, the years), then
- * numbered sections the way a paper runs them, 1 Question to 6 Poster. Every
- * picture is a numbered, captioned figure.
+ * sections the way a paper runs them, Question to Poster. Every picture is a
+ * captioned figure, and the text cites each one by a short name.
  *
  * On a desktop the figures live in a sticky rail in the right margin, and the
  * rail shows whichever figure the paragraph on the reading line cites
@@ -47,12 +47,12 @@ const inline = "(min-width: 60em) 40rem, 100vw";
 const keywords = ["remote labs", "machine vision", "LabVIEW", "NI-IMAQdx", "camera benchmark"];
 
 const contents = [
-  { id: "question", n: 1, title: "Question" },
-  { id: "rigs", n: 2, title: "Rigs" },
-  { id: "method", n: 3, title: "Method" },
-  { id: "results", n: 4, title: "Results" },
-  { id: "limits", n: 5, title: "Limits" },
-  { id: "poster", n: 6, title: "Poster" },
+  { id: "question", title: "Question" },
+  { id: "rigs", title: "Rigs" },
+  { id: "method", title: "Method" },
+  { id: "results", title: "Results" },
+  { id: "limits", title: "Limits" },
+  { id: "poster", title: "Poster" },
 ];
 ---
 
@@ -84,7 +84,7 @@ const contents = [
           <p class="case-label">Contents</p>
           <ol>
             {contents.map((c) => (
-              <li><a href={`#${c.id}`}><span aria-hidden="true">{c.n}</span> {c.title}</a></li>
+              <li><a href={`#${c.id}`}>{c.title}</a></li>
             ))}
           </ol>
         </nav>
@@ -94,42 +94,42 @@ const contents = [
     <div class="rlv-spread">
       <div class="rlv-main">
         <section id="question" class="rlv-sec" aria-labelledby="question-h">
-          <h2 class="case-h2 rlv-sec__head" id="question-h" data-reveal><span class="rlv-sec__n">1</span> <span>Question</span></h2>
+          <h2 class="case-h2 rlv-sec__head" id="question-h" data-reveal>Question</h2>
           <div class="case-prose rlv-prose">
             <p>Two lab rigs let students run chemistry and chemical-engineering lab work remotely, through a computer. They observe, measure and get results without being in the lab, which helps the students who cannot be there in person.</p>
-            <p data-cites="1">Observing from somewhere else means observing through a camera, and its picture has to arrive inside LabVIEW, beside the rig's controls <span class="rlv-cite">Fig. 1</span>. The poster puts the objective in one line: “to establish a stable, high-resolution video feed directly into LabVIEW.”</p>
+            <p data-cites="1">Observing from somewhere else means observing through a camera, and its picture has to arrive inside LabVIEW, beside the rig's controls <span class="rlv-cite">control panel</span>. The poster puts the objective in one line: “to establish a stable, high-resolution video feed directly into LabVIEW.”</p>
             <RlvFigure slug={slug} fig={F.panel} mode="inline" sizes={inline} />
             <p class="rlv-rq">Which camera can hold that feed, and how would you know?</p>
           </div>
         </section>
 
         <section id="rigs" class="rlv-sec" aria-labelledby="rigs-h">
-          <h2 class="case-h2 rlv-sec__head" id="rigs-h" data-reveal><span class="rlv-sec__n">2</span> <span>Rigs</span></h2>
+          <h2 class="case-h2 rlv-sec__head" id="rigs-h" data-reveal>Rigs</h2>
           <div class="case-prose rlv-prose">
-            <p data-cites="2">Rig one is built on a steel panel: nitrogen and air valves, two mass-flow controllers, a control box, and two clear columns with probes in them <span class="rlv-cite">Fig. 2</span>.</p>
+            <p data-cites="2">Rig one is built on a steel panel: nitrogen and air valves, two mass-flow controllers, a control box, and two clear columns with probes in them <span class="rlv-cite">rig one</span>.</p>
             <RlvFigure slug={slug} fig={F.rigOne} mode="inline" sizes={inline} />
-            <p data-cites="3">Rig two is a wall panel of sensor fittings, with its own control box and emergency stop, and a laptop on the bench below it <span class="rlv-cite">Fig. 3</span>.</p>
+            <p data-cites="3">Rig two is a wall panel of sensor fittings, with its own control box and emergency stop, and a laptop on the bench below it <span class="rlv-cite">rig two</span>.</p>
             <RlvFigure slug={slug} fig={F.rigTwo} mode="inline" sizes={inline} />
-            <p data-cites="4">The clip walks through both, as they stand in the lab <span class="rlv-cite">Fig. 4</span>.</p>
+            <p data-cites="4">The clip walks through both, as they stand in the lab <span class="rlv-cite">walk-through</span>.</p>
             <RlvFigure slug={slug} fig={F.walk} mode="inline" sizes={inline} />
           </div>
         </section>
 
         <section id="method" class="rlv-sec" aria-labelledby="method-h">
-          <h2 class="case-h2 rlv-sec__head" id="method-h" data-reveal><span class="rlv-sec__n">3</span> <span>Method</span></h2>
+          <h2 class="case-h2 rlv-sec__head" id="method-h" data-reveal>Method</h2>
           <div class="case-prose rlv-prose">
-            <p data-cites="5">I benchmarked four cameras: the OBSBOT Meet 2 4K, the Logitech C922, the GoPro Hero 8 and the Yi. For a test, the candidate camera was clamped to a stand and aimed at the rig <span class="rlv-cite">Fig. 5</span>.</p>
+            <p data-cites="5">I benchmarked four cameras: the OBSBOT Meet 2 4K, the Logitech C922, the GoPro Hero 8 and the Yi. For a test, the candidate camera was clamped to a stand and aimed at the rig <span class="rlv-cite">test setup</span>.</p>
             <RlvFigure slug={slug} fig={F.stand} mode="inline" sizes={inline} />
-            <p data-cites="6">Each one fed LabVIEW through NI-IMAQdx, the module the poster names to “acquire and process real-time video streams” <span class="rlv-cite">Fig. 6</span>.</p>
+            <p data-cites="6">Each one fed LabVIEW through NI-IMAQdx, the module the poster names to “acquire and process real-time video streams” <span class="rlv-cite">block diagram</span>.</p>
             <RlvFigure slug={slug} fig={F.diagram} mode="inline" sizes={inline} />
-            <p data-cites="7">Then the comparison: not the resolution and frame rate on each camera's box, but what reached LabVIEW, the “‘true’ resolution and frame rate (FPS) actually received”, in the poster's words <span class="rlv-cite">Fig. 7</span>. The drivers were tested too, standard UVC plug-and-play against proprietary video streams.</p>
+            <p data-cites="7">Then the comparison: not the resolution and frame rate on each camera's box, but what reached LabVIEW, the “‘true’ resolution and frame rate (FPS) actually received”, in the poster's words <span class="rlv-cite">objectives</span>. The drivers were tested too, standard UVC plug-and-play against proprietary video streams.</p>
             <RlvFigure slug={slug} fig={F.objectives} mode="inline" sizes={inline} />
-            <p>Last, the picture itself. The poster sets the four cameras' views of the rig's columns side by side <span class="rlv-cite">Fig. 8</span>, and compares them by RGB intensity histogram.</p>
+            <p>Last, the picture itself. The poster sets the four cameras' views of the rig's columns side by side <span class="rlv-cite">camera views</span>, and compares them by RGB intensity histogram.</p>
           </div>
         </section>
       </div>
 
-      <RlvRail slug={slug} label="Figures 1 to 7" figs={[F.panel, F.rigOne, F.rigTwo, F.walk, F.stand, F.diagram, F.objectives]} />
+      <RlvRail slug={slug} label="Figures: question, rigs and method" figs={[F.panel, F.rigOne, F.rigTwo, F.walk, F.stand, F.diagram, F.objectives]} />
     </div>
 
     <div class="rlv-plate">
@@ -139,36 +139,36 @@ const contents = [
     <div class="rlv-spread">
       <div class="rlv-main">
         <section id="results" class="rlv-sec" aria-labelledby="results-h">
-          <h2 class="case-h2 rlv-sec__head" id="results-h" data-reveal><span class="rlv-sec__n">4</span> <span>Results</span></h2>
+          <h2 class="case-h2 rlv-sec__head" id="results-h" data-reveal>Results</h2>
           <div class="case-prose rlv-prose">
-            <p data-cites="9">The histograms put pixel intensity, 0 to 255, against a logarithmic pixel count <span class="rlv-cite">Fig. 9</span>. The poster's reading: “a broader and smoother distribution curve indicates a superior dynamic range.”</p>
+            <p data-cites="9">The histograms put pixel intensity, 0 to 255, against a logarithmic pixel count <span class="rlv-cite">histograms</span>. The poster's reading: “a broader and smoother distribution curve indicates a superior dynamic range.”</p>
             <RlvFigure slug={slug} fig={F.histograms} mode="inline" sizes={inline} />
-            <p data-cites="10">I picked the OBSBOT Meet 2 4K. From the poster: it “emerged as the most viable current solution”, with “the best balance of high-resolution imaging, system compatibility, and cost-efficiency” <span class="rlv-cite">Fig. 10</span>.</p>
+            <p data-cites="10">I picked the OBSBOT Meet 2 4K. From the poster: it “emerged as the most viable current solution”, with “the best balance of high-resolution imaging, system compatibility, and cost-efficiency” <span class="rlv-cite">conclusion</span>.</p>
             <RlvFigure slug={slug} fig={F.conclusion} mode="inline" sizes={inline} />
             <p data-cites="10">The other three fell short in two ways. The action cameras, GoPro and Yi, “failed entirely due to closed software ecosystems”; the Logitech webcam “lacked the necessary visual detail”.</p>
-            <p data-cites="11">I mounted the OBSBOT on aluminium extrusion, and the poster's method has the focal length calibrated “to the target object” <span class="rlv-cite">Fig. 11</span>.</p>
+            <p data-cites="11">I mounted the OBSBOT on aluminium extrusion, and the poster's method has the focal length calibrated “to the target object” <span class="rlv-cite">at the rig</span>.</p>
             <RlvFigure slug={slug} fig={F.atRig} mode="inline" sizes={inline} />
           </div>
         </section>
 
         <section id="limits" class="rlv-sec" aria-labelledby="limits-h">
-          <h2 class="case-h2 rlv-sec__head" id="limits-h" data-reveal><span class="rlv-sec__n">5</span> <span>Limits</span></h2>
+          <h2 class="case-h2 rlv-sec__head" id="limits-h" data-reveal>Limits</h2>
           <div class="case-prose rlv-prose">
-            <p data-cites="10">The OBSBOT is a baseline. Its drawback, from the poster, is “the fixed lens architecture, which forces us to make manual physical adjustments” <span class="rlv-cite">Fig. 10</span>.</p>
+            <p data-cites="10">The OBSBOT is a baseline. Its drawback, from the poster, is “the fixed lens architecture, which forces us to make manual physical adjustments” <span class="rlv-cite">conclusion</span>.</p>
             <p data-cites="10">The next step the poster names is DSLR systems, “specifically Canon models (e.g., Rebel T5i or T8i)”, for interchangeable lenses and true optical zoom.</p>
             <p>And the comparison covers four cameras. It chose among them; it does not rank every camera a remote lab could use.</p>
           </div>
         </section>
       </div>
 
-      <RlvRail slug={slug} label="Figures 9 to 11" figs={[F.histograms, F.conclusion, F.atRig]} />
+      <RlvRail slug={slug} label="Figures: results and limits" figs={[F.histograms, F.conclusion, F.atRig]} />
     </div>
 
     <div class="rlv-solo">
       <section id="poster" class="rlv-sec rlv-sec--last" aria-labelledby="poster-h">
-        <h2 class="case-h2 rlv-sec__head" id="poster-h" data-reveal><span class="rlv-sec__n">6</span> <span>Poster</span></h2>
+        <h2 class="case-h2 rlv-sec__head" id="poster-h" data-reveal>Poster</h2>
         <div class="case-prose rlv-prose">
-          <p>I presented the work as a research poster, “Evaluation and Integration of a Vision System for Remote Learning Labs”, with Stephen Stockton and Lucas Ellis <span class="rlv-cite">Fig. 12</span>.</p>
+          <p>I presented the work as a research poster, “Evaluation and Integration of a Vision System for Remote Learning Labs”, with Stephen Stockton and Lucas Ellis <span class="rlv-cite">poster</span>.</p>
         </div>
       </section>
     </div>
@@ -296,13 +296,9 @@ const contents = [
       }
     }
 
-    span {
-      font: 400 0.75rem / 1 font-family(fraktion);
-      color: var(--case-accent);
-    }
   }
 
-  /* A spread: the numbered sections and, once the rail runs, the rail. */
+  /* A spread: the sections and, once the rail runs, the rail. */
   .rlv-spread {
     padding: 0 var(--case-gutter);
   }
@@ -328,32 +324,19 @@ const contents = [
   }
 
   .rlv-sec__head {
-    display: flex;
-    align-items: baseline;
-    gap: 0.4em;
     margin-bottom: 1.75rem;
   }
 
-  .rlv-sec__n {
-    color: var(--case-accent);
-  }
-
-  /* From a tablet up, the section number hangs in the left margin. */
+  /* From a tablet up, a section's heading and text sit in from a left
+     margin, the one the reading line's rule is drawn in. */
   @media (min-width: 48em) {
     .rlv-sec {
       display: grid;
       grid-template-columns: var(--rlv-margin) minmax(0, 1fr);
 
-      > :not(.rlv-sec__head) {
+      > * {
         grid-column: 2;
       }
-    }
-
-    .rlv-sec__head {
-      grid-column: 1 / -1;
-      display: grid;
-      grid-template-columns: var(--rlv-margin) minmax(0, 1fr);
-      gap: 0;
     }
   }
 
@@ -416,7 +399,7 @@ const contents = [
     padding: 0 var(--case-gutter) clamp(3rem, 8vh, 5rem);
   }
 
-  /* Section 6 runs alone, across the page, into the poster plate. */
+  /* The poster section runs alone, across the page, into the poster plate. */
   .rlv-solo {
     padding: 0 var(--case-gutter);
   }

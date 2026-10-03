@@ -3,10 +3,10 @@ import { picture } from "../../data/media";
 
 /**
  * The rocket club's build as a strip of 35 mm film: frames at one height and
- * their own widths, edge-printed numbers, perforations along both edges, the
- * captions as a numbered legend under the strip (gilhuybrecht.com's numbered
- * frames). Native scroll moves it: touch, trackpad, keyboard (the track is
- * focusable, and so is every frame) and the two buttons.
+ * their own widths, perforations along both edges, the captions as a legend
+ * under the strip in the frames' order (after gilhuybrecht.com's frames).
+ * Native scroll moves it: touch, trackpad, keyboard (the track is focusable,
+ * and so is every frame) and the two buttons.
  *
  * A frame is a link to its largest file, so without JS it still opens the
  * picture. With JS it opens in a lightbox that grows out of the frame (FLIP,
@@ -16,7 +16,7 @@ interface Props {
   slug: string;
   /** Names the strip for assistive tech. */
   label: string;
-  frames: { id: string; alt: string; caption: string; n: number }[];
+  frames: { id: string; alt: string; caption: string }[];
   class?: string;
 }
 const { slug, label, frames, class: className } = Astro.props;
@@ -33,7 +33,6 @@ const tiles = frames.map((f) => {
     sizes: `(max-width: 48em) ${Math.min(82, Math.round(ratio * 70))}vw, ${Math.round(ratio * 576)}px`,
   };
 });
-const num = (n: number) => String(n).padStart(2, "0");
 const first = tiles[0];
 ---
 
@@ -43,8 +42,7 @@ const first = tiles[0];
       <ol class="rk-strip__film">
         {tiles.map((t) => (
           <li class="rk-strip__frame">
-            <span class="rk-strip__edge" aria-hidden="true">▸ {num(t.n)}</span>
-            <a class="rk-strip__open js-rk-open" href={t.full} aria-haspopup="dialog" data-srcset={t.srcset} data-w={t.width} data-h={t.height} data-caption={`Fig. ${t.n} · ${t.caption}`}>
+            <a class="rk-strip__open js-rk-open" href={t.full} aria-haspopup="dialog" data-srcset={t.srcset} data-w={t.width} data-h={t.height} data-caption={t.caption}>
               <img src={t.src} srcset={t.srcset} sizes={t.sizes} alt={t.alt} width={t.width} height={t.height} loading="lazy" decoding="async" />
             </a>
           </li>
@@ -61,10 +59,7 @@ const first = tiles[0];
     <figcaption>
       <ol class="rk-strip__legend">
         {tiles.map((t) => (
-          <li>
-            <span class="rk-strip__n">Fig. {t.n}</span>
-            <span>{t.caption}</span>
-          </li>
+          <li>{t.caption}</li>
         ))}
       </ol>
     </figcaption>
@@ -327,15 +322,6 @@ const first = tiles[0];
     scroll-snap-align: start;
   }
 
-  .rk-strip__edge {
-    position: absolute;
-    top: -1.35rem;
-    left: 0;
-    font: 400 0.6875rem / 1 font-family(fraktion);
-    letter-spacing: 0.14em;
-    color: var(--case-accent);
-  }
-
   .rk-strip__open {
     display: block;
     border-radius: 2px;
@@ -403,20 +389,9 @@ const first = tiles[0];
     list-style: none;
 
     li {
-      display: flex;
-      gap: 0.75rem;
       font: 400 0.875rem / 1.5 font-family(geist);
       color: var(--case-soft);
     }
-  }
-
-  .rk-strip__n {
-    flex: none;
-    min-width: 3.4rem;
-    font: 400 0.6875rem / 2 font-family(fraktion);
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--case-ink);
   }
 
   /* The lightbox: the whole screen, its image placed in pixels by the

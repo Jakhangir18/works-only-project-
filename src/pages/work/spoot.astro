@@ -9,7 +9,7 @@ import { projects } from "../../data/projects";
  * SPOOT, "One video, one bearing" (docs/portfolio-v4-design.md): the
  * shortest page, on black. The title sits where the wearer would, inside a
  * bearing dial whose red mark turns to the pointer; one sentence of thesis;
- * why, in two small dials; "How it hears" as three numbered diagrams; the
+ * why, in two small dials; "How it hears" as three diagrams, one verb each; the
  * one video and the two photographs as one strip; the credits.
  *
  * No photograph shows the glasses, the microphones, the OLED or the phone
@@ -151,7 +151,7 @@ const examples = [
 
     <ol class="sp-steps">
       <li class="sp-step" data-reveal>
-        <p class="sp-step__n" aria-hidden="true"><span>01</span></p>
+        <p class="sp-step__verb">Hear</p>
         <h3 class="case-h3">Microphones</h3>
         <div class="sp-step__text">
           <p>The 3D-printed glasses come with a reSpeaker XVF3800, a USB array of four microphones, on a Raspberry Pi. On the Pi itself, Silero VAD picks out speech and faster-whisper transcribes it.</p>
@@ -185,12 +185,12 @@ const examples = [
               <text class="sp-d-text is-soft" x="182" y="118" text-anchor="middle">→ transcript</text>
             </svg>
           </div>
-          <figcaption><span class="sp-fig__n">Fig. 1</span><span>Diagram. Four microphones in, text out, on the Pi.</span></figcaption>
+          <figcaption>Diagram. Four microphones in, text out, on the Pi.</figcaption>
         </figure>
       </li>
 
       <li class="sp-step" data-reveal style="transition-delay: 90ms">
-        <p class="sp-step__n" aria-hidden="true"><span>02</span></p>
+        <p class="sp-step__verb">Ask</p>
         <h3 class="case-h3">Direction</h3>
         <div class="sp-step__text">
           <p>The array's direction-of-arrival reading is mapped to a bearing around the wearer. The transcript, the bearing and the volume go to Gemini Flash, which answers in JSON: how important the sound is, whether it was meant for you, and a message of eight words.</p>
@@ -230,12 +230,12 @@ const examples = [
               <text class="sp-d-text" x="129" y="116">8-word message</text>
             </svg>
           </div>
-          <figcaption><span class="sp-fig__n">Fig. 2</span><span>Diagram. A bearing and a transcript in, a three-part answer out.</span></figcaption>
+          <figcaption>Diagram. A bearing and a transcript in, a three-part answer out.</figcaption>
         </figure>
       </li>
 
       <li class="sp-step" data-reveal style="transition-delay: 180ms">
-        <p class="sp-step__n" aria-hidden="true"><span>03</span></p>
+        <p class="sp-step__verb">Show</p>
         <h3 class="case-h3">Display</h3>
         <div class="sp-step__text">
           <p>The result shows in two places: on an I2C OLED HUD, and in an AR web app on the phone.</p>
@@ -264,7 +264,7 @@ const examples = [
               <text class="sp-d-text" x="185" y="114" text-anchor="middle">Phone AR</text>
             </svg>
           </div>
-          <figcaption><span class="sp-fig__n">Fig. 3</span><span>Diagram. One result, two screens.</span></figcaption>
+          <figcaption>Diagram. One result, two screens.</figcaption>
         </figure>
       </li>
     </ol>
@@ -282,13 +282,13 @@ const examples = [
         <h2 class="case-h2" data-reveal>3rd place in Google's Best Use of Gemini</h2>
       </div>
       <div class="case-prose" data-reveal>
-        <p>SPOOT placed 3rd in Google's Best Use of Gemini track at BeaverHacks 2026, held at Oregon State on {DATES}. Fig. 5 walks from the tables up to the stage.</p>
+        <p>SPOOT placed 3rd in Google's Best Use of Gemini track at BeaverHacks 2026, held at Oregon State on {DATES}. The clip walks from the tables up to the stage.</p>
       </div>
     </div>
     <div class="sp-stage__strip">
-      <CaseFigure slug="spoot" id="hero" alt="Jakhangir and his teammate on stage under the BeaverHacks banner, both holding prize cards, beside a presenter with a microphone, the audience in the foreground" caption="On stage under the BeaverHacks banner, prize cards in hand." n={4} sizes="(max-width: 48em) 100vw, 46vw" class="sp-stage__wide" />
-      <CaseClip slug="spoot" id="walk" label="First-person video walking between the hackathon tables up to the stage at BeaverHacks 2026, ending on the view over the hall" caption="Up to the stage. Silent." n={5} loop class="sp-stage__walk" />
-      <CaseFigure slug="spoot" id="cover" alt="Jakhangir, his teammate Carson Secrest and the Google track presenter standing together in a hallway, event lanyards on" caption="With Carson and the Google track presenter." n={6} sizes="(max-width: 48em) 50vw, 26vw" class="sp-stage__tall" />
+      <CaseFigure slug="spoot" id="hero" alt="Jakhangir and his teammate on stage under the BeaverHacks banner, both holding prize cards, beside a presenter with a microphone, the audience in the foreground" caption="On stage under the BeaverHacks banner, prize cards in hand." sizes="(max-width: 48em) 100vw, 46vw" class="sp-stage__wide" />
+      <CaseClip slug="spoot" id="walk" label="First-person video walking between the hackathon tables up to the stage at BeaverHacks 2026, ending on the view over the hall" caption="Up to the stage. Silent." loop class="sp-stage__walk" />
+      <CaseFigure slug="spoot" id="cover" alt="Jakhangir, his teammate Carson Secrest and the Google track presenter standing together in a hallway, event lanyards on" caption="With Carson and the Google track presenter." sizes="(max-width: 48em) 50vw, 26vw" class="sp-stage__tall" />
     </div>
   </section>
 
@@ -707,12 +707,14 @@ const examples = [
     }
   }
 
-  .sp-step__n {
+  /* The step's verb, what the glasses do at that point, on a rule. */
+  .sp-step__verb {
     display: flex;
     align-items: center;
     gap: 1rem;
     margin: 0 0 1.25rem;
     font: 400 clamp(2.6rem, 4vw, 3.6rem) / 0.9 font-family(bigger);
+    text-transform: uppercase;
     color: var(--case-accent);
 
     &::after {
@@ -747,20 +749,10 @@ const examples = [
     margin: 1rem 0 0;
 
     figcaption {
-      display: flex;
-      gap: 0.75rem;
       margin-top: 0.7rem;
       font: 400 0.8125rem / 1.45 font-family(geist);
       color: var(--case-soft);
     }
-  }
-
-  .sp-fig__n {
-    flex: none;
-    font: 400 0.6875rem / 1.9 font-family(fraktion);
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--case-ink);
   }
 
   .sp-step__plate {

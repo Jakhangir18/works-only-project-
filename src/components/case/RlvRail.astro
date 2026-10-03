@@ -13,7 +13,8 @@ import RlvFigure from "./RlvFigure.astro";
  */
 interface Props {
   slug: string;
-  /** Names the aside for assistive technology, e.g. "Figures 1 to 7". */
+  /** Names the aside for assistive technology, e.g. "Figures: results and
+   *  limits". */
   label: string;
   figs: {
     n: number;
@@ -41,12 +42,14 @@ const { slug, label, figs } = Astro.props;
    * The rail's one behaviour, event-driven like the rest of the case page
    * (case.ts): no scroll listener, no frame loop.
    *
-   * A paragraph that cites a figure carries data-cites="n". One
-   * IntersectionObserver watches those paragraphs against the reading line, a
-   * band one percent tall halfway down the viewport. When a paragraph crosses
-   * it, the rail that holds Fig. n shows that figure and drops the one it
-   * showed: a class toggle, and CSS fades opacity. Between paragraphs, on a
-   * heading, or on a paragraph that cites a plate, the rail keeps what it has.
+   * A paragraph that cites a figure carries data-cites, the figure's key
+   * (`n`, never shown), and each rail figure carries the same key as
+   * data-fig. One IntersectionObserver watches those paragraphs against the
+   * reading line, a band one percent tall halfway down the viewport. When a
+   * paragraph crosses it, the rail that holds that figure shows it and drops
+   * the one it showed: a class toggle, and CSS fades opacity. Between
+   * paragraphs, on a heading, or on a paragraph that cites a plate, the rail
+   * keeps what it has.
    *
    * A clip in the rail plays only while its figure is shown, the stage is on
    * screen and the tab is visible, and never under reduced motion (then it

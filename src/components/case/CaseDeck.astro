@@ -2,8 +2,8 @@
 /**
  * Slides or pages on a horizontal track: native scroll-snap does the moving,
  * so it works by touch, trackpad, keyboard (the track is focusable) and the
- * two buttons; case.ts keeps the counter honest. Each page is an image the
- * import rendered from a PDF.
+ * two buttons; case.ts keeps the progress line under it honest. Each page is
+ * an image the import rendered from a PDF.
  */
 interface Props {
   label: string;
@@ -24,7 +24,7 @@ const { label, pages, download, class: className } = Astro.props;
   </div>
   <div class="case-deck__bar">
     <button type="button" class="case-deck__btn js-case-deck-prev" aria-label="Previous page">←</button>
-    <span class="case-deck__count"><span class="js-case-deck-at">1</span> / {pages.length}</span>
+    <span class="case-deck__progress" aria-hidden="true"><span class="case-deck__fill js-case-deck-fill" style={`transform: scaleX(${1 / pages.length})`}></span></span>
     <button type="button" class="case-deck__btn js-case-deck-next" aria-label="Next page">→</button>
     {download && <a class="case-deck__download" href={download.href}>{download.label}</a>}
   </div>
@@ -84,6 +84,27 @@ const { label, pages, download, class: className } = Astro.props;
     &:hover,
     &:focus-visible {
       border-color: var(--case-accent);
+    }
+  }
+
+  /* How far through the deck the track is: one line, filled by a scaleX
+     that case.ts writes only when the page changes. */
+  .case-deck__progress {
+    flex: 0 1 8rem;
+    height: 2px;
+    overflow: hidden;
+    background: var(--case-rule);
+  }
+
+  .case-deck__fill {
+    display: block;
+    height: 100%;
+    background: var(--case-accent);
+    transform-origin: 0 50%;
+    transition: transform 300ms ease;
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none;
     }
   }
 

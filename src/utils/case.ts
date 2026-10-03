@@ -3,7 +3,7 @@
  * frame loop.
  *   - Reveals: [data-reveal] elements fade up once, by IntersectionObserver.
  *   - Loops: muted footage plays while on screen and pauses off it.
- *   - Decks: the counter follows the track's scroll; the buttons page it.
+ *   - Decks: the progress line follows the track's scroll; the buttons page it.
  */
 export function initCase(): void {
   if (typeof window === "undefined") return;
@@ -51,7 +51,7 @@ export function initCase(): void {
 
   document.querySelectorAll<HTMLElement>(".js-case-deck").forEach((deck) => {
     const track = deck.querySelector<HTMLElement>(".js-case-deck-track");
-    const at = deck.querySelector<HTMLElement>(".js-case-deck-at");
+    const fill = deck.querySelector<HTMLElement>(".js-case-deck-fill");
     const pages = track ? [...track.children] as HTMLElement[] : [];
     if (!track || !pages.length) return;
     // One page's width plus the gap, read once and again only after a
@@ -64,9 +64,9 @@ export function initCase(): void {
       "scroll",
       () => {
         const n = Math.min(pages.length, Math.round(track.scrollLeft / step()) + 1);
-        if (n !== shown && at) {
+        if (n !== shown && fill) {
           shown = n;
-          at.textContent = String(n);
+          fill.style.transform = `scaleX(${n / pages.length})`;
         }
       },
       { passive: true },

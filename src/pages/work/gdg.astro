@@ -12,7 +12,7 @@ import { projects } from "../../data/projects";
  * the title on a bottom scrim, one hard number as the tally line, the role,
  * the chapter's own slide as the pull quote, the photographs as a two-page
  * spread, the impact report page as a document, and the credits with the
- * website. Numbered folios head the sections, as in a printed report.
+ * website. Named folios head the sections, as in a printed report.
  *
  * Facts and their sources:
  *   - Co-President since the spring 2026 election: the owner (2026-10-03) and
@@ -51,11 +51,11 @@ const report = SHOW_REPORT ? picture("gdg", "report", 1500) : null;
         <p class="case-award">Co-President</p>
         <p class="case-lede">I co-lead Oregon State's Google Developer Group on Campus, and bring students together to build.</p>
       </div>
-      <p class="gdg-cover__fig"><span class="gdg-n">Fig. 1</span> On stage at a chapter event.</p>
+      <p class="gdg-cover__fig">On stage at a chapter event.</p>
     </header>
 
     <section class="case-section gdg-count">
-      <p class="case-label gdg-folio"><span>01</span><span>In numbers</span></p>
+      <p class="case-label gdg-folio">In numbers</p>
       <GdgTally value={200} suffix="+">Students<br />registered</GdgTally>
       <p class="gdg-count__note" data-reveal>Registered with Google Developer Group on Campus at Oregon State University.</p>
       <dl class="gdg-count__more" data-reveal>
@@ -71,7 +71,7 @@ const report = SHOW_REPORT ? picture("gdg", "report", 1500) : null;
     </section>
 
     <section class="case-section gdg-role">
-      <p class="case-label gdg-folio"><span>02</span><span>The role</span></p>
+      <p class="case-label gdg-folio">The role</p>
       <h2 class="case-h2 gdg-role__title" data-reveal>Co-President</h2>
       <div class="gdg-role__grid">
         <div class="case-prose gdg-role__text" data-reveal>
@@ -79,7 +79,7 @@ const report = SHOW_REPORT ? picture("gdg", "report", 1500) : null;
           <p>The job is to bring students together to build. The chapter's own slides say what for: to build with Google technology, to learn from Google engineers, and to build projects.</p>
           <p>This year I want projects to leave localhost: workshops on deploying with Firebase and Docker, sessions on building with Gemini, and a chapter open to every engineering major, not only computer science.</p>
         </div>
-        <CaseFigure slug="gdg" id="g01" alt="Jak with a microphone on the same stage, under the chapter's title slide: 'Google Developer Group, On Campus · Oregon State', with the lines 'Build with Google technology' and 'Learn from Google engineers'" caption="On stage, under the chapter's title slide." n={2} sizes="(max-width: 56em) 100vw, 56vw" />
+        <CaseFigure slug="gdg" id="g01" alt="Jak with a microphone on the same stage, under the chapter's title slide: 'Google Developer Group, On Campus · Oregon State', with the lines 'Build with Google technology' and 'Learn from Google engineers'" caption="On stage, under the chapter's title slide." sizes="(max-width: 56em) 100vw, 56vw" />
       </div>
     </section>
 
@@ -87,44 +87,44 @@ const report = SHOW_REPORT ? picture("gdg", "report", 1500) : null;
       <blockquote>
         <p>Build with Google technology. Learn from Google engineers.</p>
       </blockquote>
-      <figcaption class="case-label">The chapter's title slide, Fig. 2</figcaption>
+      <figcaption class="case-label">The chapter's title slide, in the stage photograph above</figcaption>
     </figure>
 
     <section class="case-section gdg-room">
-      <p class="case-label gdg-folio"><span>03</span><span>In the room</span></p>
+      <p class="case-label gdg-folio">In the room</p>
       <div class="gdg-room__head">
         <h2 class="case-h2" data-reveal>“Why join GDG?”</h2>
-        <p class="case-label" data-reveal>Asked on the chapter's own slide, Fig. 1</p>
+        <p class="case-label" data-reveal>Asked on the chapter's own slide, in the opening photograph</p>
       </div>
       <div class="gdg-spread">
         <div class="gdg-spread__page">
           <p class="gdg-spread__head" aria-hidden="true"><span>GDG on Campus</span><span>In the room</span></p>
-          <CaseFigure slug="gdg" id="g02" alt="A group of students posed together in a lecture room, under a projected screen that reads 'Welcome to Google Developer Group on Campus @ Oregon State'" caption="Members under the chapter's welcome screen." n={3} sizes="(max-width: 56em) 100vw, 44vw" />
+          <CaseFigure slug="gdg" id="g02" alt="A group of students posed together in a lecture room, under a projected screen that reads 'Welcome to Google Developer Group on Campus @ Oregon State'" caption="Members under the chapter's welcome screen." sizes="(max-width: 56em) 100vw, 44vw" />
           <div class="gdg-spread__pair">
-            <CaseFigure slug="gdg" id="g05" alt="Two people talking across a table draped with a large Google 'G', one of them in a lanyard and a Google T-shirt" caption="At the chapter's table." n={4} ratio="3 / 4" focal="50% 50%" sizes="(max-width: 56em) 50vw, 22vw" />
-            <CaseFigure slug="gdg" id="g04" alt="A student pointing up at a projected slide titled 'Build Projects'" caption="“Build Projects”, on one of the chapter's slides." n={5} ratio="3 / 4" focal="50% 45%" sizes="(max-width: 56em) 50vw, 22vw" />
+            <CaseFigure slug="gdg" id="g05" alt="Two people talking across a table draped with a large Google 'G', one of them in a lanyard and a Google T-shirt" caption="At the chapter's table." ratio="3 / 4" focal="50% 50%" sizes="(max-width: 56em) 50vw, 22vw" />
+            <CaseFigure slug="gdg" id="g04" alt="A student pointing up at a projected slide titled 'Build Projects'" caption="“Build Projects”, on one of the chapter's slides." ratio="3 / 4" focal="50% 45%" sizes="(max-width: 56em) 50vw, 22vw" />
           </div>
         </div>
         <div class="gdg-spread__page">
           <p class="gdg-spread__head" aria-hidden="true"><span>Oregon State University</span><span>In the room</span></p>
-          <CaseFigure slug="gdg" id="g03" alt="A presenter in a Google T-shirt at a lectern, the slides on two screens behind, a student with a laptop in the foreground" caption="A talk at the lectern, on two screens." n={6} ratio="3 / 4" focal="50% 50%" sizes="(max-width: 56em) 100vw, 44vw" />
+          <CaseFigure slug="gdg" id="g03" alt="A presenter in a Google T-shirt at a lectern, the slides on two screens behind, a student with a laptop in the foreground" caption="A talk at the lectern, on two screens." ratio="3 / 4" focal="50% 50%" sizes="(max-width: 56em) 100vw, 44vw" />
         </div>
       </div>
     </section>
 
     {report && <section class="case-section gdg-report">
-      <p class="case-label gdg-folio"><span>04</span><span>The report</span></p>
+      <p class="case-label gdg-folio">The report</p>
       <h2 class="case-h2" data-reveal>On paper</h2>
       <figure class="gdg-doc" data-reveal>
         <div class="gdg-doc__sheet">
           <img src={report.src} srcset={report.srcset} sizes="(max-width: 56em) 92vw, 34rem" alt="A page of the chapter's draft impact report: a red header band, three event photographs down the left side, and a summary with lists of events and achievements on the right" width={report.width} height={report.height} loading="lazy" decoding="async" />
         </div>
-        <figcaption><span class="gdg-n">Fig. 7</span> From the chapter's impact report (draft).</figcaption>
+        <figcaption>From the chapter's impact report (draft).</figcaption>
       </figure>
     </section>}
 
     <section class="case-section gdg-credits">
-      <h2 class="case-label gdg-folio"><span>{SHOW_REPORT ? "05" : "04"}</span><span>Credits</span></h2>
+      <h2 class="case-label gdg-folio">Credits</h2>
       <div class="gdg-credits__grid">
         <CaseMeta
           rows={[
@@ -154,20 +154,8 @@ const report = SHOW_REPORT ? picture("gdg", "report", 1500) : null;
     --case-soft: #48484d;
   }
 
-  .gdg-n {
-    flex: none;
-    font: 400 0.6875rem / 1.9 font-family(fraktion);
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--case-ink);
-  }
-
-  /* A section's folio: number and name on one rule, as a report heads its
-     sections. */
+  /* A section's folio: its name on a rule, as a report heads its sections. */
   .gdg-folio {
-    display: flex;
-    justify-content: space-between;
-    gap: 1rem;
     margin-bottom: clamp(2rem, 6vh, 4rem);
     padding-top: 0.8rem;
     border-top: 1px solid var(--case-ink);
@@ -236,15 +224,13 @@ const report = SHOW_REPORT ? picture("gdg", "report", 1500) : null;
   }
 
   .gdg-cover__fig {
-    display: flex;
-    gap: 0.75rem;
     margin: 0;
     max-width: 22rem;
     font: 400 0.8125rem / 1.45 font-family(geist);
     color: var(--case-soft);
   }
 
-  /* 01, the tally. The number's glyphs rise above its tight line box, so the
+  /* The tally. The number's glyphs rise above its tight line box, so the
      folio keeps a gap that grows with it. */
   .gdg-count .gdg-folio {
     margin-bottom: clamp(3rem, 7vw, 7rem);
@@ -286,7 +272,7 @@ const report = SHOW_REPORT ? picture("gdg", "report", 1500) : null;
     text-transform: uppercase;
   }
 
-  /* 02, the role. */
+  /* The role. */
   .gdg-role__title {
     font-size: clamp(3rem, 11vw, 11rem);
     line-height: 0.84;
@@ -344,7 +330,7 @@ const report = SHOW_REPORT ? picture("gdg", "report", 1500) : null;
     }
   }
 
-  /* 03, the spread: two pages on one sheet, a fold down the middle. */
+  /* In the room, the spread: two pages on one sheet, a fold down the middle. */
   .gdg-room {
     background: var(--case-surface);
   }
@@ -426,7 +412,7 @@ const report = SHOW_REPORT ? picture("gdg", "report", 1500) : null;
     gap: 1rem;
   }
 
-  /* 04, the report: one page on a short stack of sheets, alone in the middle
+  /* The report: one page on a short stack of sheets, alone in the middle
      of the page like a document on a desk. The sheets behind are static;
      only the reveal moves the figure. */
   .gdg-doc {
@@ -434,8 +420,6 @@ const report = SHOW_REPORT ? picture("gdg", "report", 1500) : null;
     margin: clamp(1.5rem, 4vh, 2.5rem) auto 0;
 
     figcaption {
-      display: flex;
-      gap: 0.75rem;
       margin-top: 1.4rem;
       font: 400 0.8125rem / 1.45 font-family(geist);
       color: var(--case-soft);
@@ -489,7 +473,7 @@ const report = SHOW_REPORT ? picture("gdg", "report", 1500) : null;
     }
   }
 
-  /* 05, credits and the chapter's site, the last line set as large as the
+  /* Credits and the chapter's site, the last line set as large as the
      title. */
   .gdg-credits__grid {
     display: grid;

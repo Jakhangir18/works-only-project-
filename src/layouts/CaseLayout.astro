@@ -4,8 +4,8 @@ import "../styles/global.scss";
 
 /**
  * The shell every case page shares: one bar at the top (back to the work,
- * where this project sits among the seven, the neighbours), the page's own
- * composition in the slot, and the next project at the end.
+ * this project's name, the neighbours), the page's own composition in the
+ * slot, and the next project at the end.
  *
  * The pages differ in composition, not in system (docs/portfolio-v4-design.md):
  * same type scale, same grid, same components from src/components/case/.
@@ -29,7 +29,6 @@ const index = projects.findIndex((p) => p.slug === slug);
 const project = projects[index];
 const next = projects[(index + 1) % projects.length];
 const prev = projects[(index - 1 + projects.length) % projects.length];
-const count = (i: number) => String(i + 1).padStart(2, "0");
 ---
 
 <!doctype html>
@@ -60,9 +59,7 @@ const count = (i: number) => String(i + 1).padStart(2, "0");
   <body>
     <header class="case-bar">
       <a class="case-bar__back" id="js-back-to-works" href="/#work">← All work</a>
-      <p class="case-bar__count" aria-label={`Project ${index + 1} of ${projects.length}`}>
-        <span>{count(index)}</span> / {count(projects.length - 1)}
-      </p>
+      <p class="case-bar__title">{project.title}</p>
       <nav class="case-bar__nav" aria-label="Projects">
         <a href={prev.href} rel="prev" aria-label={`Previous project: ${prev.title}`}><span aria-hidden="true">←</span> <span class="case-bar__label" aria-hidden="true">{prev.title}</span></a>
         <a href={next.href} rel="next" aria-label={`Next project: ${next.title}`}><span class="case-bar__label" aria-hidden="true">{next.title}</span> <span aria-hidden="true">→</span></a>
@@ -165,13 +162,9 @@ const count = (i: number) => String(i + 1).padStart(2, "0");
     }
   }
 
-  .case-bar__count {
+  .case-bar__title {
     margin: 0;
     color: var(--case-soft);
-
-    span {
-      color: var(--case-ink);
-    }
   }
 
   .case-bar__nav {

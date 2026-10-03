@@ -15,11 +15,10 @@ interface Props {
   id: string;
   label: string;
   caption?: string;
-  n?: number;
   loop?: boolean;
   class?: string;
 }
-const { slug, id, label, caption, n, loop = false, class: className } = Astro.props;
+const { slug, id, label, caption, loop = false, class: className } = Astro.props;
 const v = video(slug, id);
 const length = clipLength(v.duration);
 ---
@@ -34,7 +33,6 @@ const length = clipLength(v.duration);
   </div>
   {caption && (
     <figcaption>
-      {n !== undefined && <span class="case-clip__n">Fig. {n}</span>}
       <span>{caption}</span>
       <span class="case-clip__len">{length}</span>
     </figcaption>
@@ -78,7 +76,6 @@ const length = clipLength(v.duration);
     color: var(--case-soft);
   }
 
-  .case-clip__n,
   .case-clip__len {
     flex: none;
     font: 400 0.6875rem / 1.9 font-family(fraktion);
