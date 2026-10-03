@@ -150,3 +150,52 @@ the player need t-case, screenshots, and `shots.mjs` for any changed first scree
   - The descent is 400svh: Earth disc (agy-image, the Americas side) → horizon →
     clouds → sky → meadow; `GrassField.ts` canvas in the meadow, blades off the path.
   - Harness: paradise phase 4.4 screens; new `grass-pointer` phase (desktop only).
+
+## v6 round (2026-10-03 night, owner asleep)
+Plan: `~/.claude/plans/glittery-whistling-moon.md` (X1-X8). Owner's choices: WORK as on
+Vercel with the constellation as its entrance; a full-screen flash for the explosion;
+painted ground with restyled grass; the live Zyp hero; the wall dissolving into stars
+before the Earth; picker stopped; a clean branch for the Vercel preview.
+
+### Required changes from the plan review (Opus, 2026-10-03)
+- R1 colours: `theme-contrasted` on `.s-work` and on the dive layer; home backgrounds
+  `var(--color-space)` (the anime theme's primary is near-black).
+- R2 overlap: `.s-work` on the home starts one screen early (`margin-top:-100svh`,
+  z-index 4 below 640 px), transparent until the hand-off (`is-on`), no `::before` line.
+- R3 iOS: on the home the container is `position:sticky`, no `pinTrigger`; the timeline
+  ends at `bottom top+=<container height>`.
+- R4 no global refresh: static CSS section height `(100+140+n*80+60)svh` (72 below
+  576 px), no `--height` write; refresh only the section's own trigger.
+- R5 inputs: pause through `gsap.ticker.add/remove`; rAF instead of `Ticker.nextTick`;
+  its own IntersectionObserver; `safeWidth/safeHeight` fallbacks; never `Ticker.init()`
+  on the home.
+- R6 covers: `prepareCoverWindow` only when near; `prepareCover` forgets a rejected decode.
+- R7 ordinals and data: remove the index, `#key`, dive index and eyebrow; accent from
+  `data-accent`, blurb from `data-blurb`; the home adapter supplies palette, poster and
+  size for all seven; covers capped at 1280 or with a srcset.
+- R8 the dive stops and restarts Lenis; t-dive wheels during a dive on `/`.
+- R9 `returnScrollY`: the home reads and restores it after `worksReady`.
+- R10 hand-off: `showWorkStack` re-exported from the tunnel side; space star layers dim to
+  0 at progress 1.
+- R11 harness: detect the home by `.rocket-flight`, `.s-work` on both routes, dive phase
+  on the home. Before any X3 measurement.
+- R12 tests: t-work cover regex and index drop; t-anime WORK checks on the tunnel
+  markup; t-dive on `/` waits for `is-works-ready`.
+- R13 explosion: one paused timeline, played on a downward crossing only, end state on a
+  jump, reset below CRASH_AT − 0.02; flash is an `inset:0` opacity-only layer; burst ring
+  and disc wipe deleted; the black layer ≥ 0.9 by progress 0.9; Constellation loses the
+  sparks, `impactAt` and the warm band, blank threshold to 0.9; keep `.js-rocket-impact`;
+  new check: shards and flash at opacity 0 1.6 s after the crossing.
+- R14 invariant 4: no caller of destroy() on the home; resize adding 0 listeners is the
+  measured guarantee, or a `pagehide` handler.
+- R15 Zyp: the frame count is 97 (frame-count.json), not 120; no n/97 counter.
+- R16 X8: exclude `public/resume.pdf` and CLAUDE.md (Tailscale IP, Mac path) from the
+  public preview commit.
+- Simplifications to take: WorkSection self-contained (own scroll/resize); the stack
+  measured from `.s__title .js-letter` rects; the tunnel mask SVG paints nothing (drop it
+  on the home in its own commit); the X4 dissolve drawn on the tunnel's own `.s__canvas`
+  in a home-only DISSOLVE segment after END_HOLD.
+
+### v6 progress
+- X1 0ce0ee8: the owner's picks pinned; the duplicate certificate removed; picker
+  stopped (`systemctl --user stop portfolio-picker`).
