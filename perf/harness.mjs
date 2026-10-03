@@ -1095,12 +1095,13 @@ async function main() {
         result.notes.push("space phases skipped: .rocket-flight or .anime-work not found.");
       }
 
-      // The timeline: the descent from space onto the meadow (clouds, the
-      // sky settling, the meadow rising, the rays turning) and the first
-      // stretch of the walk with the firefly and the swaying grass.
+      // The timeline: the descent from space onto the meadow (the Earth and
+      // its horizon, clouds, the sky settling, the meadow rising, the rays
+      // turning) and the first stretch of the walk with the firefly and the
+      // swaying grass. The descent is four screens since v5 (400svh).
       if (anchors.paradise) {
         const from = Math.min(anchors.paradise.top, geom.maxScroll);
-        const to = Math.min(anchors.paradise.top + Math.round(anchors.vh * 3.2), geom.maxScroll);
+        const to = Math.min(anchors.paradise.top + Math.round(anchors.vh * 4.4), geom.maxScroll);
         // A long jump right after the space phases can land while Lenis is
         // still easing toward its last target, which takes the page back;
         // jump again until the page is where it was sent.
@@ -1112,6 +1113,34 @@ async function main() {
         }
         await runPhase("paradise-down", () => wheelBy(to - from), { from, to });
         await runPhase("paradise-up", () => wheelBy(from - to), { from: to, to: from });
+        // The pointer through the grass at the front of the meadow, held at
+        // the end of the descent (GrassField.ts): three sweeps across the
+        // lowest band of the screen. A phone has no pointer to sweep.
+        if (!MOBILE) {
+          const held = Math.min(anchors.paradise.top + Math.round(anchors.vh * 3), geom.maxScroll);
+          for (let attempt = 0; attempt < 4; attempt++) {
+            await settleScroll();
+            await jumpTo(held);
+            const at = await page.evaluate(() => window.scrollY);
+            if (Math.abs(at - held) <= 8) break;
+          }
+          const vw = await page.evaluate(() => window.innerWidth);
+          await runPhase(
+            "grass-pointer",
+            async () => {
+              const y = anchors.vh - 50;
+              for (let lap = 0; lap < 3; lap++) {
+                for (let i = 0; i <= 40; i++) {
+                  const t = lap % 2 ? 1 - i / 40 : i / 40;
+                  await page.mouse.move(80 + t * (vw - 160), y + 18 * Math.sin(i / 3));
+                  await sleep(STEP_MS);
+                }
+              }
+              await sleep(1600); // the blades spring back, then the loop stops
+            },
+            { from: held, to: held },
+          );
+        }
       } else {
         result.notes.push("paradise phases skipped: .paradise not found.");
       }

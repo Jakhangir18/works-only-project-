@@ -7,9 +7,12 @@ import { timeline, KIND_LABEL, span } from "../data/timeline";
  * timeline lying on the grass.
  *
  * Two parts:
- *   1. The descent: a sticky stage where the space black thins out, the
- *      painted morning sky comes up, clouds rush past and the meadow rises
- *      into place with its path running to the sun. Then the title.
+ *   1. The descent (the owner, 2026-10-03: space, then the Earth, then the
+ *      grass): a sticky stage where the planet grows out of the dark, its
+ *      horizon comes up, the painted morning sky takes over, clouds rush
+ *      past and the meadow rises into place with its path running to the
+ *      sun. Then the title. The grass at the front of the meadow is a
+ *      canvas the pointer presses down (GrassField.ts).
  *   2. The walk: the meadow goes on down the page, and the path winds through
  *      it from 2022 at the top to now at the bottom, a signpost at every
  *      stop. A firefly walks the path with the reader; the grass at its
@@ -19,8 +22,9 @@ import { timeline, KIND_LABEL, span } from "../data/timeline";
  * transform and an opacity each, through writeIfChanged, only inside their
  * windows) and the firefly's transform. The path is computed here at build
  * time and handed to the controller as sampled points, so nothing is
- * sampled in the browser. The sky is a painting generated for this page
- * (agy-image, 2026-10-02); the meadow, hills, path and grass are vector.
+ * sampled in the browser. The sky (2026-10-02) and the Earth (2026-10-03)
+ * are paintings generated for this page with agy-image; the meadow, hills
+ * and path are vector.
  */
 
 const stops = timeline
@@ -108,6 +112,20 @@ const SKY_H = 768;
 <section class="paradise" id="timeline" aria-labelledby="paradise-title">
   <div class="paradise__descent js-par-descent">
     <div class="paradise__stage" aria-hidden="true">
+      {/* The planet, then its horizon: laid out at their largest and scaled
+          down at the start, so they only ever downsample (invariant 7). */}
+      <img class="paradise__earth js-par-earth" src="/paradise/earth-disc.webp" alt="" width="1024" height="1024" loading="lazy" decoding="async" />
+      <img
+        class="paradise__horizon js-par-horizon"
+        src="/paradise/earth-horizon.webp"
+        srcset="/paradise/earth-horizon-tall.webp 768w, /paradise/earth-horizon.webp 1376w"
+        sizes="(max-aspect-ratio: 3/4) 768px, 1376px"
+        alt=""
+        width="1376"
+        height="768"
+        loading="lazy"
+        decoding="async"
+      />
       <img
         class="paradise__sky js-par-sky"
         src="/paradise/sky-wide.webp"
@@ -126,7 +144,8 @@ const SKY_H = 768;
       <div class="paradise__cloud paradise__cloud--b js-par-cloud" data-x="22" data-speed="1.25"></div>
       <div class="paradise__cloud paradise__cloud--c js-par-cloud" data-x="-4" data-speed="1.5"></div>
 
-      <svg class="paradise__meadow js-par-meadow" viewBox="0 0 1440 520" preserveAspectRatio="xMidYMax slice" focusable="false">
+      <div class="paradise__ground js-par-meadow">
+      <svg class="paradise__meadow" viewBox="0 0 1440 520" preserveAspectRatio="xMidYMax slice" focusable="false">
         <defs>
           <linearGradient id="par-far" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0" stop-color="#79b79a" />
@@ -157,6 +176,10 @@ const SKY_H = 768;
         <path fill="#3f8a3c" d="M0 520 L0 470 C 14 488 20 448 28 472 C 36 440 44 476 52 456 C 60 482 70 444 78 470 C 90 450 96 484 106 466 C 118 492 124 456 134 480 C 146 460 150 494 160 520 Z" />
         <path fill="#3f8a3c" d="M1440 520 L1440 466 C 1426 486 1420 450 1412 474 C 1404 446 1396 478 1388 458 C 1380 486 1370 448 1362 472 C 1350 454 1344 486 1334 468 C 1322 494 1316 458 1306 482 C 1294 462 1290 494 1280 520 Z" />
       </svg>
+      {/* The grass the pointer presses down, inside the meadow's box so the
+          meadow's rise carries it. */}
+      <canvas class="paradise__grass js-par-grass" width="0" height="0"></canvas>
+      </div>
 
       <div class="paradise__title js-par-title">
         <p class="paradise__kicker">Timeline</p>
@@ -234,7 +257,7 @@ const SKY_H = 768;
 
   .paradise__descent {
     position: relative;
-    height: 300svh;
+    height: 400svh;
   }
 
   .paradise__stage {
@@ -248,6 +271,36 @@ const SKY_H = 768;
       radial-gradient(circle, rgba(255, 255, 255, 0.7) 0.6px, transparent 1.3px) 17px 23px / 137px 149px,
       radial-gradient(circle, rgba(255, 217, 168, 0.55) 0.8px, transparent 1.6px) 89px 61px / 211px 173px,
       color(space);
+  }
+
+  /* The planet, laid out at its largest (about 1.2 times the screen's short
+     side, well under the review's cap of 1.2 diagonals) and scaled down from
+     there; a radial mask keeps its painted black square out of the stars. */
+  .paradise__earth {
+    position: absolute;
+    left: 50%;
+    top: 52%;
+    width: min(120vmin, 1024px);
+    height: min(120vmin, 1024px);
+    margin: calc(min(120vmin, 1024px) / -2) 0 0 calc(min(120vmin, 1024px) / -2);
+    mask-image: radial-gradient(circle, #000 0 58%, transparent 70.5%);
+    -webkit-mask-image: radial-gradient(circle, #000 0 58%, transparent 70.5%);
+    opacity: 0;
+    will-change: transform, opacity;
+  }
+
+  /* The horizon, laid out a fifth larger than the stage all round and
+     scaled down to it at the start; as the camera drops it grows back to
+     its own size and rises. */
+  .paradise__horizon {
+    position: absolute;
+    inset: -20%;
+    width: 140%;
+    height: 140%;
+    object-fit: cover;
+    object-position: 50% 60%;
+    opacity: 0;
+    will-change: transform, opacity;
   }
 
   .paradise__sky {
@@ -307,14 +360,35 @@ const SKY_H = 768;
     pointer-events: none;
   }
 
+  .paradise__ground {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 46%;
+    transform: translate3d(0, 105%, 0);
+    will-change: transform;
+  }
+
   .paradise__meadow {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* The front of the meadow: the blades stand in the lowest third. Its own
+     layer: drawn into the meadow's layer, every redraw of the blades made
+     the whole meadow SVG raster again, and a phone at 4x CPU spent 30-40
+     long tasks on one descent (traced 2026-10-03: 0 with the canvas
+     hidden). */
+  .paradise__grass {
     position: absolute;
     left: 0;
     right: 0;
     bottom: 0;
     width: 100%;
-    height: 46%;
-    transform: translate3d(0, 105%, 0);
+    height: 34%;
     will-change: transform;
   }
 
@@ -626,10 +700,12 @@ const SKY_H = 768;
       opacity: 1;
     }
 
-    .paradise__meadow {
+    .paradise__ground {
       transform: none;
     }
 
+    .paradise__earth,
+    .paradise__horizon,
     .paradise__rays,
     .paradise__firefly,
     .paradise__cloud {

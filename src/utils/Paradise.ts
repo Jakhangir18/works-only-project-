@@ -1,15 +1,22 @@
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { writeIfChanged, forgetLeaf } from "./leafWrite";
+import { initGrass, resizeGrass, placeGrass, destroyGrass } from "./GrassField";
 
 /**
  * The timeline's descent and walk.
  *
- * The descent: one ScrollTrigger over the sticky stage's wrapper. The sky
- * fades in and settles from a little low and a little large; three cloud
- * banks rush up past the camera; the meadow rises into place; the title
- * comes in last. Each layer is one transform and one opacity, written
- * through writeIfChanged, so outside its window a layer is not written.
+ * The descent: one ScrollTrigger over the sticky stage's wrapper. The Earth
+ * grows out of the dark and gives way to its horizon, which rises as the
+ * camera drops; the sky fades in over it and settles from a little low and
+ * a little large; three cloud banks rush up past the camera; the meadow
+ * rises into place; the title comes in last. Each layer is one transform
+ * and one opacity, written through writeIfChanged, so outside its window a
+ * layer is not written. The planet and the horizon are laid out at their
+ * largest and only ever scaled down (invariant 7).
+ *
+ * The grass at the front of the meadow is GrassField.ts: this controller
+ * tells it where the stage and the meadow are.
  *
  * The walk: a firefly rides the trail with the reader. The trail was sampled
  * at build time (AnimeParadise.astro hands the points over in data
@@ -21,12 +28,21 @@ import { writeIfChanged, forgetLeaf } from "./leafWrite";
  * pauses them with the tab.
  */
 
-const SKY_IN = [0.04, 0.38] as const;
-const SKY_SETTLE = [0.04, 0.78] as const;
-const RAYS_IN = [0.4, 0.75] as const;
-const CLOUDS = [0.08, 0.6] as const;
-const MEADOW = [0.42, 0.84] as const;
-const TITLE = [0.8, 0.93] as const;
+const EARTH_GROW = [0.0, 0.26] as const;
+const EARTH_OUT = [0.2, 0.25] as const;
+/* The planet's scale at the start, against its laid-out size. */
+const EARTH_FROM = 0.38;
+const HORIZON_IN = [0.19, 0.25] as const;
+const HORIZON_DROP = [0.2, 0.5] as const;
+const HORIZON_OUT = [0.42, 0.52] as const;
+/* The horizon's scale at the start, against its laid-out 140%. */
+const HORIZON_FROM = 1 / 1.4;
+const SKY_IN = [0.38, 0.52] as const;
+const SKY_SETTLE = [0.38, 0.86] as const;
+const RAYS_IN = [0.55, 0.85] as const;
+const CLOUDS = [0.34, 0.72] as const;
+const MEADOW = [0.6, 0.9] as const;
+const TITLE = [0.88, 0.96] as const;
 const NARROW_BELOW = 768;
 
 let descentTrigger: ScrollTrigger | null = null;
@@ -37,6 +53,11 @@ let section: HTMLElement | null = null;
 let sky: HTMLElement | null = null;
 let rays: HTMLElement | null = null;
 let meadow: HTMLElement | null = null;
+let earth: HTMLElement | null = null;
+let horizon: HTMLElement | null = null;
+let grass: HTMLCanvasElement | null = null;
+/* The meadow box's height, for the grass's pointer mapping. */
+let groundH = 0;
 let title: HTMLElement | null = null;
 let clouds: { el: HTMLElement; x: number; speed: number }[] = [];
 let walk: HTMLElement | null = null;
@@ -60,8 +81,20 @@ function parse(data: string | undefined): [number, number][] {
   });
 }
 
+/* Where the descent's stage is on screen at a scroll position: held at the
+   top inside the trigger, scrolling with the page outside it. Arithmetic on
+   the trigger's cached range; the grass maps a pointer through it. */
+function stageTopAt(scroll: number): number {
+  if (!descentTrigger) return 0;
+  if (scroll < descentTrigger.start) return descentTrigger.start - scroll;
+  if (scroll > descentTrigger.end) return descentTrigger.end - scroll;
+  return 0;
+}
+
 function measure(): void {
   narrow = window.innerWidth < NARROW_BELOW;
+  if (meadow) groundH = meadow.offsetHeight;
+  resizeGrass();
   if (walk) walkW = walk.clientWidth;
   const trail = walk?.querySelector<SVGSVGElement>(narrow ? ".paradise__trail--narrow" : ".paradise__trail--wide");
   // The firefly is laid out at the trail's top-left, so the trail's own
@@ -70,6 +103,18 @@ function measure(): void {
 }
 
 function applyDescent(p: number): void {
+  if (earth) {
+    const grow = easeOut(ramp(p, EARTH_GROW[0], EARTH_GROW[1]));
+    const scale = EARTH_FROM + (1 - EARTH_FROM) * grow;
+    writeIfChanged(earth, "transform", `translate3d(0, ${((1 - grow) * 8).toFixed(2)}vh, 0) scale(${scale.toFixed(4)})`);
+    writeIfChanged(earth, "opacity", (ramp(p, 0, 0.04) * (1 - ramp(p, EARTH_OUT[0], EARTH_OUT[1]))).toFixed(3));
+  }
+  if (horizon) {
+    const drop = easeOut(ramp(p, HORIZON_DROP[0], HORIZON_DROP[1]));
+    const scale = HORIZON_FROM + (1 - HORIZON_FROM) * drop;
+    writeIfChanged(horizon, "transform", `translate3d(0, ${(-drop * 12).toFixed(2)}%, 0) scale(${scale.toFixed(4)})`);
+    writeIfChanged(horizon, "opacity", (ramp(p, HORIZON_IN[0], HORIZON_IN[1]) * (1 - ramp(p, HORIZON_OUT[0], HORIZON_OUT[1]))).toFixed(3));
+  }
   if (sky) {
     const settle = easeOut(ramp(p, SKY_SETTLE[0], SKY_SETTLE[1]));
     writeIfChanged(sky, "opacity", ramp(p, SKY_IN[0], SKY_IN[1]).toFixed(3));
@@ -87,7 +132,9 @@ function applyDescent(p: number): void {
     writeIfChanged(cloud.el, "opacity", live ? Math.sin(Math.PI * t).toFixed(3) : "0");
   }
 
-  if (meadow) writeIfChanged(meadow, "transform", `translate3d(0, ${((1 - easeOut(ramp(p, MEADOW[0], MEADOW[1]))) * 105).toFixed(2)}%, 0)`);
+  const down = (1 - easeOut(ramp(p, MEADOW[0], MEADOW[1]))) * 105;
+  if (meadow) writeIfChanged(meadow, "transform", `translate3d(0, ${down.toFixed(2)}%, 0)`);
+  placeGrass((down / 100) * groundH);
 
   if (title) {
     const t = ramp(p, TITLE[0], TITLE[1]);
@@ -117,6 +164,9 @@ export function initParadise(): void {
   sky = document.querySelector<HTMLElement>(".js-par-sky");
   rays = document.querySelector<HTMLElement>(".js-par-rays");
   meadow = document.querySelector<HTMLElement>(".js-par-meadow");
+  earth = document.querySelector<HTMLElement>(".js-par-earth");
+  horizon = document.querySelector<HTMLElement>(".js-par-horizon");
+  grass = document.querySelector<HTMLCanvasElement>(".js-par-grass");
   title = document.querySelector<HTMLElement>(".js-par-title");
   clouds = [...document.querySelectorAll<HTMLElement>(".js-par-cloud")].map((el) => ({
     el,
@@ -142,6 +192,9 @@ export function initParadise(): void {
   );
   stops.forEach((stop) => stopObserver?.observe(stop));
 
+  // Under reduced motion the grass is one still drawing.
+  if (grass) initGrass(grass, () => stageTopAt(window.scrollY));
+
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
   liveObserver = new IntersectionObserver(
@@ -160,7 +213,10 @@ export function initParadise(): void {
     start: "top top",
     end: "bottom bottom",
     onUpdate: (self) => applyDescent(self.progress),
-    onRefresh: (self) => applyDescent(self.progress),
+    onRefresh: (self) => {
+      measure();
+      applyDescent(self.progress);
+    },
   });
   walkTrigger = ScrollTrigger.create({
     trigger: walk,
@@ -184,9 +240,11 @@ export function destroyParadise(): void {
   liveObserver?.disconnect();
   stopObserver?.disconnect();
   liveObserver = stopObserver = null;
-  for (const el of [sky, rays, meadow, title, firefly, ...clouds.map((c) => c.el)]) if (el) forgetLeaf(el);
+  destroyGrass();
+  for (const el of [earth, horizon, sky, rays, meadow, title, firefly, ...clouds.map((c) => c.el)]) if (el) forgetLeaf(el);
   section?.classList.remove("is-live");
-  section = sky = rays = meadow = title = walk = firefly = null;
+  section = sky = rays = meadow = title = walk = firefly = earth = horizon = null;
+  grass = null;
   clouds = [];
   trails = { wide: [], narrow: [] };
 }

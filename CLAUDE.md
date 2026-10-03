@@ -206,6 +206,18 @@ hairline border or an inset highlight instead.
 *Was broken by:* the first WORK carousel: 133-163 frames over 50 ms per work phase
 on the desktop, 4-11 with a hairline.
 
+### 13. A canvas redraws only on interaction, and on its own layer
+
+A 2D canvas is rasterised when its frame commits, so a redraw costs commit time
+on the main thread; inside another element's layer it also makes that whole
+layer raster again. Give an animated canvas its own layer (`will-change:
+transform`), and redraw it only while something it shows moves: a pointer, a
+progress value. Never redraw it per scrolled frame for decoration.
+
+*Was broken by:* the v5 grass (GrassField.ts), leaned by scroll speed and drawn
+inside the meadow's layer: a phone at 4x CPU took 30-38 long tasks per descent
+(0 with the canvas hidden). Own layer: 20. No scroll redraw: 0.
+
 ---
 
 ## Performance budgets
