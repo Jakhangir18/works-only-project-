@@ -82,7 +82,7 @@ function rng(seed: number): () => number {
 }
 
 function letterFont(): string {
-  return `400 ${stack.size}px ${family}`;
+  return `700 ${stack.size}px ${family}`;
 }
 
 /* The alphabetic baseline that puts a glyph's line box centred on y, the

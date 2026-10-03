@@ -2,7 +2,7 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { WIPE_STARTS } from "./RocketFlight";
 import { writeIfChanged, forgetLeaf } from "./leafWrite";
-import { showWorkStack } from "./WorkRows";
+import { showWorkStack } from "./WorkSection";
 import {
   initConstellation,
   resizeConstellation,
@@ -48,8 +48,9 @@ const FAR_TRAVEL = 0.15;
    ones first, the near ones last, both fully there as the wipe completes. */
 const FAR_IN = [0.9, 1] as const;
 const NEAR_IN = [0.95, 1] as const;
-/* While the constellation gathers, both layers settle to the brightness of
-   the static tail the work section paints at its top. */
+/* While the constellation gathers, both layers settle to a faint field, and
+   they are gone by the hand-off: WORK's black, scrolling up behind its
+   letters, has no stars in it, so none may be left to end at its edge. */
 const SETTLED = 0.15;
 
 let trigger: ScrollTrigger | null = null;
@@ -106,7 +107,7 @@ function apply(): void {
   // pixels, take over in the same frame.
   showWorkStack(spaceP >= 1);
   const moved = ramp(spaceP, moveFrom, 1);
-  const dim = 1 - (1 - SETTLED) * ramp(spaceP, gatherStart(), 0.93);
+  const dim = (1 - (1 - SETTLED) * ramp(spaceP, gatherStart(), 0.93)) * (1 - ramp(spaceP, 0.93, 1));
   if (far) place(far, FAR_TRAVEL * moved, ramp(rocketP, FAR_IN[0], FAR_IN[1]) * dim);
   if (near) place(near, NEAR_TRAVEL * moved, ramp(rocketP, NEAR_IN[0], NEAR_IN[1]) * dim);
 }

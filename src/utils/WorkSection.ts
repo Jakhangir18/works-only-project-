@@ -1,5 +1,6 @@
 import Emitter from "./Emitter";
 import Ticker from "./Ticker";
+import { WorkDust } from "./WorkDust";
 
 import { gsap } from "gsap";
 import { SlowMo } from "gsap/EasePack";
@@ -21,12 +22,42 @@ function shadowOpacity(state: number): string {
 const DESKTOP_WORK_STEP_VH = 80;
 const MOBILE_WORK_STEP_VH = 72;
 const END_HOLD_VH = 60;
+/* Home only: after the hold, the wall dissolves into stars (WorkDust.ts).
+   SWork.astro's height on the home counts it. */
+const DISSOLVE_VH = 100;
 const MOBILE_BREAKPOINT = 576;
 const WORK_LANES = [0, -1, 1, -0.5, 0.75] as const;
 
 const isSafariBrowser = /^((?!chrome|android).)*safari/i.test(
   navigator.userAgent,
 );
+
+/*
+ * On the anime home (`.s-work--home`) there is no SiteController: no Emitter
+ * scroll, resize or tick, no siteLoaded, no window.safeWidth. There the
+ * section keeps its own passive listeners, runs on the GSAP ticker directly,
+ * and leaves the layer tree a screen away (`is-far`, invariant 11). Its
+ * container sticks with CSS instead of a pin, and its height is static CSS
+ * (SWork.astro), so nothing here writes the section's height.
+ */
+
+let stackShown: boolean | null = null;
+let homeSection: HTMLElement | null | undefined;
+
+/**
+ * The star field's hand-off (Space.ts): the field draws WORK's opening stack
+ * itself until its section lets go, then the tunnel's own letters, on the
+ * same pixels, take over in the same frame.
+ */
+export function showWorkStack(on: boolean): void {
+  if (on === stackShown) return;
+  if (homeSection === undefined) {
+    homeSection = document.querySelector<HTMLElement>(".s-work--home");
+  }
+  if (!homeSection) return;
+  stackShown = on;
+  homeSection.classList.toggle("is-on", on);
+}
 
 class Section {
   el: HTMLElement;
@@ -80,6 +111,7 @@ class Section {
     pointsProgress: number;
     state: number;
     scrollProgress: number | null;
+    dissolve: number;
   };
   scrollProgress: number;
   smoothScrollProgress: number;
@@ -88,6 +120,15 @@ class Section {
   speed: number;
   isPaused: boolean;
   activeWorkIndex: number;
+  /** The anime home: see the note above showWorkStack. */
+  home: boolean;
+  /** Home only: within a screen of the viewport. */
+  near = false;
+  abort: AbortController | null = null;
+  observer: IntersectionObserver | null = null;
+  /** Home only: the dissolve segment's progress, and what draws it. */
+  dissolve = 0;
+  dust: WorkDust | null = null;
 
   constructor() {
     if (isSafariBrowser) {
@@ -95,6 +136,7 @@ class Section {
     }
 
     this.el = document.querySelector(".s-work");
+    this.home = this.el.classList.contains("s-work--home");
     this.container = this.el.querySelector(".js-container");
     this.ruler = this.el.querySelector(".js-ruler");
     this.scene = this.container.querySelector(".js-scene");
@@ -132,14 +174,35 @@ class Section {
       pointsProgress: 0,
       state: 0,
       scrollProgress: null,
+      dissolve: 0,
     };
     this.isPaused = true;
     this.activeWorkIndex = -1;
 
+    const dustCanvas = this.home
+      ? this.container.querySelector<HTMLCanvasElement>(".js-dust")
+      : null;
+    const stars = this.home
+      ? this.container.querySelector<HTMLElement>(".js-stars")
+      : null;
+    if (dustCanvas && stars) {
+      this.dust = new WorkDust(dustCanvas, this.scene, stars, () =>
+        this.letters.flatMap((letter: any) =>
+          letter.ghosts.map((ghost: any) => ({
+            el: ghost.el,
+            letter: letter.el.innerText,
+          })),
+        ),
+      );
+    }
+
     // Defer the heavy DOM work until fonts and the base page are ready.
     const doInit = () => {
       if (document.readyState === "complete") {
-        Ticker.nextTick(this.init, this);
+        if (this.home) requestAnimationFrame(() => this.init());
+        else Ticker.nextTick(this.init, this);
+      } else if (this.home) {
+        window.addEventListener("load", () => this.init(), { once: true });
       } else {
         Emitter.once("siteLoaded", this.init, this);
       }
@@ -172,19 +235,77 @@ class Section {
     this.setTimeline();
     this.bindEvents();
 
-    ScrollTrigger.refresh();
+    this.refresh();
     this.tick();
 
     // Safari can settle layout a frame late, so refresh once more.
     if (isSafariBrowser) {
-      setTimeout(() => ScrollTrigger.refresh(), 400);
+      setTimeout(() => this.refresh(), 400);
     }
 
     document.documentElement.classList.add("is-works-ready");
     Emitter.emit("worksReady");
   }
 
+  /**
+   * The tunnel refreshes every trigger on the page; on the home, where the
+   * other sections are measured already, only this section's own.
+   */
+  refresh() {
+    if (this.home) this.tl?.scrollTrigger?.refresh();
+    else ScrollTrigger.refresh();
+  }
+
+  /** The stage's size: the sticky container on the home. */
+  viewWidth(): number {
+    if (this.home) return this.container.clientWidth;
+    return (window as any).safeWidth || window.innerWidth;
+  }
+
+  viewHeight(): number {
+    if (this.home) return this.container.clientHeight;
+    return (window as any).safeHeight || window.innerHeight;
+  }
+
+  onTick = () => this.tick();
+
+  bindHomeEvents() {
+    this.abort = new AbortController();
+    const { signal } = this.abort;
+    window.addEventListener(
+      "scroll",
+      () => {
+        this.scrollY = window.scrollY;
+      },
+      { passive: true, signal },
+    );
+    window.addEventListener("resize", () => this.onResize(true, true), {
+      passive: true,
+      signal,
+    });
+
+    // One screen of margin: the tick and the 3D layers run only near the
+    // viewport, and the first covers are fetched only then, not at load.
+    this.observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          this.near = entry.isIntersecting;
+          this.el.classList.toggle("is-far", !this.near);
+          this.setPausedState(!this.near);
+          if (this.near && this.activeWorkIndex < 0) this.prepareCoverWindow(0);
+        }
+      },
+      { rootMargin: "100% 0px" },
+    );
+    this.observer.observe(this.el);
+  }
+
   bindEvents() {
+    if (this.home) {
+      this.bindHomeEvents();
+      return;
+    }
+
     Emitter.on("contrastchange", this.setCtxStyle, this);
     Emitter.on("resize", this.onResize, this);
     Emitter.on("scroll", this.onScroll, this);
@@ -207,7 +328,10 @@ class Section {
 
     this.isPaused = isPaused;
 
-    if (this.isPaused) {
+    if (this.home) {
+      if (this.isPaused) gsap.ticker.remove(this.onTick);
+      else gsap.ticker.add(this.onTick);
+    } else if (this.isPaused) {
       Emitter.off("tick", this.tick, this);
     } else {
       Emitter.on("tick", this.tick, this);
@@ -225,6 +349,15 @@ class Section {
       // Debounce (200ms) to avoid jank on iOS Safari resize events.
       if (this.resizeTimer) clearTimeout(this.resizeTimer);
       this.resizeTimer = setTimeout(() => {
+        // The home's container is 100svh: a phone's toolbar moving changes
+        // innerHeight, not the stage, and rebuilds nothing.
+        if (
+          this.home &&
+          this.container.clientWidth === this.bounding.width &&
+          this.container.clientHeight === this.bounding.height
+        ) {
+          return;
+        }
         this.setCtxStyle();
         this.setSize();
         this.setMask();
@@ -232,7 +365,7 @@ class Section {
         this.setLetters();
         this.setWorks();
         this.setTimeline();
-        ScrollTrigger.refresh();
+        this.refresh();
       }, 200);
     }
   }
@@ -246,6 +379,10 @@ class Section {
     // Cached because setSize() has to be able to re-apply it synchronously,
     // and the read is the expensive half.
     this.strokeColor = color;
+    if (this.home) {
+      this.ctx.strokeStyle = color;
+      return;
+    }
     Ticker.nextTick(() => {
       this.ctx.strokeStyle = color;
     });
@@ -253,24 +390,26 @@ class Section {
 
   setSize() {
     // Use px instead of vh/lvh to avoid iOS address-bar resize jitter.
-    const unitHeight = (window as any).safeHeight || window.innerHeight;
-    const workStepVh =
-      ((window as any).safeWidth || window.innerWidth) < MOBILE_BREAKPOINT
-        ? MOBILE_WORK_STEP_VH
-        : DESKTOP_WORK_STEP_VH;
-    const pinDistanceVh =
-      INTRO_VH + this.works.length * workStepVh + END_HOLD_VH;
-    this.el.style.setProperty(
-      "--height",
-      (unitHeight * (100 + pinDistanceVh)) / 100 + "px",
-    );
+    if (!this.home) {
+      const unitHeight = (window as any).safeHeight || window.innerHeight;
+      const workStepVh =
+        ((window as any).safeWidth || window.innerWidth) < MOBILE_BREAKPOINT
+          ? MOBILE_WORK_STEP_VH
+          : DESKTOP_WORK_STEP_VH;
+      const pinDistanceVh =
+        INTRO_VH + this.works.length * workStepVh + END_HOLD_VH;
+      this.el.style.setProperty(
+        "--height",
+        (unitHeight * (100 + pinDistanceVh)) / 100 + "px",
+      );
+    }
 
     const bounding = this.container.getBoundingClientRect();
     this.bounding = {
       left: bounding.left,
       top: bounding.top,
-      width: (window as any).safeWidth,
-      height: (window as any).safeHeight,
+      width: this.viewWidth(),
+      height: this.viewHeight(),
     };
 
     // Cache the section's absolute position so tick() can derive scroll
@@ -294,6 +433,7 @@ class Section {
     // synchronously and where it is destroyed, is what keeps the grid visible
     // when the page opens straight into Work (returning from a project page).
     if (this.strokeColor) this.ctx.strokeStyle = this.strokeColor;
+    this.dust?.resize(this.bounding.width, this.bounding.height);
 
     this.speed = Math.hypot(this.bounding.width, this.bounding.height) * 4;
 
@@ -306,8 +446,8 @@ class Section {
   setMask() {
     const { mask } = this;
 
-    const width = (window as any).safeWidth || window.innerWidth;
-    const height = (window as any).safeHeight || window.innerHeight;
+    const width = this.viewWidth();
+    const height = this.viewHeight();
 
     mask.width = width;
     mask.height = height;
@@ -403,7 +543,7 @@ class Section {
       letter.freq = 1 + Math.random();
       letter.iy = ((j + 1) / (letters.length + 1) - 0.5) * 2;
 
-      const multiplier = (window as any).safeWidth > 767 ? 0.75 : 0.5;
+      const multiplier = this.viewWidth() > 767 ? 0.75 : 0.5;
       letter.total =
         Math.round((this.bounding.width / letter.width) * multiplier) + 2;
 
@@ -451,6 +591,7 @@ class Section {
         letter.ghosts.push(ghost);
       }
     });
+    this.dust?.forget();
   }
 
   setWorks() {
@@ -482,7 +623,7 @@ class Section {
 
   setTimeline() {
     const { el, container, works, scene, mask } = this;
-    const width = (window as any).safeWidth || window.innerWidth;
+    const width = this.viewWidth();
     const workStepVh =
       width < MOBILE_BREAKPOINT
         ? MOBILE_WORK_STEP_VH
@@ -499,14 +640,16 @@ class Section {
 
     const maskOuter = mask.el.parentElement as HTMLElement;
 
-    this.pinTrigger = ScrollTrigger.create({
-      trigger: el,
-      start: "top top",
-      end: "bottom bottom",
-      pin: container,
-      pinSpacing: false,
-      anticipatePin: 1,
-    });
+    if (!this.home) {
+      this.pinTrigger = ScrollTrigger.create({
+        trigger: el,
+        start: "top top",
+        end: "bottom bottom",
+        pin: container,
+        pinSpacing: false,
+        anticipatePin: 1,
+      });
+    }
 
     // --state is mirrored onto the ghost letters in moveLetters(); writing
     // it here on the scene container would invalidate the whole subtree
@@ -516,10 +659,27 @@ class Section {
       scrollTrigger: {
         trigger: el,
         start: "top top",
-        end: "bottom bottom",
+        // The home's container sticks until the section's bottom meets its
+        // own bottom edge. It is 100svh, and "bottom bottom" would follow
+        // innerHeight, taller on a phone with its toolbar away.
+        end: this.home
+          ? () => `bottom top+=${container.clientHeight}`
+          : "bottom bottom",
         scrub: 1,
-        onUpdate: () => {
-          const rawIndex = Math.floor((tl.time() - INTRO_VH) / workStepVh);
+        // tick() works out the scroll progress from this, without a rect
+        // read per frame; a refresh is where the page above has settled.
+        onRefresh: this.home
+          ? (self) => {
+              this.elAbsTop = self.start;
+            }
+          : undefined,
+        onUpdate: (self) => {
+          // From the scroll's progress, not tl.time(): under scrub the
+          // timeline trails the scroll, and after a jump (a restored offset,
+          // the End key) no later update comes to catch the covers up.
+          const rawIndex = Math.floor(
+            (self.progress * tl.duration() - INTRO_VH) / workStepVh,
+          );
           const activeIndex = Math.max(
             0,
             Math.min(works.length - 1, rawIndex),
@@ -592,9 +752,29 @@ class Section {
     // It has no exit tween inside the pin; release happens at timeline end.
     tl.to({}, { duration: END_HOLD_VH }, workTravelEnd);
 
+    if (this.dust) {
+      // The last card leaves the way the others did, and the wall dissolves.
+      const dissolveAt = workTravelEnd + END_HOLD_VH;
+      const lastWork = works[works.length - 1];
+      if (lastWork) {
+        tl.to(
+          lastWork.el,
+          { attr: { progress: -1 }, duration: DISSOLVE_VH * 0.25, ease: "power1.in" },
+          dissolveAt,
+        );
+      }
+      tl.fromTo(
+        this,
+        { dissolve: 0 },
+        { dissolve: 1, duration: DISSOLVE_VH, ease: "none" },
+        dissolveAt,
+      );
+    }
+
     this.tl = tl;
     this.activeWorkIndex = -1;
-    this.prepareCoverWindow(0);
+    // On the home the first covers wait until the section is near.
+    if (!this.home || this.near) this.prepareCoverWindow(0);
   }
 
   moveLetters() {
@@ -688,10 +868,12 @@ class Section {
 
     const rAnimationProgress = Math.round(animationProgress * 100) / 100;
     const rPointsProgress = Math.round(pointsProgress * 100) / 100;
+    const rDissolve = Math.round(this.dissolve * 100) / 100;
 
     if (
       rPointsProgress === last.pointsProgress &&
-      rAnimationProgress === last.animationProgress
+      rAnimationProgress === last.animationProgress &&
+      rDissolve === last.dissolve
     )
       return;
 
@@ -717,10 +899,18 @@ class Section {
       });
     }
 
+    // On the home the grid comes in with the tunnel instead of appearing on
+    // the hand-off frame, where the star field showed no grid.
+    // It goes again as the wall dissolves.
+    if (this.home) {
+      ctx.globalAlpha =
+        Math.min(1, pointsProgress * 4) * Math.max(0, 1 - rDissolve * 2);
+    }
     ctx.stroke();
 
     last.pointsProgress = rPointsProgress;
     last.animationProgress = rAnimationProgress;
+    last.dissolve = rDissolve;
   }
 
   tick() {
@@ -755,6 +945,7 @@ class Section {
     this.movePoints();
     this.moveLetters();
     this.drawPoints();
+    this.dust?.update(this.dissolve);
   }
 }
 

@@ -1,6 +1,6 @@
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { projects } from "../data/works";
+import { getSmoothScroll } from "./SmoothScroll";
 
 /**
  * Dive-into-image transition for the Work cards.
@@ -128,7 +128,7 @@ type CardReading = {
   coverPosition: string;
   posterMark: string;
   posterMotif: string;
-  indexText: string;
+  blurb: string;
   titleText: string;
   ctaText: string;
   href: string;
@@ -179,15 +179,12 @@ class DiveTransition {
   posterMark!: HTMLElement;
   glow!: HTMLElement;
   vignette!: HTMLElement;
-  indexEl!: HTMLElement;
-  indexText!: HTMLElement;
   titleText!: HTMLElement;
   ctaText!: HTMLElement;
   titleEl!: HTMLElement;
   ctaEl!: HTMLElement;
   frameEl!: HTMLElement;
   teaser!: HTMLElement;
-  teaserEyebrow!: HTMLElement;
   teaserTitle!: HTMLElement;
   teaserBlurb!: HTMLElement;
   teaserLink!: HTMLAnchorElement;
@@ -227,7 +224,9 @@ class DiveTransition {
 
   build() {
     const root = document.createElement("div");
-    root.className = "dive";
+    // The tunnel's colours: the anime home's theme has a near-black primary,
+    // and the dive reads primary for its title and close button.
+    root.className = "dive theme-contrasted";
     root.setAttribute("aria-hidden", "true");
     root.innerHTML = `
       <div class="dive__backdrop"></div>
@@ -249,7 +248,6 @@ class DiveTransition {
               <div class="dive__title"><span></span></div>
             </div>
             <div class="dive__layer dive__layer--fore">
-              <div class="dive__index"><span></span></div>
               <div class="dive__cta"><span></span></div>
               <div class="dive__frame"></div>
             </div>
@@ -260,7 +258,6 @@ class DiveTransition {
       <button class="dive__close" type="button" aria-label="Close">&#10005;</button>
       <div class="dive__teaser">
         <div class="dive__teaser__inner">
-          <p class="dive__teaser__eyebrow"></p>
           <h2 class="dive__teaser__title"></h2>
           <p class="dive__teaser__blurb"></p>
           <a class="dive__teaser__link" href="/">View full project &#8594;</a>
@@ -282,17 +279,14 @@ class DiveTransition {
     this.posterMark = q(".dive__poster-mark");
     this.glow = q(".dive__glow");
     this.vignette = q(".dive__vignette");
-    this.indexEl = q(".dive__index");
     this.titleEl = q(".dive__title");
     this.ctaEl = q(".dive__cta");
     // The text lives in a span so it can carry the same plate the card's text
     // carries. The colour stays on the block, as it does on the card.
-    this.indexText = q(".dive__index span");
     this.titleText = q(".dive__title span");
     this.ctaText = q(".dive__cta span");
     this.frameEl = q(".dive__frame");
     this.teaser = q(".dive__teaser");
-    this.teaserEyebrow = q(".dive__teaser__eyebrow");
     this.teaserTitle = q(".dive__teaser__title");
     this.teaserBlurb = q(".dive__teaser__blurb");
     this.teaserLink = q<HTMLAnchorElement>(".dive__teaser__link");
@@ -442,7 +436,6 @@ class DiveTransition {
     const { scale, rotationY } = projectionOf(work);
 
     const coverEl = card.querySelector(".a__card__cover") as HTMLImageElement | null;
-    const indexEl = card.querySelector(".a__card__index") as HTMLElement | null;
     const titleEl = card.querySelector(".a__card__title") as HTMLElement | null;
     const ctaEl = card.querySelector(".a__card__cta") as HTMLElement | null;
 
@@ -458,7 +451,9 @@ class DiveTransition {
       background: card.style.background || "#111111",
       backgroundChannels:
         card.style.getPropertyValue("--card-bg-rgb").trim() || "17, 17, 17",
-      accent: indexEl?.style.color || "#ffffff",
+      // The card's accent and one-line blurb ride on the <a-work> element
+      // (AWork.astro), so the dive needs no copy of the project list.
+      accent: work.dataset.accent || "#ffffff",
       coverSrc:
         work.dataset.coverState === "ready"
           ? coverEl?.currentSrc || coverEl?.src || ""
@@ -466,7 +461,7 @@ class DiveTransition {
       coverPosition: coverEl?.style.objectPosition || "50% 50%",
       posterMark: work.dataset.posterMark || "",
       posterMotif: work.dataset.posterMotif || "crosshair",
-      indexText: indexEl?.textContent?.trim() || "",
+      blurb: work.dataset.blurb || "",
       titleText: titleEl?.textContent?.trim() || "",
       ctaText: ctaEl?.textContent?.trim() || "View project →",
       href,
@@ -562,8 +557,6 @@ class DiveTransition {
     this.glow.style.display = reading.coverSrc ? "none" : "";
     this.glow.style.setProperty("--dive-accent", reading.accent);
 
-    this.indexText.textContent = reading.indexText;
-    this.indexEl.style.color = reading.accent;
     this.titleText.textContent = reading.titleText;
     this.ctaText.textContent = reading.ctaText;
     this.ctaEl.style.color = reading.accent;
@@ -582,11 +575,8 @@ class DiveTransition {
     this.teaser.style.setProperty("--card-bg-rgb", reading.backgroundChannels);
     this.camera.classList.toggle("is-cover-ready", !!reading.coverSrc);
 
-    const project = projects.find((p) => p.site === reading.href);
-    this.teaserEyebrow.textContent = reading.indexText;
-    this.teaserEyebrow.style.color = reading.accent;
-    this.teaserTitle.textContent = project?.title || reading.titleText;
-    this.teaserBlurb.textContent = project?.blurb || "";
+    this.teaserTitle.textContent = reading.titleText;
+    this.teaserBlurb.textContent = reading.blurb;
     this.teaserLink.href = reading.href;
     this.teaserLink.style.color = reading.accent;
 
@@ -1084,6 +1074,9 @@ class DiveTransition {
   lockScroll() {
     this.lockedScrollY = window.scrollY;
     document.documentElement.style.overflow = "hidden";
+    // Lenis (the anime home) scrolls with window.scrollTo, which overflow:
+    // hidden does not stop, and it takes the wheel before the cancels below.
+    getSmoothScroll()?.stop();
 
     // overflow: hidden on <html> is enough on desktop Chrome and Firefox, and
     // Step 0 measured it holding scrollY, the pin and the geometry cache.
@@ -1096,6 +1089,7 @@ class DiveTransition {
 
   unlockScroll() {
     document.documentElement.style.overflow = "";
+    getSmoothScroll()?.start();
     window.removeEventListener("wheel", this.onLockedScroll);
     window.removeEventListener("touchmove", this.onLockedScroll);
 

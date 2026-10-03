@@ -1,4 +1,4 @@
-import { initSmoothScroll } from "./SmoothScroll";
+import { initSmoothScroll, getSmoothScroll } from "./SmoothScroll";
 import { initReveal } from "./Reveal";
 import { initMagnetic } from "./Magnetic";
 
@@ -36,6 +36,20 @@ function ready(): Promise<void> {
   return Promise.all([fonts, firstCoverDecoded()]).then(() => undefined);
 }
 
+function returnToWork(): void {
+  let saved: string | null = null;
+  try {
+    saved = sessionStorage.getItem("returnScrollY");
+    sessionStorage.removeItem("returnScrollY");
+  } catch {
+    return;
+  }
+  const top = saved === null ? NaN : parseInt(saved, 10);
+  if (!Number.isFinite(top)) return;
+  window.scrollTo({ top, behavior: "instant" as ScrollBehavior });
+  getSmoothScroll()?.scrollTo(top, { immediate: true });
+}
+
 function after(ms: number): Promise<void> {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
@@ -59,6 +73,9 @@ export function initAnimeSite(): void {
     // Smooth scroll starts only once the page can be scrolled at all, so its
     // first frame is not spent fighting a locked document.
     initSmoothScroll();
+    // Back from a project opened with WORK's dive: the dive's teaser link
+    // parked the offset it was opened at (DiveTransition.ts).
+    returnToWork();
     // The cover is inert the moment it is transparent, but leaving it in the
     // tree keeps a full-viewport layer alive for nothing.
     window.setTimeout(() => intro?.remove(), 700);

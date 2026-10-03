@@ -312,7 +312,6 @@
   }
 }
 
-.dive__index,
 .dive__cta {
   font: 700 11px / 1 font-family(fraktion);
   text-transform: uppercase;
@@ -322,7 +321,6 @@
    the card at full bleed, and a project's cover can be anything — the clinic's
    is a screenshot of a white web page. One strip per line, in the card's own
    colour, carried in on --card-bg-rgb by fill(). */
-.dive__index span,
 .dive__title span,
 .dive__cta span {
   // Opaque for the same reason as the card's: overlapping strips on a wrapped
@@ -336,10 +334,6 @@
 
 // See AWork: letter-spacing's trailing space is inside the painted box, so the
 // right padding is reduced rather than the margin pulled back.
-.dive__index span {
-  padding-right: calc(0.34em - 0.2em);
-}
-
 .dive__cta span {
   padding-right: calc(0.34em - 0.15em);
 }
@@ -374,13 +368,6 @@
     );
 }
 
-.dive__index {
-  letter-spacing: 0.2em;
-  // Matches .a__card__index. The overlay replaces the card at full strength on
-  // frame one, so a different opacity here is a visible dim on click — and it
-  // would keep the 4.0:1 and 4.2:1 numerals the card just stopped rendering.
-  opacity: 1;
-}
 
 .dive__cta {
   letter-spacing: 0.15em;
@@ -432,14 +419,6 @@
 .dive__teaser__inner {
   max-width: 46rem;
 
-  // Centred on a phone, so the eyebrow's hanging indent has to go: a negative
-  // margin is counted by line-box centring and would shift the numeral off the
-  // axis of the title beneath it.
-  @include mq(phone) {
-    .dive__teaser__eyebrow {
-      margin-left: 0;
-    }
-  }
   margin: 0 auto;
 
   text-align: left;
@@ -449,27 +428,6 @@
   }
 }
 
-.dive__teaser__eyebrow {
-  // Sits at the top of the teaser block, where the wash below has almost run
-  // out, so it gets the same plate the card's numeral gets: measured 1.28:1
-  // over the clinic cover with no plate, 2.26:1 with the deeper wash alone.
-  // inline-block so the plate is the width of the numeral, not the screen.
-  display: inline-block;
-  vertical-align: top;
-  // The negative left margin keeps the numeral flush with the title and blurb
-  // below it; the plate's own padding would otherwise indent it half an em.
-  // Only while the block is left-aligned — on a phone it is centred, and a
-  // negative margin there shifts the numeral off the axis of the title.
-  margin: 0 0 0.75rem -0.5em;
-  // letter-spacing's trailing space is inside the painted box, as on every
-  // other plate here.
-  padding: 0.25em calc(0.5em - 0.2em) 0.25em 0.5em;
-  background: rgb(var(--card-bg-rgb, 17, 17, 17));
-
-  font: 700 11px / 1 font-family(fraktion);
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-}
 
 .dive__teaser__title {
   margin: 0 0 0.75rem;

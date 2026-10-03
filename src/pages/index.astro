@@ -4,9 +4,10 @@ import AnimeHero from "../components/AnimeHero.astro";
 import WhyWorkWithMe from "../components/WhyWorkWithMe.astro";
 import AnimeRocket from "../components/AnimeRocket.astro";
 import AnimeSpace from "../components/AnimeSpace.astro";
-import AnimeWork from "../components/AnimeWork.astro";
+import SWork from "../components/SWork.astro";
 import AnimeParadise from "../components/AnimeParadise.astro";
 import AnimeContact from "../components/AnimeContact.astro";
+import { workCards } from "../data/workCards";
 import "../styles/global.scss";
 ---
 
@@ -68,7 +69,9 @@ import "../styles/global.scss";
         <WhyWorkWithMe />
       </AnimeRocket>
       <AnimeSpace />
-      <AnimeWork />
+      {/* WORK as it was on Vercel: the letter tunnel, entered from the
+          star field, with the seven projects as its cards. */}
+      <SWork items={workCards} home />
       {/* The timeline as a walk: down from space onto a meadow, and along a
           path from 2022 to now. The campus entries are stops on it. */}
       <AnimeParadise />
