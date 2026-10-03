@@ -309,8 +309,9 @@ const start = clipLength(from);
     text-align: center;
   }
 
-  /* A narrow clip (portrait, in a column): the time goes, the rest fits. */
-  @container (max-width: 300px) {
+  /* A narrow clip (portrait, in a column): the time goes, so the seek bar
+     keeps a usable length; the time is still read out on the bar itself. */
+  @container (max-width: 420px) {
     .case-clip__time {
       display: none;
     }
