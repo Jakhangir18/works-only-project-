@@ -25,6 +25,8 @@ const END_HOLD_VH = 60;
 /* Home only: after the hold, the wall dissolves into stars (WorkDust.ts).
    SWork.astro's height on the home counts it. */
 const DISSOLVE_VH = 100;
+/* The point grid's spacing; flowX wraps at it. */
+const GRID_GAP = 24;
 const MOBILE_BREAKPOINT = 576;
 const WORK_LANES = [0, -1, 1, -0.5, 0.75] as const;
 
@@ -111,7 +113,6 @@ class Section {
     pointsProgress: number;
     state: number;
     scrollProgress: number | null;
-    dissolve: number;
   };
   scrollProgress: number;
   smoothScrollProgress: number;
@@ -132,7 +133,11 @@ class Section {
   /** Timeline time where the dissolve starts, and the per-card step. */
   dissolveAt = Infinity;
   workStepVh = DESKTOP_WORK_STEP_VH;
-  gridBlank = false;
+  /** Home only: the grid's last opacity and transform, and whether its
+   *  settled picture is on the canvas. */
+  gridOpacity = "";
+  gridTransform = "";
+  gridSettled = false;
 
   constructor() {
     if (isSafariBrowser) {
@@ -178,7 +183,6 @@ class Section {
       pointsProgress: 0,
       state: 0,
       scrollProgress: null,
-      dissolve: 0,
     };
     this.isPaused = true;
     this.activeWorkIndex = -1;
@@ -429,8 +433,13 @@ class Section {
     this.elAbsTop = elRect.top + this.scrollY;
     this.elHeight = elRect.height;
 
-    this.canvas.width = this.bounding.width;
+    // The home's grid drifts left by up to one gap through its transform,
+    // so its canvas is one gap wider than the stage.
+    this.canvas.width = this.bounding.width + (this.home ? GRID_GAP : 0);
     this.canvas.height = this.bounding.height;
+    // A sized canvas is a blank one: draw the grid again on the next tick.
+    this.gridSettled = false;
+    if (this.home) this.last.pointsProgress = -1;
 
     // Assigning canvas.width resets the whole 2D context to defaults, which
     // puts strokeStyle back to black — and setCtxStyle() only re-applies it a
@@ -845,7 +854,7 @@ class Section {
     const { bounding } = this;
     this.points = [];
 
-    const gap = 24;
+    const gap = GRID_GAP;
     const cols = Math.ceil((bounding.width * 1.2) / gap);
     const rows = Math.ceil((bounding.height * 1.2) / gap);
     const offsetX = (bounding.width - cols * gap) * 0.5;
@@ -872,7 +881,7 @@ class Section {
     // One scalar for the whole field: it had no per-point term, so writing it
     // into all 3240 point objects every frame was 3240 property writes to
     // reproduce a single number.
-    this.flowX = (this.animationProgress * -0.05) % 24;
+    this.flowX = (this.animationProgress * -0.05) % GRID_GAP;
   }
 
   drawPoints() {
@@ -881,31 +890,12 @@ class Section {
 
     const rAnimationProgress = Math.round(animationProgress * 100) / 100;
     const rPointsProgress = Math.round(pointsProgress * 100) / 100;
-    const rDissolve = Math.round(this.dissolve * 100) / 100;
 
     if (
       rPointsProgress === last.pointsProgress &&
-      rAnimationProgress === last.animationProgress &&
-      rDissolve === last.dissolve
+      rAnimationProgress === last.animationProgress
     )
       return;
-
-    // On the home the grid comes in with the tunnel instead of appearing on
-    // the hand-off frame, where the star field showed no grid, and it goes
-    // again as the wall dissolves. Invisible, it is cleared once and not
-    // drawn.
-    const alpha = this.home
-      ? Math.min(1, pointsProgress * 4) * Math.max(0, 1 - rDissolve * 2)
-      : 1;
-    last.pointsProgress = rPointsProgress;
-    last.animationProgress = rAnimationProgress;
-    last.dissolve = rDissolve;
-    if (alpha <= 0) {
-      if (!this.gridBlank) ctx.clearRect(0, 0, bounding.width, bounding.height);
-      this.gridBlank = true;
-      return;
-    }
-    this.gridBlank = false;
 
     ctx.clearRect(0, 0, bounding.width, bounding.height);
     ctx.beginPath();
@@ -929,7 +919,46 @@ class Section {
       });
     }
 
-    ctx.globalAlpha = alpha;
+    ctx.stroke();
+
+    last.pointsProgress = rPointsProgress;
+    last.animationProgress = rAnimationProgress;
+  }
+
+  /**
+   * The home's grid. It changes only while the tunnel opens and the points
+   * gather (pointsProgress < 1); after that every frame is the same picture
+   * shifted by flowX, so it is drawn once and the shift is the canvas's own
+   * transform on its own layer (invariant 13: no redraw per scrolled frame).
+   * It fades in with the opening and out with the dissolve through the
+   * canvas's opacity, not by redrawing.
+   */
+  drawGridHome() {
+    const { ctx, points, pointsProgress, last } = this;
+    const opacity = (
+      Math.min(1, pointsProgress * 4) * Math.max(0, 1 - this.dissolve * 2)
+    ).toFixed(3);
+    if (opacity !== this.gridOpacity) {
+      this.gridOpacity = opacity;
+      this.canvas.style.opacity = opacity;
+    }
+    if (opacity === "0.000") return;
+
+    const settled = pointsProgress === 1;
+    const rPointsProgress = Math.round(pointsProgress * 100) / 100;
+    if (settled ? this.gridSettled : rPointsProgress === last.pointsProgress) {
+      return;
+    }
+    this.gridSettled = settled;
+    last.pointsProgress = rPointsProgress;
+
+    // While the points gather, flowX is still 0: the travel starts after.
+    const k = (1 - pointsProgress) * 0.2;
+    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    ctx.beginPath();
+    points.forEach((point: any) => {
+      ctx.rect(point.x + point.dx * k, point.y + point.dy * k, 0.5, 0.5);
+    });
     ctx.stroke();
   }
 
@@ -967,7 +996,7 @@ class Section {
       this.last.scrollProgress = sp;
       (this.mask.pathInner as HTMLElement).style.transform =
         `translate3d(0, ${sp * 48}px, 0)`;
-      if (this.bounding.width >= 576) {
+      if (this.bounding.width >= 576 && !this.home) {
         this.canvas.style.transform =
           `translate3d(0, ${sp * -0.05 * this.bounding.height}px, 0)`;
       }
@@ -975,7 +1004,19 @@ class Section {
 
     this.movePoints();
     this.moveLetters();
-    this.drawPoints();
+    if (this.home) {
+      // The drift and the parallax, as the grid layer's one transform.
+      const x = this.pointsProgress === 1 ? this.flowX : 0;
+      const y = this.bounding.width >= 576 ? sp * -0.05 * this.bounding.height : 0;
+      const transform = `translate3d(${x.toFixed(2)}px, ${y.toFixed(2)}px, 0)`;
+      if (transform !== this.gridTransform) {
+        this.gridTransform = transform;
+        this.canvas.style.transform = transform;
+      }
+      this.drawGridHome();
+    } else {
+      this.drawPoints();
+    }
     this.dust?.update(this.dissolve);
   }
 }

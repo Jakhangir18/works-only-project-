@@ -419,8 +419,18 @@ const { items = works, home = false } = Astro.props;
       @include star-tiles;
     }
 
-    /* Its own layer (invariant 13): it redraws with the scroll's progress. */
+    /* The grid is drawn once the points have gathered and then only moves:
+       its own layer, one gap wider than the stage for the drift
+       (WorkSection.drawGridHome). */
+    .s__canvas {
+      width: calc(100% + 24px);
+      will-change: transform;
+    }
+
+    /* Its own layer (invariant 13): it redraws with the scroll's progress.
+       Out of the tree until the dissolve starts (WorkDust.update). */
     .s__dust {
+      display: none;
       position: absolute;
       inset: 0;
       z-index: 3;

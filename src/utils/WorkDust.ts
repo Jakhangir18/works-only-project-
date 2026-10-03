@@ -116,6 +116,7 @@ export class WorkDust {
   last = -1;
   sceneOpacity = "";
   starsOpacity = "";
+  shown = false;
 
   constructor(canvas: HTMLCanvasElement, scene: HTMLElement, stars: HTMLElement, glyphs: () => Glyph[]) {
     this.canvas = canvas;
@@ -304,9 +305,17 @@ export class WorkDust {
     this.write(this.scene, "sceneOpacity", (1 - ramp(rd, LETTERS_OUT[0], LETTERS_OUT[1])).toFixed(3));
     this.write(this.stars, "starsOpacity", ramp(rd, STARS_IN[0], STARS_IN[1]).toFixed(3));
 
+    // Outside the segment the canvas leaves the tree: a full-screen layer,
+    // blank or not, is composited on every frame WORK scrolls.
+    const shown = rd > 0 && rd < 1;
+    if (shown !== this.shown) {
+      this.shown = shown;
+      this.canvas.style.display = shown ? "block" : "none";
+    }
+
     const ctx = this.ctx;
     if (!ctx) return;
-    const nothing = rd <= 0 || rd >= 1 || !this.ready;
+    const nothing = !shown || !this.ready;
     if (nothing && this.blank) return;
     ctx.clearRect(0, 0, this.W, this.H);
     this.blank = true;
