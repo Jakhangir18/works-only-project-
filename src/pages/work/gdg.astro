@@ -15,8 +15,9 @@ import { projects } from "../../data/projects";
  * website. Named folios head the sections, as in a printed report.
  *
  * Facts and their sources:
- *   - Co-President since the spring 2026 election: the owner (2026-10-03) and
- *     gdgc-osu.com/officers, which lists two Co-Presidents.
+ *   - President, the only one, since the spring 2026 election: the owner,
+ *     2026-10-03 ("президент, и я один"). gdgc-osu.com/officers still lists
+ *     two Co-Presidents; the owner's word stands here.
  *   - 200+ students registered: the owner's figure; no chapter file states it.
  *   - 22 meetings in 2025-26: the chapter's 2026-27 funding request (GDSC ESC
  *     Annual Funding.pptx, May 2026, on the chapter's shared Drive).
@@ -41,15 +42,15 @@ const SHOW_REPORT = false;
 const report = SHOW_REPORT ? picture("gdg", "report", 1500) : null;
 ---
 
-<CaseLayout slug="gdg" title="GDG on Campus" description="Co-President of Google Developer Group on Campus at Oregon State University, a chapter with 200+ students registered." shareCard="/projects/gdg/og.jpg">
+<CaseLayout slug="gdg" title="GDG on Campus" description="President of Google Developer Group on Campus at Oregon State University, a chapter with 200+ students registered." shareCard="/projects/gdg/og.jpg">
   <div class="gdg">
     <header class="gdg-cover">
       <img class="gdg-cover__img" src={cover.src} srcset={cover.srcset} sizes="100vw" alt="Jak holding a microphone on a wood-panelled stage, a second person standing behind, under a projected slide headed 'Why join GDG?'" width={cover.width} height={cover.height} fetchpriority="high" decoding="async" />
       <div class="gdg-cover__copy">
         <p class="case-label">Leadership · Oregon State University</p>
         <h1 class="case-title">GDG on Campus</h1>
-        <p class="case-award">Co-President</p>
-        <p class="case-lede">I co-lead Oregon State's Google Developer Group on Campus, and bring students together to build.</p>
+        <p class="case-award">President</p>
+        <p class="case-lede">I lead Oregon State's Google Developer Group on Campus, and bring students together to build.</p>
       </div>
       <p class="gdg-cover__fig">On stage at a chapter event.</p>
     </header>
@@ -72,10 +73,10 @@ const report = SHOW_REPORT ? picture("gdg", "report", 1500) : null;
 
     <section class="case-section gdg-role">
       <p class="case-label gdg-folio">The role</p>
-      <h2 class="case-h2 gdg-role__title" data-reveal>Co-President</h2>
+      <h2 class="case-h2 gdg-role__title" data-reveal>President</h2>
       <div class="gdg-role__grid">
         <div class="case-prose gdg-role__text" data-reveal>
-          <p>I am one of the two Co-Presidents of Google Developer Group on Campus at Oregon State University, elected in spring 2026. 200+ students are registered with the chapter.</p>
+          <p>I am the President of Google Developer Group on Campus at Oregon State University, elected in spring 2026. 200+ students are registered with the chapter.</p>
           <p>The job is to bring students together to build. The chapter's own slides say what for: to build with Google technology, to learn from Google engineers, and to build projects.</p>
           <p>This year I want projects to leave localhost: workshops on deploying with Firebase and Docker, sessions on building with Gemini, and a chapter open to every engineering major, not only computer science.</p>
         </div>
@@ -128,7 +129,7 @@ const report = SHOW_REPORT ? picture("gdg", "report", 1500) : null;
       <div class="gdg-credits__grid">
         <CaseMeta
           rows={[
-            { label: "Co-President", value: "Jakhangir Tynshimov" },
+            { label: "President", value: "Jakhangir Tynshimov" },
             { label: "Chapter", value: "Google Developer Group on Campus" },
             { label: "University", value: "Oregon State University" },
             { label: "Registered", value: "200+ students" },

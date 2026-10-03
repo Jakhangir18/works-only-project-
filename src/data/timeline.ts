@@ -71,10 +71,11 @@ export const timeline: readonly TimelineEntry[] = [
     thumb: "/projects/zyp/media/cover-thumb.webp",
   },
   {
-    // Co-President since the spring 2026 election (week 4, April): the owner,
-    // 2026-10-03, and gdgc-osu.com/officers ("Jak Tynshimov — Co-President").
+    // President, the only one, since the spring 2026 election (week 4,
+    // April): the owner, 2026-10-03. gdgc-osu.com/officers still reads
+    // "Co-President"; the owner's word stands.
     // 200+ registered is the owner's figure.
-    title: "Co-President, Google Developer Group on Campus",
+    title: "President, Google Developer Group on Campus",
     org: "Oregon State",
     kind: "club",
     start: "2026-04",

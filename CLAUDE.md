@@ -419,8 +419,9 @@ The measurement harness lives in `perf/` (`harness.mjs`, `regression.mjs`,
   353f6da. `t-anime` runs a reduced-motion context per engine since. The
   suite is 1130+ checks; `tests/lib.mjs` ignores the engines' own aborts
   (`ERR_ABORTED`, `NS_BINDING_ABORTED`, "cancelled").
-- **GDG facts** (2026-10-03): he is one of two Co-Presidents
-  (gdgc-osu.com/officers), elected in spring 2026. 200+ registered is his
+- **GDG facts** (2026-10-03): he is the President, the only one (the owner:
+  "президент, и я один"), elected in spring 2026. gdgc-osu.com/officers still
+  lists two Co-Presidents; his word stands, and that page is the club's to fix. 200+ registered is his
   figure; 22 meetings in 2025-26 and 6 → 70 members in the first year come
   from the chapter's shared Drive (sources in `src/pages/work/gdg.astro`).
 - Branch history:

@@ -118,7 +118,8 @@ the player need t-case, screenshots, and `shots.mjs` for any changed first scree
 ## Progress
 - W0 (2026-10-03 00:35): 11 idle sessions exported to `~/work/<project>/docs/sessions/`
   and killed with `csess kill` (resumable). Available memory 3.1 → 6.1 GB.
-- W1 1074f0d: Co-President since spring 2026; GDG figures 200+ / 22 meetings / 6 → 70;
+- W1 1074f0d: President since spring 2026 (first written "Co-President" from the
+  club site; the owner corrected it the same day: he is the only President); GDG figures 200+ / 22 meetings / 6 → 70;
   TouchPoint "2nd place overall of 71 teams, 250+ hackers". Discord post updated.
 - W5 7e6f922: impact at [0.8, 0.72] / [0.78, 0.72], wipe sized in px, debris clamped.
   Phone x4 rocket-down 13-17 frames over 50 ms against a base of 16 (noisy host).
