@@ -221,13 +221,24 @@ const checks = [
       grid-template-areas: "note";
     }
 
+    /* The notes stepped back are hidden, not only transparent: stacked at
+       opacity 0 they read to axe as text at 1:1 contrast. Visibility waits
+       for the fade to finish before it hides. */
     :global(.js-case) .ams-note {
       grid-area: note;
       opacity: 0;
+      visibility: hidden;
+      transition:
+        opacity 450ms ease,
+        visibility 0s linear 450ms;
     }
 
     :global(.js-case) .ams-note.is-on {
       opacity: 1;
+      visibility: visible;
+      transition:
+        opacity 450ms ease,
+        visibility 0s;
     }
   }
 
