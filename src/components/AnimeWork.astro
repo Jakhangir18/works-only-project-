@@ -1,101 +1,155 @@
 ---
 import { projects } from "../data/projects";
+import { STACK } from "../utils/workStack";
 
 /**
- * WORK: out of the star field, the four letters of the old tunnel, and then
- * his experience on a 3D carousel.
+ * WORK: the word rows. The owner's choice (2026-10-03), after the old
+ * Vercel tunnel he liked: the vertical W / O / R / K stack opens into four
+ * rows of its own letters, the seven projects sit inside the rows as photo
+ * "words", and as the page scrolls each one in turn grows out of its row
+ * into a large card, then goes back. Research: Codrops LinesToLayout ("a
+ * typography row view with inline images to a large image preview") and
+ * the old tunnel on main (SWork.astro). Labels say what, when and where,
+ * never a position.
  *
- * Owner's direction (2026-10-02): after space, a proper hand-off into the
- * WORK section the Vercel version has — the letter tunnel — but more
- * beautiful, with a carousel, holding his experience.
+ * The section starts one screen early, over the star field's last screen
+ * (the AnimeSpace pattern), so it pins on the very scroll where the field
+ * lets go; the stack here sits on the pixels the constellation drew
+ * (utils/workStack.ts), and the controller shows it only while its trigger
+ * is active. One sticky stage, one ScrollTrigger (WorkRows.ts). Per frame:
+ * one transform per row track, the two sides' transforms while the rows
+ * open, one preview's transform and a few opacities, all through
+ * writeIfChanged. No 3D and no blurred shadows.
  *
- * One sticky stage held for the section's length, driven by one ScrollTrigger
- * (WorkCarousel.ts), in three acts:
- *   1. the letters W O R K rise out of the dark, one after another, stacked
- *      the way the tunnel opens;
- *   2. each letter becomes a ring of itself turning around the screen — the
- *      tunnel's rows — and the rings dim into a backdrop;
- *   3. the seven projects on a ring of cards turn through the front, one per
- *      seventh of the remaining scroll; dragging turns it too.
- *
- * Per frame: one transform per letter ring, one for the card ring, a few
- * opacities, all through writeIfChanged. The card at the front is laid out
- * at its on-screen size (the ring is pulled back by its own radius), so the
- * card being read is never an upscaled raster (invariant 7).
+ * Keyboard: each project's photo in its row is a link; focusing one scrolls
+ * to the place where its card is open. Reduced motion: a still wall and the
+ * plain list below it.
  */
 
-const LETTERS = ["W", "O", "R", "K"];
-/* Copies of each letter round its ring. The ring is concave (its far half
-   faces the screen and its sides come forward past the screen's edges), so
-   about half of them are ever drawn; backface-visibility drops the rest. */
-const PER_RING = 12;
+/* Letter cells on each side of a row's centre letter: enough to cover a
+   2560 px screen's half-width plus the furthest drift. */
+const SIDE = 18;
 
-const cards = projects.map((p, i) => ({ ...p, index: String(i + 1).padStart(2, "0") }));
+/* Where each project sits: its row, the side of the centre letter, and how
+   many cells out. The order of the stops is the projects' order in
+   projects.ts; WorkRows.ts drifts each row so a project's photo crosses the
+   middle of the screen at its stop. */
+const PLACES: Record<string, { row: number; side: -1 | 1; at: number }> = {
+  touchpoint: { row: 0, side: 1, at: 2 },
+  spoot: { row: 1, side: 1, at: 1 },
+  zyp: { row: 2, side: -1, at: 2 },
+  gdg: { row: 0, side: 1, at: 9 },
+  "remote-lab-vision": { row: 2, side: 1, at: 4 },
+  ams: { row: 1, side: -1, at: 6 },
+  "engineering-rocket": { row: 3, side: -1, at: 5 },
+};
+
+const items = projects.map((p, stop) => ({ ...p, stop, place: PLACES[p.slug] }));
+
+type Cell = { kind: "letter"; letter: string } | { kind: "slot"; item: (typeof items)[number] };
+
+/* One side of a row, listed outward from the centre letter. */
+function side(row: number, dir: -1 | 1): Cell[] {
+  return Array.from({ length: SIDE }, (_, i) => {
+    const item = items.find((x) => x.place.row === row && x.place.side === dir && x.place.at === i + 1);
+    return item ? { kind: "slot", item } : { kind: "letter", letter: STACK[row] };
+  });
+}
+
+const rows = STACK.map((letter, row) => ({ letter, left: side(row, -1).reverse(), right: side(row, 1) }));
+
+/* What a preview card shows, handed to the controller once. */
+const cards = items.map((p) => ({
+  href: p.href,
+  title: p.title,
+  kind: p.kind,
+  line: p.result ?? p.role,
+  when: `${p.when} · ${p.where}`,
+  thumb: p.cover.thumb,
+  src: p.cover.src,
+  srcset: p.cover.srcset,
+  alt: p.cover.alt,
+  focal: p.cover.focal,
+}));
 ---
 
 <section class="anime-work" id="work" aria-labelledby="work-title">
   <h2 class="u-sr-only" id="work-title">Work</h2>
 
-  <div class="anime-work__stage js-work-stage">
-    <div class="anime-work__tunnel" aria-hidden="true">
-      {LETTERS.map((letter, row) => (
-        <div class="anime-work__ring js-work-ring" style={`--row:${row}`}>
-          {Array.from({ length: PER_RING }, (_, i) => (
-            <span class:list={["anime-work__letter js-work-letter", { "is-front": i === 0 }]} style={`--i:${i}; --n:${PER_RING}`}>{letter}</span>
-          ))}
+  <div class="anime-work__stage js-work-stage" data-cards={JSON.stringify(cards)}>
+    <div class="anime-work__grid js-work-grid" aria-hidden="true"></div>
+
+    <div class="anime-work__rows js-work-rows">
+      {rows.map((r, row) => (
+        <div class="anime-work__row">
+          <div class="anime-work__track js-work-track" data-row={row}>
+            <div class="anime-work__side js-work-side" data-dir="-1">
+              {r.left.map((c) =>
+                c.kind === "letter" ? (
+                  <span class="anime-work__cell" aria-hidden="true">{c.letter}</span>
+                ) : (
+                  <a class="anime-work__slot js-work-slot" href={c.item.href} data-stop={c.item.stop} aria-label={`${c.item.title}: ${c.item.result ?? c.item.role}`}>
+                    <img src={c.item.cover.thumb} alt="" width="480" height="640" loading="lazy" decoding="async" draggable="false" style={`object-position:${c.item.cover.focal}`} />
+                  </a>
+                ),
+              )}
+            </div>
+            <span class="anime-work__cell anime-work__cell--centre js-work-centre" aria-hidden="true">{r.letter}</span>
+            <div class="anime-work__side js-work-side" data-dir="1">
+              {r.right.map((c) =>
+                c.kind === "letter" ? (
+                  <span class="anime-work__cell" aria-hidden="true">{c.letter}</span>
+                ) : (
+                  <a class="anime-work__slot js-work-slot" href={c.item.href} data-stop={c.item.stop} aria-label={`${c.item.title}: ${c.item.result ?? c.item.role}`}>
+                    <img src={c.item.cover.thumb} alt="" width="480" height="640" loading="lazy" decoding="async" draggable="false" style={`object-position:${c.item.cover.focal}`} />
+                  </a>
+                ),
+              )}
+            </div>
+          </div>
         </div>
       ))}
     </div>
 
-    {/* Dims the tunnel into a backdrop for the third act: an overlay's
-        opacity, because opacity on a ring would flatten its 3D. */}
-    <div class="anime-work__veil js-work-veil" aria-hidden="true"></div>
-
-    <div class="anime-work__carousel js-work-carousel">
-      <ul class="anime-work__cards js-work-cards" style={`--n:${cards.length}`}>
-        {cards.map((card, i) => (
-          <li class="anime-work__slot" style={`--i:${i}`}>
-            <a class="anime-work__card js-work-card" href={card.href} data-index={i} draggable="false">
-              <span class="anime-work__media">
-                <img
-                  draggable="false"
-                  src={card.cover.src}
-                  srcset={card.cover.srcset}
-                  sizes="(max-width: 40em) 72vw, 360px"
-                  alt={card.cover.alt}
-                  width={card.cover.width}
-                  height={card.cover.height}
-                  loading="lazy"
-                  decoding="async"
-                  style={`object-position:${card.cover.focal}`}
-                />
-              </span>
-              <span class="anime-work__body">
-                <span class="anime-work__meta">
-                  <span class="anime-work__kind">{card.kind}</span>
-                  <span class="anime-work__index">{card.index} / {String(cards.length).padStart(2, "0")}</span>
-                </span>
-                <span class="anime-work__title">{card.title}</span>
-                <span class="anime-work__role">{card.role}</span>
-                <span class="anime-work__when">{card.when} · {card.where}</span>
-                {card.result && <span class="anime-work__result">{card.result}</span>}
-                <span class="anime-work__open">Open the case <span aria-hidden="true">→</span></span>
-              </span>
-            </a>
-          </li>
-        ))}
-      </ul>
-    </div>
-
-    <p class="anime-work__hint" aria-hidden="true">
-      <span class="js-work-count">01</span> / {String(cards.length).padStart(2, "0")} · scroll<span class="anime-work__drag"> or drag</span>
-    </p>
+    {/* Two previews, used in turn: while one shrinks back into its row the
+        next can already be decoding its photograph. The rows' links are the
+        keyboard path, so these stay out of the tab order. */}
+    {[0, 1].map(() => (
+      <a class="anime-work__preview js-work-preview" href="#work" tabindex="-1" aria-hidden="true" draggable="false">
+        <span class="anime-work__shot">
+          <img class="js-work-preview-img" alt="" draggable="false" />
+        </span>
+        <span class="anime-work__info js-work-preview-info">
+          <span class="anime-work__kind js-work-preview-kind"></span>
+          <span class="anime-work__title js-work-preview-title"></span>
+          <span class="anime-work__line js-work-preview-line"></span>
+          <span class="anime-work__when js-work-preview-when"></span>
+          <span class="anime-work__open">Open the case <span aria-hidden="true">→</span></span>
+        </span>
+      </a>
+    ))}
   </div>
+
+  {/* The same seven, plainly: what a screen reader lists after the section's
+      heading, and what reduced motion shows under the still wall. */}
+  <ul class="anime-work__list">
+    {items.map((p) => (
+      <li>
+        <a class="anime-work__entry" href={p.href} tabindex="-1">
+          <img src={p.cover.thumb} alt="" width="480" height="640" loading="lazy" decoding="async" style={`object-position:${p.cover.focal}`} />
+          <span class="anime-work__entry-kind">{p.kind}</span>
+          <span class="anime-work__entry-title">{p.title}</span>
+          <span class="anime-work__entry-line">{p.result ?? p.role}</span>
+          <span class="anime-work__entry-when">{p.when} · {p.where}</span>
+        </a>
+      </li>
+    ))}
+  </ul>
 </section>
 
 <script>
-  import { initWorkCarousel } from "../utils/WorkCarousel";
-  initWorkCarousel();
+  import { initWorkRows } from "../utils/WorkRows";
+  initWorkRows();
 </script>
 
 <style lang="scss">
@@ -104,64 +158,18 @@ const cards = projects.map((p, i) => ({ ...p, index: String(i + 1).padStart(2, "
 
   .anime-work {
     position: relative;
-    /* The stage is held for the whole height; the acts are fractions of it. */
-    height: 560svh;
-    background: color(space);
+    /* One screen up, over the star field's last screen, so this section
+       pins on the scroll where that one lets go; the first screen paints
+       nothing, and the field shows through it. The stage is held for the
+       rest: the rows opening, seven stops, a short tail. */
+    margin-top: -100svh;
+    height: 680svh;
+    background: linear-gradient(to bottom, transparent 0 100svh, color(space) 100svh);
     color: color(work-text);
     /* clip, not hidden: hidden would make this a scroll container and the
        stage would stick to it instead of to the viewport. */
     overflow: clip;
     isolation: isolate;
-
-    /* The star field's tail, handed over from space: a static scatter over
-       the top of the section, painted once. */
-    &::before {
-      content: "";
-      position: absolute;
-      inset: 0 0 auto;
-      z-index: -1;
-      height: 100svh;
-      background-image:
-        radial-gradient(circle, rgba(255, 255, 255, 0.7) 0.6px, transparent 1.3px),
-        radial-gradient(circle, rgba(255, 217, 168, 0.6) 0.8px, transparent 1.6px),
-        radial-gradient(circle, rgba(255, 255, 255, 0.45) 0.5px, transparent 1.1px);
-      background-size:
-        137px 149px,
-        211px 173px,
-        97px 83px;
-      background-position:
-        17px 23px,
-        89px 61px,
-        41px 7px;
-      opacity: 0.4;
-      pointer-events: none;
-    }
-  }
-
-  /* Out of the tree while the section is more than a screen away: its
-     forty-odd 3D layers otherwise sit in the page's layer tree and are
-     re-assigned on every frame the rocket or the stars write, which on a
-     phone profile cost long tasks in sections nowhere near this one. The
-     controller sets is-far from an IntersectionObserver. */
-  /* Far away, the tunnel's letters leave the tree, and the cards stay in it
-     but go flat: still in the keyboard's tab order from anywhere on the
-     page, no longer seven 3D layers in the tree the rocket's frames update
-     (with them there, phone x4 rocket phases read 7-9 frames over 50 ms
-     against 1-3). !important because the controller writes the ring's
-     transform inline; nearer than a screen, that inline value is back in
-     force before the section shows. */
-  .anime-work:global(.is-far) .anime-work__tunnel {
-    display: none;
-  }
-
-  .anime-work:global(.is-far) .anime-work__cards {
-    transform: none !important;
-    transform-style: flat;
-    will-change: auto;
-  }
-
-  .anime-work:global(.is-far) .anime-work__slot {
-    transform: none;
   }
 
   .anime-work__stage {
@@ -169,132 +177,92 @@ const cards = projects.map((p, i) => ({ ...p, index: String(i + 1).padStart(2, "
     top: 0;
     height: 100svh;
     overflow: clip;
-    /* The tunnel's dot grid, static. */
+  }
+
+  /* The old tunnel's dot grid, static; the controller fades it in as the
+     rows open, so it is not there over the star field before the pin. */
+  .anime-work__grid {
+    position: absolute;
+    inset: 0;
     background-image: radial-gradient(circle, rgba(255, 242, 237, 0.16) 1px, transparent 1.4px);
     background-size: 28px 28px;
     background-position: center;
+    opacity: 0;
   }
 
-  /* --- Act 1 and 2: the letters ------------------------------------------ */
-
-  .anime-work__tunnel {
+  /* The four rows. Kept in step with utils/workStack.ts: 6svh above and
+     below, four equal rows, the letters at clamp(56px, min(19svh, 30vw),
+     190px) with line-height 1 — the constellation draws its letters from
+     those numbers. */
+  .anime-work__rows {
     position: absolute;
     inset: 0;
     display: grid;
     grid-template-rows: repeat(4, 1fr);
-    align-items: center;
     padding: 6svh 0;
-    perspective: 1100px;
-    pointer-events: none;
+    font: 400 clamp(56px, min(19svh, 30vw), 190px) / 1 font-family(bigger);
+    color: #fff2ed;
   }
 
-  .anime-work__tunnel {
-    /* The ring's radius, set by the controller once per resize so the
-       stylesheet and the turn it writes agree; this is the fallback. */
-    --radius: 420px;
-  }
-
-  .anime-work__ring {
+  .anime-work__row {
     position: relative;
-    height: 100%;
-    transform-style: preserve-3d;
-    /* The ring's axis stands in front of the screen by its radius, the way
-       the hero's wheel does: the far side faces the viewer, the middle copy
-       sits on the screen at its own size and the copies to either side come
-       forward and grow toward the edges — the inside of the old tunnel. The
-       controller writes this whole transform, adding the turn. */
-    transform: translateZ(var(--radius));
-    will-change: transform;
   }
 
-  .anime-work__letter {
+  /* A row's letters and photographs in one line, its centre letter on the
+     stage's centre: the controller writes the track's whole transform. */
+  .anime-work__track {
     position: absolute;
     left: 50%;
     top: 50%;
-    width: 1em;
-    margin: -0.5em 0 0 -0.5em;
-    font: 400 clamp(64px, 19svh, 190px) / 1 font-family(bigger);
-    text-align: center;
-    color: #fff2ed;
-    /* Round the ring: each copy turned to its place and set back from the
-       axis by the radius, facing it; the copy at i = 0 is the middle one. */
-    transform: rotateY(calc(var(--i) * 360deg / var(--n))) translateZ(calc(-1 * var(--radius)));
-    backface-visibility: hidden;
-    /* Every letter starts hidden; the controller brings the front copies in
-       first, then the rest, writing each one's own opacity. */
-    opacity: 0;
-  }
-
-  .anime-work__veil {
-    position: absolute;
-    inset: 0;
-    background: color(space);
-    opacity: 0;
-    pointer-events: none;
-  }
-
-  /* --- Act 3: the cards --------------------------------------------------- */
-
-  .anime-work__carousel {
-    position: absolute;
-    inset: 0;
-    display: grid;
-    place-items: center;
-    perspective: 1600px;
-    /* Transparent and off the pointer until the third act; the controller
-       fades it in. Still focusable, so a keyboard can reach every card. */
-    opacity: 0;
-    pointer-events: none;
-  }
-
-  .anime-work__cards {
-    --card: clamp(260px, 25vw, 360px);
-    position: relative;
-    width: var(--card);
-    height: calc(var(--card) * 1.42);
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    transform-style: preserve-3d;
-    /* The ring's radius, the cards' half-width over tan(pi / n) widened by a
-       gap, is set by the controller once per resize; this is the fallback.
-       Pulled back by it, so the front card sits at exactly its own size; the
-       controller writes this whole transform, adding the turn. */
-    --ring-radius: 520px;
-    transform: translateZ(calc(-1 * var(--ring-radius)));
+    display: flex;
+    align-items: center;
+    height: 1em;
+    margin-top: -0.5em;
+    white-space: nowrap;
     will-change: transform;
   }
 
-  .anime-work__slot {
-    position: absolute;
-    inset: 0;
-    transform: rotateY(calc(var(--i) * 360deg / var(--n))) translateZ(var(--ring-radius));
-    backface-visibility: hidden;
+  .anime-work__side {
+    display: flex;
+    align-items: center;
+    /* Folded in behind the centre letter until the rows open. */
+    opacity: 0;
   }
 
-  .anime-work__card {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    overflow: hidden;
-    border: 1px solid color(work-border);
-    border-radius: 18px;
-    background: color(work-surface);
-    color: color(work-text);
-    text-decoration: none;
-    /* A mouse drag turns the ring; the browser's own link and image drag
-       would cancel it. */
-    -webkit-user-drag: none;
-    user-select: none;
-    /* A hairline and a lighter top edge rather than a drop shadow: seven
-       turning layers with a 60px blur each were most of this section's
-       compositing cost on a software rasteriser. */
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
-    transition: border-color 200ms ease;
+  .anime-work__cell {
+    flex: 0 0 auto;
+    width: 0.8em;
+    text-align: center;
+  }
 
-    &:hover,
-    &:focus-visible {
-      border-color: color(accent);
+  /* Hidden until the section's trigger is active: before that, the star
+     field's constellation draws this letter on the same pixels. */
+  .anime-work__cell--centre {
+    visibility: hidden;
+  }
+
+  .anime-work:global(.is-on) .anime-work__cell--centre {
+    visibility: visible;
+  }
+
+  /* A photograph the height of a letter, 3:4 like every cover and like the
+     preview it grows into, so the growth is one uniform scale. */
+  .anime-work__slot {
+    flex: 0 0 auto;
+    display: block;
+    width: 0.6em;
+    height: 0.8em;
+    margin: 0 0.1em;
+    overflow: hidden;
+    border-radius: 0.06em;
+    background: #16161a;
+    -webkit-user-drag: none;
+
+    img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
     }
 
     &:focus-visible {
@@ -303,10 +271,50 @@ const cards = projects.map((p, i) => ({ ...p, index: String(i + 1).padStart(2, "
     }
   }
 
-  .anime-work__media {
+  /* Far away the tracks keep their place in the tree (the photographs are
+     the keyboard path) and only stop asking for their own layers. */
+  .anime-work:global(.is-far) .anime-work__track {
+    will-change: auto;
+  }
+
+  /* --- The preview ------------------------------------------------------- */
+
+  /* Laid out at its full size with the photograph's box centred on its
+     place; the controller scales it down onto a row's photograph and back
+     (invariant 7: it only ever downsamples). */
+  .anime-work__preview {
+    --shot-h: min(62svh, 560px);
+    position: absolute;
+    left: 40%;
+    top: 50%;
+    width: calc(var(--shot-h) * 0.75);
+    height: var(--shot-h);
+    margin: calc(var(--shot-h) / -2) 0 0 calc(var(--shot-h) * -0.375);
+    color: color(work-text);
+    text-decoration: none;
+    opacity: 0;
+    pointer-events: none;
+    -webkit-user-drag: none;
+
+    &:global(.is-up) {
+      pointer-events: auto;
+    }
+
+    &:global(.is-focus) .anime-work__shot {
+      outline: 2px solid color(accent);
+      outline-offset: 6px;
+    }
+  }
+
+  .anime-work__shot {
     display: block;
-    flex: 0 0 52%;
+    width: 100%;
+    height: 100%;
     overflow: hidden;
+    /* The same corner as the row's photograph at its size: 0.06em of a
+       letter, about 10px. */
+    border-radius: 12px;
+    border: 1px solid color(work-border);
     background: #16161a;
 
     img {
@@ -317,180 +325,179 @@ const cards = projects.map((p, i) => ({ ...p, index: String(i + 1).padStart(2, "
     }
   }
 
-  .anime-work__body {
+  .anime-work__info {
+    position: absolute;
+    left: calc(100% + clamp(1.5rem, 3vw, 3rem));
+    bottom: 0;
     display: flex;
-    flex: 1;
     flex-direction: column;
-    gap: 0.4rem;
-    padding: 1rem 1.1rem 1.1rem;
+    gap: 0.55rem;
+    width: min(30vw, 26rem);
+    opacity: 0;
   }
 
-  .anime-work__meta {
-    display: flex;
-    justify-content: space-between;
+  .anime-work__kind {
+    align-self: flex-start;
+    padding: 0.3em 0.65em;
+    border: 1px solid color(work-border);
+    border-radius: 999px;
     font: 400 0.6875rem / 1 font-family(fraktion);
     letter-spacing: 0.12em;
     text-transform: uppercase;
     color: color(work-muted);
   }
 
-  .anime-work__kind {
-    padding: 0.3em 0.6em;
-    border: 1px solid color(work-border);
-    border-radius: 999px;
-  }
-
   .anime-work__title {
-    margin-top: 0.35rem;
-    font: 400 clamp(1.9rem, 2.6vw, 2.5rem) / 0.95 font-family(bigger);
-    letter-spacing: 0.01em;
+    font: 400 clamp(2.6rem, 5.4vw, 5.6rem) / 0.88 font-family(bigger);
     text-transform: uppercase;
     color: #fff;
   }
 
-  .anime-work__role {
-    font: 400 0.875rem / 1.35 font-family(geist);
-    color: color(work-text);
+  .anime-work__line {
+    font: 400 clamp(1.05rem, 1.4vw, 1.3rem) / 1.3 font-family(editorial);
+    color: #ffd9a8;
   }
 
   .anime-work__when {
-    font: 400 0.6875rem / 1.4 font-family(fraktion);
+    font: 400 0.75rem / 1.45 font-family(fraktion);
     letter-spacing: 0.06em;
     color: color(work-muted);
   }
 
-  .anime-work__result {
-    font: 400 0.75rem / 1.3 font-family(fraktion);
-    letter-spacing: 0.04em;
-    color: #ffd9a8;
-  }
-
   .anime-work__open {
-    margin-top: auto;
+    margin-top: 0.6rem;
     font: 700 0.6875rem / 1 font-family(fraktion);
     letter-spacing: 0.16em;
     text-transform: uppercase;
     color: color(accent);
   }
 
-  .anime-work__hint {
+  /* --- The plain list ---------------------------------------------------- */
+
+  .anime-work__list {
     position: absolute;
-    left: 50%;
-    bottom: 4svh;
-    margin: 0;
-    transform: translateX(-50%);
-    font: 400 0.6875rem / 1 font-family(fraktion);
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: color(work-muted);
-    opacity: 0;
-    transition: opacity 300ms ease;
-
-    &:global(.is-on) {
-      opacity: 1;
-    }
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    list-style: none;
   }
 
+  /* A phone: the photograph centred higher, the words under it. The star
+     field sits at z-index 3 there (over the flight's stage, AnimeSpace.astro)
+     and this section's first screen lies over its last one, so this one
+     has to stack above it. */
   @media (max-width: 639.98px) {
-    .anime-work__cards {
-      --card: min(72vw, 290px);
+    .anime-work {
+      z-index: 4;
     }
 
-    /* A phone's ring is small: every other copy, and smaller letters, or
-       the band turns into a fence. */
-    .anime-work__letter {
-      font-size: clamp(56px, 12svh, 120px);
+    .anime-work__preview {
+      --shot-h: min(46svh, calc(64vw / 0.75));
+      left: 50%;
+      top: 40%;
     }
 
-    .anime-work__letter:nth-child(3n + 2) {
-      display: none;
+    .anime-work__info {
+      left: 50%;
+      top: calc(100% + 1.1rem);
+      bottom: auto;
+      width: 86vw;
+      transform: translateX(-50%);
+      align-items: center;
+      text-align: center;
+    }
+
+    .anime-work__kind {
+      align-self: center;
+    }
+
+    .anime-work__title {
+      font-size: clamp(2.2rem, 11vw, 3.2rem);
     }
   }
 
-  @media (pointer: coarse) {
-    .anime-work__drag {
-      display: none;
-    }
-  }
-
-  /* Stillness, not absence: no holding, no turning. The word is set once and
-     the cards sit in a row the hand or the keyboard scrolls sideways. */
+  /* Stillness, not absence: the wall stands still and open, and the seven
+     are listed under it as plain cards. */
   @media (prefers-reduced-motion: reduce) {
     .anime-work {
+      margin-top: 0;
       height: auto;
-      padding: 12svh 0 10svh;
+      padding-bottom: 10svh;
+      background: color(space);
     }
 
     .anime-work__stage {
-      position: static;
-      height: auto;
-      background: none;
+      position: relative;
     }
 
-    .anime-work__tunnel {
-      position: static;
-      display: flex;
-      justify-content: center;
-      gap: 0.1em;
-      padding: 0 0 6svh;
-      perspective: none;
-    }
-
-    .anime-work__ring {
-      height: auto;
+    .anime-work__grid,
+    .anime-work__side {
       opacity: 1;
+    }
+
+    .anime-work__cell--centre {
+      visibility: visible;
+    }
+
+    .anime-work__track {
+      transform: translateX(-50%);
       will-change: auto;
-      transform-style: flat;
     }
 
-    .anime-work__letter {
-      position: static;
-      display: block;
-      margin: 0;
-      transform: none;
-      opacity: 1;
-      font-size: clamp(64px, 14vw, 180px);
-    }
-
-    .anime-work__veil {
+    .anime-work__preview {
       display: none;
     }
 
-    .anime-work__letter:not(.is-front) {
-      display: none;
-    }
-
-    .anime-work__carousel {
+    .anime-work__list {
       position: static;
-      display: block;
-      opacity: 1;
-      pointer-events: auto;
-      perspective: none;
-    }
-
-    .anime-work__cards {
-      display: flex;
-      gap: 1rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+      gap: 1.25rem;
       width: auto;
       height: auto;
-      padding: 0 clamp(1rem, 4vw, 3rem) 1rem;
-      overflow-x: auto;
-      scroll-snap-type: x mandatory;
-      transform: none;
-      transform-style: flat;
-      will-change: auto;
+      margin: 0;
+      padding: 0 clamp(1rem, 4vw, 3rem);
+      overflow: visible;
+      clip: auto;
+      white-space: normal;
     }
+  }
 
-    .anime-work__slot {
-      position: static;
-      flex: 0 0 var(--card);
-      height: calc(var(--card) * 1.42);
-      transform: none;
-      scroll-snap-align: center;
-    }
+  .anime-work__entry {
+    display: grid;
+    gap: 0.4rem;
+    color: color(work-text);
+    text-decoration: none;
 
-    .anime-work__hint {
-      display: none;
+    img {
+      width: 100%;
+      height: auto;
+      aspect-ratio: 3 / 4;
+      object-fit: cover;
+      border-radius: 12px;
     }
+  }
+
+  .anime-work__entry-kind,
+  .anime-work__entry-when {
+    font: 400 0.6875rem / 1.4 font-family(fraktion);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: color(work-muted);
+  }
+
+  .anime-work__entry-title {
+    font: 400 2rem / 0.95 font-family(bigger);
+    text-transform: uppercase;
+    color: #fff;
+  }
+
+  .anime-work__entry-line {
+    font: 400 1rem / 1.35 font-family(editorial);
+    color: #ffd9a8;
   }
 </style>

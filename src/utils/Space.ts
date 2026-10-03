@@ -2,16 +2,26 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { WIPE_STARTS } from "./RocketFlight";
 import { writeIfChanged, forgetLeaf } from "./leafWrite";
+import { showWorkStack } from "./WorkRows";
+import {
+  initConstellation,
+  resizeConstellation,
+  updateConstellation,
+  setConstellationLive,
+  gatherStart,
+  destroyConstellation,
+} from "./Constellation";
 
 /**
- * Two star layers sliding in from the corner the rocket left through.
+ * Two star layers sliding in from the corner the rocket left through, and
+ * the constellation (Constellation.ts) that gathers the sparks and the field
+ * into the word WORK.
  *
- * The section begins one viewport early, over the flight, and is two
- * viewports tall; its stage is sticky for the second. The layers are
+ * The section begins one viewport early, over the flight, and is three
+ * viewports tall; its stage is sticky for the last two. The layers are
  * invisible until the wipe has painted black under them, travel along one
- * line — right to left, ten degrees down, away from the top-right exit — at
- * two speeds, and dim over the last tenth to meet the work section's static
- * tail.
+ * line — right to left, ten degrees down — at two speeds, and dim while the
+ * constellation gathers, so the word is what the eye follows.
  *
  * Two triggers, so no number here encodes the two sections' heights: the
  * reveal reads the rocket's own progress (the wipe starts at WIPE_STARTS of
@@ -38,17 +48,18 @@ const FAR_TRAVEL = 0.15;
    ones first, the near ones last, both fully there as the wipe completes. */
 const FAR_IN = [0.9, 1] as const;
 const NEAR_IN = [0.95, 1] as const;
-/* The hand-off: over the last tenth both layers settle to the brightness of
+/* While the constellation gathers, both layers settle to the brightness of
    the static tail the work section paints at its top. */
-const SETTLE_FROM = 0.9;
-const SETTLED = 0.4;
+const SETTLED = 0.15;
 
 let trigger: ScrollTrigger | null = null;
 let rocketTrigger: ScrollTrigger | null = null;
 let stage: HTMLElement | null = null;
 let far: HTMLElement | null = null;
 let near: HTMLElement | null = null;
+let canvas: HTMLCanvasElement | null = null;
 let width = 0;
+let height = 0;
 /* The two progresses, each written by its own trigger. */
 let spaceP = 0;
 let rocketP = 0;
@@ -70,7 +81,17 @@ function place(el: HTMLElement, travel: number, opacity: number): void {
 }
 
 function measure(): void {
-  if (stage) width = stage.clientWidth;
+  if (stage) {
+    const w = stage.clientWidth;
+    const h = stage.clientHeight;
+    // A phone's address bar changes the stage's height by a few pixels as it
+    // comes and goes; the constellation is resampled only on a real change.
+    if (w !== width || Math.abs(h - height) > 40) {
+      width = w;
+      height = h;
+      resizeConstellation(w, h);
+    }
+  }
   // The scroll position where the rocket reaches WIPE_STARTS, read back as
   // this section's progress. Both triggers have their start and end by now.
   if (trigger && rocketTrigger) {
@@ -80,8 +101,12 @@ function measure(): void {
 }
 
 function apply(): void {
+  updateConstellation(rocketP, spaceP, moveFrom);
+  // At its end the constellation clears and WORK's own letters, on the same
+  // pixels, take over in the same frame.
+  showWorkStack(spaceP >= 1);
   const moved = ramp(spaceP, moveFrom, 1);
-  const dim = 1 - (1 - SETTLED) * ramp(spaceP, SETTLE_FROM, 1);
+  const dim = 1 - (1 - SETTLED) * ramp(spaceP, gatherStart(), 0.93);
   if (far) place(far, FAR_TRAVEL * moved, ramp(rocketP, FAR_IN[0], FAR_IN[1]) * dim);
   if (near) place(near, NEAR_TRAVEL * moved, ramp(rocketP, NEAR_IN[0], NEAR_IN[1]) * dim);
 }
@@ -94,6 +119,7 @@ export function initSpace(): void {
   stage = document.querySelector<HTMLElement>(".space__stage");
   far = document.querySelector<HTMLElement>(".js-space-far");
   near = document.querySelector<HTMLElement>(".js-space-near");
+  canvas = document.querySelector<HTMLCanvasElement>(".js-space-constellation");
   if (!section || !rocket || !stage || !far || !near) return;
 
   // Stillness, not absence: the stylesheet lays the section out as one plain
@@ -101,6 +127,10 @@ export function initSpace(): void {
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
   gsap.registerPlugin(ScrollTrigger);
+  if (canvas) initConstellation(canvas);
+  // The constellation draws only while the runway or this section is on
+  // screen: both triggers report in.
+  const live = () => setConstellationLive(!!(rocketTrigger?.isActive || trigger?.isActive));
 
   // The same window the rocket's own driver uses, read here for the reveal.
   rocketTrigger = ScrollTrigger.create({
@@ -111,6 +141,7 @@ export function initSpace(): void {
       rocketP = self.progress;
       apply();
     },
+    onToggle: live,
   });
 
   trigger = ScrollTrigger.create({
@@ -121,6 +152,7 @@ export function initSpace(): void {
       spaceP = self.progress;
       apply();
     },
+    onToggle: live,
     // One refresh handler for both: ScrollTrigger refreshes every trigger
     // together, and this one is created last.
     onRefresh: () => {
@@ -136,6 +168,7 @@ export function initSpace(): void {
   rocketP = rocketTrigger.progress;
   spaceP = trigger.progress;
   apply();
+  live();
 }
 
 export function destroySpace(): void {
@@ -152,8 +185,11 @@ export function destroySpace(): void {
     el.style.opacity = "";
     forgetLeaf(el);
   }
+  destroyConstellation();
   stage = null;
   far = null;
   near = null;
+  canvas = null;
   width = 0;
+  height = 0;
 }
