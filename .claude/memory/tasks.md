@@ -94,3 +94,8 @@
 - files: ../../../.claude/hooks/read-once.py, ../../../.claude/hooks/review-gate.py, .claude/skills/build-animation/LESSONS.md, ../../../.claude/auto-memory/MEMORY.md, ../../../.claude/auto-memory/mac-desktop-layout.md, ../../../.claude/auto-memory/vps-primary-dev-migration.md, ../../../.claude/auto-memory/no-auto-tmux-on-login.md, ../../../.claude/auto-memory/friend-account-and-ssh-hardening.md, ../../../.claude/auto-memory/api-keys-missing-on-host.md, ../../../.claude/auto-memory/clip2vps-image-paste.md
 - git: feat/portfolio-v4@eb96b5e
 
+## 2026-10-03 02:37 | Portfolio v5 (owner flying, autonomous): memory freed (11 sessions to md); GDG Co-President + Drive figures; rocket explodes on the right; no machine numbering on case pages; video player with sound/seek/start points + liquid glass case bar; owner-only photo picker on :4401; constellation into WORK; WORK as word rows (carousel deleted); space -> Earth -> grass descent with pointer-pressed grass; two /code-review rounds acted on; full suite 1172/1173 (one flaky tunnel contrast check, passes on rerun); harness in band
+- files: src/utils/RocketFlight.ts, src/utils/Constellation.ts, src/utils/WorkRows.ts, src/utils/workStack.ts, src/utils/GrassField.ts, src/utils/player.ts, src/components/AnimeWork.astro, src/components/AnimeSpace.astro, src/components/AnimeParadise.astro, src/components/case/CaseClip.astro, src/layouts/CaseLayout.astro, src/pages/work/gdg.astro, scripts/pick-server.mjs, CLAUDE.md, docs/portfolio-v5-design.md
+- git: feat/portfolio-v5@d2f938b
+- next: Owner: try photos on http://100.122.188.86:4401/ and press Send; then pin with scripts/pin-picks.mjs. Decide the Vercel preview route (repo is public). Review on Mac/iPhone at :4400.
+

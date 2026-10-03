@@ -1,4 +1,4 @@
 # Project state
-Updated: 2026-10-02 22:26
+Updated: 2026-10-03 02:37
 
-feat/portfolio-v4 @ e835887 (local, not pushed), 1142/1142, preview :4400 serving the final build; main untouched
+feat/portfolio-v5 @ d2f938b local, not pushed; preview :4400 serves the final build; picker :4401 (user unit portfolio-picker); full suite 1172/1173
