@@ -450,7 +450,12 @@ The measurement harness lives in `perf/` (`harness.mjs`, `regression.mjs`,
   figure; 22 meetings in 2025-26 and 6 → 70 members in the first year come
   from the chapter's shared Drive (sources in `src/pages/work/gdg.astro`).
 - Branch history:
-  - `feat/portfolio-v5` (2026-10-03, local, not pushed) is v5, from
+  - `preview/portfolio` (pushed 2026-10-03, the owner's choice): one orphan
+    commit with the site's sources only (src, public without resume.pdf,
+    configs), no notes and no history, built by Vercel as a preview. Vercel
+    Authentication protects previews: the link opens for the owner's Vercel
+    login only. Rebuild it from a fresh orphan commit, never by merging.
+  - `feat/portfolio-v5` (2026-10-03, local, not pushed) is v5 and v6, from
     `feat/portfolio-v4` @ eb96b5e. The GitHub repo is public and Vercel builds a
     preview for every pushed branch, so a push would also publish
     `docs/media-picks.md` and the other private curation notes; the owner
