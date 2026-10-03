@@ -40,6 +40,22 @@ import { BASE, check, summarize } from './lib.mjs';
 
 const results = [];
 
+// WebKit reports a same-origin load that a navigation cancelled as a page
+// error, even when the page's own code catches the rejection: "Fetch API
+// cannot load <url> due to access control checks" for a fetch, and "Cannot
+// load blob:<url> ..." for the blob createImageBitmap decodes from. The Zyp
+// case page fetches and decodes its frames ahead of the scroll, and this
+// suite leaves it with frames in flight. Same origin cannot fail an access
+// control check, so this is the engine's own cancellation, like the aborts
+// tests/lib.mjs ignores. WebKit mangles the scheme in the message ("http:
+// /host", "blob: ttp://host"), so only the host is compared.
+const host = new URL(BASE).host.replace(/[.]/g, '\\.');
+const sameOriginLoad = new RegExp(`^(blob:)?h?ttps?:/{1,2}${host}/`);
+const cancelledFetch = (text) => {
+  const m = /^(?:Fetch API cannot load|Cannot load) (.+?) due to access control checks/.exec(text.trim());
+  return !!m && sameOriginLoad.test(m[1].replace(/\s+/g, ''));
+};
+
 for (const [ename, engine] of Object.entries({ chromium, webkit })) {
   let browser;
   try {
@@ -54,8 +70,8 @@ for (const [ename, engine] of Object.entries({ chromium, webkit })) {
     const ctx = await browser.newContext({ viewport: { width: w, height: h } });
     const page = await ctx.newPage();
     const errors = [];
-    page.on('pageerror', (e) => errors.push(String(e).slice(0, 140)));
-    page.on('console', (m) => { if (m.type() === 'error' && !/favicon/.test(m.text())) errors.push(m.text().slice(0, 140)); });
+    page.on('pageerror', (e) => { if (!cancelledFetch(String(e))) errors.push(String(e).slice(0, 140)); });
+    page.on('console', (m) => { if (m.type() === 'error' && !/favicon/.test(m.text()) && !cancelledFetch(m.text())) errors.push(m.text().slice(0, 140)); });
 
     await page.goto(BASE + '/', { waitUntil: 'load' });
 
@@ -279,8 +295,8 @@ for (const [ename, engine] of Object.entries({ chromium, webkit })) {
     const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' });
     const page = await ctx.newPage();
     const errors = [];
-    page.on('pageerror', (e) => errors.push(String(e).slice(0, 140)));
-    page.on('console', (m) => { if (m.type() === 'error' && !/favicon/.test(m.text())) errors.push(m.text().slice(0, 140)); });
+    page.on('pageerror', (e) => { if (!cancelledFetch(String(e))) errors.push(String(e).slice(0, 140)); });
+    page.on('console', (m) => { if (m.type() === 'error' && !/favicon/.test(m.text()) && !cancelledFetch(m.text())) errors.push(m.text().slice(0, 140)); });
     await page.goto(BASE + '/', { waitUntil: 'load' });
     await page
       .waitForFunction(() => !document.documentElement.classList.contains('is-scroll-blocked'), null, { timeout: 12000 })

@@ -72,6 +72,12 @@ for (const [w, h, size] of [[1440, 900, 'desktop'], [390, 844, 'phone']]) {
         // ...and it shows nothing until the star field hands over (`is-on`).
         const off = document.querySelector('.s-work--home:not(.is-on)');
         off?.classList.add('is-on');
+        // The sweep above ran through the wall's dissolve, which leaves the
+        // scene at opacity 0 until the section is near again and its tick
+        // writes the value for where the visitor is. Inside WORK that is 1.
+        const scene = document.querySelector('.s-work--home .s__scene');
+        const sceneOpacity = scene?.style.opacity ?? '';
+        if (scene) scene.style.opacity = '';
         void document.body.offsetHeight;
 
         const lum = (c) => {
@@ -184,6 +190,7 @@ for (const [w, h, size] of [[1440, 900, 'desktop'], [390, 844, 'phone']]) {
         forced.forEach((el) => el.classList.remove('is-inview'));
         far?.classList.add('is-far');
         off?.classList.remove('is-on');
+        if (scene) scene.style.opacity = sceneOpacity;
         return { bad, examined, inCards, cards: document.querySelectorAll('a-work').length };
       });
       // Measured: a project page grades 11 strings, the home page many more.
