@@ -56,7 +56,7 @@ export const projects: readonly Project[] = [
     role: "Hardware: the Raspberry Pi driver board",
     when: "May 2026",
     where: "QuackHacks 3, University of Oregon",
-    result: "2nd place overall of 71 teams",
+    result: "2nd place overall of 71 teams, 250+ hackers",
     line: "A device that plays Braille through vibration motors, so a blind user can browse the web by touch.",
     cover: {
       ...picture("touchpoint", "cover", 640),
@@ -115,11 +115,11 @@ export const projects: readonly Project[] = [
     href: "/work/gdg/",
     title: "GDG on Campus",
     kind: "Leadership",
-    role: "President",
-    when: "2026 — now",
+    role: "Co-President",
+    when: "Spring 2026 — now",
     where: "Google Developer Group on Campus, Oregon State",
     result: "200+ students registered",
-    line: "President of Oregon State's Google Developer Group chapter, where 200+ registered students build with Google technology.",
+    line: "Co-President of Oregon State's Google Developer Group chapter, where 200+ registered students build with Google technology.",
     cover: {
       ...picture("gdg", "cover", 640),
       alt: "Presenting Google Developer Group on Campus Oregon State from the stage",
