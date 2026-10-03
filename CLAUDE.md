@@ -6,7 +6,7 @@ Read this before doing anything in this repository.
 
 A personal portfolio site built with **Astro**, animation-heavy. Two homes ship:
 
-- `/` is the **anime home** (v5, branch `feat/portfolio-v5`, from v4). The sections:
+- `/` is the **anime home** (v6, branch `feat/portfolio-v5`, from v4). The sections:
   - `AnimeIntro`: the opening cover.
   - `AnimeHero`: the name and the two lines on a cylinder, projected at build
     time by `src/utils/cylinderText.ts`, behind a CSS 3D wheel of the seven
@@ -14,19 +14,28 @@ A personal portfolio site built with **Astro**, animation-heavy. Two homes ship:
   - `AnimeRocket` wraps `WhyWorkWithMe`. A sticky stage flies the rocket beside
     the bento, then crashes it on the right into the wipe.
   - `AnimeSpace`: the star field, then the constellation (`Constellation.ts`,
-    one canvas): the sparks and stars gather into a vertical W/O/R/K stack.
-  - `AnimeWork`: the word rows (`WorkRows.ts`). The stack opens into four rows
-    of letters with the seven projects of `src/data/projects.ts` as photographs
-    in them; at each stop one preview grows out into a card. The stack's
-    geometry has one source, `src/utils/workStack.ts`, shared with the canvas.
+    one canvas): the stars gather into WORK's opening W/O/R/K stack.
+  - WORK is the `/tunnel/` letter wall in home mode (`SWork items={workCards}
+    home`, `WorkSection.ts`, `AWork.astro`, `src/data/workCards.ts` from
+    `projects.ts`): concave W/O/R/K rows, the seven projects as cards flying
+    through, a click opens the dive (`DiveTransition.ts`). The constellation
+    hands over on the frame the section's top meets the screen's
+    (`showWorkStack`); the stack's geometry has one source,
+    `src/utils/workStack.ts`, derived from the tunnel's CSS. After the last
+    card the wall dissolves into the descent's star field (`WorkDust.ts`,
+    `helpers/_stars.scss`).
   - `AnimeParadise`: the timeline. A descent from space past the Earth and its
-    horizon onto a meadow with a painted sky and grass the pointer presses down
-    (`GrassField.ts`), then a walk along a trail.
+    horizon, through clouds, onto a painted meadow (`public/paradise/land-*`,
+    Gemini, the sky's own picture) with grass the pointer presses down
+    (`GrassField.ts`), then a walk along a trail over a painted grass tile.
   - `AnimeContact`: no resume link, by the owner's choice.
   - Lenis smooth scroll runs on the home only, off on touch and under reduced
     motion.
   - The seven case pages use `src/layouts/CaseLayout.astro` and
-    `src/components/case/`. Each page has its own composition.
+    `src/components/case/`. Each page has its own composition. Zyp's plays
+    the zyp.co hero's 97 frames on a canvas scrubbed by the scroll
+    (`src/utils/frameSequence.ts`, `public/projects/zyp/frames/`); below
+    768 px and under reduced motion it shows frame 1, as zyp.co does.
   - Case-page clips play in `CaseClip.astro` + `src/utils/player.ts` (seek,
     sound, full screen, a `playFrom` start point); controls and the case bar are
     liquid glass (`src/styles/helpers/_glass.scss`, refraction on Chromium only).
@@ -77,7 +86,10 @@ Verified behaviours — do not re-test these, they are confirmed:
 Environment note: the repository now lives on the Linux VPS (`vps-worker`,
 4 cores, 7.6 GB, no GPU), not on the Mac. Run every build, test suite and
 headless browser through `heavy` (`heavy npm run build`, `heavy npm test`):
-it serialises heavy jobs, and two at once make the host swap.
+it serialises heavy jobs, and two at once make the host swap. Worktrees go
+under `~/work/works-only/wt/<name>` (the workspace hook blocks writes
+elsewhere); bind ad-hoc preview servers to 127.0.0.1, since `--host`
+also binds the public interface.
 
 ---
 
@@ -313,6 +325,18 @@ The measurement harness lives in `perf/` (`harness.mjs`, `regression.mjs`,
   has a fix applied but **unverified on iOS**.
 - Running notes and rejected hypotheses live in `PERF-NOTES.md`. Read it before
   re-proposing something that was already tried.
+- **v6 numbers** (2026-10-03, same host and harness; frames over 50 ms per phase,
+  long tasks in brackets; base = v5 with the v6 explosion, measured the same
+  morning):
+  - Phone x4: WORK phases 9-35 (2-16) over two runs, against 0-2 for v5's word
+    rows and 11-28 (0-11) for `/tunnel/`'s same wall; rocket 14-16, space 0,
+    paradise 2-7, dive-home 6-13.
+  - Desktop: WORK phases 139-181 at a 50 ms median (`/tunnel/` 50-94 at
+    33-50; v5 rows 1-10); paradise 6-16; grass-pointer 26.
+  - The wall is the heavy design the owner chose (WORK as on Vercel). On this
+    host the frames are lost in the compositor (software raster), not in
+    script: a trace showed 35 tasks over 50 ms in all WORK phases. His Mac and
+    iPhone give the verdict.
 - **v5 numbers** (2026-10-03, chromium headless, software raster, `wheelScale` 2 / 1;
   base = v4 measured the same morning; frames over 50 ms, phone x4 two runs):
   - Phone x4: medians 16.7 everywhere but rocket (33.3), as in v4. Work phases
@@ -385,7 +409,8 @@ The measurement harness lives in `perf/` (`harness.mjs`, `regression.mjs`,
     the imported file; the poster is taken there) and `blur: [[from, to]]` (a
     privacy cut). Re-import single entries with `--only=<slug> --ids=<id>
     --force`.
-- **The photo picker** (owner only, never in the build): `node
+- **The photo picker** (owner only, never in the build; stopped on 2026-10-03
+  after his picks were pinned in 0ce0ee8): `node
   scripts/pick-server.mjs` serves `dist/` on http://100.122.188.86:4401/ (open it
   by IP: Host and Origin are checked) and injects `scripts/pick/picker.js`. The
   candidate pool is `~/work/works-only/in/pick-pool/` (`scripts/pick-pool.mjs`,

@@ -199,3 +199,35 @@ before the Earth; picker stopped; a clean branch for the Vercel preview.
 ### v6 progress
 - X1 0ce0ee8: the owner's picks pinned; the duplicate certificate removed; picker
   stopped (`systemctl --user stop portfolio-picker`).
+- X2 e1fe9a3: the explosion is a full-screen flash played in time; nothing scrubbed is
+  left mid-air.
+- X6 61b428b (Opus agent): the Zyp case page plays the site's 97 hero frames on a
+  canvas, scrubbed by the scroll; the recording is gone. Below 768 px and under reduced
+  motion it shows frame 1, as zyp.co does.
+- X3 (v6-x3): `/` mounts the tunnel (`SWork items={workCards} home`); WorkRows and
+  AnimeWork deleted. Home mode in WorkSection: own passive listeners, GSAP ticker, `is-far`
+  observer with a one-screen margin, sticky container, static height, own-trigger
+  refresh. The constellation lands on the tunnel's opening pose (`workStack.ts` from the
+  tunnel's CSS); checked within ~1 px at 1440x900. The dive stops Lenis; the home
+  restores `returnScrollY` after the intro. Card covers: the cover window is chosen from
+  the scroll's progress, not the trailing timeline (a jump left later cards on their
+  posters); covers up to 1440 px.
+- X4 (v6-x3): after the hold, a home-only 100svh segment: the last card leaves, the
+  letters fade as dust sampled from their glyphs drifts outward (WorkDust.ts, own
+  canvas, drawn on progress change only), one speck lands on each star of the descent's
+  field (`helpers/_stars.scss`, shared with the descent stage), and that field fades in
+  under them. The descent then grows the Earth out of the same field.
+- X5 (v6-x3): the descent ends on the painted land (Gemini, the sky's own picture with
+  the meadow and the path), faded in while the clouds are thickest and settling with the
+  grass; the SVG meadow and its flowers are gone. GrassField takes the painting's
+  greens and keeps blades off the painted path (a corridor in the picture's units). The
+  walk's ground is a painted seamless tile, fetched once the section is near.
+- Review (/code-review high, 8 findings, all acted on): tall cuts by aspect with
+  `<picture>`; the wall initialises on fonts, not `load`; covers not decoded while far
+  and retried on coming near; the home's own `returnScrollY:/` key, dropped on a bfcache
+  restore; the dust sampled during the hold (reads first, scan in idle) into buffers
+  allocated once; the invisible grid not stroked; star tiles read from `.s__stars`.
+- Perf: the home's grid drawn once and moved by its layer; the dust canvas out of the
+  tree outside its segment; the settled meadow drops the sky and its mask. Phone x4
+  WORK 9-35 frames over 50 ms per phase (the tunnel 11-28; v5 rows 0-2); numbers in
+  CLAUDE.md and the perf commits.
