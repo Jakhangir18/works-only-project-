@@ -1,0 +1,106 @@
+---
+/**
+ * The opening.
+ *
+ * The reference holds a white screen for about two seconds while its logo mark
+ * assembles from two halves and the hero fades up ghosted behind it. That is
+ * the whole trick: no progress bar, no word "loading", and the scene is
+ * already there before the cover leaves.
+ *
+ * The mark here is the owner's own — a J and a T cut from the same diagonal —
+ * drawn as two paths so each can arrive from its own side.
+ */
+---
+
+<div class="anime-intro js-anime-intro" aria-hidden="true">
+  <svg
+    class="anime-intro__mark"
+    viewBox="0 0 44 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      class="anime-intro__part anime-intro__part--j"
+      d="M4 0h12v16.2c0 4.3-3.1 7.8-7.4 7.8H4.6C2 24 0 21.9 0 19.4v-2.2h5.6v1.1c0 .6.5 1.1 1.1 1.1h1.2c.6 0 1.1-.5 1.1-1.1V4.8H4V0Z"
+      fill="currentColor"></path>
+    <path
+      class="anime-intro__part anime-intro__part--t"
+      d="M20 0h24v4.8h-9v19.2h-6V4.8h-9V0Z"
+      fill="currentColor"></path>
+  </svg>
+</div>
+
+<style lang="scss">
+  @use "../styles/helpers/colors" as *;
+
+  .anime-intro {
+    position: fixed;
+    inset: 0;
+    z-index: 900;
+
+    display: grid;
+    place-items: center;
+
+    /* Space black, not the page's white: the page opens and closes dark, with
+       the white hero between — and the mark is the one white thing on it. */
+    background: color(space);
+
+    /* Cleared by the controller once the hero has something to show. The cover
+       fades; the mark leaves first and a little faster, so the last thing on
+       screen is the page and not the logo. */
+    opacity: 1;
+    transition: opacity 520ms cubic-bezier(0.4, 0, 0.2, 1);
+
+    &.is-gone {
+      opacity: 0;
+      pointer-events: none;
+    }
+  }
+
+  .anime-intro__mark {
+    width: clamp(64px, 7vw, 96px);
+    height: auto;
+    color: color(secondary);
+    overflow: visible;
+  }
+
+  .anime-intro__part {
+    /* Each half starts off its own side of the centre and slides in. The
+       distance is in the SVG's own user units, so it scales with the mark. */
+    opacity: 0;
+    animation: anime-intro-part 620ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .anime-intro__part--j {
+    --from-x: -14px;
+  }
+
+  .anime-intro__part--t {
+    --from-x: 14px;
+    animation-delay: 90ms;
+  }
+
+  @keyframes anime-intro-part {
+    from {
+      opacity: 0;
+      transform: translateX(var(--from-x, 0)) scaleY(0.82);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0) scaleY(1);
+    }
+  }
+
+  /* The setting asks for no motion, not for no page: the mark is simply there,
+     and the controller still takes the cover away on the same signal. */
+  @media (prefers-reduced-motion: reduce) {
+    .anime-intro {
+      transition-duration: 1ms;
+    }
+
+    .anime-intro__part {
+      opacity: 1;
+      animation: none;
+    }
+  }
+</style>

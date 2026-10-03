@@ -1,0 +1,267 @@
+---
+// RocketBackground.astro
+// Fixed background layer rendering the rocket frame sequence.
+// Positioned behind all content, responds to scroll progress of RocketStorySection.
+---
+
+<!-- Fixed canvas layer behind the rocket story. -->
+<div class="rocket-bg js-rocket-bg">
+  <div class="rocket-bg__container js-rocket-container">
+    <canvas
+      class="rocket-bg__canvas js-rocket-canvas"
+      width="1400"
+      height="1400"></canvas>
+  </div>
+</div>
+
+<style lang="scss">
+  /* Fixed background layer, only visible during the rocket section. */
+  .rocket-bg {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #000;
+    pointer-events: none;
+    z-index: 1;
+    overflow: hidden;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+
+    &.is-active {
+      opacity: 1;
+    }
+  }
+
+  .rocket-bg__container {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    will-change: transform;
+    transform-origin: 50% 50%;
+  }
+
+  .rocket-bg__canvas {
+    display: block;
+    max-width: 60vw;
+    max-height: 80vh;
+    width: auto;
+    height: auto;
+
+    @media (max-width: 576px) {
+      max-width: 92vw;
+      max-height: 65vh;
+    }
+  }
+</style>
+
+<script>
+  /**
+   * Rocket background frame renderer.
+   * Loads all frames and updates based on progress passed from parent scroll handler.
+   * Activates background only during rocket section scroll.
+   */
+  (function initRocketBg() {
+    const canvas = document.querySelector(
+      ".js-rocket-canvas",
+    ) as HTMLCanvasElement;
+    const bg = document.querySelector(".js-rocket-bg") as HTMLElement;
+    if (!canvas || !bg) return;
+
+    const ctx = canvas.getContext("2d")!;
+    const TOTAL = 240;
+    // 960px wide, not the original 1918: same 240 frames decoded at a quarter
+    // of the pixels roughly halves resident memory (perf/preload-bench.mjs:
+    // 45.3 MB vs 90.7 MB, isolated). The original 1918px set stays in
+    // public/1/ unused, so this is a one-line revert if 960 ever needs
+    // reconsidering — see docs/preload-weight-findings.md.
+    const PATH = "/1/960/ezgif-frame-";
+    const EXT = ".jpg";
+
+    const images: HTMLImageElement[] = new Array(TOTAL).fill(null);
+    let lastFrameIdx = -1;
+
+    /* Draw each frame centered on the canvas. */
+    function drawFrame(img: HTMLImageElement) {
+      if (!img?.complete || !img.naturalWidth) return;
+      const W = canvas.width,
+        H = canvas.height;
+      const scale = Math.min(W / img.naturalWidth, H / img.naturalHeight);
+      const dw = img.naturalWidth * scale,
+        dh = img.naturalHeight * scale;
+      ctx.clearRect(0, 0, W, H);
+      ctx.drawImage(img, (W - dw) * 0.5, (H - dh) * 0.5, dw, dh);
+    }
+
+    /* Update the displayed frame from scroll progress. */
+    window.updateRocketFrame = function (progress: number) {
+      const frameIdx = Math.min(TOTAL - 1, Math.round(progress * (TOTAL - 1)));
+      if (frameIdx !== lastFrameIdx) {
+        // lastFrameIdx is the frame the scroll position wants. If its image is
+        // still in flight, the onload handler in loadFrame draws it on arrival;
+        // a frame crossed before its bytes landed is never lost.
+        lastFrameIdx = frameIdx;
+        const img = images[frameIdx];
+        if (img?.complete && img.naturalWidth) drawFrame(img);
+        // Not here yet. Once the bulk gate is open the pump asks for exactly
+        // this frame — its search is anchored on the index that was just set —
+        // so the only case needing a direct request is the gate still being
+        // shut: a visitor who arrived by anchor or a restored scroll offset
+        // must not wait on idle for the frame in front of them.
+        // Not here yet: ask for this one and nothing else. Opening the bulk
+        // gate here would defeat the deferral — the story section drives this
+        // from an initial animation frame and from its load handler, before
+        // the first screen has settled — and requesting it uncapped would put
+        // one image on the wire per frame crossed during a fling.
+        else demand();
+      }
+
+      // Toggle background visibility based on progress
+      // Keep visible once started (don't fade out at end)
+      if (progress > 0) {
+        bg.classList.add("is-active");
+      } else {
+        bg.classList.remove("is-active");
+      }
+    };
+
+    /* Preload every frame so scroll playback stays responsive — but not while
+       the first screen is still painting. Firing this at script time put 240
+       requests on the critical path, competing with the hero for bandwidth and
+       decoder time before anything was on screen. The set still loads eagerly
+       and completely; it just starts once the browser is idle, or sooner if the
+       rocket section is already close. */
+    let preloadStarted = false;
+
+    /* Requesting all 240 at once put them on the wire in index order and gave
+       the loader no way to change its mind. Measured on a 250 kB/s link: the
+       frame the visitor had scrolled to was wanted at 5.9 s and painted at
+       23.8 s, because the bandwidth in between went to frames already scrolled
+       past. Setting fetchPriority afterwards does not help — a request in
+       flight cannot be re-prioritized.
+
+       So the set is fetched through a small window instead, and the next
+       request is always the missing frame nearest to where the visitor is.
+       Same bytes, same completeness; what changes is the order, and the order
+       is what was wrong. */
+    const WINDOW = 6;
+    const RETRY_LIMIT = 2;
+    let inFlight = 0;
+    /* How many slots are still empty. The outward search below is the whole
+       point of the loader, so it is not bounded — but once the set is complete
+       the search would otherwise walk all 240 slots on every scroll frame that
+       changes the index, so it is skipped entirely at zero. */
+    let missing = TOTAL;
+    const attempts: number[] = [];
+
+    const loadFrame = (i: number) => {
+      if (images[i]) return;
+      const img = new Image();
+      images[i] = img;
+      missing--;
+      inFlight++;
+      img.decoding = "async";
+      const settle = () => {
+        inFlight--;
+        // Both, in this order: the frame the visitor is on comes before the
+        // backlog, and demand() is what keeps a wanted frame from being
+        // starved by a full window while the bulk gate is still shut.
+        demand();
+        pump();
+      };
+      img.onload = () => {
+        if (i === lastFrameIdx) drawFrame(img);
+        settle();
+      };
+      img.onerror = () => {
+        // A slot holding a broken image reads as present forever: the search
+        // skips it, the draw refuses it, and nothing ever asks again. Free it
+        // so the window can heal a dropped connection, but not indefinitely —
+        // a frame that is genuinely missing must not become a request loop.
+        attempts[i] = (attempts[i] || 0) + 1;
+        if (attempts[i] <= RETRY_LIMIT) {
+          images[i] = undefined as unknown as HTMLImageElement;
+          missing++;
+        }
+        settle();
+      };
+      img.src = `${PATH}${String(i + 1).padStart(3, "0")}${EXT}`;
+    };
+
+    /* The missing frame closest to the one on screen, searched outward so a
+       visitor scrolling either direction is served before the far end of the
+       sequence, then the sweep for the rest. */
+    const nextWanted = () => {
+      if (missing <= 0) return -1;
+      // lastFrameIdx is -1 until something drives the controller, and -1 is
+      // also this function's "nothing left" answer, so an unclamped anchor
+      // stops the loader before it starts and the gate can never reopen.
+      const anchor = lastFrameIdx < 0 ? 0 : lastFrameIdx;
+      for (let d = 0; d < TOTAL; d++) {
+        const ahead = anchor + d;
+        if (ahead < TOTAL && !images[ahead]) return ahead;
+        if (d === 0) continue;
+        const behind = anchor - d;
+        if (behind >= 0 && !images[behind]) return behind;
+      }
+      return -1;
+    };
+
+    /**
+     * The frame the scroll position is on, if it is missing and there is room
+     * on the wire. Independent of the bulk gate, because a visitor who arrives
+     * at the rocket section by anchor or a restored scroll offset must not
+     * wait on idle for the frame in front of them — but capped by the same
+     * window, and retried from settle() whenever a slot frees.
+     */
+    function demand() {
+      if (lastFrameIdx < 0 || images[lastFrameIdx]) return;
+      if (inFlight >= WINDOW) return;
+      loadFrame(lastFrameIdx);
+    }
+
+    function pump() {
+      if (!preloadStarted) return;
+      while (inFlight < WINDOW) {
+        const i = nextWanted();
+        if (i < 0) return;
+        loadFrame(i);
+      }
+    }
+
+    const preloadFrames = () => {
+      if (preloadStarted) return;
+      preloadStarted = true;
+      pump();
+    };
+
+    // The first frame is one small request and is what the section shows the
+    // moment it appears, so it does not wait for idle.
+    loadFrame(0);
+
+    // Whichever comes first: the browser goes idle, or the section approaches.
+    const startWhenIdle = () => {
+      if ("requestIdleCallback" in window) {
+        (window as Window & {
+          requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => number;
+        }).requestIdleCallback(preloadFrames, { timeout: 2000 });
+      } else {
+        setTimeout(preloadFrames, 600);
+      }
+    };
+
+    if (document.readyState === "complete") startWhenIdle();
+    else window.addEventListener("load", startWhenIdle, { once: true });
+
+    // The story section already intersects the viewport at scroll 0, so an
+    // IntersectionObserver on it fires before first paint and defeats the
+    // deferral. The first scroll is the honest signal that the visitor is on
+    // their way to the rocket.
+    window.addEventListener("scroll", preloadFrames, { once: true, passive: true });
+
+    // Initial frame
+    setTimeout(() => window.updateRocketFrame?.(0), 50);
+  })();
+</script>

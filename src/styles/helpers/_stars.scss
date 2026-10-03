@@ -1,0 +1,18 @@
+/**
+ * The descent's star field: two tiled layers of dots, white and warm. The
+ * timeline's descent stage paints it (AnimeParadise.astro), and WORK's wall
+ * on the home dissolves into it (SWork.astro), so the two screens show one
+ * field across the seam where WORK scrolls away.
+ *
+ * WorkDust.ts lands its last specks on these stars' centres (each tile's
+ * offset plus half its size), reading the offsets and sizes from
+ * `.s__stars`'s computed background; their colours and alphas it keeps in
+ * LOOKS, in this order.
+ */
+@mixin star-tiles {
+  background-image:
+    radial-gradient(circle, rgba(255, 255, 255, 0.7) 0.6px, transparent 1.3px),
+    radial-gradient(circle, rgba(255, 217, 168, 0.55) 0.8px, transparent 1.6px);
+  background-position: 17px 23px, 89px 61px;
+  background-size: 137px 149px, 211px 173px;
+}

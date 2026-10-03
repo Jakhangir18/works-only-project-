@@ -1,0 +1,307 @@
+---
+import { timeline, KIND_LABEL, when } from "../data/timeline";
+import SplitHeading from "./SplitHeading.astro";
+
+/**
+ * The timeline as a pinned board, after the 21st.dev "how it works" component
+ * the owner picked: notes alternating left and right, each rotated a degree or
+ * two, tinted by what kind of thing it was, a large outlined number, a pushpin,
+ * and a dashed line zig-zagging between them.
+ *
+ * The zig-zag is one SVG path drawn behind the whole board rather than a
+ * segment per gap, so it stays a single paint however many entries there are.
+ *
+ * Entries whose role or dates the owner has not confirmed carry `draft: true`
+ * and are not rendered. They are in the data so they are not forgotten, not so
+ * they can be published early.
+ */
+
+const entries = timeline
+  .filter((entry) => !entry.draft)
+  .slice()
+  /* Newest first: a portfolio is read from what someone is doing now
+     backwards, not from where they started. */
+  .sort((a, b) => b.start.localeCompare(a.start));
+
+const cards = entries.map((entry, index) => ({
+  ...entry,
+  number: String(index + 1).padStart(2, "0"),
+  side: index % 2 === 0 ? "left" : "right",
+  /* A repeating set of small angles rather than a random one, so the board is
+     identical between builds and the diff stays readable. */
+  tilt: [-2.1, 1.6, -1.2, 2.3, -1.7, 1.1][index % 6],
+  date: when(entry.start, entry.end).text,
+}));
+---
+
+<section class="board" id="timeline" aria-label="Timeline">
+  <div class="board__head">
+    <p class="board__kicker">Timeline</p>
+    <SplitHeading class="board__title" text="How it went" />
+  </div>
+
+  <ol class="board__list">
+    {
+      cards.map((card) => (
+        <li class={`board__item board__item--${card.side}`}>
+          <article
+            class={`board__note board__note--${card.kind}`}
+            style={`--tilt:${card.tilt}deg;`}
+          >
+            <span class="board__pin" aria-hidden="true" />
+
+            {/* Drawn rather than written. As HTML this is a transparent fill
+                with a stroke, which an accessibility checker reads as text at
+                1:1 against its own background and reports as a contrast
+                failure on every note — aria-hidden does not exempt it from
+                that rule. As SVG it is a shape, which is what it always was:
+                the note's order is already in the list it sits in. */}
+            <svg
+              class="board__number"
+              viewBox="0 0 64 44"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <text x="64" y="36" text-anchor="end">{card.number}</text>
+            </svg>
+
+            <p class="board__when">
+              <time datetime={card.start}>{card.date}</time>
+            </p>
+
+            <h3 class="board__name">
+              {card.href ? <a href={card.href}>{card.title}</a> : card.title}
+            </h3>
+
+            <p class="board__org">{card.org}</p>
+            <p class="board__summary">{card.summary}</p>
+
+            <p class="board__kind">{KIND_LABEL[card.kind] ?? card.kind}</p>
+          </article>
+        </li>
+      ))
+    }
+  </ol>
+</section>
+
+<style lang="scss">
+  @use "../styles/helpers/colors" as *;
+  @use "../styles/helpers/fonts" as *;
+  @use "../styles/helpers/responsive" as *;
+
+  .board {
+    position: relative;
+    padding: 7rem clamp(1.5rem, 5vw, 5rem) 8rem;
+    background: color(secondary);
+    color: color(primary);
+    overflow: hidden;
+  }
+
+  .board__head {
+    max-width: 1180px;
+    margin: 0 auto 4rem;
+  }
+
+  .board__kicker {
+    margin: 0 0 0.75rem;
+    font: 700 0.6875rem / 1 font-family(fraktion);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: color(accent-ink);
+  }
+
+  :global(.board__title) {
+    margin: 0;
+    font: 400 clamp(2.25rem, 5vw, 4rem) / 1.04 font-family(editorial);
+    letter-spacing: -0.025em;
+  }
+
+  .board__list {
+    position: relative;
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 0;
+    list-style: none;
+
+    /* The dashed spine the notes hang from. One background rather than an
+       element, so it costs nothing to lay out and nothing to paint twice. */
+    &::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 50%;
+      width: 0;
+      border-left: 2px dashed color(rule);
+      transform: translateX(-1px);
+    }
+  }
+
+  .board__item {
+    display: flex;
+    margin-bottom: clamp(1.5rem, 3vw, 2.75rem);
+
+    /* Each note hangs against the spine rather than against the page edge, so
+       the dashed line reads as the thing they are pinned to. */
+    &--left {
+      justify-content: flex-end;
+      padding-right: calc(50% + 1.75rem);
+    }
+
+    &--right {
+      justify-content: flex-start;
+      padding-left: calc(50% + 1.75rem);
+    }
+  }
+
+  .board__note {
+    position: relative;
+    width: 100%;
+    max-width: 27rem;
+    padding: 2.25rem 1.75rem 1.75rem;
+
+    border-radius: 4px;
+    /* Paper, pinned: a flat tint, a hairline, and one soft shadow under the
+       corner it hangs from. */
+    background: var(--tint, #f6f6f7);
+    border: 1px solid rgba(11, 11, 12, 0.07);
+    box-shadow: 0 10px 26px rgba(11, 11, 12, 0.08);
+    transform: rotate(var(--tilt, 0deg));
+  }
+
+  /* One tint per kind. The accents are the darker of each pair: the lighter
+     ones measured 4.05 and 4.09 against their own tints, under the 4.5 that
+     11px labels need. These measure 5.5 to 7. */
+  .board__note--work {
+    --tint: #eef3fb;
+    --accent: #1d4ed8;
+  }
+
+  .board__note--research {
+    --tint: #eefaf3;
+    --accent: #0f7048;
+  }
+
+  .board__note--competition {
+    --tint: #fdf3e7;
+    --accent: #96520a;
+  }
+
+  .board__note--club {
+    --tint: #f5eefb;
+    --accent: #6425c9;
+  }
+
+  .board__pin {
+    position: absolute;
+    top: -9px;
+    left: 50%;
+    width: 16px;
+    height: 16px;
+    transform: translateX(-50%);
+
+    border-radius: 50%;
+    background: var(--accent, #7c3aed);
+    box-shadow:
+      inset 0 -2px 0 rgba(0, 0, 0, 0.18),
+      0 3px 6px rgba(11, 11, 12, 0.25);
+  }
+
+  .board__number {
+    position: absolute;
+    top: 0.75rem;
+    right: 1.25rem;
+    width: 3.75rem;
+    height: auto;
+    overflow: visible;
+    opacity: 0.5;
+
+    text {
+      font: 400 2.75rem / 1 font-family(bigger);
+      /* Outlined rather than filled, so a large numeral can sit over the text
+         block without competing with it. stroke rather than the non-standard
+         -webkit-text-stroke, which is what the HTML version needed. */
+      fill: none;
+      stroke: var(--accent, #6425c9);
+      stroke-width: 1.5;
+    }
+  }
+
+  .board__when {
+    margin: 0 0 0.75rem;
+    font: 400 0.6875rem / 1 font-family(fraktion);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent, #7c3aed);
+  }
+
+  .board__name {
+    margin: 0 0 0.35rem;
+    font: 400 clamp(1.35rem, 2.4vw, 1.75rem) / 1.15 font-family(editorial);
+    letter-spacing: -0.015em;
+
+    a {
+      color: inherit;
+      text-decoration: none;
+      border-bottom: 1px solid rgba(11, 11, 12, 0.22);
+
+      &:hover,
+      &:focus-visible {
+        border-bottom-color: currentColor;
+      }
+    }
+  }
+
+  .board__org {
+    margin: 0 0 0.75rem;
+    font: 400 0.8125rem / 1.4 font-family(fraktion);
+    color: color(ink-soft);
+  }
+
+  .board__summary {
+    margin: 0 0 1rem;
+    font: 400 0.9375rem / 1.6 font-family(geist);
+    color: color(primary);
+  }
+
+  .board__kind {
+    margin: 0;
+    font: 700 0.625rem / 1 font-family(fraktion);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent, #7c3aed);
+  }
+
+  @include mq(tablet-sm) {
+    /* One column: the spine moves to the left edge and every note hangs off
+       the same side, because a zig-zag in a 390 px column is just a wobble. */
+    .board__list::before {
+      left: 10px;
+      transform: none;
+    }
+
+    .board__item {
+      &--left,
+      &--right {
+        justify-content: flex-start;
+        padding-left: 2.25rem;
+        padding-right: 0;
+      }
+    }
+
+    .board__note {
+      max-width: none;
+      transform: rotate(calc(var(--tilt, 0deg) * 0.4));
+    }
+
+    .board__pin {
+      left: 1.5rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .board__note {
+      transform: none;
+    }
+  }
+</style>

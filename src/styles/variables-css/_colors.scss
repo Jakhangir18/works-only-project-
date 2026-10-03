@@ -1,0 +1,27 @@
+/**
+ * Colors variables
+ */
+@use "sass:map";
+@use "../variables-scss/colors" as *;
+
+/* CSS properties */
+:root {
+  // Colors
+  @each $variable, $color in map.get($theme-colors, "default") {
+    --color-#{"" + $variable}: #{$color};
+  }
+}
+
+.theme-contrasted {
+  @each $variable, $color in map.get($theme-colors, "contrasted") {
+    --color-#{"" + $variable}: #{$color};
+  }
+}
+
+.theme-anime {
+  @each $variable, $color in map.get($theme-colors, "anime") {
+    --color-#{"" + $variable}: #{$color};
+  }
+
+  color-scheme: light;
+}

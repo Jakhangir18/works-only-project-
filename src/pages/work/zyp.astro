@@ -1,0 +1,662 @@
+---
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import CaseLayout from "../../layouts/CaseLayout.astro";
+import CaseMeta from "../../components/case/CaseMeta.astro";
+import CaseFigure from "../../components/case/CaseFigure.astro";
+import { projects } from "../../data/projects";
+
+/**
+ * Zyp, "The live artefact" (docs/portfolio-v4-design.md): the work is a
+ * public website, so the page opens on the website itself: the hero
+ * sequence of www.zyp.co, the site's own frames, scrubbed by the scroll
+ * inside a browser frame (src/utils/frameSequence.ts), with "See it live"
+ * as the first thing to press. Then the details, and three sections named
+ * by deliverable instead of Problem / Approach / Solution: the hero, the
+ * globe, the tests. It closes on what he learned and a note that the live
+ * site moves on.
+ *
+ * The stage is a runway of 250svh with the frame sticky inside it, and the
+ * scroll across it is the playhead, from the first scroll to where the
+ * frame lets go. At phone width and under reduced motion there is no
+ * runway: the frame holds the sequence's first frame, and no other frame
+ * is requested.
+ *
+ * Signature: the frame lands once, on load, from a tilt (rotateX 12deg,
+ * scale 0.9) to flat. Transform only, laid out at its final size so the
+ * scale approaches 1 from below and only ever downsamples (invariant 7), and
+ * none under reduced motion. It is a CSS animation, not a reveal: the frame
+ * is on the first screen at desktop and phone width, and a reveal there
+ * would be added a frame after first paint and never be seen.
+ *
+ * Facts: the owner's notes (role, dates, his part: the motion and the 3D)
+ * and the site's codebase as summarised for him (Astro, the 97-frame
+ * sequence, the canvas globe, the product-video takeover, Playwright + axe).
+ * The pictures are captures of the public site, 2 October 2026; the
+ * sequence is the site's own 97 frames, resized (scripts/zyp-frames.mjs).
+ * Nothing internal: no repository, no customers, no numbers about the
+ * company.
+ */
+const p = projects.find((x) => x.slug === "zyp")!;
+const live = p.links[0].href;
+
+/* The hero sequence's frames, with their count and size, as
+   scripts/zyp-frames.mjs wrote them. */
+const frameDir = "/projects/zyp/frames";
+const seq: { count: number; width: number; height: number } = JSON.parse(readFileSync(join(process.cwd(), "public", frameDir, "frames.json"), "utf8"));
+
+/* The frames of the hero sequence, as a ruler: a tall tick at the first
+   frame and every tenth. */
+const ticks = Array.from({ length: seq.count }, (_, i) => ({ x: i + 0.5, major: i === 0 || (i + 1) % 10 === 0 }));
+
+const parts = [
+  { id: "scrub", kind: "Motion", title: "The scroll-scrubbed hero" },
+  { id: "globe", kind: "3D", title: "The canvas globe" },
+  { id: "tests", kind: "Tests", title: "The tests that hold it together" },
+];
+---
+
+<CaseLayout slug="zyp" title="Zyp internship" description={p.line} shareCard="/projects/zyp/og.jpg">
+  <div class="zyp">
+    <header class="zyp-hero">
+      <div class="zyp-hero__top">
+        <div class="zyp-hero__name">
+          <p class="case-label">{p.kind} · {p.where} · {p.when}</p>
+          <h1 class="case-title">Zyp</h1>
+        </div>
+        <div class="zyp-hero__aside">
+          <p class="case-lede">The motion and the 3D on Zyp's public website: a hero you scrub with the scroll, and a globe drawn on a canvas.</p>
+          <a class="zyp-live" href={live} target="_blank" rel="noopener noreferrer">See it live <span class="zyp-live__arrow" aria-hidden="true">↗</span><span class="u-sr-only">(opens in a new tab)</span></a>
+        </div>
+      </div>
+
+      <div class="zyp-stage js-frame-seq-runway">
+        <div class="zyp-stage__pin">
+          <figure class="zyp-browser">
+            <div class="zyp-browser__window">
+              <div class="zyp-browser__bar" aria-hidden="true">
+                <span class="zyp-browser__dots"><i></i><i></i><i></i></span>
+                <span class="zyp-browser__url">
+                  <svg viewBox="0 0 10 12"><rect x="1" y="5" width="8" height="6.5" rx="1.2" /><path d="M3 5V3.6a2 2 0 0 1 4 0V5" /></svg>
+                  zyp.co
+                </span>
+              </div>
+              <div class="zyp-browser__view js-frame-seq" data-frames={`${frameDir}/frame_%04d.webp`} data-count={seq.count} style={`aspect-ratio:${seq.width} / ${seq.height}`}>
+                <img
+                  src={`${frameDir}/frame_0001.webp`}
+                  width={seq.width}
+                  height={seq.height}
+                  alt="The first frame of the zyp.co hero: an open-plan office, with a laptop on a white desk by the window and people working at the desks behind"
+                  fetchpriority="high"
+                  decoding="async"
+                />
+              </div>
+            </div>
+            <figcaption>
+              <span class="zyp-cap zyp-cap--live">The hero of www.zyp.co, played by your scroll as it is on the site: the shot moves in from the office to the laptop.</span>
+              <span class="zyp-cap zyp-cap--still">The first frame of the hero on www.zyp.co. On the site, the scroll moves the shot in from the office to the laptop.</span>
+            </figcaption>
+          </figure>
+        </div>
+      </div>
+    </header>
+
+    <section class="zyp-details" aria-label="Details">
+      <CaseMeta
+        rows={[
+          { label: "Role", value: "Software engineering intern, Zyp, Inc." },
+          { label: "My part", value: "The motion and the 3D on the public marketing site" },
+          { label: "When", value: "Summer 2026, August to September" },
+          { label: "Stack", value: "Astro, HTML canvas, Playwright, axe" },
+        ]}
+      />
+    </section>
+
+    <section class="case-section zyp-intro">
+      <div class="zyp-intro__grid">
+        <div>
+          <p class="case-label" data-reveal>The site</p>
+          <div class="case-prose zyp-intro__prose" data-reveal>
+            <p>In summer 2026 I worked on Zyp's public marketing site, www.zyp.co, on its motion and its 3D.</p>
+            <p>The site is an Astro static site with a scroll-scrubbed 97-frame hero sequence, a canvas globe with payment arcs, a product-video takeover, and Playwright and axe end-to-end tests. Three of those pieces follow, each named for what it is.</p>
+          </div>
+        </div>
+        <ol class="zyp-index" data-reveal>
+          {parts.map((part) => (
+            <li>
+              <a href={`#${part.id}`}>
+                <span class="zyp-index__t">{part.title}</span>
+                <span class="zyp-index__k">{part.kind}</span>
+              </a>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </section>
+
+    <section id={parts[0].id} class="case-section zyp-part zyp-part--ruled">
+      <div class="zyp-scrub__head">
+        <div>
+          <p class="zyp-tag" data-reveal>{parts[0].kind}</p>
+          <h2 class="case-h2" data-reveal>{parts[0].title}</h2>
+        </div>
+        <div class="case-prose" data-reveal>
+          <p>The home page opens on an office, and the scroll is the playhead. The hero is a 97-frame sequence scrubbed by scroll position: reading down pushes the shot in from the room to the laptop on the desk, and scrolling back up plays it in reverse. The reader sets the pace.</p>
+        </div>
+      </div>
+
+      <div class="zyp-ruler" aria-hidden="true" data-reveal>
+        <svg viewBox={`0 0 ${seq.count} 10`} preserveAspectRatio="none">
+          {ticks.map((t) => <line x1={t.x} x2={t.x} y1={t.major ? 0 : 5} y2="10" class={t.major ? "is-major" : undefined} />)}
+          <line x1="0.5" x2="0.5" y1="0" y2="10" class="is-head" />
+        </svg>
+        <p><span>Frame 1</span><span class="zyp-ruler__mid">{seq.count} frames, one scroll</span><span>{seq.count}</span></p>
+      </div>
+
+      <div class="zyp-scrub__stills">
+        <CaseFigure slug="zyp" id="hero" alt="The top of www.zyp.co: an office with a laptop on a white desk, under the headline 'The back office management platform for global companies.' and a Launch demo button" caption="The first screen, at the top of the page." sizes="(max-width: 48em) 100vw, 46vw" />
+        <CaseFigure slug="zyp" id="g01" alt="Further into the hero sequence: the shot has moved in to the laptop on the desk, its screen showing the product dashboard" caption="A little further down: the shot has moved in to the laptop." sizes="(max-width: 48em) 100vw, 46vw" />
+      </div>
+    </section>
+
+    <section id={parts[1].id} class="case-section zyp-part zyp-part--ground">
+      <div class="zyp-split zyp-split--media-first">
+        <div class="zyp-split__text">
+          <p class="zyp-tag" data-reveal>{parts[1].kind}</p>
+          <h2 class="case-h2" data-reveal>{parts[1].title}</h2>
+          <div class="case-prose" data-reveal>
+            <p>Further down, under the heading “Coverage where it matters”, the page draws a globe on an HTML canvas: the land as a field of dots, with payment arcs across it. The heading states the idea and the globe draws it, in 3D, live in the browser rather than as a static image.</p>
+          </div>
+        </div>
+        <CaseFigure slug="zyp" id="g04" alt="The section 'Coverage where it matters' on www.zyp.co: a pale globe with its land drawn as a field of dots" caption="“Coverage where it matters”, and the globe under it." ratio="2 / 1" focal="50% 100%" sizes="(max-width: 56em) 100vw, 56vw" class="zyp-split__media" />
+      </div>
+    </section>
+
+    <section id={parts[2].id} class="case-section zyp-part">
+      <div class="zyp-split">
+        <div class="zyp-split__text">
+          <p class="zyp-tag" data-reveal>{parts[2].kind}</p>
+          <h2 class="case-h2" data-reveal>{parts[2].title}</h2>
+          <div class="case-prose" data-reveal>
+            <p>Motion breaks quietly: a sequence that stops short, or a control the keyboard cannot reach, throws no error anyone sees. The site has end-to-end tests in Playwright, which loads it in a real browser, and axe, which checks what renders for accessibility problems. They are what let the motion change without breaking the page.</p>
+          </div>
+        </div>
+        <CaseFigure slug="zyp" id="g03" alt="The Team section of www.zyp.co: a dark product window with playback controls under it, beside the heading 'Team' and a list of what it does" caption="The Team section, with its product window." sizes="(max-width: 56em) 100vw, 56vw" class="zyp-split__media" />
+      </div>
+    </section>
+
+    <section class="case-section zyp-learned">
+      <div class="zyp-learned__grid">
+        <h2 class="case-h2" data-reveal>What I learned</h2>
+        <div>
+          <div class="case-prose" data-reveal>
+            <p>People come to a company's public site for the product, not for the effects. Motion there has to carry the message and then step aside, so the interesting decisions were about what moves, how far and when, more than how. End-to-end tests are what make it safe to keep revisiting them.</p>
+          </div>
+          <aside class="zyp-note" data-reveal>
+            <p class="case-label">A note on the captures</p>
+            <p>The pictures on this page were captured from the public site on 2 October 2026, and the sequence at the top is the site's own frames. The live site may have changed since.</p>
+          </aside>
+          <a class="zyp-live" href={live} target="_blank" rel="noopener noreferrer" data-reveal>See it live <span class="zyp-live__arrow" aria-hidden="true">↗</span><span class="u-sr-only">(opens in a new tab)</span></a>
+        </div>
+      </div>
+    </section>
+  </div>
+</CaseLayout>
+
+<script>
+  import { initFrameSequences } from "../../utils/frameSequence";
+  initFrameSequences();
+</script>
+
+<style lang="scss">
+  @use "../../styles/helpers/fonts" as *;
+
+  /* The hero: the name and the first action, then the site in its frame. */
+  .zyp-hero__top {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 27rem);
+    gap: clamp(1.5rem, 5vw, 5rem);
+    align-items: end;
+    padding: clamp(2.5rem, 7vh, 5rem) var(--case-gutter) clamp(2rem, 5vh, 3.5rem);
+
+    @media (max-width: 56em) {
+      grid-template-columns: 1fr;
+    }
+
+    /* Three letters: the name can be larger than the shared scale, and the
+       display face's caps rise above its tight line box, so the label above
+       needs more room than a margin of 1rem gives it. */
+    .case-title {
+      margin-top: clamp(1.5rem, 2.6vw, 2.5rem);
+      font-size: clamp(5.5rem, 16vw, 13rem);
+    }
+  }
+
+  .zyp-hero__aside {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.5rem;
+  }
+
+  .zyp-live {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.95rem 1.4rem;
+    border-radius: 999px;
+    background: var(--case-ink);
+    color: #fff;
+    font: 500 0.9375rem / 1 font-family(geist);
+    text-decoration: none;
+
+    &:hover,
+    &:focus-visible {
+      background: var(--case-accent);
+    }
+  }
+
+  .zyp-live__arrow {
+    display: inline-block;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .zyp-live__arrow {
+      transition: transform 200ms ease;
+    }
+
+    .zyp-live:hover .zyp-live__arrow,
+    .zyp-live:focus-visible .zyp-live__arrow {
+      transform: translate(2px, -2px);
+    }
+  }
+
+  /* The frame sits half on the white and half on the warm ground, which the
+     details then continue. */
+  .zyp-stage {
+    padding: 0 var(--case-gutter) clamp(1.25rem, 3vh, 2rem);
+    background: linear-gradient(to bottom, transparent 0 46%, var(--case-surface) 46%);
+  }
+
+  .zyp-browser {
+    max-width: 72rem;
+    margin: 0 auto;
+
+    figcaption {
+      margin-top: 0.8rem;
+      font: 400 0.8125rem / 1.45 font-family(geist);
+      color: var(--case-soft);
+    }
+  }
+
+  .zyp-cap--live {
+    display: none;
+  }
+
+  /* The runway the sequence plays across: the same query as LIVE in
+     frameSequence.ts, which plays nothing outside it. The frame holds the
+     middle of the screen, clear of the case bar's pills, and is never
+     taller than the screen. The warm ground rises behind it as it plays and
+     reaches its middle as it lets go, where the details carry it on. */
+  @media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+    .zyp-stage {
+      height: 250svh;
+      padding-bottom: 0;
+      background: linear-gradient(to bottom, transparent 0 calc(100% - 50svh), var(--case-surface) 0);
+    }
+
+    .zyp-stage__pin {
+      position: sticky;
+      top: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      height: 100svh;
+      padding: 4rem 0 1rem;
+    }
+
+    .zyp-browser {
+      width: min(100%, 72rem, calc((100svh - 10.5rem) * 16 / 9));
+    }
+
+    .zyp-cap--live {
+      display: inline;
+    }
+
+    .zyp-cap--still {
+      display: none;
+    }
+  }
+
+  /* Laid out at its final size: 72rem at most. */
+  .zyp-browser__window {
+    overflow: hidden;
+    border: 1px solid rgba(11, 11, 12, 0.1);
+    border-radius: 14px;
+    background: #fff;
+    box-shadow:
+      0 1px 2px rgba(11, 11, 12, 0.05),
+      0 30px 70px -32px rgba(11, 11, 12, 0.35);
+  }
+
+  /* One-shot, transform only. The layer is promoted while it runs and let go
+     when it ends; `backwards` holds the tilt through the short delay, and
+     nothing is held after. */
+  @media (prefers-reduced-motion: no-preference) {
+    .zyp-browser__window {
+      animation: zyp-land 1400ms cubic-bezier(0.16, 1, 0.3, 1) 120ms backwards;
+    }
+  }
+
+  @keyframes zyp-land {
+    from {
+      transform: perspective(1600px) rotateX(12deg) scale(0.9);
+    }
+
+    to {
+      transform: perspective(1600px) rotateX(0deg) scale(1);
+    }
+  }
+
+  .zyp-browser__bar {
+    display: grid;
+    grid-template-columns: 1fr minmax(0, 24rem) 1fr;
+    align-items: center;
+    gap: 1rem;
+    height: 2.75rem;
+    padding: 0 1rem;
+    border-bottom: 1px solid var(--case-rule);
+    background: #f7f7f8;
+
+    @media (max-width: 40em) {
+      grid-template-columns: 1fr minmax(0, 11rem) 1fr;
+      gap: 0.5rem;
+      height: 2.1rem;
+      padding: 0 0.7rem;
+    }
+  }
+
+  .zyp-browser__dots {
+    display: flex;
+    gap: 0.45rem;
+
+    i {
+      width: 0.7rem;
+      height: 0.7rem;
+      border-radius: 50%;
+      background: #d9d9dd;
+    }
+
+    @media (max-width: 40em) {
+      gap: 0.3rem;
+
+      i {
+        width: 0.5rem;
+        height: 0.5rem;
+      }
+    }
+  }
+
+  .zyp-browser__url {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    height: 1.75rem;
+    border-radius: 999px;
+    background: #ececef;
+    color: #3a3a3f;
+    font: 400 0.8125rem / 1 font-family(geist);
+
+    svg {
+      width: 0.6rem;
+      height: 0.72rem;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.3;
+    }
+
+    @media (max-width: 40em) {
+      height: 1.4rem;
+      font-size: 0.75rem;
+    }
+  }
+
+  /* The poster <img>, and over it the canvas frameSequence.ts adds: opaque,
+     the same box, on its own layer (invariant 13). */
+  .zyp-browser__view {
+    position: relative;
+    background: #f2eee8;
+
+    img,
+    :global(canvas) {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    :global(canvas) {
+      position: absolute;
+      inset: 0;
+      will-change: transform;
+    }
+  }
+
+  .zyp-details {
+    padding: clamp(1.5rem, 4vh, 2.5rem) var(--case-gutter) clamp(3rem, 8vh, 5rem);
+    background: var(--case-surface);
+
+    :global(.case-meta) {
+      max-width: 72rem;
+      margin: 0 auto;
+    }
+  }
+
+  /* What the site is, and the three deliverables as an index. */
+  .zyp-intro__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+    gap: clamp(2.5rem, 6vw, 6rem);
+    align-items: start;
+
+    @media (max-width: 56em) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .zyp-intro__prose {
+    margin-top: 1.25rem;
+
+    p:first-child {
+      font: 400 clamp(1.4rem, 2.1vw, 1.9rem) / 1.3 font-family(editorial);
+      max-width: 30ch;
+    }
+  }
+
+  .zyp-index {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-bottom: 1px solid var(--case-rule);
+
+    a {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: baseline;
+      gap: 1rem;
+      padding: 1.15rem 0;
+      border-top: 1px solid var(--case-rule);
+      color: inherit;
+      text-decoration: none;
+
+      &:hover .zyp-index__t,
+      &:focus-visible .zyp-index__t {
+        color: var(--case-accent);
+      }
+    }
+  }
+
+  .zyp-index__t {
+    font: 400 clamp(1.25rem, 1.8vw, 1.6rem) / 1.2 font-family(editorial);
+  }
+
+  .zyp-index__k {
+    font: 400 0.6875rem / 1 font-family(fraktion);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--case-soft);
+  }
+
+  /* The deliverables. Each carries its kind above its name. */
+  .zyp-part {
+    scroll-margin-top: 3rem;
+  }
+
+  /* A rule across the content width, not the bleed. */
+  .zyp-part--ruled {
+    background: linear-gradient(var(--case-rule), var(--case-rule)) 50% 0 / calc(100% - 2 * var(--case-gutter)) 1px no-repeat;
+  }
+
+  .zyp-part--ground {
+    background: var(--case-surface);
+
+    /* The globe's own ground is nearly this one: a hairline gives the
+       capture its edge. */
+    :global(.case-figure__frame) {
+      box-shadow: 0 0 0 1px var(--case-rule);
+    }
+  }
+
+  .zyp-tag {
+    margin: 0 0 1.25rem;
+    font: 400 0.75rem / 1.3 font-family(fraktion);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .zyp-scrub__head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: clamp(1rem, 5vw, 5rem);
+    align-items: end;
+    margin-bottom: clamp(2.5rem, 6vh, 4rem);
+
+    @media (max-width: 56em) {
+      grid-template-columns: 1fr;
+    }
+
+    .case-prose p {
+      margin: 0;
+    }
+  }
+
+  .zyp-ruler {
+    margin-bottom: 1.25rem;
+
+    svg {
+      display: block;
+      width: 100%;
+      height: 14px;
+    }
+
+    line {
+      stroke: #b9b9bf;
+      stroke-width: 1;
+      vector-effect: non-scaling-stroke;
+      shape-rendering: crispEdges;
+    }
+
+    line.is-major {
+      stroke: var(--case-ink);
+    }
+
+    line.is-head {
+      stroke: var(--case-accent);
+      stroke-width: 3;
+    }
+
+    p {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      margin: 0.6rem 0 0;
+      font: 400 0.6875rem / 1 font-family(fraktion);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--case-soft);
+    }
+  }
+
+  .zyp-scrub__stills {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: clamp(1.25rem, 2vw, 1.75rem);
+
+    @media (max-width: 48em) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .zyp-split {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    grid-template-areas: "text media";
+    gap: clamp(2rem, 5vw, 5rem);
+    align-items: center;
+
+    @media (max-width: 56em) {
+      grid-template-columns: 1fr;
+      grid-template-areas: "text" "media";
+    }
+  }
+
+  .zyp-split--media-first {
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    grid-template-areas: "media text";
+
+    @media (max-width: 56em) {
+      grid-template-columns: 1fr;
+      grid-template-areas: "text" "media";
+    }
+  }
+
+  .zyp-split__text {
+    grid-area: text;
+  }
+
+  :global(.zyp-split__media) {
+    grid-area: media;
+  }
+
+  .zyp-learned {
+    background: var(--case-surface);
+  }
+
+  .zyp-learned__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    gap: clamp(1rem, 5vw, 5rem);
+    align-items: start;
+
+    @media (max-width: 56em) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .zyp-note {
+    max-width: var(--case-measure);
+    margin: 1rem 0 2rem;
+    padding: 1rem 1.25rem;
+    border-left: 2px solid var(--case-accent);
+    background: var(--case-ground);
+
+    p {
+      margin: 0;
+    }
+
+    p + p {
+      margin-top: 0.5rem;
+      font-size: 0.9375rem;
+    }
+  }
+</style>

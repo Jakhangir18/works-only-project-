@@ -1,0 +1,176 @@
+{
+  "cover": {
+    "kind": "image",
+    "width": 1600,
+    "height": 2844,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/touchpoint/media/cover-640.webp"
+      },
+      {
+        "w": 1280,
+        "src": "/projects/touchpoint/media/cover-1280.webp"
+      },
+      {
+        "w": 1600,
+        "src": "/projects/touchpoint/media/cover-1600.webp"
+      }
+    ],
+    "thumb": "/projects/touchpoint/media/cover-thumb.webp"
+  },
+  "hero": {
+    "kind": "image",
+    "width": 1600,
+    "height": 2844,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/touchpoint/media/hero-640.webp"
+      },
+      {
+        "w": 1280,
+        "src": "/projects/touchpoint/media/hero-1280.webp"
+      },
+      {
+        "w": 1600,
+        "src": "/projects/touchpoint/media/hero-1600.webp"
+      }
+    ],
+    "thumb": "/projects/touchpoint/media/hero-thumb.webp"
+  },
+  "g01": {
+    "kind": "image",
+    "width": 1200,
+    "height": 1800,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/touchpoint/media/g01-640.webp"
+      },
+      {
+        "w": 1200,
+        "src": "/projects/touchpoint/media/g01-1200.webp"
+      }
+    ],
+    "thumb": "/projects/touchpoint/media/g01-thumb.webp"
+  },
+  "g02": {
+    "kind": "image",
+    "width": 1200,
+    "height": 800,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/touchpoint/media/g02-640.webp"
+      },
+      {
+        "w": 1200,
+        "src": "/projects/touchpoint/media/g02-1200.webp"
+      }
+    ],
+    "thumb": "/projects/touchpoint/media/g02-thumb.webp"
+  },
+  "g03": {
+    "kind": "image",
+    "width": 1200,
+    "height": 764,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/touchpoint/media/g03-640.webp"
+      },
+      {
+        "w": 1200,
+        "src": "/projects/touchpoint/media/g03-1200.webp"
+      }
+    ],
+    "thumb": "/projects/touchpoint/media/g03-thumb.webp"
+  },
+  "g04": {
+    "kind": "image",
+    "width": 1600,
+    "height": 2133,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/touchpoint/media/g04-640.webp"
+      },
+      {
+        "w": 1280,
+        "src": "/projects/touchpoint/media/g04-1280.webp"
+      },
+      {
+        "w": 1600,
+        "src": "/projects/touchpoint/media/g04-1600.webp"
+      }
+    ],
+    "thumb": "/projects/touchpoint/media/g04-thumb.webp"
+  },
+  "demo-loop": {
+    "kind": "video",
+    "width": 1280,
+    "height": 720,
+    "duration": 30,
+    "bytes": 3723904,
+    "src": "/projects/touchpoint/media/demo-loop.mp4",
+    "poster": "/projects/touchpoint/media/demo-loop-poster.webp"
+  },
+  "talk": {
+    "kind": "video",
+    "width": 1280,
+    "height": 720,
+    "duration": 141,
+    "bytes": 15644758,
+    "src": "/projects/touchpoint/media/talk.mp4",
+    "poster": "/projects/touchpoint/media/talk-poster.webp"
+  },
+  "g06": {
+    "kind": "image",
+    "width": 1200,
+    "height": 1600,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/touchpoint/media/g06-640.webp"
+      },
+      {
+        "w": 1200,
+        "src": "/projects/touchpoint/media/g06-1200.webp"
+      }
+    ],
+    "thumb": "/projects/touchpoint/media/g06-thumb.webp"
+  },
+  "g07": {
+    "kind": "image",
+    "width": 1200,
+    "height": 800,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/touchpoint/media/g07-640.webp"
+      },
+      {
+        "w": 1200,
+        "src": "/projects/touchpoint/media/g07-1200.webp"
+      }
+    ],
+    "thumb": "/projects/touchpoint/media/g07-thumb.webp"
+  },
+  "g08": {
+    "kind": "image",
+    "width": 1200,
+    "height": 800,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/touchpoint/media/g08-640.webp"
+      },
+      {
+        "w": 1200,
+        "src": "/projects/touchpoint/media/g08-1200.webp"
+      }
+    ],
+    "thumb": "/projects/touchpoint/media/g08-thumb.webp"
+  }
+}

@@ -1,0 +1,122 @@
+{
+  "cover": {
+    "kind": "image",
+    "width": 759,
+    "height": 1012,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/gdg/media/cover-640.webp"
+      }
+    ],
+    "thumb": "/projects/gdg/media/cover-thumb.webp"
+  },
+  "hero": {
+    "kind": "image",
+    "width": 1800,
+    "height": 1012,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/gdg/media/hero-640.webp"
+      },
+      {
+        "w": 1280,
+        "src": "/projects/gdg/media/hero-1280.webp"
+      },
+      {
+        "w": 1800,
+        "src": "/projects/gdg/media/hero-1800.webp"
+      }
+    ],
+    "thumb": "/projects/gdg/media/hero-thumb.webp"
+  },
+  "g01": {
+    "kind": "image",
+    "width": 1800,
+    "height": 1012,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/gdg/media/g01-640.webp"
+      },
+      {
+        "w": 1280,
+        "src": "/projects/gdg/media/g01-1280.webp"
+      },
+      {
+        "w": 1800,
+        "src": "/projects/gdg/media/g01-1800.webp"
+      }
+    ],
+    "thumb": "/projects/gdg/media/g01-thumb.webp"
+  },
+  "g02": {
+    "kind": "image",
+    "width": 1674,
+    "height": 1004,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/gdg/media/g02-640.webp"
+      },
+      {
+        "w": 1280,
+        "src": "/projects/gdg/media/g02-1280.webp"
+      },
+      {
+        "w": 1674,
+        "src": "/projects/gdg/media/g02-1674.webp"
+      }
+    ],
+    "thumb": "/projects/gdg/media/g02-thumb.webp"
+  },
+  "g03": {
+    "kind": "image",
+    "width": 1800,
+    "height": 1012,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/gdg/media/g03-640.webp"
+      },
+      {
+        "w": 1280,
+        "src": "/projects/gdg/media/g03-1280.webp"
+      },
+      {
+        "w": 1800,
+        "src": "/projects/gdg/media/g03-1800.webp"
+      }
+    ],
+    "thumb": "/projects/gdg/media/g03-thumb.webp"
+  },
+  "g04": {
+    "kind": "image",
+    "width": 536,
+    "height": 966,
+    "files": [
+      {
+        "w": 536,
+        "src": "/projects/gdg/media/g04-536.webp"
+      }
+    ],
+    "thumb": "/projects/gdg/media/g04-thumb.webp"
+  },
+  "g05": {
+    "kind": "image",
+    "width": 1138,
+    "height": 1518,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/gdg/media/g05-640.webp"
+      },
+      {
+        "w": 1138,
+        "src": "/projects/gdg/media/g05-1138.webp"
+      }
+    ],
+    "thumb": "/projects/gdg/media/g05-thumb.webp"
+  }
+}

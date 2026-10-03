@@ -1,0 +1,311 @@
+---
+import { picture } from "../../data/media";
+
+/**
+ * The AMS Tablet's four checks beside its own diagram.
+ *
+ * The plate is the unit's instruction card (media id g02), cropped by
+ * object-position to the drawing of the unit: the Russian steps above it and
+ * the line of names below it stay out of view. The card already circles each
+ * part in red; a white dot marks the centre of each circle.
+ *
+ * The signature is a reading line: as a check crosses it, that check's pin
+ * and note come up and the others step back. One IntersectionObserver whose
+ * root margin narrows the viewport to a band at 45% of its height; classes
+ * toggle on the leaves (pins, notes, the checks' own rules), never on an
+ * ancestor, and only opacity transitions. No frame loop. Without script, at
+ * phone width and under reduced motion every pin and note stays visible.
+ *
+ * Pin positions are the circles' centres in the cropped frame, measured on
+ * the 1280 px file: x / 1280, (y - 760) / 940.
+ */
+const card = picture("ams", "g02", 1280);
+
+const checks = [
+  {
+    title: "Identity",
+    part: "Camera · face recognition",
+    pin: { x: 35.3, y: 20.2 },
+    text: "The first question at a checkpoint is who is standing there. The camera in the unit's top edge takes the worker's face, and face recognition answers it: the deck's component page names AWS face recognition for that job. The readings that follow then have a name on them, and the admin dashboard and mobile app keep that name, with the time, as attendance.",
+  },
+  {
+    title: "Temperature",
+    part: "Temperature sensor · remote",
+    pin: { x: 42, y: 20.2 },
+    text: "The second reading needs no contact. The deck lists remote temperature measurement among the unit's components, and the instruction card marks the temperature sensor in the same top edge, right beside the camera and facing the same way. The value goes into the health log with the others, under the name the identity check found.",
+  },
+  {
+    title: "Breath alcohol",
+    part: "Breathalyser · Dingo B02",
+    pin: { x: 63.4, y: 50.9 },
+    text: "The right half of the unit is built around one part: the round port in its middle is the breathalyser, the largest opening on the front. The deck names the sensor behind it among its components, a Dingo B02 alcohol sensor. The worker breathes into the port, and the result joins the identity, the time and the temperature in the same pre-shift record.",
+  },
+  {
+    title: "SpO2",
+    part: "Pulse sensor · pulse oximetry",
+    pin: { x: 63.4, y: 75 },
+    text: "The fourth reading takes a fingertip on the round sensor below the breathalyser. The deck's component page calls it pulse oximetry: it reads SpO2, the share of oxygen the blood carries. With that the record is complete, and it goes to the admin dashboard and the mobile app, which hold the attendance and health logs for the site.",
+  },
+];
+---
+
+<div class="ams-checks">
+  <figure class="ams-plate">
+    <div class="ams-plate__frame">
+      <img
+        src={card.src}
+        srcset={card.srcset}
+        sizes="(max-width: 56em) 100vw, 46vw"
+        alt="The unit's instruction card, cropped to its drawing: the camera and the temperature sensor in the top edge of the screen half, the breathalyser port and the pulse sensor on the right half, each circled in red and labelled in Russian"
+        width={card.width}
+        height={card.height}
+        loading="lazy"
+        decoding="async"
+      />
+      {checks.map((c, i) => (
+        <span class:list={["ams-pin js-ams-pin", i === 0 && "is-on"]} style={`left:${c.pin.x}%; top:${c.pin.y}%`} aria-hidden="true"></span>
+      ))}
+    </div>
+    <figcaption class="ams-plate__cap">
+      <ol class="ams-notes">
+        {checks.map((c, i) => (
+          <li class:list={["ams-note js-ams-note", i === 0 && "is-on"]}>{c.part}</li>
+        ))}
+      </ol>
+      <span class="ams-plate__src">The unit's own instruction card; its labels are in Russian.</span>
+    </figcaption>
+  </figure>
+
+  <ol class="ams-checks__list">
+    {checks.map((c, i) => (
+      <li class:list={["ams-check js-ams-check", i === 0 && "is-on"]}>
+        <div class="ams-check__body">
+          <h3 class="case-h3">{c.title}</h3>
+          <p class="ams-check__part">{c.part}</p>
+          <p class="ams-check__text">{c.text}</p>
+        </div>
+      </li>
+    ))}
+  </ol>
+</div>
+
+<script>
+  /* The reading line. A band at 45% of the viewport; whichever check is in
+     it marks its part. Toggled on the leaves, opacity-only in CSS. */
+  const checks = [...document.querySelectorAll<HTMLElement>(".js-ams-check")];
+  const groups = [checks, [...document.querySelectorAll<HTMLElement>(".js-ams-pin")], [...document.querySelectorAll<HTMLElement>(".js-ams-note")]];
+  if (checks.length) {
+    let on = 0;
+    const show = (i: number) => {
+      if (i === on || i < 0) return;
+      on = i;
+      for (const list of groups) list.forEach((el, k) => el.classList.toggle("is-on", k === i));
+    };
+    const line = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) if (entry.isIntersecting) show(checks.indexOf(entry.target as HTMLElement));
+      },
+      { rootMargin: "-45% 0px -54% 0px" },
+    );
+    checks.forEach((c) => line.observe(c));
+  }
+</script>
+
+<style lang="scss">
+  @use "../../styles/helpers/fonts" as *;
+
+  .ams-checks {
+    display: grid;
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+    grid-template-areas: "list plate";
+    gap: clamp(2rem, 5vw, 5.5rem);
+    align-items: start;
+
+    @media (max-width: 56em) {
+      grid-template-columns: 1fr;
+      grid-template-areas: "plate" "list";
+    }
+  }
+
+  /* The plate: a dark drawing on the white sheet, held in view on a
+     desktop while the four checks pass it. */
+  .ams-plate {
+    grid-area: plate;
+    position: sticky;
+    top: calc(2.7rem + 5vh);
+    margin: 0;
+
+    @media (max-width: 56em) {
+      position: static;
+    }
+  }
+
+  .ams-plate__frame {
+    position: relative;
+    aspect-ratio: 1280 / 940;
+    overflow: hidden;
+    border-radius: 12px;
+    background: #111;
+
+    img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: 50% 87.36%;
+    }
+  }
+
+  .ams-pin {
+    position: absolute;
+    width: clamp(8px, 1.6%, 12px);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: #fff;
+    transform: translate(-50%, -50%);
+    transition: opacity 450ms ease;
+
+    /* The halo of the part being read: its own layer, so only opacity moves. */
+    &::after {
+      content: "";
+      position: absolute;
+      inset: -7px;
+      border-radius: 50%;
+      border: 2px solid #fff;
+      opacity: 0;
+      transition: opacity 450ms ease;
+    }
+  }
+
+  .ams-plate__cap {
+    display: grid;
+    gap: 0.4rem;
+    margin-top: 0.8rem;
+    font: 400 0.875rem / 1.45 font-family(geist);
+  }
+
+  .ams-plate__src {
+    color: var(--case-soft);
+    font-size: 0.8125rem;
+  }
+
+  .ams-notes {
+    display: grid;
+    gap: 0.2rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .ams-note {
+    transition: opacity 450ms ease;
+  }
+
+  /* The reading line takes over only where the plate is sticky, the script
+     runs and motion is welcome: one pin and one note up, the rest stepped
+     back. Under reduced motion every pin and note stays up. */
+  @media (min-width: 56.0625em) and (prefers-reduced-motion: no-preference) {
+    :global(.js-case) .ams-pin {
+      opacity: 0.4;
+    }
+
+    :global(.js-case) .ams-pin.is-on {
+      opacity: 1;
+
+      &::after {
+        opacity: 0.55;
+      }
+    }
+
+    :global(.js-case) .ams-notes {
+      grid-template-areas: "note";
+    }
+
+    /* The notes stepped back are hidden, not only transparent: stacked at
+       opacity 0 they read to axe as text at 1:1 contrast. Visibility waits
+       for the fade to finish before it hides. */
+    :global(.js-case) .ams-note {
+      grid-area: note;
+      opacity: 0;
+      visibility: hidden;
+      transition:
+        opacity 450ms ease,
+        visibility 0s linear 450ms;
+    }
+
+    :global(.js-case) .ams-note.is-on {
+      opacity: 1;
+      visibility: visible;
+      transition:
+        opacity 450ms ease,
+        visibility 0s;
+    }
+  }
+
+  .ams-checks__list {
+    grid-area: list;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .ams-check {
+    position: relative;
+    padding: 2rem 0 2.5rem;
+    border-top: 1px solid var(--case-rule);
+
+    /* Room for the reading line to pass each check while the plate holds;
+       the last one needs none, the plate is still held when it arrives. */
+    @media (min-width: 56.0625em) {
+      min-height: 48svh;
+
+      &:last-child {
+        min-height: 0;
+      }
+    }
+
+    /* The check on the reading line: an accent rule over its own top
+       border, faded in. */
+    &::before {
+      content: "";
+      position: absolute;
+      top: -1px;
+      left: 0;
+      width: clamp(4.5rem, 8vw, 7.5rem);
+      height: 2px;
+      background: var(--case-accent);
+      opacity: 0;
+      transition: opacity 450ms ease;
+    }
+  }
+
+  :global(.js-case) .ams-check.is-on::before {
+    opacity: 1;
+  }
+
+  .ams-check__body {
+    max-width: 40rem;
+  }
+
+  .ams-check__part {
+    margin: 0 0 1rem;
+    font: 400 0.75rem / 1.4 font-family(fraktion);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--case-soft);
+  }
+
+  .ams-check__text {
+    margin: 0;
+    max-width: var(--case-measure);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ams-pin,
+    .ams-pin::after,
+    .ams-note,
+    .ams-check::before {
+      transition: none;
+    }
+  }
+</style>

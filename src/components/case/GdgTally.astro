@@ -1,0 +1,139 @@
+---
+/**
+ * The tally line: one hard number, set as large as the page allows, and what
+ * it counts beside it (the slot). The number counts up once, the first time
+ * it is mostly on screen.
+ *
+ * The counter writes only its own text node, and only when the integer it
+ * shows changes, so a count to 200 is at most 200 writes. Its box never
+ * changes size: an invisible twin holding the final value sits in the same
+ * grid cell and fixes the width, and the live digits are set end-aligned in
+ * tabular figures over it. Screen readers get the final value once, as text;
+ * both visible copies are hidden from them.
+ *
+ * The figure is one line of inline content at display size, so its markup
+ * is written without whitespace: one space in there renders as a gap a
+ * quarter of the number's height wide.
+ *
+ * No JavaScript, or reduced motion: the final number, as rendered.
+ */
+interface Props {
+  value: number;
+  suffix?: string;
+  class?: string;
+}
+const { value, suffix = "", class: className } = Astro.props;
+---
+
+<h2 class:list={["gdg-tally", className]}>
+  <span class="gdg-tally__figure"><span class="gdg-tally__count js-gdg-count" data-to={value}><span class="gdg-tally__sizer" aria-hidden="true">{value}</span><span class="gdg-tally__live js-gdg-count-live" aria-hidden="true">{value}</span></span>{suffix && <span class="gdg-tally__suffix" aria-hidden="true">{suffix}</span>}<span class="u-sr-only">{value}{suffix}</span></span>
+  <span class="gdg-tally__words"><slot /></span>
+</h2>
+
+<script>
+  import { gsap } from "gsap";
+
+  /* One tween on GSAP's ticker, the site's one clock: no loop of its own, and
+     the ticker sleeps again once the tween is done. The observer fires once
+     and disconnects, so nothing is left listening afterwards. */
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  document.querySelectorAll<HTMLElement>(".js-gdg-count").forEach((root) => {
+    const live = root.querySelector<HTMLElement>(".js-gdg-count-live");
+    const to = Number(root.dataset.to);
+    if (reduce || !live || !Number.isFinite(to)) return;
+
+    let shown = 0;
+    live.textContent = "0";
+    const seen = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((e) => e.isIntersecting)) return;
+        seen.disconnect();
+        const state = { v: 0 };
+        gsap.to(state, {
+          v: to,
+          duration: 1.8,
+          ease: "power3.out",
+          onUpdate: () => {
+            const n = Math.round(state.v);
+            if (n === shown) return;
+            shown = n;
+            live.textContent = String(n);
+          },
+        });
+      },
+      { threshold: 0.6 },
+    );
+    seen.observe(root);
+  });
+</script>
+
+<style lang="scss">
+  @use "../../styles/helpers/fonts" as *;
+
+  /* The words sit on the number's baseline: the figure is one line of
+     inline content, so its last baseline is the digits' own, and the words'
+     is their last line's. Older engines fall back to bottom edges. */
+  .gdg-tally {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    align-items: last baseline;
+    gap: 0.75rem clamp(1.25rem, 3vw, 3rem);
+    margin: 0;
+    font-weight: 400;
+  }
+
+  .gdg-tally__figure {
+    position: relative;
+    display: inline-block;
+    white-space: nowrap;
+    font: 400 clamp(8.5rem, 45vw, 48rem) / 0.78 font-family(bigger);
+    font-variant-numeric: tabular-nums lining-nums;
+    letter-spacing: -0.01em;
+
+    /* On a phone the words go under the number, so the number takes the
+       whole measure. */
+    @media (max-width: 30em) {
+      font-size: 64vw;
+    }
+  }
+
+  .gdg-tally__count {
+    display: inline-grid;
+  }
+
+  .gdg-tally__sizer,
+  .gdg-tally__live {
+    grid-area: 1 / 1;
+  }
+
+  .gdg-tally__sizer {
+    visibility: hidden;
+  }
+
+  .gdg-tally__live {
+    justify-self: end;
+  }
+
+  /* Lifted to the digits' cap line, as a superscript: a relative offset, so
+     it moves nothing else. */
+  .gdg-tally__suffix {
+    position: relative;
+    top: -0.36em;
+    vertical-align: top;
+    color: var(--case-accent);
+    font-size: 0.5em;
+    line-height: 1;
+    margin-left: 0.04em;
+  }
+
+  .gdg-tally__words {
+    display: block;
+    font: 400 clamp(2.2rem, 7vw, 7rem) / 0.9 font-family(bigger);
+    text-transform: uppercase;
+
+    @media (max-width: 30em) {
+      font-size: 3rem;
+    }
+  }
+</style>

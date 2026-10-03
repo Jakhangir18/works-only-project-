@@ -1,0 +1,494 @@
+---
+import CaseLayout from "../../../layouts/CaseLayout.astro";
+import CaseMeta from "../../../components/case/CaseMeta.astro";
+import CaseFigure from "../../../components/case/CaseFigure.astro";
+import CaseDeck from "../../../components/case/CaseDeck.astro";
+import AmsChecks from "../../../components/case/AmsChecks.astro";
+import { picture, slides } from "../../../data/media";
+import { projects } from "../../../data/projects";
+
+/**
+ * AMS Tablet, "Spec sheet" (docs/portfolio-v4-design.md): a split-screen
+ * opening with the unit in use held on the left and a datasheet of details
+ * on the right; the four checks beside the unit's own diagram, read one at a
+ * time (AmsChecks); the unit on site; the edge and cloud behind it; five
+ * pages of the pitch deck on a track; what I did, as a list.
+ *
+ * Facts: the resume (role, dates, the work), the deck's component page
+ * (AWS face recognition, remote temperature, pulse oximetry, a Dingo B02
+ * alcohol sensor) and the curated media. Left out on purpose, because they
+ * are wrong or unconfirmed: any patent or certification, market sizes and
+ * deployment counts, the names of deployment sites, award wording, team
+ * names, and the old images in ./images/.
+ *
+ * Small sources are never shown wider than their pixels: each of those
+ * figures carries a max-width equal to its widest file.
+ */
+const p = projects.find((x) => x.slug === "ams")!;
+const hero = picture("ams", "hero", 1800);
+
+const deckAlt: Record<number, string> = {
+  1: "Pitch deck, the product: a render of the two-part AMS wall unit beside the title 'ams system' and four icons for temperature, alcohol, pulse and face checks",
+  2: "Pitch deck, the problem: four statements in Russian about manual pre-shift medical checks of workers",
+  5: "Pitch deck, the components: face recognition with Amazon Web Services, remote temperature, pulse oximetry and a Dingo B02 alcohol sensor, drawn around a render of the unit",
+  6: "Pitch deck, the admin mobile app: a feature list in Russian beside the app's attendance screen, names blurred",
+  7: "Pitch deck, installations: five photographs of installed tablets with notes in Russian",
+};
+const deckIndex: Record<number, string> = {
+  1: "The product",
+  2: "The problem: manual pre-shift checks",
+  5: "The components",
+  6: "The admin app",
+  7: "Installations",
+};
+/* Page 7 (installations) is held back: it names client sites the owner has
+   not confirmed and shows a person's face without a blur. Its file is kept
+   out of public/ (~/work/works-only/in/mwe-2026-10-02/held/ams/) and out of
+   media.json; the filter stays so a re-import cannot bring it back unasked. */
+const deckPages = slides("ams", "slides-deck").pages.filter((pg) => pg.page !== 7);
+const deck = deckPages.map((pg) => ({ src: pg.src, width: pg.width, height: pg.height, alt: deckAlt[pg.page] }));
+
+const flow = [
+  { label: "Edge", title: "The unit", text: "A Raspberry Pi with a camera, a temperature sensor, a breathalyser and a pulse sensor." },
+  { label: "Link", title: "The API", text: "An edge-to-cloud API: every unit reports to the cloud." },
+  { label: "Cloud", title: "The cloud", text: "The cloud dashboard, and a deployment on AWS with Docker and Portainer." },
+  { label: "Admin", title: "The logs", text: "The admin dashboard and mobile app hold attendance and health logs." },
+];
+
+const did = [
+  { label: "Software", text: "The full-stack app." },
+  { label: "Hardware", text: "Raspberry Pi assembly, wiring and soldering." },
+  { label: "On site", text: "Camera and sensor installs." },
+  { label: "Cloud", text: "Deployment on AWS with Docker and Portainer." },
+  { label: "Edge to cloud", text: "The API the units report through." },
+  { label: "Cameras", text: "Person detection with YOLO and Frigate." },
+];
+---
+
+<CaseLayout slug="ams" title="AMS Tablet" description={p.line} shareCard="/projects/ams/og.jpg">
+  <div class="ams">
+    <header class="ams-open">
+      <figure class="ams-open__media">
+        <img src={hero.src} srcset={hero.srcset} sizes="(max-width: 56em) 132vw, 175vh" alt="Two workers in white uniforms, one in a hair cover, facing the AMS wall unit at a check station while another person points at its screen; faces are blurred" width={hero.width} height={hero.height} fetchpriority="high" decoding="async" />
+        <figcaption>The tablet in use at a check station. Faces blurred.</figcaption>
+      </figure>
+
+      <div class="ams-open__copy">
+        <p class="case-label">{p.kind} · {p.where} · <span class="ams-nowrap">{p.when}</span></p>
+        <h1 class="case-title ams-open__title">AMS Tablet</h1>
+        <p class="case-lede">A pre-shift checkpoint tablet for industrial sites in Kazakhstan.</p>
+        <div class="case-prose ams-open__prose">
+          <p>Before a shift, workers on an industrial site pass a checkpoint. AMS put a two-part wall unit there that runs four checks in one stop: identity by face recognition, temperature, breath alcohol and SpO2.</p>
+          <p>Each unit is an edge device that reports to a cloud dashboard, and an admin dashboard and mobile app hold the attendance and health logs. I worked on it as a full-stack and hardware developer.</p>
+        </div>
+        <div class="ams-open__spec">
+          <p class="case-label">Details</p>
+          <CaseMeta
+            class="ams-spec"
+            rows={[
+              { label: "Role", value: "Full-stack and hardware developer" },
+              { label: "Company", value: "Automated Monitoring Solutions (AMS)" },
+              { label: "Location", value: "Aktau, Kazakhstan" },
+              { label: "Dates", value: "Nov 2024 – Sep 2025" },
+              { label: "Checks", value: "Identity, temperature, breath alcohol, SpO2" },
+              { label: "Built with", value: "Raspberry Pi, AWS, Docker, Portainer, YOLO, Frigate" },
+            ]}
+          />
+        </div>
+      </div>
+    </header>
+
+    <section class="case-section ams-sec">
+      <div class="ams-sec__head">
+        <p class="case-label">The checks</p>
+        <h2 class="case-h2" data-reveal>Four checks, one stop</h2>
+        <p class="case-prose" data-reveal>One wall unit in two halves: a screen with a camera and a temperature sensor in its top edge, and beside it a breathalyser port above a pulse sensor. Each part answers one check.</p>
+      </div>
+      <AmsChecks />
+    </section>
+
+    <section class="case-section ams-sec ams-site">
+      <div class="ams-sec__head ams-site__head">
+        <p class="case-label">On site</p>
+        <h2 class="case-h2" data-reveal>On the wall</h2>
+        <p class="case-prose" data-reveal>The unit in the field: on walls at site checkpoints, next to turnstiles and doors. I installed the cameras and sensors on site. Two of the installed tablets show ESG, which is a client company's brand, not the product's name.</p>
+      </div>
+      <div class="ams-site__grid">
+        <CaseFigure slug="ams" id="g03" alt="The black two-part unit fixed to a white wall, cable running down from it, a Raspberry Pi desktop on its screen and the breathalyser port on the right half" caption="Installed on a wall, a Raspberry Pi desktop on its screen." sizes="(max-width: 36em) 100vw, 512px" class="ams-w512" />
+        <CaseFigure slug="ams" id="g05" alt="A slim wall tablet showing 'AMS' on a pink screen, mounted on a glass partition beside a checkpoint turnstile" caption="Installed at a site checkpoint, beside the turnstile." sizes="(max-width: 36em) 100vw, 478px" class="ams-w478" />
+        <CaseFigure slug="ams" id="g04" alt="A finger pressing the button 'Открыть дверь', open the door, on a white wall tablet whose screen shows the ESG company logo" caption="A client-branded tablet: ESG is the client's brand. The button reads “Открыть дверь”, open the door." sizes="(max-width: 36em) 100vw, 460px" class="ams-w460" />
+      </div>
+    </section>
+
+    <section class="case-section ams-sec ams-back">
+      <div class="ams-back__top">
+        <div class="ams-sec__head">
+          <p class="case-label">Behind the tablet</p>
+          <h2 class="case-h2" data-reveal>Edge to cloud</h2>
+        </div>
+        <div class="case-prose" data-reveal>
+          <p>The two-part unit is built on a Raspberry Pi (its desktop is on the screen in the first wall photograph above), and I did the assembly, wiring and soldering. The units are edge devices: each one reports to a cloud dashboard through an edge-to-cloud API, and the cloud side is deployed on AWS with Docker and Portainer.</p>
+          <p>I also set up person detection on cameras with YOLO and Frigate. In the feed below, a fabrication workshop, each person found is boxed in red; zones are drawn over the camera image, here a night view in infrared.</p>
+        </div>
+      </div>
+
+      <ol class="ams-flow" data-reveal>
+        {flow.map((f) => (
+          <li>
+            <span class="ams-flow__label">{f.label}</span>
+            <strong>{f.title}</strong>
+            <span>{f.text}</span>
+          </li>
+        ))}
+      </ol>
+
+      <CaseFigure slug="ams" id="m1" alt="A camera view of a metal fabrication workshop in the Frigate interface, two people outlined in red boxes among steel frames and a forklift" caption="Person detection in Frigate: a workshop camera, each person found in a red box." sizes="(max-width: 48em) 100vw, 92vw" class="ams-back__wide" />
+      <div class="ams-back__pair">
+        <CaseFigure slug="ams" id="m2" alt="Frigate's Masks and Zones screen: a teal zone drawn across a night infrared camera view of a yard" caption="Setting a zone on a camera, on its night infrared view." sizes="(max-width: 48em) 100vw, 60vw" class="ams-w1094" />
+        <CaseFigure slug="ams" id="g06" alt="The admin mobile app's main screen: buttons to add employees and see their status, and an entry list of dates and times, names blurred" caption="The admin mobile app: entries by date and time. Names blurred." sizes="(max-width: 48em) 100vw, 28vw" class="ams-w640" />
+      </div>
+    </section>
+
+    <section class="case-section ams-sec ams-deck">
+      <div class="ams-sec__head">
+        <p class="case-label">Pitch deck · {deck.length} pages, in Russian</p>
+        <h2 class="case-h2" data-reveal>The deck</h2>
+      </div>
+      <CaseDeck label="Pages from the AMS pitch deck" pages={deck} />
+      <ol class="ams-deck__index">
+        {deckPages.map((pg) => (
+          <li>{deckIndex[pg.page]}</li>
+        ))}
+      </ol>
+    </section>
+
+    <section class="case-section ams-sec ams-did">
+      <div class="ams-sec__head">
+        <p class="case-label">My part · <span class="ams-nowrap">{p.when}</span></p>
+        <h2 class="case-h2" data-reveal>What I did</h2>
+      </div>
+      <ol class="ams-did__list" data-reveal>
+        {did.map((d) => (
+          <li>
+            <span class="ams-did__label">{d.label}</span>
+            <span class="ams-did__text">{d.text}</span>
+          </li>
+        ))}
+      </ol>
+    </section>
+  </div>
+</CaseLayout>
+
+<style lang="scss">
+  @use "../../../styles/helpers/fonts" as *;
+
+  /* This page's secondary ink, darker than the system's so captions and
+     labels clear 7:1 on white and on the surface. Set once, never per frame. */
+  .ams {
+    --case-soft: #4d4d52;
+  }
+
+  /* The opening: the unit in use, full-bleed on the left and held while the
+     details scroll past on the right. */
+  .ams-open {
+    display: grid;
+    grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr);
+    border-bottom: 1px solid var(--case-rule);
+
+    @media (max-width: 56em) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .ams-open__media {
+    position: sticky;
+    top: 2.6rem;
+    align-self: start;
+    height: calc(100svh - 2.6rem);
+    margin: 0;
+    overflow: hidden;
+    background: var(--case-surface);
+
+    img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: 36% 45%;
+    }
+
+    figcaption {
+      position: absolute;
+      left: 1rem;
+      bottom: 1rem;
+      max-width: calc(100% - 2rem);
+      padding: 0.45rem 0.75rem;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.94);
+      font: 400 0.8125rem / 1.35 font-family(geist);
+    }
+
+    /* At phone width the photo is a 4:3 band and the caption sits under it,
+       not over a third of it. */
+    @media (max-width: 56em) {
+      position: static;
+      height: auto;
+      overflow: visible;
+      background: none;
+
+      img {
+        height: auto;
+        aspect-ratio: 4 / 3;
+      }
+
+      figcaption {
+        position: static;
+        max-width: none;
+        padding: 0.7rem var(--case-gutter) 0;
+        border-radius: 0;
+        background: none;
+        color: var(--case-soft);
+      }
+    }
+  }
+
+  .ams-nowrap {
+    white-space: nowrap;
+  }
+
+  .ams-open__copy {
+    display: flex;
+    flex-direction: column;
+    gap: 1.6rem;
+    padding: clamp(2.5rem, 8vh, 5.5rem) var(--case-gutter) clamp(3rem, 9vh, 6rem);
+  }
+
+  .ams-open__title {
+    font-size: clamp(3.5rem, 8.4vw, 9rem);
+  }
+
+  .ams-open__prose p:last-child {
+    margin-bottom: 0;
+  }
+
+  .ams-open__spec {
+    display: grid;
+    gap: 0.9rem;
+    margin-top: 0.6rem;
+  }
+
+  /* The details as a datasheet: one row per line, label and value side by
+     side, hairlines between. */
+  .ams-open :global(.ams-spec) {
+    grid-template-columns: 1fr;
+    gap: 0;
+    border-bottom: 1px solid var(--case-ink);
+  }
+
+  .ams-open :global(.ams-spec .case-meta__row) {
+    display: grid;
+    grid-template-columns: 7.5rem minmax(0, 1fr);
+    gap: 1rem;
+    align-items: baseline;
+    padding: 0.8rem 0;
+  }
+
+  .ams-open :global(.ams-spec .case-meta__row:first-child) {
+    border-top-color: var(--case-ink);
+  }
+
+  .ams-open :global(.ams-spec dt) {
+    margin: 0;
+  }
+
+  .ams-sec__head {
+    max-width: 60rem;
+    margin-bottom: clamp(2rem, 5vh, 3.5rem);
+
+    .case-label {
+      margin-bottom: 1rem;
+    }
+  }
+
+  .ams-site {
+    background: var(--case-surface);
+  }
+
+  .ams-site__grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(1.25rem, 3vw, 3rem);
+    align-items: start;
+
+    @media (max-width: 60em) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    @media (max-width: 36em) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* Never wider than the widest file. */
+  :global(.ams-w512) {
+    max-width: 512px;
+  }
+
+  :global(.ams-w478) {
+    max-width: 478px;
+  }
+
+  :global(.ams-w460) {
+    max-width: 460px;
+  }
+
+  :global(.ams-w640) {
+    max-width: 640px;
+  }
+
+  :global(.ams-w1094) {
+    max-width: 1094px;
+  }
+
+  .ams-back__top {
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    gap: clamp(1rem, 5vw, 5rem);
+    align-items: start;
+
+    @media (max-width: 56em) {
+      grid-template-columns: 1fr;
+    }
+
+    .ams-sec__head {
+      margin-bottom: 0;
+    }
+  }
+
+  /* Edge to admin, as four cells of the sheet. */
+  .ams-flow {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin: clamp(2.5rem, 6vh, 4rem) 0;
+    padding: 0;
+    list-style: none;
+    border-top: 1px solid var(--case-ink);
+    border-bottom: 1px solid var(--case-rule);
+
+    @media (max-width: 56em) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    @media (max-width: 30em) {
+      grid-template-columns: 1fr;
+    }
+
+    li {
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+      padding: 1.1rem 1.25rem 1.4rem 0;
+      font-size: 0.98rem;
+      line-height: 1.45;
+    }
+
+    li + li {
+      padding-left: 1.25rem;
+      border-left: 1px solid var(--case-rule);
+    }
+
+    strong {
+      font: 400 clamp(1.3rem, 1.8vw, 1.6rem) / 1.15 font-family(editorial);
+    }
+
+    @media (max-width: 56em) {
+      li:nth-child(odd) {
+        padding-left: 0;
+        border-left: 0;
+      }
+
+      li:nth-child(n + 3) {
+        border-top: 1px solid var(--case-rule);
+      }
+    }
+
+    @media (max-width: 30em) {
+      li,
+      li + li {
+        padding-left: 0;
+        border-left: 0;
+      }
+
+      li + li {
+        border-top: 1px solid var(--case-rule);
+      }
+    }
+  }
+
+  .ams-flow__label {
+    font: 400 0.6875rem / 1.3 font-family(fraktion);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--case-soft);
+  }
+
+  .ams-back :global(.ams-back__wide) {
+    margin-bottom: clamp(1.5rem, 4vh, 3rem);
+  }
+
+  .ams-back__pair {
+    display: grid;
+    grid-template-columns: minmax(0, 1.65fr) minmax(0, 0.75fr);
+    gap: clamp(1.25rem, 3vw, 3rem);
+    align-items: start;
+
+    @media (max-width: 48em) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .ams-deck__index {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+    gap: 0.5rem 1.5rem;
+    margin: 1.5rem 0 0;
+    padding: 1rem 0 0;
+    list-style: none;
+    border-top: 1px solid var(--case-rule);
+    font-size: 0.9375rem;
+    line-height: 1.4;
+  }
+
+  .ams-did {
+    border-top: 1px solid var(--case-rule);
+  }
+
+  .ams-did__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-top: 1px solid var(--case-ink);
+
+    li {
+      display: grid;
+      grid-template-columns: minmax(9rem, 16rem) minmax(0, 1fr);
+      gap: 1rem;
+      align-items: baseline;
+      padding: 1.1rem 0;
+      border-bottom: 1px solid var(--case-rule);
+
+      @media (max-width: 36em) {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0.2rem;
+      }
+    }
+  }
+
+  .ams-did__label {
+    font: 400 clamp(1.3rem, 2vw, 1.75rem) / 1.15 font-family(editorial);
+  }
+
+  .ams-did__text {
+    font-size: 1.0625rem;
+  }
+</style>

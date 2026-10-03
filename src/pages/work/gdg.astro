@@ -1,0 +1,535 @@
+---
+import CaseLayout from "../../layouts/CaseLayout.astro";
+import CaseMeta from "../../components/case/CaseMeta.astro";
+import CaseFigure from "../../components/case/CaseFigure.astro";
+import GdgTally from "../../components/case/GdgTally.astro";
+import { picture } from "../../data/media";
+import { projects } from "../../data/projects";
+
+/**
+ * GDG on Campus, "Annual report" (docs/portfolio-v4-design.md): a light page
+ * set like a chapter's year in print. The opening photograph full-bleed with
+ * the title on a bottom scrim, one hard number as the tally line, the role,
+ * the chapter's own slide as the pull quote, the photographs as a two-page
+ * spread, the impact report page as a document, and the credits with the
+ * website. Named folios head the sections, as in a printed report.
+ *
+ * Facts and their sources:
+ *   - President, the only one, since the spring 2026 election: the owner,
+ *     2026-10-03 ("президент, и я один"). gdgc-osu.com/officers still lists
+ *     two Co-Presidents; the owner's word stands here.
+ *   - 200+ students registered: the owner's figure; no chapter file states it.
+ *   - 22 meetings in 2025-26: the chapter's 2026-27 funding request (GDSC ESC
+ *     Annual Funding.pptx, May 2026, on the chapter's shared Drive).
+ *   - 6 members at the founding (Ideal-Logic recognition, 2023-10-04) and 70 by
+ *     May 2024 (RSO Recognition Submission GDSC 2024-2025.pdf): the chapter's
+ *     history, before his term, and worded as the chapter's.
+ *   - This year's plans: his own "Ideas and Goals" doc for 2026-27.
+ *   - He is the speaker on the stage photographs (cover, g01): the owner,
+ *     2026-10-03. The lectern photograph (g03) stays unnamed.
+ * The impact report is a draft template under an older club name: it is
+ * shown as a picture and nothing in it is quoted.
+ */
+const p = projects.find((x) => x.slug === "gdg")!;
+const cover = picture("gdg", "hero", 1800);
+/* The report page is held back until the owner confirms it: it is a draft
+   template, and it reads out claims that are on no source list (a trip to
+   Google I/O, a sponsorship, the chapter's founding year, an older name).
+   Its files are kept out of public/ (in ~/work/works-only/in/mwe-2026-10-02/
+   held/gdg/, with its media.json entry) so they cannot be opened by URL.
+   To show it: move them back, restore the entry, set this to true. */
+const SHOW_REPORT = false;
+const report = SHOW_REPORT ? picture("gdg", "report", 1500) : null;
+---
+
+<CaseLayout slug="gdg" title="GDG on Campus" description="President of Google Developer Group on Campus at Oregon State University, a chapter with 200+ students registered." shareCard="/projects/gdg/og.jpg">
+  <div class="gdg">
+    <header class="gdg-cover">
+      <img class="gdg-cover__img" src={cover.src} srcset={cover.srcset} sizes="100vw" alt="Jak holding a microphone on a wood-panelled stage, a second person standing behind, under a projected slide headed 'Why join GDG?'" width={cover.width} height={cover.height} fetchpriority="high" decoding="async" />
+      <div class="gdg-cover__copy">
+        <p class="case-label">Leadership · Oregon State University</p>
+        <h1 class="case-title">GDG on Campus</h1>
+        <p class="case-award">President</p>
+        <p class="case-lede">I lead Oregon State's Google Developer Group on Campus, and bring students together to build.</p>
+      </div>
+      <p class="gdg-cover__fig">On stage at a chapter event.</p>
+    </header>
+
+    <section class="case-section gdg-count">
+      <p class="case-label gdg-folio">In numbers</p>
+      <GdgTally value={200} suffix="+">Students<br />registered</GdgTally>
+      <p class="gdg-count__note" data-reveal>Registered with Google Developer Group on Campus at Oregon State University.</p>
+      <dl class="gdg-count__more" data-reveal>
+        <div>
+          <dt class="gdg-count__fig">22</dt>
+          <dd>meetings in 2025–26</dd>
+        </div>
+        <div>
+          <dt class="gdg-count__fig">6<span aria-hidden="true"> → </span><span class="u-sr-only"> to </span>70</dt>
+          <dd>members in the chapter's first year, from its founding in fall 2023</dd>
+        </div>
+      </dl>
+    </section>
+
+    <section class="case-section gdg-role">
+      <p class="case-label gdg-folio">The role</p>
+      <h2 class="case-h2 gdg-role__title" data-reveal>President</h2>
+      <div class="gdg-role__grid">
+        <div class="case-prose gdg-role__text" data-reveal>
+          <p>I am the President of Google Developer Group on Campus at Oregon State University, elected in spring 2026. 200+ students are registered with the chapter.</p>
+          <p>The job is to bring students together to build. The chapter's own slides say what for: to build with Google technology, to learn from Google engineers, and to build projects.</p>
+          <p>This year I want projects to leave localhost: workshops on deploying with Firebase and Docker, sessions on building with Gemini, and a chapter open to every engineering major, not only computer science.</p>
+        </div>
+        <CaseFigure slug="gdg" id="g01" alt="Jak with a microphone on the same stage, under the chapter's title slide: 'Google Developer Group, On Campus · Oregon State', with the lines 'Build with Google technology' and 'Learn from Google engineers'" caption="On stage, under the chapter's title slide." sizes="(max-width: 56em) 100vw, 56vw" />
+      </div>
+    </section>
+
+    <figure class="gdg-pull" data-reveal>
+      <blockquote>
+        <p>Build with Google technology. Learn from Google engineers.</p>
+      </blockquote>
+      <figcaption class="case-label">The chapter's title slide, in the stage photograph above</figcaption>
+    </figure>
+
+    <section class="case-section gdg-room">
+      <p class="case-label gdg-folio">In the room</p>
+      <div class="gdg-room__head">
+        <h2 class="case-h2" data-reveal>“Why join GDG?”</h2>
+        <p class="case-label" data-reveal>Asked on the chapter's own slide, in the opening photograph</p>
+      </div>
+      <div class="gdg-spread">
+        <div class="gdg-spread__page">
+          <p class="gdg-spread__head" aria-hidden="true"><span>GDG on Campus</span><span>In the room</span></p>
+          <CaseFigure slug="gdg" id="g02" alt="A group of students posed together in a lecture room, under a projected screen that reads 'Welcome to Google Developer Group on Campus @ Oregon State'" caption="Members under the chapter's welcome screen." sizes="(max-width: 56em) 100vw, 44vw" />
+          <div class="gdg-spread__pair">
+            <CaseFigure slug="gdg" id="g05" alt="Two people talking across a table draped with a large Google 'G', one of them in a lanyard and a Google T-shirt" caption="At the chapter's table." ratio="3 / 4" focal="50% 50%" sizes="(max-width: 56em) 50vw, 22vw" />
+            <CaseFigure slug="gdg" id="g04" alt="A student pointing up at a projected slide titled 'Build Projects'" caption="“Build Projects”, on one of the chapter's slides." ratio="3 / 4" focal="50% 45%" sizes="(max-width: 56em) 50vw, 22vw" />
+          </div>
+        </div>
+        <div class="gdg-spread__page">
+          <p class="gdg-spread__head" aria-hidden="true"><span>Oregon State University</span><span>In the room</span></p>
+          <CaseFigure slug="gdg" id="g03" alt="Jak with a microphone and a second organizer on the wood-panelled stage, under the slide 'Why join GDG?'" caption="Why join GDG, from the stage." ratio="3 / 4" focal="50% 50%" sizes="(max-width: 56em) 100vw, 44vw" />
+        </div>
+      </div>
+    </section>
+
+    {report && <section class="case-section gdg-report">
+      <p class="case-label gdg-folio">The report</p>
+      <h2 class="case-h2" data-reveal>On paper</h2>
+      <figure class="gdg-doc" data-reveal>
+        <div class="gdg-doc__sheet">
+          <img src={report.src} srcset={report.srcset} sizes="(max-width: 56em) 92vw, 34rem" alt="A page of the chapter's draft impact report: a red header band, three event photographs down the left side, and a summary with lists of events and achievements on the right" width={report.width} height={report.height} loading="lazy" decoding="async" />
+        </div>
+        <figcaption>From the chapter's impact report (draft).</figcaption>
+      </figure>
+    </section>}
+
+    <section class="case-section gdg-credits">
+      <h2 class="case-label gdg-folio">Credits</h2>
+      <div class="gdg-credits__grid">
+        <CaseMeta
+          rows={[
+            { label: "President", value: "Jakhangir Tynshimov" },
+            { label: "Chapter", value: "Google Developer Group on Campus" },
+            { label: "University", value: "Oregon State University" },
+            { label: "Registered", value: "200+ students" },
+          ]}
+        />
+        <div class="gdg-credits__site" data-reveal>
+          <p class="case-label">The chapter online</p>
+          {p.links.map((l) => (
+            <a class="gdg-credits__link" href={l.href} target="_blank" rel="noopener noreferrer">{new URL(l.href).host}<span class="gdg-credits__arrow" aria-hidden="true">↗</span><span class="u-sr-only">(opens in a new tab)</span></a>
+          ))}
+        </div>
+      </div>
+    </section>
+  </div>
+</CaseLayout>
+
+<style lang="scss">
+  @use "../../styles/helpers/fonts" as *;
+
+  /* Static tokens, set once: the system's soft grey reads at 6.7:1 on white
+     and 6.2:1 on the surface, so captions here take a darker one (9:1). */
+  .gdg {
+    --case-soft: #48484d;
+  }
+
+  /* A section's folio: its name on a rule, as a report heads its sections. */
+  .gdg-folio {
+    margin-bottom: clamp(2rem, 6vh, 4rem);
+    padding-top: 0.8rem;
+    border-top: 1px solid var(--case-ink);
+    color: var(--case-ink);
+  }
+
+  /* The cover. The photograph fills the first screen under the bar; the
+     scrim darkens only its lower part, where the title sits, so the slide
+     above stays bright. */
+  .gdg-cover {
+    --case-ink: #ffffff;
+    --case-soft: rgba(255, 255, 255, 0.86);
+    --case-rule: rgba(255, 255, 255, 0.5);
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    align-content: end;
+    gap: 1.5rem 3rem;
+    min-height: 34rem;
+    height: calc(100svh - 2.7rem);
+    padding: 0 var(--case-gutter) clamp(2rem, 6vh, 4rem);
+    overflow: hidden;
+    background: #2a1d14;
+    color: #ffffff;
+
+    &::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom, rgba(8, 8, 10, 0) 30%, rgba(8, 8, 10, 0.72) 58%, rgba(8, 8, 10, 0.9) 100%);
+    }
+
+    @media (max-width: 56em) {
+      grid-template-columns: 1fr;
+
+      &::after {
+        background: linear-gradient(to bottom, rgba(8, 8, 10, 0) 22%, rgba(8, 8, 10, 0.7) 48%, rgba(8, 8, 10, 0.92) 100%);
+      }
+    }
+  }
+
+  .gdg-cover__img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 30%;
+
+    @media (max-width: 56em) {
+      object-position: 45% 20%;
+    }
+  }
+
+  .gdg-cover__copy,
+  .gdg-cover__fig {
+    position: relative;
+    z-index: 1;
+  }
+
+  .gdg-cover__copy {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+  }
+
+  .gdg-cover__fig {
+    margin: 0;
+    max-width: 22rem;
+    font: 400 0.8125rem / 1.45 font-family(geist);
+    color: var(--case-soft);
+  }
+
+  /* The tally. The number's glyphs rise above its tight line box, so the
+     folio keeps a gap that grows with it. */
+  .gdg-count .gdg-folio {
+    margin-bottom: clamp(3rem, 7vw, 7rem);
+  }
+
+  .gdg-count__more {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: clamp(1.5rem, 4vw, 4rem);
+    margin: clamp(2.5rem, 6vh, 4rem) 0 0;
+
+    @media (max-width: 40em) {
+      grid-template-columns: 1fr;
+    }
+
+    dd {
+      margin: 0.6rem 0 0;
+      max-width: 22ch;
+      font: 400 1.05rem / 1.45 font-family(editorial);
+    }
+  }
+
+  .gdg-count__fig {
+    font: 400 clamp(4rem, 12vw, 9rem) / 0.82 font-family(bigger);
+    font-variant-numeric: tabular-nums lining-nums;
+    white-space: nowrap;
+
+    span[aria-hidden] {
+      color: var(--case-accent);
+    }
+  }
+
+  .gdg-count__note {
+    margin: clamp(1.5rem, 4vh, 2.5rem) 0 0;
+    padding-top: 0.8rem;
+    border-top: 1px solid var(--case-rule);
+    font: 400 0.75rem / 1.5 font-family(fraktion);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  /* The role. */
+  .gdg-role__title {
+    font-size: clamp(3rem, 11vw, 11rem);
+    line-height: 0.84;
+    margin-bottom: clamp(2rem, 5vh, 3.5rem);
+  }
+
+  .gdg-role__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    gap: clamp(2rem, 5vw, 5rem);
+    align-items: end;
+
+    @media (max-width: 56em) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .gdg-role__text p:last-child {
+    margin-bottom: 0;
+  }
+
+  /* The pull quote: the chapter's own words, as large as a heading. */
+  .gdg-pull {
+    margin: 0;
+    padding: 0 var(--case-gutter) clamp(4rem, 12vh, 9rem);
+
+    blockquote,
+    figcaption {
+      padding-left: clamp(0.75rem, 16vw, 16rem);
+
+      @media (max-width: 48em) {
+        padding-left: 0.75rem;
+      }
+    }
+
+    blockquote {
+      margin: 0 0 1.5rem;
+    }
+
+    p {
+      margin: 0;
+      max-width: 20ch;
+      font: 400 clamp(2.2rem, 5.6vw, 5.8rem) / 1.04 font-family(editorial);
+      text-indent: -0.42em;
+
+      &::before {
+        content: "“";
+        color: var(--case-accent);
+      }
+
+      &::after {
+        content: "”";
+        color: var(--case-accent);
+      }
+    }
+  }
+
+  /* In the room, the spread: two pages on one sheet, a fold down the middle. */
+  .gdg-room {
+    background: var(--case-surface);
+  }
+
+  .gdg-room__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem 2rem;
+    margin-bottom: clamp(2rem, 5vh, 3rem);
+
+    .case-h2 {
+      margin: 0;
+    }
+  }
+
+  .gdg-spread {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: clamp(2.5rem, 6vw, 6rem);
+    padding: clamp(1rem, 3vw, 3rem);
+    background: #ffffff;
+    border-radius: 4px;
+    box-shadow:
+      0 1px 2px rgba(11, 11, 12, 0.06),
+      0 40px 80px -50px rgba(11, 11, 12, 0.4);
+
+    &::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 50%;
+      width: clamp(2.5rem, 6vw, 6rem);
+      transform: translateX(-50%);
+      background: linear-gradient(to right, rgba(11, 11, 12, 0) 0%, rgba(11, 11, 12, 0.045) 44%, rgba(11, 11, 12, 0.11) 50%, rgba(11, 11, 12, 0.045) 56%, rgba(11, 11, 12, 0) 100%);
+      pointer-events: none;
+    }
+
+    @media (max-width: 56em) {
+      grid-template-columns: minmax(0, 1fr);
+      row-gap: 2.5rem;
+
+      &::before {
+        display: none;
+      }
+    }
+
+    :global(.case-figure__frame) {
+      border-radius: 2px;
+    }
+  }
+
+  .gdg-spread__page {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    min-width: 0;
+  }
+
+  .gdg-spread__head {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin: 0;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid var(--case-rule);
+    font: 400 0.6875rem / 1.2 font-family(fraktion);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--case-soft);
+  }
+
+  .gdg-spread__pair {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  /* The report: one page on a short stack of sheets, alone in the middle
+     of the page like a document on a desk. The sheets behind are static;
+     only the reveal moves the figure. */
+  .gdg-doc {
+    width: min(100%, 34rem);
+    margin: clamp(1.5rem, 4vh, 2.5rem) auto 0;
+
+    figcaption {
+      margin-top: 1.4rem;
+      font: 400 0.8125rem / 1.45 font-family(geist);
+      color: var(--case-soft);
+    }
+  }
+
+  .gdg-doc__sheet {
+    position: relative;
+    isolation: isolate;
+
+    &::before,
+    &::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      background: #ffffff;
+      border: 1px solid var(--case-rule);
+      box-shadow: 0 10px 30px -18px rgba(11, 11, 12, 0.3);
+    }
+
+    &::before {
+      transform: rotate(-2.4deg) translate(-1.5%, 1%);
+    }
+
+    &::after {
+      transform: rotate(1.6deg) translate(1.5%, 1.5%);
+    }
+
+    /* At phone width the page fills the measure, so the sheets behind lean
+       less and stay inside the gutter. */
+    @media (max-width: 30em) {
+      &::before {
+        transform: rotate(-1.2deg) translate(-0.6%, 0.8%);
+      }
+
+      &::after {
+        transform: rotate(0.9deg) translate(0.6%, 1.2%);
+      }
+    }
+
+    img {
+      display: block;
+      width: 100%;
+      height: auto;
+      background: #ffffff;
+      border: 1px solid var(--case-rule);
+      box-shadow:
+        0 2px 4px rgba(11, 11, 12, 0.06),
+        0 36px 70px -36px rgba(11, 11, 12, 0.42);
+    }
+  }
+
+  /* Credits and the chapter's site, the last line set as large as the
+     title. */
+  .gdg-credits__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: clamp(2.5rem, 6vw, 6rem);
+    align-items: end;
+
+    @media (max-width: 56em) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .gdg-credits__grid :global(.case-meta) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .gdg-credits__site {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+  }
+
+  .gdg-credits__link {
+    display: inline-flex;
+    align-items: flex-start;
+    gap: 0.12em;
+    color: inherit;
+    font: 400 clamp(2.6rem, 6.4vw, 6.6rem) / 0.9 font-family(bigger);
+    text-transform: uppercase;
+    text-decoration: none;
+    overflow-wrap: anywhere;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--case-accent);
+    }
+  }
+
+  .gdg-credits__arrow {
+    font-size: 0.5em;
+    line-height: 1.1;
+    transition: transform 300ms cubic-bezier(0.2, 0.8, 0.2, 1);
+
+    .gdg-credits__link:hover &,
+    .gdg-credits__link:focus-visible & {
+      transform: translate(0.12em, -0.12em);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none;
+
+      .gdg-credits__link:hover &,
+      .gdg-credits__link:focus-visible & {
+        transform: none;
+      }
+    }
+  }
+</style>

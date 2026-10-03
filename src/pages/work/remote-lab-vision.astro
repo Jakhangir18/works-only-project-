@@ -1,0 +1,458 @@
+---
+import CaseLayout from "../../layouts/CaseLayout.astro";
+import CaseMeta from "../../components/case/CaseMeta.astro";
+import RlvFigure from "../../components/case/RlvFigure.astro";
+import RlvRail from "../../components/case/RlvRail.astro";
+import { projects } from "../../data/projects";
+
+/**
+ * Remote Lab Vision, "The paper" (docs/portfolio-v4-design.md): a title page
+ * with no picture (the title, an abstract, the author line, the years), then
+ * sections the way a paper runs them, Question to Poster. Every picture is a
+ * captioned figure, and the text cites each one by a short name.
+ *
+ * On a desktop the figures live in a sticky rail in the right margin, and the
+ * rail shows whichever figure the paragraph on the reading line cites
+ * (RlvRail: one IntersectionObserver, a class toggle, an opacity fade). On a
+ * phone each figure sits inline after the paragraph that cites it. Two
+ * figures too wide for a margin, the camera strip and the full poster, are
+ * plates across the page.
+ *
+ * Facts: the owner's brief of 2026-10-02 and the poster itself. Everything in
+ * quotation marks is read off the poster and attributed to it; no number is
+ * given that the poster does not print.
+ */
+const slug = "remote-lab-vision";
+const p = projects.find((x) => x.slug === slug)!;
+
+const F = {
+  panel: { n: 1, id: "g05", alt: "A laptop showing the LabVIEW control panel: valve and column controls on the left, the camera's live view of the rig on the right", caption: "The LabVIEW control panel: the rig's controls on the left, the camera's live view on the right." },
+  rigOne: { n: 2, id: "g01", alt: "Rig one on a steel panel: nitrogen and air valves, two mass-flow controllers, a control box with a red switch, and two clear columns with probes", caption: "Rig one: N₂ and air valves, two mass-flow controllers, a control box, two clear columns with probes." },
+  rigTwo: { n: 3, id: "g02", alt: "Rig two: a wall panel of blue sensor fittings above a control box with an emergency stop, and a laptop on the bench below", caption: "Rig two: a wall panel of sensor fittings, a control box with an e-stop, and a laptop." },
+  walk: { n: 4, id: "walk", clip: true, alt: "A handheld walk past both remote lab rigs", caption: "Both rigs, walked through. No sound." },
+  stand: { n: 5, id: "g06", alt: "A candidate camera held by a clamp on a lab stand, aimed at the rig's two columns", caption: "The test setup: a candidate camera, clamped and aimed at the rig." },
+  diagram: { n: 6, id: "g04", alt: "The LabVIEW block diagram on a laptop screen, including the NI-IMAQdx camera image capture loop", caption: "The block diagram, with the NI-IMAQdx camera capture loop." },
+  objectives: { n: 7, id: "poster-objectives", alt: "The poster's Objectives panel: software integration, driver compatibility testing, performance analysis and hardware assembly", caption: "The method, as the poster's Objectives panel lists it." },
+  cameras: { n: 8, id: "poster-cameras", alt: "Four views of the rig's columns from the poster, labelled Yi Action Camera, OBSBOT Meet 2-4K, Logitech C922 Pro Stream and GoPro Hero 8 Black", caption: "The rig's columns through each camera, as labelled on the poster: Yi, OBSBOT, Logitech, GoPro." },
+  histograms: { n: 9, id: "poster-histograms", alt: "RGB pixel intensity histograms from the poster for the OBSBOT Meet 2-4K, Logitech C922 Pro Stream, GoPro Hero 8 Black and Yi Action Camera", caption: "RGB pixel intensity histograms for the four cameras, from the poster." },
+  conclusion: { n: 10, id: "poster-conclusion", alt: "The poster's Conclusion and Future Efforts panel", caption: "Conclusion and Future Efforts, from the poster." },
+  // A colleague stood at the left edge: the 3:4 crop and a 10% trim keep him off the page.
+  atRig: { n: 11, id: "g08", alt: "Jakhangir standing at the rig, the camera feed of the rig live in LabVIEW on the monitor beside him", caption: "At the rig, with the camera feed live in LabVIEW.", ratio: 3 / 4, focal: "50% 42%", trim: 0.1 },
+  poster: { n: 12, id: "poster", alt: "The full research poster, 'Evaluation and Integration of a Vision System for Remote Learning Labs', by Jakhangir Tynshimov, Stephen Stockton and Lucas Ellis", caption: "The research poster." },
+  session: { n: 13, id: "hero", alt: "Jakhangir standing beside his research poster in a hall of posters, a man on its other side", caption: "With the poster." },
+};
+
+const inline = "(min-width: 60em) 40rem, 100vw";
+
+const keywords = ["remote labs", "machine vision", "LabVIEW", "NI-IMAQdx", "camera benchmark"];
+
+const contents = [
+  { id: "question", title: "Question" },
+  { id: "rigs", title: "Rigs" },
+  { id: "method", title: "Method" },
+  { id: "results", title: "Results" },
+  { id: "limits", title: "Limits" },
+  { id: "poster", title: "Poster" },
+];
+---
+
+<CaseLayout slug={slug} title="Remote Lab Vision" description={p.line} shareCard="/projects/remote-lab-vision/og.jpg">
+  <script is:inline>document.documentElement.classList.add("js-rlv");</script>
+
+  <article class="rlv">
+    <header class="rlv-title case-section">
+      <p class="case-label rlv-title__kicker">Undergraduate research · Oregon State University</p>
+      <h1 class="case-title">Remote Lab Vision</h1>
+      <p class="rlv-title__years">{p.when}</p>
+
+      <section class="rlv-abstract" aria-labelledby="abstract">
+        <h2 class="case-label rlv-abstract__label" id="abstract">Abstract</h2>
+        <p class="case-lede">Two lab rigs let students run chemistry and chemical-engineering lab work through a computer, observing it through a camera. I benchmarked four cameras in LabVIEW on the resolution and frame rate each actually delivered and on their RGB intensity histograms, picked the OBSBOT Meet 2 4K, mounted it on aluminium extrusion and presented the work as a research poster.</p>
+        <p class="rlv-abstract__keys"><span class="rlv-abstract__key">Keywords</span> {keywords.map((k, i) => (<><span class="rlv-nowrap">{k}</span>{i < keywords.length - 1 && " · "}</>))}</p>
+      </section>
+
+      <div class="rlv-front">
+        <CaseMeta
+          rows={[
+            { label: "Role", value: "Undergraduate researcher" },
+            { label: "Programme", value: "URSA Engage" },
+            { label: "With", value: "Prof. Lucas Ellis, Stephen Stockton" },
+            { label: "Tools", value: "LabVIEW, NI-IMAQdx" },
+          ]}
+        />
+        <nav class="rlv-toc" aria-label="Contents">
+          <p class="case-label">Contents</p>
+          <ol>
+            {contents.map((c) => (
+              <li><a href={`#${c.id}`}>{c.title}</a></li>
+            ))}
+          </ol>
+        </nav>
+      </div>
+    </header>
+
+    <div class="rlv-spread">
+      <div class="rlv-main">
+        <section id="question" class="rlv-sec" aria-labelledby="question-h">
+          <h2 class="case-h2 rlv-sec__head" id="question-h" data-reveal>Question</h2>
+          <div class="case-prose rlv-prose">
+            <p>Two lab rigs let students run chemistry and chemical-engineering lab work remotely, through a computer. They observe, measure and get results without being in the lab, which helps the students who cannot be there in person.</p>
+            <p data-cites="1">Observing from somewhere else means observing through a camera, and its picture has to arrive inside LabVIEW, beside the rig's controls <span class="rlv-cite">control panel</span>. The poster puts the objective in one line: “to establish a stable, high-resolution video feed directly into LabVIEW.”</p>
+            <RlvFigure slug={slug} fig={F.panel} mode="inline" sizes={inline} />
+            <p class="rlv-rq">Which camera can hold that feed, and how would you know?</p>
+          </div>
+        </section>
+
+        <section id="rigs" class="rlv-sec" aria-labelledby="rigs-h">
+          <h2 class="case-h2 rlv-sec__head" id="rigs-h" data-reveal>Rigs</h2>
+          <div class="case-prose rlv-prose">
+            <p data-cites="2">Rig one is built on a steel panel: nitrogen and air valves, two mass-flow controllers, a control box, and two clear columns with probes in them <span class="rlv-cite">rig one</span>.</p>
+            <RlvFigure slug={slug} fig={F.rigOne} mode="inline" sizes={inline} />
+            <p data-cites="3">Rig two is a wall panel of sensor fittings, with its own control box and emergency stop, and a laptop on the bench below it <span class="rlv-cite">rig two</span>.</p>
+            <RlvFigure slug={slug} fig={F.rigTwo} mode="inline" sizes={inline} />
+            <p data-cites="4">The clip walks through both, as they stand in the lab <span class="rlv-cite">walk-through</span>.</p>
+            <RlvFigure slug={slug} fig={F.walk} mode="inline" sizes={inline} />
+          </div>
+        </section>
+
+        <section id="method" class="rlv-sec" aria-labelledby="method-h">
+          <h2 class="case-h2 rlv-sec__head" id="method-h" data-reveal>Method</h2>
+          <div class="case-prose rlv-prose">
+            <p data-cites="5">I benchmarked four cameras: the OBSBOT Meet 2 4K, the Logitech C922, the GoPro Hero 8 and the Yi. For a test, the candidate camera was clamped to a stand and aimed at the rig <span class="rlv-cite">test setup</span>.</p>
+            <RlvFigure slug={slug} fig={F.stand} mode="inline" sizes={inline} />
+            <p data-cites="6">Each one fed LabVIEW through NI-IMAQdx, the module the poster names to “acquire and process real-time video streams” <span class="rlv-cite">block diagram</span>.</p>
+            <RlvFigure slug={slug} fig={F.diagram} mode="inline" sizes={inline} />
+            <p data-cites="7">Then the comparison: not the resolution and frame rate on each camera's box, but what reached LabVIEW, the “‘true’ resolution and frame rate (FPS) actually received”, in the poster's words <span class="rlv-cite">objectives</span>. The drivers were tested too, standard UVC plug-and-play against proprietary video streams.</p>
+            <RlvFigure slug={slug} fig={F.objectives} mode="inline" sizes={inline} />
+            <p>Last, the picture itself. The poster sets the four cameras' views of the rig's columns side by side <span class="rlv-cite">camera views</span>, and compares them by RGB intensity histogram.</p>
+          </div>
+        </section>
+      </div>
+
+      <RlvRail slug={slug} label="Figures: question, rigs and method" figs={[F.panel, F.rigOne, F.rigTwo, F.walk, F.stand, F.diagram, F.objectives]} />
+    </div>
+
+    <div class="rlv-plate">
+      <RlvFigure slug={slug} fig={F.cameras} mode="plate" pan sizes="(max-width: 47.99em) 960px, 92vw" />
+    </div>
+
+    <div class="rlv-spread">
+      <div class="rlv-main">
+        <section id="results" class="rlv-sec" aria-labelledby="results-h">
+          <h2 class="case-h2 rlv-sec__head" id="results-h" data-reveal>Results</h2>
+          <div class="case-prose rlv-prose">
+            <p data-cites="9">The histograms put pixel intensity, 0 to 255, against a logarithmic pixel count <span class="rlv-cite">histograms</span>. The poster's reading: “a broader and smoother distribution curve indicates a superior dynamic range.”</p>
+            <RlvFigure slug={slug} fig={F.histograms} mode="inline" sizes={inline} />
+            <p data-cites="10">I picked the OBSBOT Meet 2 4K. From the poster: it “emerged as the most viable current solution”, with “the best balance of high-resolution imaging, system compatibility, and cost-efficiency” <span class="rlv-cite">conclusion</span>.</p>
+            <RlvFigure slug={slug} fig={F.conclusion} mode="inline" sizes={inline} />
+            <p data-cites="10">The other three fell short in two ways. The action cameras, GoPro and Yi, “failed entirely due to closed software ecosystems”; the Logitech webcam “lacked the necessary visual detail”.</p>
+            <p data-cites="11">I mounted the OBSBOT on aluminium extrusion, and the poster's method has the focal length calibrated “to the target object” <span class="rlv-cite">at the rig</span>.</p>
+            <RlvFigure slug={slug} fig={F.atRig} mode="inline" sizes={inline} />
+          </div>
+        </section>
+
+        <section id="limits" class="rlv-sec" aria-labelledby="limits-h">
+          <h2 class="case-h2 rlv-sec__head" id="limits-h" data-reveal>Limits</h2>
+          <div class="case-prose rlv-prose">
+            <p data-cites="10">The OBSBOT is a baseline. Its drawback, from the poster, is “the fixed lens architecture, which forces us to make manual physical adjustments” <span class="rlv-cite">conclusion</span>.</p>
+            <p data-cites="10">The next step the poster names is DSLR systems, “specifically Canon models (e.g., Rebel T5i or T8i)”, for interchangeable lenses and true optical zoom.</p>
+            <p>And the comparison covers four cameras. It chose among them; it does not rank every camera a remote lab could use.</p>
+          </div>
+        </section>
+      </div>
+
+      <RlvRail slug={slug} label="Figures: results and limits" figs={[F.histograms, F.conclusion, F.atRig]} />
+    </div>
+
+    <div class="rlv-solo">
+      <section id="poster" class="rlv-sec rlv-sec--last" aria-labelledby="poster-h">
+        <h2 class="case-h2 rlv-sec__head" id="poster-h" data-reveal>Poster</h2>
+        <div class="case-prose rlv-prose">
+          <p>I presented the work as a research poster, “Evaluation and Integration of a Vision System for Remote Learning Labs”, with Stephen Stockton and Lucas Ellis <span class="rlv-cite">poster</span>.</p>
+        </div>
+      </section>
+    </div>
+
+    <div class="rlv-sheet">
+      <RlvFigure slug={slug} fig={F.poster} mode="plate" sizes="(max-width: 60em) 100vw, 76rem" />
+      <a class="rlv-sheet__full" href="/projects/remote-lab-vision/media/poster-2400.webp" target="_blank" rel="noopener">Poster at full size <span aria-hidden="true">↗</span><span class="u-sr-only">(opens in a new tab)</span></a>
+    </div>
+
+    <div class="rlv-close case-section">
+      <RlvFigure slug={slug} fig={F.session} mode="plate" sizes="(max-width: 56em) 100vw, 50vw" />
+      <div class="rlv-close__text" data-reveal>
+        <h2 class="case-label">Acknowledgements</h2>
+        <p>URSA Engage undergraduate research at Oregon State University, <span class="rlv-nowrap">{p.when}</span>, with Prof. Lucas Ellis and Stephen Stockton.</p>
+      </div>
+    </div>
+  </article>
+</CaseLayout>
+
+<style lang="scss">
+  @use "../../styles/helpers/fonts" as *;
+
+  .rlv {
+    --rlv-margin: clamp(2.75rem, 6vw, 6rem);
+  }
+
+  /* The title page: centred like a paper's first page, no picture. */
+  .rlv-title {
+    display: grid;
+    justify-items: center;
+    gap: 1.4rem;
+    padding-top: clamp(3.5rem, 11vh, 8rem);
+    padding-bottom: clamp(3rem, 8vh, 5rem);
+    text-align: center;
+
+    .case-title {
+      text-wrap: balance;
+    }
+  }
+
+  .rlv-title__kicker {
+    text-wrap: balance;
+  }
+
+  .rlv-title__years {
+    margin: 0;
+    font: 400 0.875rem / 1 font-family(fraktion);
+    letter-spacing: 0.2em;
+  }
+
+  .rlv-abstract {
+    margin-top: clamp(1.5rem, 5vh, 3rem);
+    max-width: 34ch;
+    text-align: left;
+
+    .case-lede {
+      max-width: none;
+    }
+  }
+
+  .rlv-abstract__label {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+    color: var(--case-ink);
+
+    &::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: var(--case-rule);
+    }
+  }
+
+  .rlv-abstract__keys {
+    margin: 1.5rem 0 0;
+    font: 400 0.8125rem / 1.6 font-family(geist);
+    letter-spacing: 0;
+    color: var(--case-soft);
+
+    .rlv-abstract__key {
+      margin-right: 0.6rem;
+      font: 400 0.6875rem / 1 font-family(fraktion);
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--case-ink);
+    }
+  }
+
+  .rlv-front {
+    display: grid;
+    gap: 2rem;
+    width: 100%;
+    max-width: 64rem;
+    margin-top: clamp(2rem, 6vh, 4rem);
+    text-align: left;
+  }
+
+  .rlv-nowrap {
+    white-space: nowrap;
+  }
+
+  .rlv-toc {
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--case-rule);
+
+    ol {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem 1.1rem;
+      margin: 0.5rem 0 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    a {
+      font: 400 0.98rem / 1.4 font-family(geist);
+      color: inherit;
+      text-decoration: none;
+
+      &:hover,
+      &:focus-visible {
+        color: var(--case-accent);
+      }
+    }
+
+  }
+
+  /* A spread: the sections and, once the rail runs, the rail. */
+  .rlv-spread {
+    padding: 0 var(--case-gutter);
+  }
+
+  @media (min-width: 60em) {
+    :global(.js-rlv) .rlv-spread {
+      display: grid;
+      grid-template-columns: minmax(0, 44rem) minmax(20rem, 1fr);
+      column-gap: clamp(3rem, 6vw, 7rem);
+    }
+
+    /* Room after the last paragraph, so the rail is still pinned while it
+       crosses the reading line. */
+    :global(.js-rlv) .rlv-main {
+      padding-bottom: 14svh;
+    }
+  }
+
+  .rlv-sec {
+    padding-block: clamp(3.5rem, 10vh, 7rem);
+    border-top: 1px solid var(--case-rule);
+    scroll-margin-top: 3rem;
+  }
+
+  .rlv-sec__head {
+    margin-bottom: 1.75rem;
+  }
+
+  /* From a tablet up, a section's heading and text sit in from a left
+     margin, the one the reading line's rule is drawn in. */
+  @media (min-width: 48em) {
+    .rlv-sec {
+      display: grid;
+      grid-template-columns: var(--rlv-margin) minmax(0, 1fr);
+
+      > * {
+        grid-column: 2;
+      }
+    }
+  }
+
+  /* The citation: a mono tag in the line. On the reading line, with the rail
+     running, its paragraph gets a margin rule and its tag the accent. */
+  /* Inline, not inline-block: an atomic box would let the full stop after
+     it wrap to a line of its own. */
+  .rlv-cite {
+    padding: 0.2em 0.5em 0.15em;
+    border: 1px solid var(--case-rule);
+    border-radius: 999px;
+    font: 400 0.7em / 1 font-family(fraktion);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .rlv-prose p[data-cites] {
+    position: relative;
+  }
+
+  @media (min-width: 60em) {
+    :global(.js-rlv) .rlv-prose p[data-cites]::before {
+      content: "";
+      position: absolute;
+      top: 0.3em;
+      bottom: 0.3em;
+      left: -1.4rem;
+      width: 2px;
+      background: var(--case-accent);
+      opacity: 0;
+      transition: opacity 300ms ease;
+    }
+
+    :global(.js-rlv) .rlv-prose p:global(.is-reading)::before {
+      opacity: 1;
+    }
+
+    :global(.js-rlv) .rlv-prose p:global(.is-reading) .rlv-cite {
+      border-color: var(--case-accent);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js-rlv) .rlv-prose p[data-cites]::before {
+      transition: none;
+    }
+  }
+
+  /* The question, set apart the way a paper states its research question. */
+  .rlv-rq {
+    margin: 2rem 0 0;
+    padding-left: 1.25rem;
+    border-left: 2px solid var(--case-accent);
+    font: 400 clamp(1.35rem, 2vw, 1.75rem) / 1.3 font-family(editorial);
+  }
+
+  /* Plates run past the reading column. */
+  .rlv-plate {
+    padding: 0 var(--case-gutter) clamp(3rem, 8vh, 5rem);
+  }
+
+  /* The poster section runs alone, across the page, into the poster plate. */
+  .rlv-solo {
+    padding: 0 var(--case-gutter);
+  }
+
+  .rlv-sec--last {
+    padding-bottom: 2.5rem;
+  }
+
+  /* The poster laid on the page's paper grey, like a sheet on a desk. */
+  .rlv-sheet {
+    display: grid;
+    justify-items: center;
+    gap: 1.25rem;
+    padding: clamp(2.5rem, 7vh, 5rem) var(--case-gutter);
+    background: var(--case-surface);
+
+    > :global(.rlv-fig) {
+      width: 100%;
+      max-width: 76rem;
+    }
+  }
+
+  .rlv-sheet__full {
+    font: 400 0.75rem / 1 font-family(fraktion);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: inherit;
+    text-underline-offset: 0.3em;
+    text-decoration-color: var(--case-accent);
+  }
+
+  .rlv-close {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+    gap: clamp(2rem, 5vw, 5rem);
+    align-items: end;
+
+    @media (max-width: 56em) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .rlv-close__text {
+    max-width: 34ch;
+
+    h2 {
+      margin-bottom: 0.9rem;
+      color: var(--case-ink);
+    }
+
+    p {
+      margin: 0;
+      font: 400 clamp(1.2rem, 1.7vw, 1.5rem) / 1.35 font-family(editorial);
+    }
+  }
+</style>

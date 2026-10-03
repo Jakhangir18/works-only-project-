@@ -1,0 +1,70 @@
+---
+import { picture } from "../../data/media";
+
+/**
+ * One picture from the project's imported media, with a caption.
+ *
+ * `fit` is "cover" when the figure has a fixed shape (`ratio`) and the
+ * picture is cropped into it at `focal`, or "contain" to show it whole (the
+ * default: a case page shows the evidence, not a crop of it). `sizes` is the
+ * slot's rendered width, so the browser picks the right file from the
+ * widths the import produced.
+ */
+interface Props {
+  slug: string;
+  id: string;
+  alt: string;
+  caption?: string;
+  ratio?: string;
+  focal?: string;
+  sizes?: string;
+  eager?: boolean;
+  class?: string;
+}
+const { slug, id, alt, caption, ratio, focal = "50% 50%", sizes = "(max-width: 48em) 100vw, 60vw", eager = false, class: className } = Astro.props;
+const pic = picture(slug, id, 1920);
+---
+
+<figure class:list={["case-figure", className]} data-reveal>
+  <div class="case-figure__frame" style={ratio ? `aspect-ratio:${ratio}` : undefined}>
+    <img
+      src={pic.src}
+      srcset={pic.srcset}
+      sizes={sizes}
+      alt={alt}
+      width={pic.width}
+      height={pic.height}
+      loading={eager ? "eager" : "lazy"}
+      fetchpriority={eager ? "high" : undefined}
+      decoding="async"
+      style={ratio ? `object-fit:cover; object-position:${focal}; width:100%; height:100%;` : undefined}
+    />
+  </div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<style lang="scss">
+  @use "../../styles/helpers/fonts" as *;
+
+  .case-figure {
+    margin: 0;
+  }
+
+  .case-figure__frame {
+    overflow: hidden;
+    border-radius: 12px;
+    background: var(--case-surface);
+
+    img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+  }
+
+  figcaption {
+    margin-top: 0.7rem;
+    font: 400 0.8125rem / 1.45 font-family(geist);
+    color: var(--case-soft);
+  }
+</style>

@@ -1,0 +1,18 @@
+---
+import ProjectLayout from "../../components/ProjectLayout.astro";
+---
+
+<ProjectLayout
+  title="Portfolio Rocket"
+  number="07"
+  accentColor="#f5f5f5"
+  heroColor="#0d0d0d"
+  heroImage="/projects/portfolio-rocket/cover.webp"
+  heroImageWidth={960}
+  heroImageHeight={383}
+  intro="This site. A 240-frame rocket sequence scrubbed by scroll, a Three.js field behind the hero, and a Work section that expands into a tunnel of letters. It is also the project where I learned that composing animations is harder than writing them."
+  problem="Each animation worked on its own. The hero field, the frame sequence and the Work tunnel were built separately, and each was smooth in isolation. Put on one page they competed for the same 16.7 milliseconds: four independent requestAnimationFrame loops running at once, two of which never stopped even when their section was far off screen. The result was a site that felt heavy for reasons no single component was responsible for."
+  approach="I stopped guessing and built a measurement harness — frame timing, long tasks, forced reflows, listener and heap deltas — that runs against the production build in Chromium, WebKit and Firefox at desktop and 390-pixel widths. Every hypothesis had to move a number in that harness or be written down as rejected. Several were rejected: reducing the compositor hints on the letter tunnel changed nothing measurable, and a memory figure that drove an entire branch of work turned out to be a sum across Chrome processes rather than the page's own."
+  solution="The fixes that held were structural. Nothing animates while it cannot be seen, so every loop pauses on an IntersectionObserver and on tab visibility. Per-frame values are written on the leaf element that consumes them, never as a custom property on an ancestor — inherited properties invalidated roughly 1,600 nodes per frame and produced style recalculations of 44 to 89 milliseconds. Geometry is read before styles are written, never interleaved. Whatever a component creates it destroys, which took listener growth from plus 160 per resize to zero. The frame sequence runs at 960 pixels rather than 1918, cutting transfer by 34 percent."
+  outcome="The invariants are written down in the repository so the next change cannot quietly break them, and the rejected hypotheses are written down too, so nobody re-runs them. What is still open is honest: three cross-browser findings need a real iPhone rather than a headless WebKit, and headless numbers on a shared machine are a hint, not proof. The site you are reading is the current state of that work."
+/>

@@ -1,0 +1,327 @@
+---
+import CaseLayout from "../../layouts/CaseLayout.astro";
+import CaseMeta from "../../components/case/CaseMeta.astro";
+import CaseFigure from "../../components/case/CaseFigure.astro";
+import CaseClip from "../../components/case/CaseClip.astro";
+import { picture } from "../../data/media";
+import { projects } from "../../data/projects";
+
+/**
+ * TouchPoint, "The plate" (docs/portfolio-v4-design.md): a white page whose
+ * title is spelled in Braille cells first, the glove up close, the driver
+ * board's schematic as one large plate with its four parts marked, three
+ * questions instead of Problem / Approach / Solution, the event as a contact
+ * sheet, and the talk to finish.
+ *
+ * Facts: the official QuackHacks 3 pages (2026.quackhacks.org: "250+
+ * PARTICIPANTS", "2nd Place Overall"), the repository README, the owner's
+ * notes and the curated media (docs/media-picks.md). The schematic's title
+ * block reads "JZHOHA", the owner's own handle.
+ */
+const p = projects.find((x) => x.slug === "touchpoint")!;
+const hero = picture("touchpoint", "hero", 1280);
+const plate = picture("touchpoint", "g03", 1920);
+
+/* Grade 1 Braille, dots numbered 1-3 down the left column and 4-6 down the
+   right. The title spelled in cells, drawn as raised and flat dots. */
+const BRAILLE: Record<string, number[]> = {
+  t: [2, 3, 4, 5], o: [1, 3, 5], u: [1, 3, 6], c: [1, 4], h: [1, 2, 5], p: [1, 2, 3, 4], i: [2, 4], n: [1, 3, 4, 5],
+};
+const cells = [..."touchpoint"].map((ch) => BRAILLE[ch]);
+const dot = (n: number) => ({ x: n <= 3 ? 0 : 1, y: (n - 1) % 3 });
+
+/* The four parts of the board, marked on the plate where the schematic draws
+   them; the legend names each by the labels the schematic prints. */
+const callouts = [
+  { x: 47, y: 21, title: "Eight motor channels", text: "MOT1 to MOT8: a MOSFET module per vibration motor, switched from the Pi's GPIO. Six of them drive the fingertips, three per hand." },
+  { x: 42, y: 43, title: "Five keys", text: "KEY1 to KEY5, the thumb joystick and its buttons, each on its own input with a 100 Ω resistor to ground." },
+  { x: 31, y: 60, title: "Raspberry Pi 5", text: "P1 to P8 out to the drivers and B1 to B5 in from the keys, on one header." },
+  { x: 21, y: 54, title: "One supply", text: "A single VCC and ground rail feeds the drivers, the keys and the Pi." },
+];
+---
+
+<CaseLayout slug="touchpoint" title="TouchPoint" description={p.line} shareCard="/projects/touchpoint/og.jpg">
+  <header class="tp-hero case-section">
+    <div class="tp-hero__copy">
+      <svg class="tp-braille" viewBox={`0 0 ${cells.length * 3.4} 3`} role="img" aria-label="TouchPoint, in Braille">
+        {cells.map((on, i) =>
+          [1, 2, 3, 4, 5, 6].map((n) => {
+            const d = dot(n);
+            return <circle cx={i * 3.4 + 0.6 + d.x * 1.1} cy={0.5 + d.y * 1} r="0.36" class={on.includes(n) ? "is-up" : ""} />;
+          }),
+        )}
+      </svg>
+      <p class="case-label">Hackathon · {p.where} · {p.when}</p>
+      <h1 class="case-title">TouchPoint</h1>
+      <p class="case-award">{p.result}</p>
+      <p class="case-lede">A pair of gloves that plays Braille on the fingertips, so a blind user can browse the web by touch. Built in 24 hours by a team of three.</p>
+      <CaseMeta
+        rows={[
+          { label: "My part", value: "The driver board: schematic, wiring and the Pi's GPIO" },
+          { label: "Team", value: "Jakhangir Tynshimov, Marcus Tin, William Tu" },
+          { label: "Built with", value: "Raspberry Pi 5, MOSFET drivers, coin vibration motors, Python, Flask, Playwright, Gemini" },
+          { label: "Event", value: "QuackHacks 3, University of Oregon, May 30-31, 2026" },
+        ]}
+      />
+    </div>
+    <figure class="tp-hero__media">
+      <img src={hero.src} srcset={hero.srcset} sizes="(max-width: 56em) 100vw, 38vw" alt="The TouchPoint web interface, 'Feel every word.', with both wired gloves on the table in the QuackHacks hall" width={hero.width} height={hero.height} fetchpriority="high" decoding="async" />
+    </figure>
+  </header>
+
+  <section class="case-section tp-question">
+    <h2 class="case-h2" data-reveal>How do you read the web when you can't see the screen?</h2>
+    <div class="case-prose" data-reveal>
+      <p>People who are blind rely on screen readers, and screen readers rely on hearing. With age, hearing goes too, and the fallback is a refreshable braille display: hardware that starts around $2,000. For a lot of the people who need one, that puts the internet out of reach.</p>
+      <p>We searched for a cheaper device that did the same job and could not find one, so we built the smallest thing that could: not a braille display, but a way to feel the structure of a page and read it one word at a time.</p>
+    </div>
+  </section>
+
+  <section class="tp-loop">
+    <CaseClip slug="touchpoint" id="demo-loop" label="Close-up of a finger pressing the palm buttons on the TouchPoint glove" caption="The thumb walks the page; the fingertips answer in Braille." loop />
+  </section>
+
+  <section class="case-section tp-plate">
+    <div class="tp-plate__head">
+      <p class="case-label">The driver board</p>
+      <h2 class="case-h2">One sheet, eight motors, five keys</h2>
+      <p class="case-prose">My part of the 24 hours: the board between the Pi and the hands. The schematic below is the one I drew at the event; its title block carries my handle.</p>
+    </div>
+    <figure class="tp-plate__figure" data-reveal>
+      <div class="tp-plate__frame">
+        <img src={plate.src} srcset={plate.srcset} sizes="(max-width: 64em) 100vw, 70vw" alt="Schematic: eight MOSFET motor driver modules, five keys with 100 ohm resistors, and a Raspberry Pi 5 GPIO header" width={plate.width} height={plate.height} loading="lazy" decoding="async" />
+        {callouts.map((c) => (
+          <span class="tp-plate__pin" style={`left:${c.x}%; top:${c.y}%`} aria-hidden="true"></span>
+        ))}
+      </div>
+      <figcaption>
+        <ol class="tp-plate__legend">
+          {callouts.map((c) => (
+            <li><strong>{c.title}.</strong> {c.text}</li>
+          ))}
+        </ol>
+        <a class="tp-plate__pdf" href="/projects/touchpoint/docs/driver-board-schematic.pdf">Schematic (PDF) ↓</a>
+      </figcaption>
+    </figure>
+  </section>
+
+  <section class="case-section tp-how">
+    <div class="tp-how__grid">
+      <div class="tp-how__text">
+        <h2 class="case-h2" data-reveal>What does a page feel like?</h2>
+        <div class="case-prose" data-reveal>
+          <p>We stopped trying to reproduce a braille display and asked what the minimum sense of touch is. What someone navigating a page needs first is structure: where am I, what is next to me, what is one level down.</p>
+          <p>So the page becomes a tree. A Playwright and Gemini extractor fetches it, strips it to its skeleton and summarises each branch. The fingers receive: six vibration motors, three on each hand, play the current word in Grade 1 Braille. The thumb navigates: a joystick and buttons under the right palm move up and down through siblings and in and out through depth.</p>
+        </div>
+      </div>
+      <CaseFigure slug="touchpoint" id="g04" alt="Both gloves worn, coin motors on three fingertips of each hand, the Raspberry Pi and the palm buttons" caption="Six motors, three per hand, play Grade 1 Braille." sizes="(max-width: 56em) 100vw, 40vw" class="tp-how__tall" />
+      <CaseFigure slug="touchpoint" id="g02" alt="The team on stage holding their prize vouchers; the slide reads 2nd Overall, TouchPoint, with the three names" caption="On stage at QuackHacks 3: 2nd place overall of 71 teams." sizes="(max-width: 56em) 100vw, 50vw" class="tp-how__wide" />
+    </div>
+  </section>
+
+  <section class="case-section tp-sheet">
+    <h2 class="case-h2" data-reveal>Twenty-four hours, in four frames</h2>
+    <div class="tp-sheet__grid">
+      <CaseFigure slug="touchpoint" id="g01" alt="Jakhangir at the team desk with the interface on the monitor" caption="At the desk, the interface on the monitor." ratio="3 / 4" focal="50% 40%" sizes="(max-width: 48em) 50vw, 24vw" />
+      <CaseFigure slug="touchpoint" id="g06" alt="A teammate wearing the glove explains it to a visitor while Jakhangir stands beside them" caption="Demoing TouchPoint to a visitor." ratio="3 / 4" focal="50% 45%" sizes="(max-width: 48em) 50vw, 24vw" />
+      <CaseFigure slug="touchpoint" id="g07" alt="Jakhangir explaining the project to two visitors, the hardware on the table behind" caption="Web browsing by touch, explained." ratio="3 / 4" focal="45% 50%" sizes="(max-width: 48em) 50vw, 24vw" />
+      <CaseFigure slug="touchpoint" id="g08" alt="The QuackHacks 3 hall from above: rows of tables full of hackers, the stage screen at the far end" caption="The hall: 250+ hackers, 24 hours." ratio="3 / 4" focal="50% 50%" sizes="(max-width: 48em) 50vw, 24vw" />
+    </div>
+  </section>
+
+  <section class="case-section tp-talk">
+    <div class="tp-talk__grid">
+      <div>
+        <h2 class="case-h2" data-reveal>Did it work?</h2>
+        <div class="case-prose" data-reveal>
+          <p>TouchPoint placed 2nd overall of 71 teams at QuackHacks 3, a 24-hour hackathon at the University of Oregon with more than 250 participants. Engineers from Google stopped at our table to work through the interaction model with us.</p>
+          <p>The honest limit: this is a 24-hour prototype that shows the navigation model can be learned. It is not a product yet, and the next question is whether the tree still holds on a page with a thousand nodes.</p>
+        </div>
+        <ul class="case-links" data-reveal>
+          {p.links.map((l) => (
+            <li><a href={l.href} target="_blank" rel="noopener noreferrer">{l.label} <span aria-hidden="true">↗</span><span class="u-sr-only">(opens in a new tab)</span></a></li>
+          ))}
+        </ul>
+      </div>
+      <CaseClip slug="touchpoint" id="talk" label="Jakhangir explaining TouchPoint on camera, with sound" caption="Me, explaining it at the table. With sound." />
+    </div>
+  </section>
+</CaseLayout>
+
+<style lang="scss">
+  @use "../../styles/helpers/fonts" as *;
+
+  .tp-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr);
+    gap: clamp(2rem, 5vw, 5rem);
+    align-items: end;
+    padding-top: clamp(3rem, 8vh, 6rem);
+
+    @media (max-width: 56em) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .tp-hero__copy {
+    display: flex;
+    flex-direction: column;
+    gap: 1.4rem;
+  }
+
+  .tp-braille {
+    width: min(100%, 520px);
+    height: auto;
+
+    circle {
+      fill: none;
+      stroke: var(--case-rule);
+      stroke-width: 0.12;
+    }
+
+    circle.is-up {
+      fill: var(--case-ink);
+      stroke: none;
+    }
+  }
+
+  .tp-hero__media {
+    margin: 0;
+    max-height: 82svh;
+    overflow: hidden;
+    border-radius: 14px;
+
+    img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+  }
+
+  .tp-question {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: clamp(2rem, 5vw, 5rem);
+    align-items: start;
+
+    @media (max-width: 56em) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .tp-loop {
+    padding: 0 var(--case-gutter);
+  }
+
+  .tp-plate {
+    background: var(--case-surface);
+  }
+
+  .tp-plate__head {
+    max-width: 60rem;
+    margin-bottom: 2rem;
+  }
+
+  .tp-plate__figure {
+    margin: 0;
+  }
+
+  .tp-plate__frame {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid var(--case-rule);
+
+    img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+  }
+
+  /* A mark on each part: a dot and a pale ring, no label of its own. */
+  .tp-plate__pin {
+    position: absolute;
+    width: 0.875rem;
+    height: 0.875rem;
+    margin: -0.4375rem 0 0 -0.4375rem;
+    border-radius: 50%;
+    background: var(--case-accent);
+    box-shadow: 0 0 0 6px rgba(224, 5, 56, 0.18);
+  }
+
+  .tp-plate__legend {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+    gap: 1rem 2rem;
+    margin: 1.5rem 0 1rem;
+    padding: 0;
+    list-style: none;
+
+    li {
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+  }
+
+  .tp-plate__pdf {
+    font: 400 0.75rem / 1 font-family(fraktion);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: inherit;
+  }
+
+  .tp-how__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+    grid-template-areas:
+      "text tall"
+      "wide tall";
+    gap: clamp(2rem, 4vw, 4rem);
+    align-items: start;
+
+    @media (max-width: 56em) {
+      grid-template-columns: 1fr;
+      grid-template-areas: "text" "tall" "wide";
+    }
+  }
+
+  .tp-how__text {
+    grid-area: text;
+  }
+
+  :global(.tp-how__tall) {
+    grid-area: tall;
+  }
+
+  :global(.tp-how__wide) {
+    grid-area: wide;
+  }
+
+  .tp-sheet__grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+    margin-top: 2rem;
+
+    @media (max-width: 48em) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .tp-talk__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    gap: clamp(2rem, 5vw, 5rem);
+    align-items: center;
+
+    @media (max-width: 56em) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .tp-talk .case-links {
+    margin-top: 1.5rem;
+  }
+</style>

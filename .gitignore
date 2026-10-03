@@ -1,0 +1,15 @@
+node_modules
+.astro
+dist
+.DS_Store
+.env
+.env.*
+perf-results/
+
+# Claude Code: keep .claude/skills tracked so it survives a clone;
+# ignore only machine-local settings.
+.claude/settings.local.json
+.DS_Store
+
+# Linked in by tests/run.mjs to resolve playwright without depending on it
+tests/node_modules

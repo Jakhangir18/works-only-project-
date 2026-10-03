@@ -1,0 +1,36 @@
+---
+interface Props {
+  title: string;
+  text: string;
+  variant: "large" | "medium" | "wide" | "small";
+}
+
+const { title, text, variant } = Astro.props;
+
+const cornerPlus = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" width="24" height="24" stroke-width="1" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m6-6H6"/></svg>`;
+---
+
+<div class={`bento-card bento-card--${variant}`} data-reveal>
+  {/* The light: a spot that follows the pointer and a beam that runs the
+      border. Both are leaves of their own inside a clipped box, so nothing
+      about the card itself changes per frame (invariant 2), and the corner
+      marks outside the box stay unclipped. */}
+  <span class="bento-card__fx" aria-hidden="true">
+    <span class="bento-card__spot"></span>
+    <span class="bento-card__beam">
+      <span class="bento-card__track bento-card__track--t"></span>
+      <span class="bento-card__track bento-card__track--r"></span>
+      <span class="bento-card__track bento-card__track--b"></span>
+      <span class="bento-card__track bento-card__track--l"></span>
+    </span>
+  </span>
+  <span class="corner-plus corner-plus--tl" set:html={cornerPlus} />
+  <span class="corner-plus corner-plus--tr" set:html={cornerPlus} />
+  <span class="corner-plus corner-plus--bl" set:html={cornerPlus} />
+  <span class="corner-plus corner-plus--br" set:html={cornerPlus} />
+
+  <div class="bento-card__content">
+    <h3 class="bento-card__title">{title}</h3>
+    <p class="bento-card__text">{text}</p>
+  </div>
+</div>
