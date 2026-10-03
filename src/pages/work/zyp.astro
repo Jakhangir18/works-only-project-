@@ -1,17 +1,26 @@
 ---
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import CaseLayout from "../../layouts/CaseLayout.astro";
 import CaseMeta from "../../components/case/CaseMeta.astro";
 import CaseFigure from "../../components/case/CaseFigure.astro";
-import { picture, video, clipLength } from "../../data/media";
 import { projects } from "../../data/projects";
 
 /**
  * Zyp, "The live artefact" (docs/portfolio-v4-design.md): the work is a
- * public website, so the page opens on the website itself, the recording of
- * www.zyp.co playing inside a browser frame, with "See it live" as the first
- * thing to press. Then the details, and three sections named by deliverable
- * instead of Problem / Approach / Solution: the hero, the globe, the tests.
- * It closes on what he learned and a note that the live site moves on.
+ * public website, so the page opens on the website itself: the hero
+ * sequence of www.zyp.co, the site's own frames, scrubbed by the scroll
+ * inside a browser frame (src/utils/frameSequence.ts), with "See it live"
+ * as the first thing to press. Then the details, and three sections named
+ * by deliverable instead of Problem / Approach / Solution: the hero, the
+ * globe, the tests. It closes on what he learned and a note that the live
+ * site moves on.
+ *
+ * The stage is a runway of 250svh with the frame sticky inside it, and the
+ * scroll across it is the playhead, from the first scroll to where the
+ * frame lets go. At phone width and under reduced motion there is no
+ * runway: the frame holds the sequence's first frame, and no other frame
+ * is requested.
  *
  * Signature: the frame lands once, on load, from a tilt (rotateX 12deg,
  * scale 0.9) to flat. Transform only, laid out at its final size so the
@@ -21,26 +30,24 @@ import { projects } from "../../data/projects";
  * would be added a frame after first paint and never be seen.
  *
  * Facts: the owner's notes (role, dates, his part: the motion and the 3D)
- * and the site's codebase as summarised for him (Astro, the 120-frame
+ * and the site's codebase as summarised for him (Astro, the 97-frame
  * sequence, the canvas globe, the product-video takeover, Playwright + axe).
- * The pictures are captures of the public site, 2 October 2026. Nothing
- * internal: no repository, no customers, no numbers about the company.
+ * The pictures are captures of the public site, 2 October 2026; the
+ * sequence is the site's own 97 frames, resized (scripts/zyp-frames.mjs).
+ * Nothing internal: no repository, no customers, no numbers about the
+ * company.
  */
 const p = projects.find((x) => x.slug === "zyp")!;
 const live = p.links[0].href;
-const clip = video("zyp", "scroll");
-const first = picture("zyp", "hero", 1280);
-const length = clipLength(clip.duration);
 
-/* The recording opens on the site's own loader: 1.5 s of blank ground, then
-   the logo builds, and the first screen is whole at about 4.5 s. The first
-   play starts there, so it carries straight on from the poster (a capture of
-   that same first screen); each loop after it plays the loader as recorded. */
-const clipStart = 4.5;
+/* The hero sequence's frames, with their count and size, as
+   scripts/zyp-frames.mjs wrote them. */
+const frameDir = "/projects/zyp/frames";
+const seq: { count: number; width: number; height: number } = JSON.parse(readFileSync(join(process.cwd(), "public", frameDir, "frames.json"), "utf8"));
 
-/* The 120 frames of the hero sequence, as a ruler: a tall tick at the first
+/* The frames of the hero sequence, as a ruler: a tall tick at the first
    frame and every tenth. */
-const ticks = Array.from({ length: 120 }, (_, i) => ({ x: i + 0.5, major: i === 0 || (i + 1) % 10 === 0 }));
+const ticks = Array.from({ length: seq.count }, (_, i) => ({ x: i + 0.5, major: i === 0 || (i + 1) % 10 === 0 }));
 
 const parts = [
   { id: "scrub", kind: "Motion", title: "The scroll-scrubbed hero" },
@@ -63,36 +70,34 @@ const parts = [
         </div>
       </div>
 
-      <div class="zyp-stage">
-        <figure class="zyp-browser">
-          <div class="zyp-browser__window">
-            <div class="zyp-browser__bar" aria-hidden="true">
-              <span class="zyp-browser__dots"><i></i><i></i><i></i></span>
-              <span class="zyp-browser__url">
-                <svg viewBox="0 0 10 12"><rect x="1" y="5" width="8" height="6.5" rx="1.2" /><path d="M3 5V3.6a2 2 0 0 1 4 0V5" /></svg>
-                zyp.co
-              </span>
+      <div class="zyp-stage js-frame-seq-runway">
+        <div class="zyp-stage__pin">
+          <figure class="zyp-browser">
+            <div class="zyp-browser__window">
+              <div class="zyp-browser__bar" aria-hidden="true">
+                <span class="zyp-browser__dots"><i></i><i></i><i></i></span>
+                <span class="zyp-browser__url">
+                  <svg viewBox="0 0 10 12"><rect x="1" y="5" width="8" height="6.5" rx="1.2" /><path d="M3 5V3.6a2 2 0 0 1 4 0V5" /></svg>
+                  zyp.co
+                </span>
+              </div>
+              <div class="zyp-browser__view js-frame-seq" data-frames={`${frameDir}/frame_%04d.webp`} data-count={seq.count} style={`aspect-ratio:${seq.width} / ${seq.height}`}>
+                <img
+                  src={`${frameDir}/frame_0001.webp`}
+                  width={seq.width}
+                  height={seq.height}
+                  alt="The first frame of the zyp.co hero: an open-plan office, with a laptop on a white desk by the window and people working at the desks behind"
+                  fetchpriority="high"
+                  decoding="async"
+                />
+              </div>
             </div>
-            <div class="zyp-browser__view" style={`aspect-ratio:${clip.width} / ${clip.height}`}>
-              <video
-                class="js-case-loop"
-                src={`${clip.src}#t=${clipStart}`}
-                poster={clip.poster}
-                preload="none"
-                muted
-                playsinline
-                loop
-                aria-label="Screen recording of the www.zyp.co home page as it is scrolled: the office hero, the move in to the laptop and its dashboard, the product sections and the dotted globe"
-                width={clip.width}
-                height={clip.height}
-              ></video>
-            </div>
-          </div>
-          <figcaption>
-            <span>The www.zyp.co home page, scrolled from the top. Recorded on 2 October 2026.</span>
-            <span class="zyp-len">{length}</span>
-          </figcaption>
-        </figure>
+            <figcaption>
+              <span class="zyp-cap zyp-cap--live">The hero of www.zyp.co, played by your scroll as it is on the site: the shot moves in from the office to the laptop.</span>
+              <span class="zyp-cap zyp-cap--still">The first frame of the hero on www.zyp.co. On the site, the scroll moves the shot in from the office to the laptop.</span>
+            </figcaption>
+          </figure>
+        </div>
       </div>
     </header>
 
@@ -113,7 +118,7 @@ const parts = [
           <p class="case-label" data-reveal>The site</p>
           <div class="case-prose zyp-intro__prose" data-reveal>
             <p>In summer 2026 I worked on Zyp's public marketing site, www.zyp.co, on its motion and its 3D.</p>
-            <p>The site is an Astro static site with a scroll-scrubbed 120-frame hero sequence, a canvas globe with payment arcs, a product-video takeover, and Playwright and axe end-to-end tests. Three of those pieces follow, each named for what it is.</p>
+            <p>The site is an Astro static site with a scroll-scrubbed 97-frame hero sequence, a canvas globe with payment arcs, a product-video takeover, and Playwright and axe end-to-end tests. Three of those pieces follow, each named for what it is.</p>
           </div>
         </div>
         <ol class="zyp-index" data-reveal>
@@ -136,16 +141,16 @@ const parts = [
           <h2 class="case-h2" data-reveal>{parts[0].title}</h2>
         </div>
         <div class="case-prose" data-reveal>
-          <p>The home page opens on an office, and the scroll is the playhead. The hero is a 120-frame sequence scrubbed by scroll position: reading down pushes the shot in from the room to the laptop on the desk, and scrolling back up plays it in reverse. The reader sets the pace.</p>
+          <p>The home page opens on an office, and the scroll is the playhead. The hero is a 97-frame sequence scrubbed by scroll position: reading down pushes the shot in from the room to the laptop on the desk, and scrolling back up plays it in reverse. The reader sets the pace.</p>
         </div>
       </div>
 
       <div class="zyp-ruler" aria-hidden="true" data-reveal>
-        <svg viewBox="0 0 120 10" preserveAspectRatio="none">
+        <svg viewBox={`0 0 ${seq.count} 10`} preserveAspectRatio="none">
           {ticks.map((t) => <line x1={t.x} x2={t.x} y1={t.major ? 0 : 5} y2="10" class={t.major ? "is-major" : undefined} />)}
           <line x1="0.5" x2="0.5" y1="0" y2="10" class="is-head" />
         </svg>
-        <p><span>Frame 1</span><span class="zyp-ruler__mid">120 frames, one scroll</span><span>120</span></p>
+        <p><span>Frame 1</span><span class="zyp-ruler__mid">{seq.count} frames, one scroll</span><span>{seq.count}</span></p>
       </div>
 
       <div class="zyp-scrub__stills">
@@ -189,7 +194,7 @@ const parts = [
           </div>
           <aside class="zyp-note" data-reveal>
             <p class="case-label">A note on the captures</p>
-            <p>The recording and the pictures on this page were captured from the public site on 2 October 2026. The live site may have changed since.</p>
+            <p>The pictures on this page were captured from the public site on 2 October 2026, and the sequence at the top is the site's own frames. The live site may have changed since.</p>
           </aside>
           <a class="zyp-live" href={live} target="_blank" rel="noopener noreferrer" data-reveal>See it live <span class="zyp-live__arrow" aria-hidden="true">↗</span><span class="u-sr-only">(opens in a new tab)</span></a>
         </div>
@@ -197,6 +202,11 @@ const parts = [
     </section>
   </div>
 </CaseLayout>
+
+<script>
+  import { initFrameSequences } from "../../utils/frameSequence";
+  initFrameSequences();
+</script>
 
 <style lang="scss">
   @use "../../styles/helpers/fonts" as *;
@@ -273,15 +283,52 @@ const parts = [
     margin: 0 auto;
 
     figcaption {
-      display: flex;
-      gap: 0.75rem;
       margin-top: 0.8rem;
       font: 400 0.8125rem / 1.45 font-family(geist);
       color: var(--case-soft);
     }
   }
 
-  /* Laid out at its final size, 72rem: the recording's own width. */
+  .zyp-cap--live {
+    display: none;
+  }
+
+  /* The runway the sequence plays across: the same query as LIVE in
+     frameSequence.ts, which plays nothing outside it. The frame holds the
+     middle of the screen, clear of the case bar's pills, and is never
+     taller than the screen. The warm ground rises behind it as it plays and
+     reaches its middle as it lets go, where the details carry it on. */
+  @media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+    .zyp-stage {
+      height: 250svh;
+      padding-bottom: 0;
+      background: linear-gradient(to bottom, transparent 0 calc(100% - 50svh), var(--case-surface) 0);
+    }
+
+    .zyp-stage__pin {
+      position: sticky;
+      top: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      height: 100svh;
+      padding: 4rem 0 1rem;
+    }
+
+    .zyp-browser {
+      width: min(100%, 72rem, calc((100svh - 10.5rem) * 16 / 9));
+    }
+
+    .zyp-cap--live {
+      display: inline;
+    }
+
+    .zyp-cap--still {
+      display: none;
+    }
+  }
+
+  /* Laid out at its final size: 72rem at most. */
   .zyp-browser__window {
     overflow: hidden;
     border: 1px solid rgba(11, 11, 12, 0.1);
@@ -375,24 +422,24 @@ const parts = [
     }
   }
 
+  /* The poster <img>, and over it the canvas frameSequence.ts adds: opaque,
+     the same box, on its own layer (invariant 13). */
   .zyp-browser__view {
+    position: relative;
     background: #f2eee8;
 
-    video {
+    img,
+    :global(canvas) {
       display: block;
       width: 100%;
       height: 100%;
-      object-fit: cover;
     }
-  }
 
-  .zyp-len {
-    flex: none;
-    margin-left: auto;
-    font: 400 0.6875rem / 1.9 font-family(fraktion);
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--case-soft);
+    :global(canvas) {
+      position: absolute;
+      inset: 0;
+      will-change: transform;
+    }
   }
 
   .zyp-details {
