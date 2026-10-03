@@ -1,0 +1,35 @@
+---
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
+/**
+ * The SVG filter behind the liquid glass's refraction (styles/helpers/_glass.scss),
+ * once per page. Only Chromium applies an SVG filter inside backdrop-filter,
+ * so the inline script marks <html> with has-refraction there and nowhere
+ * else; every other engine keeps the blurred glass.
+ *
+ * The map is src/assets/glass-map.png (scripts/glass-map.mjs), inlined: about
+ * a kilobyte, and a filter that waits on a request would draw unbent first.
+ * It is stretched to each control's box, so one map serves every shape.
+ */
+const map = `data:image/png;base64,${readFileSync(join(process.cwd(), "src/assets/glass-map.png")).toString("base64")}`;
+---
+
+<script is:inline>
+  if ("userAgentData" in navigator) document.documentElement.classList.add("has-refraction");
+</script>
+<svg class="glass-filter" width="0" height="0" aria-hidden="true" focusable="false">
+  <filter id="lg-refract" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+    <feImage href={map} x="0" y="0" width="100%" height="100%" preserveAspectRatio="none" result="map"></feImage>
+    <feDisplacementMap in="SourceGraphic" in2="map" scale="22" xChannelSelector="R" yChannelSelector="G"></feDisplacementMap>
+  </filter>
+</svg>
+
+<style>
+  .glass-filter {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+  }
+</style>

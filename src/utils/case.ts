@@ -2,7 +2,9 @@
  * The few behaviours a case page has, all event-driven: nothing here runs a
  * frame loop.
  *   - Reveals: [data-reveal] elements fade up once, by IntersectionObserver.
- *   - Loops: muted footage plays while on screen and pauses off it.
+ *   - Loops: muted footage plays while on screen and pauses off it, until
+ *     the visitor takes one over in its player (data-user, player.ts):
+ *     from then on it still pauses off screen but never starts on its own.
  *   - Decks: the progress line follows the track's scroll; the buttons page it.
  */
 export function initCase(): void {
@@ -28,24 +30,24 @@ export function initCase(): void {
     // Which loops are on screen, so a tab coming back can resume exactly
     // those: the observer does not fire again for an unchanged intersection.
     const onScreen = new Set<HTMLVideoElement>();
+    const auto = (v: HTMLVideoElement) => !reduce && !v.closest<HTMLElement>(".js-player")?.dataset.user;
     const playback = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
           const v = entry.target as HTMLVideoElement;
           if (entry.isIntersecting) onScreen.add(v);
           else onScreen.delete(v);
-          if (entry.isIntersecting && !reduce && !document.hidden) v.play().catch(() => {});
-          else v.pause();
+          if (entry.isIntersecting && auto(v) && !document.hidden) v.play().catch(() => {});
+          else if (!entry.isIntersecting) v.pause();
         }
       },
       { threshold: 0.35 },
     );
     loops.forEach((v) => playback.observe(v));
-    // Under reduced motion the loops are still there to watch, by hand.
-    if (reduce) loops.forEach((v) => (v.controls = true));
+    // Under reduced motion the loops wait for the player's own play button.
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) loops.forEach((v) => v.pause());
-      else if (!reduce) onScreen.forEach((v) => v.play().catch(() => {}));
+      else onScreen.forEach((v) => auto(v) && v.play().catch(() => {}));
     });
   }
 
