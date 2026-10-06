@@ -9,10 +9,17 @@
  * `.s__stars`'s computed background; their colours and alphas it keeps in
  * LOOKS, in this order.
  */
+/* Five tiles, not two: with two the field read as a lattice of dots at
+   every rest position of the dissolve (seen 2026-10-06 at both widths).
+   Five periods that share no factor hide the repeat; the order here is the
+   order of LOOKS in WorkDust.ts. */
 @mixin star-tiles {
   background-image:
     radial-gradient(circle, rgba(255, 255, 255, 0.7) 0.6px, transparent 1.3px),
-    radial-gradient(circle, rgba(255, 217, 168, 0.55) 0.8px, transparent 1.6px);
-  background-position: 17px 23px, 89px 61px;
-  background-size: 137px 149px, 211px 173px;
+    radial-gradient(circle, rgba(255, 217, 168, 0.55) 0.8px, transparent 1.6px),
+    radial-gradient(circle, rgba(255, 255, 255, 0.45) 0.5px, transparent 1.1px),
+    radial-gradient(circle, rgba(255, 255, 255, 0.9) 0.9px, transparent 1.8px),
+    radial-gradient(circle, rgba(214, 228, 255, 0.4) 0.45px, transparent 1px);
+  background-position: 17px 23px, 89px 61px, 41px 97px, 157px 199px, 5px 151px;
+  background-size: 137px 149px, 211px 173px, 97px 131px, 311px 263px, 73px 191px;
 }

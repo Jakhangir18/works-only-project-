@@ -26,12 +26,15 @@ import { writeIfChanged } from "./leafWrite";
  * same function (invariant 8).
  */
 
-/* The star field's two tiles: their colour and alpha here, their offsets
+/* The star field's five tiles: their colour and alpha here, their offsets
    and sizes read from `.s__stars`'s computed background (the one source is
-   helpers/_stars.scss). A star sits at the centre of each tile. */
+   helpers/_stars.scss, same order). A star sits at the centre of each tile. */
 const LOOKS = [
   { rgb: "255, 255, 255", a: 0.7, size: 1.8 },
   { rgb: "255, 217, 168", a: 0.55, size: 2.2 },
+  { rgb: "255, 255, 255", a: 0.45, size: 1.4 },
+  { rgb: "255, 255, 255", a: 0.9, size: 2.6 },
+  { rgb: "214, 228, 255", a: 0.4, size: 1.3 },
 ] as const;
 const DUST = "255, 242, 237";
 const COLOURS = [DUST, ...LOOKS.map((l) => l.rgb)];

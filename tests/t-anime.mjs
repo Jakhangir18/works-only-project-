@@ -244,6 +244,30 @@ for (const [ename, engine] of Object.entries({ chromium, webkit })) {
     results.push(check(`${tag} the keyboard route lists the seven case pages`, sameSet(sections.listed), sections.listed.join(',')));
     results.push(check(`${tag} no "0n / 0n" counter in WORK`, sections.counters.length === 0, sections.counters.join(', ')));
 
+    // 5b. The dissolve: between the last card's hold and the descent the
+    // screen is never empty. 2026-10-06: at rest it read as a lattice of
+    // dots, because the star field was two tiles. Ten positions across the
+    // home-only segment (the section's last screen before it lets go): at
+    // each, something bright is drawn: the letters, the dust or the stars.
+    const workEnd = await page.evaluate(() => {
+      const el = document.querySelector('#work');
+      if (!el) return null;
+      return el.getBoundingClientRect().bottom + window.scrollY;
+    });
+    if (workEnd) {
+      const empty = [];
+      for (let i = 0; i <= 10; i++) {
+        const y = workEnd - 2 * h + (i / 10) * h;
+        await page.evaluate((yy) => window.scrollTo({ top: yy, behavior: 'instant' }), y);
+        await page.waitForTimeout(900);
+        const { data, info } = await sharp(await page.screenshot()).greyscale().raw().toBuffer({ resolveWithObject: true });
+        let bright = 0;
+        for (let k = 0; k < data.length; k += 3) if (data[k] > 90) bright++;
+        if (bright < 30) empty.push(`${(i / 10).toFixed(1)}: ${bright} bright px of ${Math.round(info.width * info.height / 3)}`);
+      }
+      results.push(check(`${tag} the dissolve draws something at every position`, empty.length === 0, empty.join('; ') || 'letters, dust or stars at all 11'));
+    }
+
     // 5b. The hand-off, by pixels: the last frame the star field draws (its
     //     canvas letters) and the first frame WORK shows (its own DOM
     //     letters, the tunnel's ghost letters) must put the four letters on the same pixels. Measured on
