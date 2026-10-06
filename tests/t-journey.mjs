@@ -202,6 +202,33 @@ const browser = await chromium.launch();
   await ctx.close();
 }
 
+// 2b. The parked offset expires. A visitor who opened a case page, left by
+// another route and came back later used to land on a stale offset with no
+// opening (PERF-NOTES, "stale returnScrollY"); since 2026-10-06 the key
+// carries its time (src/utils/returnKey.ts) and is ignored after 30 minutes.
+{
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const page = await ctx.newPage();
+  await page.goto(BASE + '/work/touchpoint/', { waitUntil: 'load' });
+  // A fresh key is honoured: the home lands on it with no opening.
+  await page.evaluate(() => sessionStorage.setItem('returnScrollY:/', `3000|${Date.now()}`));
+  await page.goto(BASE + '/', { waitUntil: 'load' });
+  await page.waitForTimeout(4500);
+  const fresh = await page.evaluate(() => ({ y: Math.round(window.scrollY), intro: !!document.querySelector('.js-anime-intro') }));
+  results.push(check('return key: a fresh offset is restored', Math.abs(fresh.y - 3000) < 400 && !fresh.intro, JSON.stringify(fresh)));
+
+  // A key parked 31 minutes ago is dropped: the opening plays and the page
+  // starts at the top.
+  await page.goto(BASE + '/work/touchpoint/', { waitUntil: 'load' });
+  await page.evaluate(() => sessionStorage.setItem('returnScrollY:/', `3000|${Date.now() - 31 * 60 * 1000}`));
+  await page.goto(BASE + '/', { waitUntil: 'load' });
+  const blocked = await page.evaluate(() => document.documentElement.classList.contains('is-scroll-blocked'));
+  await page.waitForTimeout(5000);
+  const stale = await page.evaluate(() => ({ y: Math.round(window.scrollY), key: sessionStorage.getItem('returnScrollY:/') }));
+  results.push(check('return key: a stale offset is ignored and the opening plays', blocked && stale.y < 200 && stale.key === null, JSON.stringify({ blocked, ...stale })));
+  await ctx.close();
+}
+
 // 3. Keyboard only: reach a project from the home page and come back.
 {
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });

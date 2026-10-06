@@ -1,5 +1,6 @@
 import { initSmoothScroll, getSmoothScroll } from "./SmoothScroll";
 import { HOME_RETURN_KEY } from "./DiveTransition";
+import { takeReturn } from "./returnKey";
 import { initReveal } from "./Reveal";
 import { initMagnetic } from "./Magnetic";
 
@@ -38,15 +39,9 @@ function ready(): Promise<void> {
 }
 
 function returnToWork(): void {
-  let saved: string | null = null;
-  try {
-    saved = sessionStorage.getItem(HOME_RETURN_KEY);
-    sessionStorage.removeItem(HOME_RETURN_KEY);
-  } catch {
-    return;
-  }
-  const top = saved === null ? NaN : parseInt(saved, 10);
-  if (!Number.isFinite(top)) return;
+  // A stale offset (older than returnKey's MAX_AGE) is dropped here.
+  const top = takeReturn(HOME_RETURN_KEY);
+  if (top === null) return;
   window.scrollTo({ top, behavior: "instant" as ScrollBehavior });
   getSmoothScroll()?.scrollTo(top, { immediate: true });
 }
