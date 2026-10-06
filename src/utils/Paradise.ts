@@ -224,7 +224,9 @@ export function initParadise(): void {
     (entries) => {
       for (const entry of entries) section?.classList.toggle("is-live", entry.isIntersecting);
     },
-    { rootMargin: "50% 0px 50% 0px" },
+    // A screen of margin: the descent's scenery leaves the layer tree
+    // outside it (AnimeParadise.astro, invariant 11).
+    { rootMargin: "100% 0px 100% 0px" },
   );
   liveObserver.observe(section);
 
