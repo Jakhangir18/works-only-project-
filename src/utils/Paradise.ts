@@ -56,6 +56,8 @@ let descentTrigger: ScrollTrigger | null = null;
 let walkTrigger: ScrollTrigger | null = null;
 let liveObserver: IntersectionObserver | null = null;
 let stopObserver: IntersectionObserver | null = null;
+let walkObserver: IntersectionObserver | null = null;
+let raysShown = false;
 let section: HTMLElement | null = null;
 let sky: HTMLElement | null = null;
 let rays: HTMLElement | null = null;
@@ -131,7 +133,15 @@ function applyDescent(p: number): void {
     writeIfChanged(sky, "transform", `translate3d(0, ${((1 - settle) * 22).toFixed(2)}%, 0) scale(${(1.18 - 0.18 * settle).toFixed(4)})`);
   }
   // The painting has rays of its own: these only stir them.
-  if (rays) writeIfChanged(rays, "opacity", (RAYS_MAX * ramp(p, RAYS_IN[0], RAYS_IN[1])).toFixed(3));
+  if (rays) {
+    writeIfChanged(rays, "opacity", (RAYS_MAX * ramp(p, RAYS_IN[0], RAYS_IN[1])).toFixed(3));
+    // They turn only while they can be seen.
+    const shown = p > RAYS_IN[0];
+    if (shown !== raysShown) {
+      raysShown = shown;
+      rays.classList.toggle("is-shown", shown);
+    }
+  }
 
   const c = ramp(p, CLOUDS[0], CLOUDS[1]);
   for (const cloud of clouds) {
@@ -230,6 +240,12 @@ export function initParadise(): void {
   );
   liveObserver.observe(section);
 
+  // The tufts along the walk sway only while the walk is on screen.
+  walkObserver = new IntersectionObserver((entries) => {
+    for (const entry of entries) walk?.classList.toggle("is-walking", entry.isIntersecting);
+  });
+  walkObserver.observe(walk);
+
   trails = { wide: parse(firefly?.dataset.wide), narrow: parse(firefly?.dataset.narrow) };
 
   gsap.registerPlugin(ScrollTrigger);
@@ -266,7 +282,11 @@ export function destroyParadise(): void {
   descentTrigger = walkTrigger = null;
   liveObserver?.disconnect();
   stopObserver?.disconnect();
-  liveObserver = stopObserver = null;
+  walkObserver?.disconnect();
+  liveObserver = stopObserver = walkObserver = null;
+  walk?.classList.remove("is-walking");
+  rays?.classList.remove("is-shown");
+  raysShown = false;
   destroyGrass();
   for (const el of [earth, horizon, sky, rays, land, meadow, title, firefly, ...clouds.map((c) => c.el)]) if (el) forgetLeaf(el);
   section?.classList.remove("is-live");

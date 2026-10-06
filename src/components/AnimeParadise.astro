@@ -308,7 +308,10 @@ const SKY_H = 768;
     will-change: transform;
   }
 
-  .paradise:global(.is-live) .paradise__rays {
+  /* Turning only while they show (Paradise.ts sets is-shown from the
+     descent's progress), not for the whole screen of margin around the
+     section (invariant 1). */
+  .paradise:global(.is-live) .paradise__rays:global(.is-shown) {
     animation-play-state: running;
   }
 
@@ -503,7 +506,10 @@ const SKY_H = 768;
     right: 4vw;
   }
 
-  .paradise:global(.is-live) .paradise__tuft {
+  /* Swaying only while the walk is on screen (is-walking, Paradise.ts):
+     under is-live they swayed through the whole descent and the end of
+     WORK, a style recalculation per tuft per frame off screen. */
+  .paradise__walk:global(.is-walking) .paradise__tuft {
     animation-play-state: running;
   }
 
