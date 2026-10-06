@@ -108,7 +108,7 @@ const measured = [
     <header class="zyp-hero">
       <div class="zyp-hero__top">
         <div class="zyp-hero__name">
-          <p class="case-label">{p.kind} · {p.where} · August 2026</p>
+          <p class="case-label">{p.kind} · {p.where} · {p.when}</p>
           <h1 class="case-title">Zyp</h1>
         </div>
         <div class="zyp-hero__aside">
@@ -187,7 +187,7 @@ const measured = [
           <p class="zyp-tag" data-reveal>{parts[0].kind}</p>
           <h2 class="case-h2" data-reveal>{parts[0].title}</h2>
           <div class="case-prose" data-reveal>
-            <p>The page has one thing to do: get a visitor to book a demo. The visitors are owner-operators of outsourcing, staffing and consulting businesses, most of them between 35 and 55, in the US and the Philippines. They evaluate the site before they ever speak to anyone, often forward it to a partner who arrives with no context, and a good share of them arrive on a phone. Zyp moves their money, so the page has to read as trustworthy before it reads as clever.</p>
+            <p>The page has one thing to do: get a visitor to book a demo. The visitors run outsourcing, staffing and consulting businesses that pay people across borders. They evaluate the site before they ever speak to anyone, often forward it to a partner who arrives with no context, and a good share of them arrive on a phone. Zyp moves their money, so the page has to read as trustworthy before it reads as clever.</p>
             <p>So the motion supports the content and never competes with it. Before the first line of animation I wrote the rules the whole build was reviewed against, thirteen of them. These six did the most work.</p>
           </div>
         </div>
@@ -317,7 +317,7 @@ const measured = [
         <div class="case-prose" data-reveal>
           <p>Every stage started as a written brief: the goal, what was in and out of scope, the rules that applied, the edge cases on phones and under reduced motion, and how it would be verified. I ran the implementation of those briefs through coding agents and reviewed every diff myself against the thirteen rules; the architecture, the diagnosis and every merge were mine.</p>
           <p>Nothing that touched the pinned hero or the scroll merged without the Safari gate: the build on my own iPhone, in real Safari, scrolled fast and slow with the address bar collapsing and returning. A headless browser never caught what that did.</p>
-          <p>The client's side ran as a request log, 27 items, each with what it unblocked; a call on 14 September became one pull request; a pull request from their side was reviewed, used as the spec, and rebuilt on the production base.</p>
+          <p>The company's side ran as a written request log, each item with what it unblocked; a call became a pull request; a change proposed from their side was reviewed, used as the spec, and rebuilt on the production base.</p>
         </div>
       </div>
     </section>
