@@ -84,8 +84,12 @@ A personal portfolio site built with **Astro**, animation-heavy. Two homes ship:
 Stack: Astro components (`.astro`) + TypeScript controllers, **Three.js**
 (`DottedSurface`, `/tunnel/` only), **GSAP + ScrollTrigger**, **Lenis**.
 Deployed on Vercel from `main`. Since 15a1432 (2026-10-03, the owner's
-word) `main` carries v6 as one commit cut like `preview/portfolio`: the
-site's sources only, never a merge of this branch. Vercel built it as a
+word) `main` carries the site as one commit per release cut like
+`preview/portfolio`: the site's sources only, never a merge of this
+branch (v8: b9598ed, 2026-10-06, built from a temporary index: main's
+tree with src, public without resume.pdf and the configs replaced). The
+owner connected his own domain (2026-10-06); deployment URLs stay behind
+Vercel Authentication, the domain is public. Vercel built it as a
 Production deployment, but works-only-project.vercel.app kept serving the
 July deployment (alias not reassigned; no Vercel CLI or login on this
 host), so the owner promotes it in the Vercel dashboard.
