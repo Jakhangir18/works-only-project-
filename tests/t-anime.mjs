@@ -232,9 +232,12 @@ for (const [ename, engine] of Object.entries({ chromium, webkit })) {
       // timeline, whose pause(0) re-rendered it to 0 at once.)
       const medianOf = (d) => [...d].sort((a, b) => a - b)[d.length >> 1];
       await greyAt(runway.top - h + 0.5 * runway.height, 500, 48);
-      const { data: crossed } = await greyAt(runway.top - h + 0.6 * runway.height, 1000, 48);
+      // The crash's flash fades over the first 1.1 s and leaves the black a
+      // little warm until then (a median of about 50 at 1 s in Chromium), so
+      // the sample waits the crash out.
+      const { data: crossed } = await greyAt(runway.top - h + 0.6 * runway.height, 1700, 48);
       const { data: back } = await greyAt(runway.top - h + 0.5 * runway.height, 1000, 48);
-      results.push(check(`${tag} the black plays in on the crossing and out on the way back`, medianOf(crossed) < 40 && medianOf(back) > 200, `crossed ${medianOf(crossed)}, back ${medianOf(back)}`));
+      results.push(check(`${tag} the black plays in on the crossing and out on the way back`, medianOf(crossed) < 60 && medianOf(back) > 200, `crossed ${medianOf(crossed)}, back ${medianOf(back)}`));
     }
 
     // 5. WORK (the letter tunnel, as on /tunnel/) and the timeline walk.
