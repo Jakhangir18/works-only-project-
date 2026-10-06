@@ -21,8 +21,8 @@
   },
   "hero": {
     "kind": "image",
-    "width": 2160,
-    "height": 2880,
+    "width": 3000,
+    "height": 4000,
     "files": [
       {
         "w": 640,
@@ -37,8 +37,8 @@
         "src": "/projects/usher/media/hero-1600.webp"
       },
       {
-        "w": 2160,
-        "src": "/projects/usher/media/hero-2160.webp"
+        "w": 3000,
+        "src": "/projects/usher/media/hero-3000.webp"
       }
     ],
     "thumb": "/projects/usher/media/hero-thumb.webp"
