@@ -72,9 +72,10 @@ export const timeline: readonly TimelineEntry[] = [
   },
   {
     // The offer letter: Frontend Engineer Intern, August 2026 (part-time,
-    // remote). His commits on the company's site run Aug 16 - Sep 19, 2026,
+    // remote); on the site the owner (2026-10-06) names it software engineer
+    // intern. His commits on the company's site run Aug 16 - Sep 19, 2026,
     // with the launch on Sep 13, so the span keeps September.
-    title: "Frontend engineer intern",
+    title: "Software engineer intern",
     org: "Zyp",
     kind: "work",
     start: "2026-08",

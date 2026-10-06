@@ -125,8 +125,9 @@ export const projects: readonly Project[] = [
     kind: "Internship",
     // The signed offer letter (2026-07-22): Frontend Engineer Intern, part-time,
     // remote, August 2026; the site launched 13 September and his last merge
-    // was 19 September (the repository's history).
-    role: "Frontend engineer intern: the public site, from first commit to launch",
+    // was 19 September (the repository's history). The owner (2026-10-06)
+    // names the role "software engineer intern" on the site.
+    role: "Software engineer intern: the public site, from first commit to launch",
     when: "August – September 2026",
     where: "Zyp, Inc.",
     line: "Zyp's public site, zyp.co, built and launched in four weeks: a scroll-scrubbed hero, a canvas globe of payment arcs, tests that hold it together.",
