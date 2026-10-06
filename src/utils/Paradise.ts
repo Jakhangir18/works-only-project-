@@ -61,6 +61,7 @@ let liveObserver: IntersectionObserver | null = null;
 let stopObserver: IntersectionObserver | null = null;
 let walkObserver: IntersectionObserver | null = null;
 let descentObserver: IntersectionObserver | null = null;
+let descentEl: HTMLElement | null = null;
 let raysShown = false;
 let section: HTMLElement | null = null;
 let sky: HTMLElement | null = null;
@@ -251,6 +252,10 @@ export function initParadise(): void {
     { rootMargin: "100% 0px 100% 0px" },
   );
   descentObserver.observe(descent);
+  // Only now may the stylesheet take the scenery out: before the observer
+  // has spoken, a load that lands inside the descent shows it.
+  descent.classList.add("is-watched");
+  descentEl = descent;
 
   // The tufts along the walk sway only while the walk is on screen.
   walkObserver = new IntersectionObserver((entries) => {
@@ -300,7 +305,8 @@ export function destroyParadise(): void {
   walkObserver?.disconnect();
   descentObserver?.disconnect();
   liveObserver = stopObserver = walkObserver = descentObserver = null;
-  document.querySelector(".js-par-descent")?.classList.remove("is-near");
+  descentEl?.classList.remove("is-near", "is-watched");
+  descentEl = null;
   walk?.classList.remove("is-walking");
   rays?.classList.remove("is-shown");
   raysShown = false;

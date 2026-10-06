@@ -700,7 +700,7 @@ const SKY_H = 768;
      grass measures its canvas once, at load. Not under reduced motion,
      where nothing sets is-near. */
   @media (prefers-reduced-motion: no-preference) {
-    :global(.paradise__descent:not(.is-near)) :is(.paradise__earth, .paradise__horizon, .paradise__sky, .paradise__land, .paradise__rays, .paradise__cloud) {
+    :global(.paradise__descent.is-watched:not(.is-near)) :is(.paradise__earth, .paradise__horizon, .paradise__sky, .paradise__land, .paradise__rays, .paradise__cloud) {
       display: none;
     }
   }
