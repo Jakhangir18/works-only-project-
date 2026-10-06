@@ -25,9 +25,12 @@ import { initGrass, resizeGrass, placeGrass, destroyGrass } from "./GrassField";
  * attributes, normalised), so per frame this only looks a point up and
  * writes one transform. The signposts come in by IntersectionObserver, once.
  *
- * The rays' turn and the grass's sway are compositor animations; they run
- * only while the section is within a screen (is-live), and the browser
- * pauses them with the tab.
+ * The rays' turn and the tufts' sway are compositor animations: the rays
+ * run while the descent is within a screen (is-near) and shows them
+ * (is-shown), the tufts while the walk is on screen (is-walking), and the
+ * browser pauses both with the tab. The descent's scenery leaves the layer
+ * tree outside is-near; is-live (the whole section) only fetches the walk's
+ * ground.
  */
 
 const EARTH_GROW = [0.0, 0.26] as const;
@@ -57,6 +60,7 @@ let walkTrigger: ScrollTrigger | null = null;
 let liveObserver: IntersectionObserver | null = null;
 let stopObserver: IntersectionObserver | null = null;
 let walkObserver: IntersectionObserver | null = null;
+let descentObserver: IntersectionObserver | null = null;
 let raysShown = false;
 let section: HTMLElement | null = null;
 let sky: HTMLElement | null = null;
@@ -234,11 +238,19 @@ export function initParadise(): void {
     (entries) => {
       for (const entry of entries) section?.classList.toggle("is-live", entry.isIntersecting);
     },
-    // A screen of margin: the descent's scenery leaves the layer tree
-    // outside it (AnimeParadise.astro, invariant 11).
-    { rootMargin: "100% 0px 100% 0px" },
+    { rootMargin: "50% 0px 50% 0px" },
   );
   liveObserver.observe(section);
+
+  // The descent's scenery is in the layer tree only within a screen of the
+  // descent itself (invariant 11); the walk below it is not the descent.
+  descentObserver = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) descent.classList.toggle("is-near", entry.isIntersecting);
+    },
+    { rootMargin: "100% 0px 100% 0px" },
+  );
+  descentObserver.observe(descent);
 
   // The tufts along the walk sway only while the walk is on screen.
   walkObserver = new IntersectionObserver((entries) => {
@@ -286,7 +298,9 @@ export function destroyParadise(): void {
   liveObserver?.disconnect();
   stopObserver?.disconnect();
   walkObserver?.disconnect();
-  liveObserver = stopObserver = walkObserver = null;
+  descentObserver?.disconnect();
+  liveObserver = stopObserver = walkObserver = descentObserver = null;
+  document.querySelector(".js-par-descent")?.classList.remove("is-near");
   walk?.classList.remove("is-walking");
   rays?.classList.remove("is-shown");
   raysShown = false;

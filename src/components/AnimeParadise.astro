@@ -311,7 +311,7 @@ const SKY_H = 768;
   /* Turning only while they show (Paradise.ts sets is-shown from the
      descent's progress), not for the whole screen of margin around the
      section (invariant 1). */
-  .paradise:global(.is-live) .paradise__rays:global(.is-shown) {
+  .paradise__descent:global(.is-near) .paradise__rays:global(.is-shown) {
     animation-play-state: running;
   }
 
@@ -694,13 +694,13 @@ const SKY_H = 768;
     }
   }
 
-  /* A screen away, the descent's scenery leaves the layer tree (invariant
-     11): the rays alone are a 1351px square layer on a phone, and the clouds
-     three more, all present from the top of the page. The ground stays: the
+  /* A screen away from the descent (is-near, Paradise.ts), its scenery
+     leaves the layer tree (invariant 11): the rays alone are a 1351px square
+     layer on a phone, and the clouds three more. The ground stays: the
      grass measures its canvas once, at load. Not under reduced motion,
-     where nothing sets is-live. */
+     where nothing sets is-near. */
   @media (prefers-reduced-motion: no-preference) {
-    :global(.paradise:not(.is-live)) :is(.paradise__earth, .paradise__horizon, .paradise__sky, .paradise__land, .paradise__rays, .paradise__cloud) {
+    :global(.paradise__descent:not(.is-near)) :is(.paradise__earth, .paradise__horizon, .paradise__sky, .paradise__land, .paradise__rays, .paradise__cloud) {
       display: none;
     }
   }
