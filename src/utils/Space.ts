@@ -43,11 +43,13 @@ const DIR = { x: -0.985, y: 0.174 };
    (see AnimeSpace.astro), so the field is full at both ends. */
 const NEAR_TRAVEL = 0.45;
 const FAR_TRAVEL = 0.15;
-/* Where the layers come in, in the rocket's progress: only once the wipe is
-   well past the middle of the screen, so no star sits on white — the far
-   ones first, the near ones last, both fully there as the wipe completes. */
-const FAR_IN = [0.9, 1] as const;
-const NEAR_IN = [0.95, 1] as const;
+/* Where the layers come in, in the rocket's progress: only once the wipe
+   has painted the screen black (RocketFlight's DARK ends at 0.64), so no
+   star sits on white — the far ones first, the near ones after, both fully
+   there well before the runway ends, so a reader who stops right after the
+   crash is looking at stars, not at a black screen. */
+const FAR_IN = [0.66, 0.8] as const;
+const NEAR_IN = [0.72, 0.86] as const;
 /* While the constellation gathers, both layers settle to a faint field, and
    they are gone by the hand-off: WORK's black, scrolling up behind its
    letters, has no stars in it, so none may be left to end at its edge. */

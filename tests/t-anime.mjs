@@ -199,6 +199,34 @@ for (const [ename, engine] of Object.entries({ chromium, webkit })) {
     });
     results.push(check(`${tag} the rocket hits on the right`, !!impact && impact.x > 0.6 * impact.w, impact ? `x ${impact.x} of ${impact.w}` : 'no impact point'));
 
+    // 4c. Past the crash the page is never a blank or a flat-grey rest state:
+    // the black is full a tenth of a screen after the impact and the stars
+    // are on it. 2026-10-06: at 390x844 a reader who stopped between the
+    // bento and the stars saw a white screen, then a grey one. Sampled on
+    // the runway's own progress r (its top entering at the bottom of the
+    // screen = 0, its bottom reaching the bottom = 1), from just past the
+    // black's end to the star field: a frame is "flat" when a 48 px wide
+    // copy has fewer than two pixels off its median; flat black is space.
+    const runway = await page.evaluate(() => {
+      const el = document.querySelector('.rocket-flight');
+      if (!el) return null;
+      const r = el.getBoundingClientRect();
+      return { top: r.top + window.scrollY, height: r.height };
+    });
+    if (runway) {
+      const flat = [];
+      for (let r = 0.66; r <= 1.3; r += 0.08) {
+        await page.evaluate((y) => window.scrollTo({ top: y, behavior: 'instant' }), runway.top - h + r * runway.height);
+        await page.waitForTimeout(700);
+        const { data } = await sharp(await page.screenshot()).resize(48, null).greyscale().raw().toBuffer({ resolveWithObject: true });
+        const sorted = [...data].sort((a, b) => a - b);
+        const median = sorted[sorted.length >> 1];
+        const drawn = data.filter((v) => Math.abs(v - median) > 24).length;
+        if (drawn < 2 && median > 40) flat.push(`r=${r.toFixed(2)} median ${median}`);
+      }
+      results.push(check(`${tag} no blank or flat-grey rest state after the crash`, flat.length === 0, flat.join('; ') || 'stars or black at every sample'));
+    }
+
     // 5. WORK (the letter tunnel, as on /tunnel/) and the timeline walk.
     const CASES = ['/work/touchpoint/', '/work/spoot/', '/work/zyp/', '/work/gdg/', '/work/remote-lab-vision/', '/projects/ams/', '/work/engineering-rocket/'];
     const sections = await page.evaluate(() => ({

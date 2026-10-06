@@ -27,11 +27,15 @@ import { writeIfChanged, forgetLeaf } from "./leafWrite";
 
 /* In the runway's progress (its top entering at the bottom of the screen = 0,
    its bottom reaching the bottom of the screen = 1): where the rocket hits,
-   where the page starts turning to space. Exported: the star field reveals
-   on that, and the stars arrive at 0.9, by which the black is near full. */
+   and where the page starts turning to space: the same moment. The black
+   comes in fast from the impact and is full by DARK[1], a tenth of a screen
+   later, so a reader who stops anywhere past the crash sees black (and,
+   from 0.66, the stars that Space.ts brings in), never a blank white or a
+   half-grey screen; the crash itself plays over it in time. Exported: the
+   star field's travel starts on WIPE_STARTS. */
 export const CRASH_AT = 0.55;
-export const WIPE_STARTS = 0.6;
-const DARK = [WIPE_STARTS, 0.88] as const;
+export const WIPE_STARTS = CRASH_AT;
+const DARK = [WIPE_STARTS, 0.64] as const;
 /* A downward crossing plays the crash; a jump that lands further past it
    than this shows the crash's end state (all gone) instead. Scrolling back
    above the impact by RESET resets it. */
@@ -313,8 +317,9 @@ function apply(scroll: number): void {
 
   if (dark) {
     const t = ramp(r, DARK[0], DARK[1]);
-    // Smoothstep: no step at either end of the turn to black.
-    writeIfChanged(dark, "opacity", (t * t * (3 - 2 * t)).toFixed(3));
+    // Ease-out: most of the black arrives right after the impact, the rest
+    // settles without a step at the end.
+    writeIfChanged(dark, "opacity", (1 - (1 - t) * (1 - t)).toFixed(3));
   }
 
   // The crash itself runs in time. A crossing on the way down plays it; a
