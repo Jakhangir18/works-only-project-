@@ -406,6 +406,19 @@ const { items = works, home = false } = Astro.props;
       font-size: min(18.75rem, 25lvh);
     }
 
+    /* And so do the cards' lanes on a phone (the tunnel's own rule says
+       7svh): with the stage in lvh they clustered tighter than it. */
+    @include mq(phone) {
+      .s__scene :global(.s__scene__work) {
+        transform: rotateY(calc(var(--progress) * -20deg))
+          translate3d(
+            calc(var(--progress) * (50vw + 100%) - 50%),
+            calc(-50% + var(--y) * 7lvh),
+            calc(var(--progress) * var(--progress) * -5rem)
+          );
+      }
+    }
+
     /* Before the hand-off the star field draws these letters itself. */
     &:not(.is-on) :is(.s__scene, .s__canvas, .s__mask-outer) {
       visibility: hidden;
