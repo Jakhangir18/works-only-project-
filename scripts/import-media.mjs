@@ -4,6 +4,8 @@
 //
 // The manifest is a list of entries. Each entry is one of:
 //   { slug, id, kind: "image", src, widths?: [640, 1280, 1920], quality?: 80 }
+//   (an existing file is kept as it is: a changed width list or quality takes
+//   --force, which also removes the entry's widths no longer listed)
 //   { slug, id, kind: "video", src, maxHeight?: 720, start?: seconds, duration?: seconds,
 //     keepAudio?: true, playFrom?: seconds }
 //   `start`/`duration` trim the source; `playFrom` is where playback begins in the
@@ -25,7 +27,7 @@
 // Run it through `heavy`: ffmpeg and sharp at full tilt make the host swap.
 
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, writeFileSync, statSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync, statSync, rmSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import sharp from "sharp";
@@ -70,7 +72,7 @@ async function image(e) {
   const swap = (meta.orientation ?? 1) >= 5;
   const srcW = swap ? meta.height : meta.width;
   const srcH = swap ? meta.width : meta.height;
-  const listed = e.widths ?? [640, 1280, 1920];
+  const listed = [...new Set(e.widths ?? [640, 1280, 1920])].sort((a, b) => a - b);
   const widths = listed.filter((w) => w <= srcW);
   // A source between two listed widths also gets its own width, or a 1200 px
   // photograph would only ever be served at 640. A source wider than every
@@ -84,8 +86,17 @@ async function image(e) {
     if (!fresh(file)) await sharp(e.src).rotate().resize({ width: w }).webp({ quality: e.quality ?? 80 }).toFile(file);
     files.push({ w, src: `/projects/${e.slug}/media/${e.id}-${w}.webp` });
   }
+  // A width this run no longer writes is not served any more: on --force its
+  // old file goes, or it would ship unreferenced (Usher's hero-3000, 2026-10-06).
+  if (force) {
+    const keep = new Set(widths.map((w) => `${e.id}-${w}.webp`));
+    const sized = new RegExp(`^${e.id.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}-\\d+\\.webp$`);
+    for (const name of readdirSync(dir)) {
+      if (sized.test(name) && !keep.has(name)) rmSync(join(dir, name));
+    }
+  }
   const thumb = join(dir, `${e.id}-thumb.webp`);
-  if (!fresh(thumb)) await sharp(e.src).rotate().resize({ width: 480, withoutEnlargement: true }).webp({ quality: 72 }).toFile(thumb);
+  if (!fresh(thumb)) await sharp(e.src).rotate().resize({ width: 480, withoutEnlargement: true }).webp({ quality: Math.min(72, e.quality ?? 72) }).toFile(thumb);
   record(e.slug, e.id, {
     kind: "image",
     width: srcW,
