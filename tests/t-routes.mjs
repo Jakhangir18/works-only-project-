@@ -154,7 +154,9 @@ for (const [ename, engine] of Object.entries(ENGINES)) {
               .map((r) => `${Math.round(r.transferSize / 1024)}KB ${r.name.split('/').pop()}`),
           };
         });
-        results.push(check(`${tag} critical path under 40 resources`, budget.count <= 40, `${budget.count} resources`));
+        // 44 since 2026-10-06: the eighth project put two more pictures on
+        // the hero wheel (a shot and its blurred twin per project), 43 in all.
+        results.push(check(`${tag} critical path under 44 resources`, budget.count <= 44, `${budget.count} resources`));
         results.push(check(`${tag} critical path under 600 KB`, budget.kb <= 600, `${budget.kb} KB`));
         results.push(check(`${tag} nothing over 150 KB blocks the page`, budget.heavy.length === 0, budget.heavy.join(', ')));
       }

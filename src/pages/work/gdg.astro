@@ -32,6 +32,11 @@ import { projects } from "../../data/projects";
  */
 const p = projects.find((x) => x.slug === "gdg")!;
 const cover = picture("gdg", "hero", 1800);
+/* The eager hero is on the critical path: its candidates stop at 1280 (141
+   KB), since the 1800 file is 243 KB and the route suite holds every page
+   to nothing over 150 KB before load (found 2026-10-06 when /work/gdg/
+   joined the suite). A 2x screen gets the 1280 file, a little soft. */
+const heroSet = cover.srcset.split(", ").filter((c) => parseInt(c.split(" ")[1], 10) <= 1280).join(", ");
 /* The report page is held back until the owner confirms it: it is a draft
    template, and it reads out claims that are on no source list (a trip to
    Google I/O, a sponsorship, the chapter's founding year, an older name).
@@ -45,7 +50,7 @@ const report = SHOW_REPORT ? picture("gdg", "report", 1500) : null;
 <CaseLayout slug="gdg" title="GDG on Campus" description="President of Google Developer Group on Campus at Oregon State University, a chapter with 200+ students registered." shareCard="/projects/gdg/og.jpg">
   <div class="gdg">
     <header class="gdg-cover">
-      <img class="gdg-cover__img" src={cover.src} srcset={cover.srcset} sizes="100vw" alt="Jak holding a microphone on a wood-panelled stage, a second person standing behind, under a projected slide headed 'Why join GDG?'" width={cover.width} height={cover.height} fetchpriority="high" decoding="async" />
+      <img class="gdg-cover__img" src={picture("gdg", "hero", 1280).src} srcset={heroSet} sizes="100vw" alt="Jak holding a microphone on a wood-panelled stage, a second person standing behind, under a projected slide headed 'Why join GDG?'" width={cover.width} height={cover.height} fetchpriority="high" decoding="async" />
       <div class="gdg-cover__copy">
         <p class="case-label">Leadership · Oregon State University</p>
         <h1 class="case-title">GDG on Campus</h1>
