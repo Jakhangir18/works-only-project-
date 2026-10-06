@@ -23,11 +23,9 @@ interface Props {
   theme?: "light" | "dark";
   /** A 1200x630 share card, when the project has one. */
   shareCard?: string;
-  /** Search engines: the listed case pages are indexable (2026-10-06). */
-  robots?: string;
 }
 
-const { slug, title, description, theme = "light", shareCard, robots = "index, follow" } = Astro.props;
+const { slug, title, description, theme = "light", shareCard } = Astro.props;
 const index = projects.findIndex((p) => p.slug === slug);
 const project = projects[index];
 const next = projects[(index + 1) % projects.length];
@@ -41,7 +39,9 @@ const prev = projects[(index - 1 + projects.length) % projects.length];
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title} — Jakhangir Tynshimov</title>
     <meta name="description" content={description} />
-    <meta name="robots" content={robots} />
+    <!-- Every page on this layout is a listed case page: indexable since
+         2026-10-06. The unlisted pages use ProjectLayout, which says noindex. -->
+    <meta name="robots" content="index, follow" />
     <meta property="og:type" content="article" />
     <meta property="og:title" content={`${title} — Jakhangir Tynshimov`} />
     <meta property="og:description" content={description} />

@@ -3,7 +3,6 @@ import CaseLayout from "../../layouts/CaseLayout.astro";
 import CaseMeta from "../../components/case/CaseMeta.astro";
 import CaseFigure from "../../components/case/CaseFigure.astro";
 import CaseClip from "../../components/case/CaseClip.astro";
-import { has, picture } from "../../data/media";
 import { projects } from "../../data/projects";
 
 /**
@@ -23,10 +22,6 @@ import { projects } from "../../data/projects";
  * claims a result the event did not give.
  */
 const p = projects.find((x) => x.slug === "usher")!;
-const hero = picture("usher", "hero", 1600);
-const app = has("usher", "app");
-const demo = has("usher", "demo");
-const table = has("usher", "table");
 
 /* What happens after the phrase, in the order the device does it. */
 const steps = [
@@ -64,8 +59,13 @@ const troubles = [
   { p: "The first buzz pattern was too strong on the temples.", f: "A soft continuous buzz at 10–20% power that gets softer as the wearer turns, instead of counted pulses." },
 ];
 
-/* The head from above: 0° is front, clockwise. */
+/* The head from above: 0° is front, clockwise. A point on a ring of radius
+   r at a bearing, as the fixed-decimal pair the SVG takes. */
 const REST = 118;
+const polar = (r: number, deg: number) => {
+  const a = (deg * Math.PI) / 180;
+  return { x: (r * Math.sin(a)).toFixed(1), y: (-r * Math.cos(a)).toFixed(1) };
+};
 const DATES = "October 3⁠–⁠4, 2026";
 ---
 
@@ -84,10 +84,7 @@ const DATES = "October 3⁠–⁠4, 2026";
         ]}
       />
     </div>
-    <figure class="us-hero__media">
-      <img src={hero.src} srcset={hero.srcset} sizes="(max-width: 56em) 100vw, 42vw" alt="The Usher headset worn with its eyepiece down: the printed band, the motor module taped at the temple, a hand holding the frame" width={hero.width} height={hero.height} fetchpriority="high" decoding="async" />
-      <figcaption>The prototype on the second night, the eyepiece down.</figcaption>
-    </figure>
+    <CaseFigure slug="usher" id="hero" alt="The Usher headset worn with its eyepiece down: the printed band, the motor module taped at the temple, a hand holding the frame" caption="The prototype on the second night, the eyepiece down." ratio="4 / 5" focal="50% 42%" sizes="(max-width: 56em) 100vw, 42vw" eager class="us-hero__media" />
   </header>
 
   <section class="case-section us-hello js-us-hello" aria-labelledby="us-hello-title">
@@ -111,8 +108,9 @@ const DATES = "October 3⁠–⁠4, 2026";
       <svg class="us-head__svg" viewBox="-130 -130 260 260" role="img" aria-label="The wearer's head seen from above, front at the top: the mic array on top of the head, a motor at each temple, and a speaker on a ring around the head. The temple nearer the speaker lights up, and the display under the head names the direction.">
         <circle class="us-head__ring" r="108" />
         {[0, 90, 180, 270].map((d) => {
-          const a = (d * Math.PI) / 180;
-          return <line class="us-head__tick" x1={(104 * Math.sin(a)).toFixed(1)} y1={(-104 * Math.cos(a)).toFixed(1)} x2={(112 * Math.sin(a)).toFixed(1)} y2={(-112 * Math.cos(a)).toFixed(1)} />;
+          const a = polar(104, d);
+          const b = polar(112, d);
+          return <line class="us-head__tick" x1={a.x} y1={a.y} x2={b.x} y2={b.y} />;
         })}
         <text class="us-head__cardinal" x="0" y="-118" text-anchor="middle">front</text>
         <text class="us-head__cardinal" x="0" y="124" text-anchor="middle">behind</text>
@@ -129,11 +127,11 @@ const DATES = "October 3⁠–⁠4, 2026";
         {/* The mic array on top of the head: four microphones on a disc. */}
         <circle class="us-head__array" r="24" />
         {[45, 135, 225, 315].map((d) => {
-          const a = (d * Math.PI) / 180;
-          return <circle class="us-head__mic" cx={(15 * Math.sin(a)).toFixed(1)} cy={(-15 * Math.cos(a)).toFixed(1)} r="3" />;
+          const m = polar(15, d);
+          return <circle class="us-head__mic" cx={m.x} cy={m.y} r="3" />;
         })}
         {/* The speaker: a dot on the ring, turned by the pointer. */}
-        <g class="us-head__speaker js-us-speaker" style={`transform: rotate(${REST}deg)`}>
+        <g class="us-head__speaker js-us-speaker" data-rest={REST} style={`transform: rotate(${REST}deg)`}>
           <circle class="us-head__voice" cx="0" cy="-108" r="7" />
           <path class="us-head__wave" d="M -13 -121 A 18 18 0 0 1 13 -121" />
           <path class="us-head__wave" d="M -20 -129 A 26 26 0 0 1 20 -129" />
@@ -189,7 +187,7 @@ const DATES = "October 3⁠–⁠4, 2026";
       </div>
     </div>
     <div class="us-judges__grid">
-      {app && <CaseFigure slug="usher" id="app" alt="The judge web app in its demo mode: a camera view with a tunnel-vision circle on the left, a voice-identified transcript and a conversation summary on the right" caption="The judge app, in its scripted demo: no headset needed." sizes="(max-width: 56em) 100vw, 60vw" class="us-judges__app" />}
+      <CaseFigure slug="usher" id="app" alt="The judge web app in its demo mode: a camera view with a tunnel-vision circle on the left, a voice-identified transcript and a conversation summary on the right" caption="The judge app, in its scripted demo: no headset needed." sizes="(max-width: 56em) 100vw, 60vw" class="us-judges__app" />
       <CaseFigure slug="usher" id="g01" alt="A laptop showing the web app, 'Stay in the conversation', with Jakhangir in the camera feed" caption="The first version of the page, the camera on me." sizes="(max-width: 56em) 100vw, 40vw" />
       <CaseFigure slug="usher" id="g02" alt="A teammate at a curved monitor showing the judge app: the tunnel-vision circle on the left and the transcript on the right" caption="The tunnel-vision overlay on the big screen, late on the first night." sizes="(max-width: 56em) 100vw, 40vw" />
     </div>
@@ -230,8 +228,8 @@ const DATES = "October 3⁠–⁠4, 2026";
       <CaseFigure slug="usher" id="g08" alt="The prototype on the table: the Pi beside it, the OLED hanging on its wires, two face sketches on the whiteboard behind" caption="The OLED on its wires; the whiteboard behind has the first sketches." ratio="3 / 4" focal="50% 55%" sizes="(max-width: 48em) 50vw, 24vw" />
       <CaseFigure slug="usher" id="g06" alt="Jakhangir and two teammates lying on the floor between the chairs at night" caption="Three in the morning." ratio="4 / 3" focal="50% 40%" sizes="(max-width: 48em) 100vw, 48vw" class="us-frames__wide" />
       <CaseFigure slug="usher" id="g04" alt="A teammate seated wearing the headset, wires running to a laptop; Jakhangir standing beside him" caption="A first fitting, Sunday morning." ratio="4 / 3" focal="50% 45%" sizes="(max-width: 48em) 100vw, 48vw" class="us-frames__wide" />
-      {demo && <CaseClip slug="usher" id="demo" label="The headset worn at the judging table, the Raspberry Pi in a teammate's hand" caption="At the judging table." class="us-frames__clip" />}
-      {table && <CaseClip slug="usher" id="table" label="A teammate wearing the headset at the team's table while another adjusts the wiring and explains" caption="Fitting and explaining, Sunday morning." class="us-frames__clip" />}
+      <CaseClip slug="usher" id="demo" label="The headset worn at the judging table, the Raspberry Pi in a teammate's hand" caption="At the judging table." class="us-frames__clip" />
+      <CaseClip slug="usher" id="table" label="A teammate wearing the headset at the team's table while another adjusts the wiring and explains" caption="Fitting and explaining, Sunday morning." class="us-frames__clip" />
       <CaseFigure slug="usher" id="g12" alt="The four teammates behind the MHACKS marquee letters in the judging hall" caption="The four of us, after judging." sizes="(max-width: 48em) 100vw, 100vw" class="us-frames__full" />
     </div>
   </section>
@@ -257,10 +255,13 @@ const DATES = "October 3⁠–⁠4, 2026";
 </CaseLayout>
 
 <script>
+  import { writeIfChanged } from "../../utils/leafWrite";
+
   /* The head answers the pointer the way the headset answers a voice.
      Event-driven, no frame loop (invariant 6): a pointer event writes one
      transform on the speaker's own group, two opacities on the glows and,
-     only when it changes, the display's text. The figure's centre is read
+     only when it changes, the display's text; every write goes through
+     writeIfChanged, so a value already there is not written again. The figure's centre is read
      once in page coordinates, and again after a resize or a font swap
      (invariants 3 and 5). The listeners sit on the section, so nothing runs
      while it is off screen; under reduced motion the voice stays where it
@@ -278,7 +279,7 @@ const DATES = "October 3⁠–⁠4, 2026";
     let cy = 0;
     let dead = 0;
     let stale = true;
-    let angle = 118;
+    let angle = Number(speaker.dataset.rest) || 0;
     let word = "";
     const WORDS: Record<string, string> = { LEFT: "←", RIGHT: "→", FRONT: "↑", BEHIND: "↓" };
     const measure = () => {
@@ -295,8 +296,8 @@ const DATES = "October 3⁠–⁠4, 2026";
       const behind = Math.max(0, -Math.cos((deg * Math.PI) / 180));
       const l = Math.max(0, -s) * 0.9 + (behind > 0.9 && s < 0 ? 0.1 : 0);
       const rr = Math.max(0, s) * 0.9 + (behind > 0.9 && s >= 0 ? 0.1 : 0);
-      left.style.opacity = l.toFixed(2);
-      right.style.opacity = rr.toFixed(2);
+      writeIfChanged(left as unknown as HTMLElement, "opacity", l.toFixed(2));
+      writeIfChanged(right as unknown as HTMLElement, "opacity", rr.toFixed(2));
       const abs = Math.abs(deg);
       const w = abs < 25 ? "FRONT" : abs > 155 ? "BEHIND" : deg < 0 ? "LEFT" : "RIGHT";
       if (w !== word) {
@@ -314,7 +315,7 @@ const DATES = "October 3⁠–⁠4, 2026";
       const turn = ((((target - angle) % 360) + 540) % 360) - 180;
       if (Math.abs(turn) < 0.5) return;
       angle += turn;
-      speaker.style.transform = `rotate(${angle.toFixed(1)}deg)`;
+      writeIfChanged(speaker as unknown as HTMLElement, "transform", `rotate(${angle.toFixed(1)}deg)`);
       show(((((angle % 360) + 540) % 360) - 180));
     };
     show(angle);
@@ -347,23 +348,10 @@ const DATES = "October 3⁠–⁠4, 2026";
     gap: 1.4rem;
   }
 
-  .us-hero__media {
-    margin: 0;
-
-    img {
-      display: block;
-      width: 100%;
-      height: auto;
-      max-height: 82svh;
-      object-fit: cover;
-      border-radius: 14px;
-    }
-
-    figcaption {
-      margin-top: 0.7rem;
-      font: 400 0.8125rem / 1.45 font-family(geist);
-      color: var(--case-soft);
-    }
+  /* The hero picture is a CaseFigure (eager, its own caption); only its
+     slot in the grid is this page's. */
+  :global(.us-hero__media) {
+    align-self: end;
   }
 
   /* ---- The trigger and the head ---- */

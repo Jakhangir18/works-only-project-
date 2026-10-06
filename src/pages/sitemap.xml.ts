@@ -7,8 +7,8 @@ import { projects } from "../data/projects";
  * noindex. Built once, like the rest of the site.
  */
 export const GET: APIRoute = ({ site }) => {
-  const base = site ?? new URL("https://works-only-project.vercel.app");
-  const urls = ["/", ...projects.map((p) => p.href)].map((path) => new URL(path, base).href);
+  // astro.config.mjs always sets `site`.
+  const urls = ["/", ...projects.map((p) => p.href)].map((path) => new URL(path, site!).href);
   const body =
     '<?xml version="1.0" encoding="UTF-8"?>\n' +
     '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +

@@ -4,7 +4,6 @@ import { join } from "node:path";
 import CaseLayout from "../../layouts/CaseLayout.astro";
 import CaseMeta from "../../components/case/CaseMeta.astro";
 import CaseFigure from "../../components/case/CaseFigure.astro";
-import { has } from "../../data/media";
 import { projects } from "../../data/projects";
 
 /**
@@ -43,13 +42,13 @@ const live = p.links[0].href;
    scripts/zyp-frames.mjs wrote them. */
 const frameDir = "/projects/zyp/frames";
 const seq: { count: number; width: number; height: number } = JSON.parse(readFileSync(join(process.cwd(), "public", frameDir, "frames.json"), "utf8"));
-const frame = (n: number) => `${frameDir}/frame_${String(n).padStart(4, "0")}.webp`;
+/* One pattern names the frames: the sequence reads it from data-frames
+   (frameSequence.ts expands %04d the same way), the strip below expands it. */
+const PATTERN = `${frameDir}/frame_%04d.webp`;
+const frame = (n: number) => PATTERN.replace("%04d", String(n).padStart(4, "0"));
 /* Six of the shipped frames, evenly along the move, for the process strip. */
 const strip = [1, 20, 40, 60, 80, seq.count];
 const ticks = Array.from({ length: seq.count }, (_, i) => ({ x: i + 0.5, major: i === 0 || (i + 1) % 10 === 0 }));
-
-/* The new captures of the public site (docs/media-manifest-zyp-2.json). */
-const captures = ["header", "trusted", "tablet", "films", "globe"].every((id) => has("zyp", id));
 
 const parts = [
   { id: "brief", kind: "The brief", title: "One job for the page" },
@@ -129,7 +128,7 @@ const measured = [
                   zyp.co
                 </span>
               </div>
-              <div class="zyp-browser__view js-frame-seq" data-frames={`${frameDir}/frame_%04d.webp`} data-count={seq.count} style={`aspect-ratio:${seq.width} / ${seq.height}`}>
+              <div class="zyp-browser__view js-frame-seq" data-frames={PATTERN} data-count={seq.count} style={`aspect-ratio:${seq.width} / ${seq.height}`}>
                 <img
                   src={frame(1)}
                   width={seq.width}
@@ -272,11 +271,7 @@ const measured = [
             <p>Under the heading “Coverage where it matters”, the page draws a globe on an HTML canvas: no WebGL, no 3D library. The land comes from Natural Earth through d3-geo at build time and is drawn as dots in depth buckets; the payment arcs lift off the surface and are hidden where the sphere is in the way; a drag turns it. A frame draws in about 1.3 ms, and the globe mounts only when it is near the screen.</p>
           </div>
         </div>
-        {captures ? (
-          <CaseFigure slug="zyp" id="globe" alt="The section 'Coverage where it matters' on www.zyp.co: a pale globe with its land drawn as a field of dots" caption="“Coverage where it matters”, captured 6 October 2026." sizes="(max-width: 56em) 100vw, 56vw" class="zyp-split__media" />
-        ) : (
-          <CaseFigure slug="zyp" id="g04" alt="The section 'Coverage where it matters' on www.zyp.co: a pale globe with its land drawn as a field of dots" caption="“Coverage where it matters”, and the globe under it." ratio="2 / 1" focal="50% 100%" sizes="(max-width: 56em) 100vw, 56vw" class="zyp-split__media" />
-        )}
+        <CaseFigure slug="zyp" id="globe" alt="The section 'Coverage where it matters' on www.zyp.co: a pale globe with its land drawn as a field of dots" caption="“Coverage where it matters”, captured 6 October 2026." sizes="(max-width: 56em) 100vw, 56vw" class="zyp-split__media" />
       </div>
     </section>
 
@@ -290,15 +285,13 @@ const measured = [
           <p>Everything below the hero is the same idea at a smaller scale: a little motion that explains, then stillness. The header is glass at rest and a solid surface the moment the page scrolls, which is what fixed its jank. The logos turn on a cylinder made of CSS transforms. The dashboard band counts up once. The films open at full size with a transport under them.</p>
         </div>
       </div>
-      {captures && (
-        <div class="zyp-rest">
+      <div class="zyp-rest">
           <CaseFigure slug="zyp" id="header" alt="The top of www.zyp.co: the Zyp mark, a glass pill with Businesses, Freelancers and People, and the Book a demo button, over the blurred office" caption="The header: liquid glass at rest." sizes="100vw" class="zyp-rest__wide" />
           <CaseFigure slug="zyp" id="trusted" alt="Under the hero on www.zyp.co: a row of client logos, 'Trusted by growing teams worldwide', and the statement 'Payments, payroll and paperwork for global teams.'" caption="The Trusted-by cylinder and the statement." sizes="(max-width: 56em) 100vw, 46vw" />
           <CaseFigure slug="zyp" id="tablet" alt="The dashboard band on www.zyp.co: a tablet showing a balance chart, cash flow and payroll due" caption="The dashboard band: it plays itself once." sizes="(max-width: 56em) 100vw, 46vw" />
           <CaseFigure slug="zyp" id="films" alt="The Clients section on www.zyp.co: a dark product window with a transport under it beside the heading 'Clients'" caption="A film in its window, with its transport." sizes="(max-width: 56em) 100vw, 46vw" />
           <CaseFigure slug="zyp" id="g03" alt="The Team section of www.zyp.co: a dark product window with playback controls under it, beside the heading 'Team'" caption="The Team section, captured 2 October." sizes="(max-width: 56em) 100vw, 46vw" />
-        </div>
-      )}
+      </div>
     </section>
 
     <section id={parts[5].id} class="case-section zyp-part zyp-part--ground">

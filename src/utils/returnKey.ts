@@ -17,7 +17,7 @@ export function parkReturn(key: string, y: number): void {
 }
 
 /** The parked offset if it is fresh, else null; never removes it. */
-export function peekReturn(key: string, now = Date.now()): number | null {
+export function peekReturn(key: string): number | null {
   let raw: string | null = null;
   try {
     raw = sessionStorage.getItem(key);
@@ -26,13 +26,13 @@ export function peekReturn(key: string, now = Date.now()): number | null {
   }
   if (raw === null) return null;
   const [y, t] = raw.split("|").map((n) => parseInt(n, 10));
-  if (!Number.isFinite(y) || !Number.isFinite(t) || now - t > MAX_AGE) return null;
+  if (!Number.isFinite(y) || !Number.isFinite(t) || Date.now() - t > MAX_AGE) return null;
   return y;
 }
 
 /** The parked offset if it is fresh, else null; the key is removed either way. */
-export function takeReturn(key: string, now = Date.now()): number | null {
-  const y = peekReturn(key, now);
+export function takeReturn(key: string): number | null {
+  const y = peekReturn(key);
   try {
     sessionStorage.removeItem(key);
   } catch {
