@@ -31,8 +31,11 @@ import { gsap } from "gsap";
 type Blade = { x: number; y: number; h: number; w: number; band: number; bend: number; v: number; rest: number };
 
 /* Darkest at the front, as in the painting: its foreground greens (the
-   quintiles, sampled), a step lighter so a blade sits in its light. */
-const COLOURS = ["#3d5c31", "#55753b", "#6d8f44", "#8eab52", "#b4c66c"];
+   quintiles, sampled). Not a step lighter than the paint: lighter flat
+   fills read as clip art over it (seen 2026-10-06 at 390x844), so the
+   blades stay inside the painting's own range and a little translucent. */
+const COLOURS = ["#2f4a27", "#3f5f31", "#53773c", "#6a8f47", "#86a655"];
+const BLADE_ALPHA = 0.88;
 const SPRING = 0.075;
 const DAMPING = 0.82;
 /* How far a blade can be pressed over, in radians from upright. */
@@ -128,6 +131,7 @@ function build(): void {
 function draw(): void {
   if (!ctx) return;
   ctx.clearRect(0, 0, W, H);
+  ctx.globalAlpha = BLADE_ALPHA;
   for (let band = 0; band < COLOURS.length; band++) {
     ctx.fillStyle = COLOURS[band];
     ctx.beginPath();
