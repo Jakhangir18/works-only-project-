@@ -20,7 +20,8 @@
       1280,
       1600
     ],
-    "note": "picked by the owner (2026-10-06T20:40:51.497Z) from pool item usher/desktop-8"
+    "note": "picked by the owner (2026-10-06T20:40:51.497Z) from pool item usher/desktop-8",
+    "quality": 66
   },
   {
     "slug": "usher",
@@ -31,7 +32,8 @@
       640,
       1280
     ],
-    "note": "picked by the owner (2026-10-06T20:40:51.497Z) from pool item usher/desktop-5"
+    "note": "picked by the owner (2026-10-06T20:40:51.497Z) from pool item usher/desktop-5",
+    "quality": 66
   },
   {
     "slug": "usher",
@@ -48,12 +50,12 @@
     "slug": "usher",
     "id": "g03",
     "kind": "image",
-    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-06/usher/desktop-5.jpg",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-06/usher/desktop-3.jpg",
     "widths": [
       640,
       1280
     ],
-    "note": "the parts on the table: Pi 5, mic array, motors, breadboard (photo 5)"
+    "note": "the first web app on a laptop, him in the camera feed (photo 3); desktop-5 went to g01 by the owner's pick (2026-10-06)"
   },
   {
     "slug": "usher",

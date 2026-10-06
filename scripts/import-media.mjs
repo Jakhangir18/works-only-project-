@@ -3,7 +3,7 @@
 //   node scripts/import-media.mjs <manifest.json> [--only=<slug>] [--ids=<id>,<id>] [--force]
 //
 // The manifest is a list of entries. Each entry is one of:
-//   { slug, id, kind: "image", src, widths?: [640, 1280, 1920] }
+//   { slug, id, kind: "image", src, widths?: [640, 1280, 1920], quality?: 80 }
 //   { slug, id, kind: "video", src, maxHeight?: 720, start?: seconds, duration?: seconds,
 //     keepAudio?: true, playFrom?: seconds }
 //   `start`/`duration` trim the source; `playFrom` is where playback begins in the
@@ -70,14 +70,18 @@ async function image(e) {
   const swap = (meta.orientation ?? 1) >= 5;
   const srcW = swap ? meta.height : meta.width;
   const srcH = swap ? meta.width : meta.height;
-  const widths = (e.widths ?? [640, 1280, 1920]).filter((w) => w <= srcW);
-  // A source between two standard widths also gets its own width, or a 1200 px
-  // photograph would only ever be served at 640.
-  if (!widths.length || srcW - widths[widths.length - 1] > 160) widths.push(srcW);
+  const listed = e.widths ?? [640, 1280, 1920];
+  const widths = listed.filter((w) => w <= srcW);
+  // A source between two listed widths also gets its own width, or a 1200 px
+  // photograph would only ever be served at 640. A source wider than every
+  // listed width does not: the list is the cap, or a 3000 px phone photo put
+  // a 1.35 MB file in the srcset (Usher's hero, 2026-10-06).
+  const capped = widths.length === listed.length;
+  if (!widths.length || (!capped && srcW - widths[widths.length - 1] > 160)) widths.push(srcW);
   const files = [];
   for (const w of widths) {
     const file = join(dir, `${e.id}-${w}.webp`);
-    if (!fresh(file)) await sharp(e.src).rotate().resize({ width: w }).webp({ quality: 80 }).toFile(file);
+    if (!fresh(file)) await sharp(e.src).rotate().resize({ width: w }).webp({ quality: e.quality ?? 80 }).toFile(file);
     files.push({ w, src: `/projects/${e.slug}/media/${e.id}-${w}.webp` });
   }
   const thumb = join(dir, `${e.id}-thumb.webp`);
