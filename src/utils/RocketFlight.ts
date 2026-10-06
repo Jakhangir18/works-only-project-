@@ -33,7 +33,10 @@ import { writeIfChanged, forgetLeaf } from "./leafWrite";
    where the black comes in with the crash, and where the star field's
    travel starts (Space.ts derives its entries from it). */
 export const CRASH_AT = 0.55;
-/* The black's own timing, in seconds: in with the crash, out on the way back. */
+/* The black's own timing, in seconds: in with the crash, out on the way back.
+   Its tweens are its own, not part of the crash's timeline: pausing that
+   timeline at 0 would re-render the black to 0 at once (the /code-review
+   finding on the first version), and each direction kills the other. */
 const DARK_IN = 0.45;
 const DARK_OUT = 0.35;
 /* A downward crossing plays the crash; a jump that lands further past it
@@ -314,7 +317,10 @@ function apply(scroll: number): void {
     writeIfChanged(el, "transform", `translate3d(${p.x.toFixed(1)}px, ${p.y.toFixed(1)}px, 0) scale(${s.toFixed(2)})`);
   });
 
-  const nowCrashed = r >= CRASH_AT;
+  // The same hysteresis as the black: past the impact the rocket is gone,
+  // and it is back only once the black has let go (CRASH_AT - RESET), so
+  // it never stands on the black on the way up.
+  const nowCrashed = r >= CRASH_AT ? true : r < CRASH_AT - RESET ? false : crashed;
   if (stage && nowCrashed !== crashed) {
     crashed = nowCrashed;
     stage.classList.toggle("is-crashed", crashed);
@@ -326,15 +332,47 @@ function apply(scroll: number): void {
   if (boom) {
     const before = lastR;
     if (r >= CRASH_AT && before >= 0 && before < CRASH_AT) {
-      if (r < CRASH_AT + PLAY_WITHIN) boom.restart();
-      else boom.progress(1).pause();
+      if (r < CRASH_AT + PLAY_WITHIN) {
+        boom.restart();
+        blackTo(1, DARK_IN);
+      } else {
+        boom.progress(1).pause();
+        blackSet(1);
+      }
     } else if (r >= CRASH_AT && before < 0) {
       boom.progress(1).pause();
+      blackSet(1);
     } else if (r < CRASH_AT - RESET && before >= CRASH_AT - RESET) {
       resetCrash();
     }
   }
   lastR = r;
+}
+
+/* The black, in time: `overwrite` kills the other direction, and the layer
+   is promoted only while a tween runs (an interrupted crash must not leave
+   a full-screen layer promoted for the rest of the page, invariant 11). */
+function blackTo(opacity: number, duration: number): void {
+  if (!dark) return;
+  const el = dark;
+  gsap.to(el, {
+    opacity,
+    duration,
+    ease: opacity ? "power2.out" : "power1.out",
+    overwrite: true,
+    onStart: () => {
+      el.style.willChange = "opacity";
+    },
+    onComplete: () => {
+      el.style.willChange = "auto";
+    },
+  });
+}
+
+function blackSet(opacity: number): void {
+  if (!dark) return;
+  gsap.killTweensOf(dark);
+  gsap.set(dark, { opacity, willChange: "auto" });
 }
 
 /* Everything the crash shows, back to hidden and ready to play. The black
@@ -344,7 +382,7 @@ function resetCrash(): void {
   boom.pause(0);
   const els = [flash, core, ...shards.map((s) => s.el), ...embers.map((e) => e.el)].filter(Boolean);
   gsap.set(els, { opacity: 0, willChange: "auto" });
-  if (dark) gsap.to(dark, { opacity: 0, duration: DARK_OUT, ease: "power1.out", overwrite: "auto" });
+  blackTo(0, DARK_OUT);
 }
 
 /* The one-shot crash: about 1.2 s, every piece ending at opacity 0. Built
@@ -358,7 +396,7 @@ function buildCrash(): void {
   const reach = 0.3 * Math.min(W, H);
   const right = Math.min(reach, 0.9 * (W - endX));
   const left = Math.min(reach, 0.9 * endX);
-  const pieces = [flash, core, ...(dark ? [dark] : []), ...shards.map((s) => s.el), ...embers.map((e) => e.el)];
+  const pieces = [flash, core, ...shards.map((s) => s.el), ...embers.map((e) => e.el)];
   const tl = gsap.timeline({
     paused: true,
     onStart: () => {
@@ -369,9 +407,6 @@ function buildCrash(): void {
     },
   });
   tl.fromTo(core, { scale: 0.08, opacity: 1 }, { scale: 1, opacity: 0, duration: 0.55, ease: "power2.out" }, 0);
-  // The black under the flash: in with the crash, and it stays at 1 at the
-  // timeline's end, so a jump that lands past the impact shows black.
-  if (dark) tl.fromTo(dark, { opacity: 0 }, { opacity: 1, duration: DARK_IN, ease: "power2.out" }, 0.06);
   tl.fromTo(flash, { opacity: 0 }, { opacity: 1, duration: 0.08, ease: "power1.out" }, 0.02);
   tl.to(flash, { opacity: 0, duration: 0.95, ease: "power2.in" }, 0.16);
   for (const sh of shards) {
@@ -395,8 +430,10 @@ function buildCrash(): void {
   }
   boom = tl;
   // A rebuild after the crash keeps it finished, not replayable by a resize.
-  if (wasDone || lastR >= CRASH_AT) boom.progress(1).pause();
-  else resetCrash();
+  if (wasDone || lastR >= CRASH_AT) {
+    boom.progress(1).pause();
+    blackSet(1);
+  } else resetCrash();
 }
 
 /* The resting pose under reduced motion: the rocket at the start of its route,
@@ -492,7 +529,7 @@ export function destroyRocketFlight(): void {
   boom = null;
   lastR = -1;
   for (const el of [craft, ...puffs]) if (el) forgetLeaf(el);
-  if (dark) gsap.set(dark, { opacity: 0 });
+  blackSet(0);
   stage?.classList.remove("is-flying", "is-crashed");
   restBox = { w: 0, h: 0 };
   crashed = false;

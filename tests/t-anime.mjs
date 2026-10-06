@@ -225,6 +225,16 @@ for (const [ename, engine] of Object.entries({ chromium, webkit })) {
         if (drawn < 2 && median > 40) flat.push(`r=${r.toFixed(2)} median ${median}`);
       }
       results.push(check(`${tag} no blank or flat-grey rest state after the crash`, flat.length === 0, flat.join('; ') || 'stars or black at every sample'));
+
+      // The black plays in time: rest above the impact, cross it, and the
+      // screen is black within a second; go back above it, and the page is
+      // back. (The first in-time version put the black in the crash's
+      // timeline, whose pause(0) re-rendered it to 0 at once.)
+      const medianOf = (d) => [...d].sort((a, b) => a - b)[d.length >> 1];
+      await greyAt(runway.top - h + 0.5 * runway.height, 500, 48);
+      const { data: crossed } = await greyAt(runway.top - h + 0.6 * runway.height, 1000, 48);
+      const { data: back } = await greyAt(runway.top - h + 0.5 * runway.height, 1000, 48);
+      results.push(check(`${tag} the black plays in on the crossing and out on the way back`, medianOf(crossed) < 40 && medianOf(back) > 200, `crossed ${medianOf(crossed)}, back ${medianOf(back)}`));
     }
 
     // 5. WORK (the letter tunnel, as on /tunnel/) and the timeline walk.

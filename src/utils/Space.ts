@@ -43,13 +43,14 @@ const DIR = { x: -0.985, y: 0.174 };
    (see AnimeSpace.astro), so the field is full at both ends. */
 const NEAR_TRAVEL = 0.45;
 const FAR_TRAVEL = 0.15;
-/* Where the layers come in, in the rocket's progress, from the impact:
-   just after the black has played in with the crash, so no star sits on
-   white — the far ones first, the near ones after, both fully there well
-   before the runway ends, so a reader who stops right after the crash is
-   looking at stars, not at a black screen. */
-const FAR_IN = [CRASH_AT + 0.11, CRASH_AT + 0.25] as const;
-const NEAR_IN = [CRASH_AT + 0.17, CRASH_AT + 0.31] as const;
+/* Where the layers come in, in the rocket's progress, from the impact. The
+   black plays in over about half a second (RocketFlight), so a flick that
+   lands within its PLAY_WITHIN of the impact would show stars on white if
+   the layers came in at once: they start just past that window (a landing
+   further than it sets the black at once). The far ones first, the near
+   ones after, both fully there well before the runway ends. */
+const FAR_IN = [CRASH_AT + 0.16, CRASH_AT + 0.3] as const;
+const NEAR_IN = [CRASH_AT + 0.22, CRASH_AT + 0.36] as const;
 /* While the constellation gathers, both layers settle to a faint field, and
    they are gone by the hand-off: WORK's black, scrolling up behind its
    letters, has no stars in it, so none may be left to end at its edge. */
