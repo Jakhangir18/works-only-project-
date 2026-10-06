@@ -213,15 +213,17 @@ const SKY_H = 768;
 
   /* --- 1. The descent ----------------------------------------------------- */
 
+  /* lvh, as the flight's stage (AnimeRocket.astro): full screen with the
+     toolbar away, so no band of the section's black shows under the meadow. */
   .paradise__descent {
     position: relative;
-    height: 400svh;
+    height: 400lvh;
   }
 
   .paradise__stage {
     position: sticky;
     top: 0;
-    height: 100svh;
+    height: 100lvh;
     overflow: clip;
     /* Space, until the sky comes up behind the black thinning out: the
        same star field WORK's wall dissolves into (helpers/_stars.scss). */
@@ -690,7 +692,7 @@ const SKY_H = 768;
      signs already up, the firefly gone, the grass still. */
   @media (prefers-reduced-motion: reduce) {
     .paradise__descent {
-      height: 100svh;
+      height: 100lvh;
     }
 
     .paradise__stage {

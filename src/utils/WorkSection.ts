@@ -358,7 +358,7 @@ class Section {
       // Debounce (200ms) to avoid jank on iOS Safari resize events.
       if (this.resizeTimer) clearTimeout(this.resizeTimer);
       this.resizeTimer = setTimeout(() => {
-        // The home's container is 100svh: a phone's toolbar moving changes
+        // The home's container is 100lvh: a phone's toolbar moving changes
         // innerHeight, not the stage, and rebuilds nothing.
         if (
           this.home &&
@@ -686,8 +686,8 @@ class Section {
         trigger: el,
         start: "top top",
         // The home's container sticks until the section's bottom meets its
-        // own bottom edge. It is 100svh, and "bottom bottom" would follow
-        // innerHeight, taller on a phone with its toolbar away.
+        // own bottom edge. It is 100lvh, and "bottom bottom" would follow
+        // innerHeight, which on a phone moves with the toolbar.
         end: this.home
           ? () => `bottom top+=${container.clientHeight}`
           : "bottom bottom",

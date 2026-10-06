@@ -5,8 +5,9 @@
  * for the other in a single frame and they must sit on the same pixels.
  *
  * The tunnel's stylesheet holds these numbers; keep them in step:
- *   - the letters: `font-size: min(18.75rem, 25svh)` (FONT_REM, FONT_VH),
- *     `line-height: 0.85` (LINE), in a column centred in the 100svh stage;
+ *   - the letters: `font-size: min(18.75rem, 25lvh)` on the home (FONT_REM,
+ *     FONT_VH), `line-height: 0.85` (LINE), in a column centred in the
+ *     100lvh stage; `h` is that stage's height, read from the page;
  *   - the scene: WorkSection's timeline starts it at `scale: 0.75`
  *     (SCENE_START) about the stage's centre.
  * The stack cannot be measured from the page instead: while WORK is far

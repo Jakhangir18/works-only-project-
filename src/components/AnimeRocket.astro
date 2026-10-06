@@ -128,12 +128,18 @@ const EMBERS = Array.from({ length: 18 }, (_, i) => {
      the bento's content: the rocket weaves behind the cards and never covers
      a line of text. Clipped to itself, so the flash and the debris cannot widen
      the page. */
+  /* lvh, the screen with a phone's toolbar away: with svh the stage fell a
+     toolbar short of the screen once it hid, and the page showed under it
+     (the owner, 2026-10-06, Safari and Chrome on his iPhone). While the
+     toolbar shows, the stage's foot sits under it. The home's other stages
+     (AnimeSpace, SWork, AnimeParadise) use the same unit, and the hand-offs
+     between them depend on it. */
   .flight-stage {
     position: sticky;
     top: 0;
     z-index: 0;
-    height: 100svh;
-    margin-bottom: -100svh;
+    height: 100lvh;
+    margin-bottom: -100lvh;
     overflow: clip;
     pointer-events: none;
   }
@@ -160,7 +166,7 @@ const EMBERS = Array.from({ length: 18 }, (_, i) => {
   .rocket-flight {
     position: relative;
     z-index: 1;
-    height: 100svh;
+    height: 100lvh;
   }
 
   .rocket-flight__craft {

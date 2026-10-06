@@ -88,7 +88,7 @@ function measure(): void {
   if (stage) {
     const w = stage.clientWidth;
     const h = stage.clientHeight;
-    // The stage is 100svh, so a phone's address bar does not change it; any
+    // The stage is 100lvh, so a phone's address bar does not change it; any
     // change is a real one, and the canvas and its targets follow it.
     if (w !== width || h !== height) {
       width = w;
@@ -153,8 +153,8 @@ export function initSpace(): void {
     start: "top bottom",
     // Ends where WORK pins (its top at the top of the screen, a stage's
     // height above this section's bottom). "bottom bottom" would follow
-    // innerHeight, which on a phone with its address bar away is taller
-    // than the 100svh stage, and the hand-off would jump by the difference.
+    // innerHeight, which on a phone moves with the address bar while the
+    // 100lvh stage does not, and the hand-off would jump by the difference.
     end: () => `bottom top+=${stage?.clientHeight || window.innerHeight}`,
     onUpdate: (self) => {
       spaceP = self.progress;
