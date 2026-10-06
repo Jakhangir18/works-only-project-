@@ -38,6 +38,22 @@ async function inkRowsOf(png) {
 }
 import { BASE, check, summarize, workBox } from './lib.mjs';
 
+/* A navigation, tried twice: headless WebKit on this host once answered a
+   same-page goto with "WebKit encountered an internal error" while the Zyp
+   page's frames were still in flight (2026-10-06, the last full run), and
+   an uncaught goto takes the whole suite down with it. The second try is
+   the test; the first failure is logged in the check's detail. */
+async function visit(page, url) {
+  try {
+    await page.goto(url, { waitUntil: 'load' });
+    return '';
+  } catch (first) {
+    await page.waitForTimeout(1500);
+    await page.goto(url, { waitUntil: 'load' });
+    return `first try: ${String(first).split('\n')[0].slice(0, 80)}`;
+  }
+}
+
 const results = [];
 
 // WebKit reports a same-origin load that a navigation cancelled as a page
@@ -73,7 +89,7 @@ for (const [ename, engine] of Object.entries({ chromium, webkit })) {
     page.on('pageerror', (e) => { if (!cancelledFetch(String(e))) errors.push(String(e).slice(0, 140)); });
     page.on('console', (m) => { if (m.type() === 'error' && !/favicon/.test(m.text()) && !cancelledFetch(m.text())) errors.push(m.text().slice(0, 140)); });
 
-    await page.goto(BASE + '/', { waitUntil: 'load' });
+    await visit(page, BASE + '/');
 
     // 1. The opening hands the page over, and does not outstay its welcome.
     const handedOver = await page
@@ -316,7 +332,8 @@ for (const [ename, engine] of Object.entries({ chromium, webkit })) {
     //     0:30") is not a counter, so a number next to a colon does not count.
     if (size === 'desktop') {
       for (const path of CASES) {
-        await page.goto(BASE + path, { waitUntil: 'load' });
+        const retried = await visit(page, BASE + path);
+        if (retried) results.push(check(`${tag} ${path} loaded on the second try`, true, retried));
         const hits = await page.evaluate(() => (document.body.innerText.match(/Fig\.\s*\d+|(?<![:\d])0\d\s*\/\s*0?\d(?![:\d])/g) || []));
         results.push(check(`${tag} ${path} has no figure numbers or counters`, hits.length === 0, hits.slice(0, 3).join(', ')));
       }
@@ -357,7 +374,7 @@ for (const [ename, engine] of Object.entries({ chromium, webkit })) {
     const errors = [];
     page.on('pageerror', (e) => { if (!cancelledFetch(String(e))) errors.push(String(e).slice(0, 140)); });
     page.on('console', (m) => { if (m.type() === 'error' && !/favicon/.test(m.text()) && !cancelledFetch(m.text())) errors.push(m.text().slice(0, 140)); });
-    await page.goto(BASE + '/', { waitUntil: 'load' });
+    await visit(page, BASE + '/');
     await page
       .waitForFunction(() => !document.documentElement.classList.contains('is-scroll-blocked'), null, { timeout: 12000 })
       .catch(() => {});
