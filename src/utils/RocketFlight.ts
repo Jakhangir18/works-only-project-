@@ -61,8 +61,9 @@ type Waypoint = [number, number] | { loop: [number, number]; r: number; from: nu
    on the right and 72% of the way down (the owner, 2026-10-03: "explode on
    the right"). Not higher: at the moment of impact the runway's top edge is
    at 1 - CRASH_AT = 45% of the screen, so a higher point would land under
-   the last card on a desktop and over text on a phone. The last arc comes in
-   from the left. Keep NARROW_BELOW in step with the stage's z-index rule in
+   the last card on a desktop and over text on a phone. The wide route's last
+   arc comes in from the left; the narrow one hooks in along the right edge.
+   Keep NARROW_BELOW in step with the stage's z-index rule in
    AnimeRocket.astro, and IMPACT with each route's last point. */
 const IMPACT = { wide: [0.8, 0.72], narrow: [0.78, 0.72] } as const;
 const ROUTE_WIDE: Waypoint[] = [
@@ -93,7 +94,10 @@ const ROUTE_WIDE: Waypoint[] = [
 /* On a phone the stage rides above the content (the cards fill the width, so
    behind them the rocket would only ever peek out), and the route keeps to
    the two edge lanes outside the cards' text: it crosses the screen only at
-   the top and the bottom of each lap, fast. */
+   the top and the bottom of each lap, fast. The last stretch stays in the
+   right lane too: a hook down the edge and up into the impact, so the
+   final approach never crosses a card's text the way an S across the
+   middle did (seen 2026-10-06 at 390x844). */
 const ROUTE_NARROW: Waypoint[] = [
   [0.93, 0.97],
   [0.955, 0.78],
@@ -109,11 +113,12 @@ const ROUTE_NARROW: Waypoint[] = [
   [0.5, 0.96],
   [0.88, 0.9],
   [0.955, 0.66],
-  [0.9, 0.36],
-  [0.6, 0.26],
-  [0.36, 0.42],
-  [0.46, 0.6],
-  [0.64, 0.7],
+  [0.975, 0.5],
+  [0.955, 0.36],
+  [0.975, 0.8],
+  [0.94, 0.9],
+  [0.86, 0.86],
+  [0.8, 0.78],
   [...IMPACT.narrow],
 ];
 const NARROW_BELOW = 640;
