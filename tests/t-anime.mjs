@@ -36,7 +36,7 @@ async function inkRowsOf(png) {
   }
   return runs.filter((r) => r.bottom - r.top > 10);
 }
-import { BASE, check, summarize } from './lib.mjs';
+import { BASE, check, summarize, workBox } from './lib.mjs';
 
 const results = [];
 
@@ -200,25 +200,25 @@ for (const [ename, engine] of Object.entries({ chromium, webkit })) {
     results.push(check(`${tag} the rocket hits on the right`, !!impact && impact.x > 0.6 * impact.w, impact ? `x ${impact.x} of ${impact.w}` : 'no impact point'));
 
     // 4c. Past the crash the page is never a blank or a flat-grey rest state:
-    // the black is full a tenth of a screen after the impact and the stars
-    // are on it. 2026-10-06: at 390x844 a reader who stopped between the
-    // bento and the stars saw a white screen, then a grey one. Sampled on
-    // the runway's own progress r (its top entering at the bottom of the
-    // screen = 0, its bottom reaching the bottom = 1), from just past the
-    // black's end to the star field: a frame is "flat" when a 48 px wide
-    // copy has fewer than two pixels off its median; flat black is space.
-    const runway = await page.evaluate(() => {
-      const el = document.querySelector('.rocket-flight');
-      if (!el) return null;
-      const r = el.getBoundingClientRect();
-      return { top: r.top + window.scrollY, height: r.height };
-    });
+    // the black plays in with the crash and stays, and the stars come in on
+    // it. 2026-10-06: at 390x844 a reader who stopped between the bento and
+    // the stars saw a white screen, then a grey one. Sampled on the runway's
+    // own progress r (its top entering at the bottom of the screen = 0, its
+    // bottom reaching the bottom = 1), from just past the impact to the star
+    // field: a frame is "flat" when a 48 px wide copy has fewer than two
+    // pixels off its median; flat black is space.
+    // The screen at a scroll position, as grey pixels (optionally shrunk).
+    const greyAt = async (y, waitMs, width) => {
+      await page.evaluate((yy) => window.scrollTo({ top: yy, behavior: 'instant' }), y);
+      await page.waitForTimeout(waitMs);
+      const img = sharp(await page.screenshot());
+      return (width ? img.resize(width, null) : img).greyscale().raw().toBuffer({ resolveWithObject: true });
+    };
+    const runway = flight;
     if (runway) {
       const flat = [];
-      for (let r = 0.66; r <= 1.3; r += 0.08) {
-        await page.evaluate((y) => window.scrollTo({ top: y, behavior: 'instant' }), runway.top - h + r * runway.height);
-        await page.waitForTimeout(700);
-        const { data } = await sharp(await page.screenshot()).resize(48, null).greyscale().raw().toBuffer({ resolveWithObject: true });
+      for (let r = 0.58; r <= 1.3; r += 0.08) {
+        const { data } = await greyAt(runway.top - h + r * runway.height, 700, 48);
         const sorted = [...data].sort((a, b) => a - b);
         const median = sorted[sorted.length >> 1];
         const drawn = data.filter((v) => Math.abs(v - median) > 24).length;
@@ -249,18 +249,12 @@ for (const [ename, engine] of Object.entries({ chromium, webkit })) {
     // dots, because the star field was two tiles. Ten positions across the
     // home-only segment (the section's last screen before it lets go): at
     // each, something bright is drawn: the letters, the dust or the stars.
-    const workEnd = await page.evaluate(() => {
-      const el = document.querySelector('#work');
-      if (!el) return null;
-      return el.getBoundingClientRect().bottom + window.scrollY;
-    });
+    const workBoxNow = await workBox(page);
+    const workEnd = workBoxNow ? workBoxNow.top + workBoxNow.height : null;
     if (workEnd) {
       const empty = [];
       for (let i = 0; i <= 10; i++) {
-        const y = workEnd - 2 * h + (i / 10) * h;
-        await page.evaluate((yy) => window.scrollTo({ top: yy, behavior: 'instant' }), y);
-        await page.waitForTimeout(900);
-        const { data, info } = await sharp(await page.screenshot()).greyscale().raw().toBuffer({ resolveWithObject: true });
+        const { data, info } = await greyAt(workEnd - 2 * h + (i / 10) * h, 900);
         let bright = 0;
         for (let k = 0; k < data.length; k += 3) if (data[k] > 90) bright++;
         if (bright < 30) empty.push(`${(i / 10).toFixed(1)}: ${bright} bright px of ${Math.round(info.width * info.height / 3)}`);

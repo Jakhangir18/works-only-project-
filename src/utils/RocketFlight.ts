@@ -15,7 +15,10 @@ import { writeIfChanged, forgetLeaf } from "./leafWrite";
  *     timeline in time, not with the scroll (a white-hot core, a flash over
  *     the whole screen, debris and embers that always end invisible, so
  *     nothing is ever left frozen where the scroll stopped); a full-screen
- *     black, written from the runway's own progress, takes the page to space.
+ *     black plays with it, in time, and stays: no scroll position past the
+ *     impact can rest on a half-grey screen (2026-10-06: a phone showed one
+ *     while the black followed the scroll). Scrolling back above the impact
+ *     fades it out again.
  *
  * Measured once per refresh (resize, font load): the stage's size, the route
  * built for it and sampled into SAMPLES points, and the scroll positions of
@@ -27,15 +30,12 @@ import { writeIfChanged, forgetLeaf } from "./leafWrite";
 
 /* In the runway's progress (its top entering at the bottom of the screen = 0,
    its bottom reaching the bottom of the screen = 1): where the rocket hits,
-   and where the page starts turning to space: the same moment. The black
-   comes in fast from the impact and is full by DARK[1], a tenth of a screen
-   later, so a reader who stops anywhere past the crash sees black (and,
-   from 0.66, the stars that Space.ts brings in), never a blank white or a
-   half-grey screen; the crash itself plays over it in time. Exported: the
-   star field's travel starts on WIPE_STARTS. */
+   where the black comes in with the crash, and where the star field's
+   travel starts (Space.ts derives its entries from it). */
 export const CRASH_AT = 0.55;
-export const WIPE_STARTS = CRASH_AT;
-const DARK = [WIPE_STARTS, 0.64] as const;
+/* The black's own timing, in seconds: in with the crash, out on the way back. */
+const DARK_IN = 0.45;
+const DARK_OUT = 0.35;
 /* A downward crossing plays the crash; a jump that lands further past it
    than this shows the crash's end state (all gone) instead. Scrolling back
    above the impact by RESET resets it. */
@@ -320,13 +320,6 @@ function apply(scroll: number): void {
     stage.classList.toggle("is-crashed", crashed);
   }
 
-  if (dark) {
-    const t = ramp(r, DARK[0], DARK[1]);
-    // Ease-out: most of the black arrives right after the impact, the rest
-    // settles without a step at the end.
-    writeIfChanged(dark, "opacity", (1 - (1 - t) * (1 - t)).toFixed(3));
-  }
-
   // The crash itself runs in time. A crossing on the way down plays it; a
   // jump that lands well past the impact (a reload, a long scroll) shows its
   // end, which is nothing; coming back up above the impact resets it.
@@ -344,12 +337,14 @@ function apply(scroll: number): void {
   lastR = r;
 }
 
-/* Everything the crash shows, back to hidden and ready to play. */
+/* Everything the crash shows, back to hidden and ready to play. The black
+   leaves in time rather than at once, so coming back up is not a cut. */
 function resetCrash(): void {
   if (!boom) return;
   boom.pause(0);
   const els = [flash, core, ...shards.map((s) => s.el), ...embers.map((e) => e.el)].filter(Boolean);
   gsap.set(els, { opacity: 0, willChange: "auto" });
+  if (dark) gsap.to(dark, { opacity: 0, duration: DARK_OUT, ease: "power1.out", overwrite: "auto" });
 }
 
 /* The one-shot crash: about 1.2 s, every piece ending at opacity 0. Built
@@ -363,7 +358,7 @@ function buildCrash(): void {
   const reach = 0.3 * Math.min(W, H);
   const right = Math.min(reach, 0.9 * (W - endX));
   const left = Math.min(reach, 0.9 * endX);
-  const pieces = [flash, core, ...shards.map((s) => s.el), ...embers.map((e) => e.el)];
+  const pieces = [flash, core, ...(dark ? [dark] : []), ...shards.map((s) => s.el), ...embers.map((e) => e.el)];
   const tl = gsap.timeline({
     paused: true,
     onStart: () => {
@@ -374,6 +369,9 @@ function buildCrash(): void {
     },
   });
   tl.fromTo(core, { scale: 0.08, opacity: 1 }, { scale: 1, opacity: 0, duration: 0.55, ease: "power2.out" }, 0);
+  // The black under the flash: in with the crash, and it stays at 1 at the
+  // timeline's end, so a jump that lands past the impact shows black.
+  if (dark) tl.fromTo(dark, { opacity: 0 }, { opacity: 1, duration: DARK_IN, ease: "power2.out" }, 0.06);
   tl.fromTo(flash, { opacity: 0 }, { opacity: 1, duration: 0.08, ease: "power1.out" }, 0.02);
   tl.to(flash, { opacity: 0, duration: 0.95, ease: "power2.in" }, 0.16);
   for (const sh of shards) {
@@ -493,7 +491,8 @@ export function destroyRocketFlight(): void {
   boom?.kill();
   boom = null;
   lastR = -1;
-  for (const el of [craft, dark, ...puffs]) if (el) forgetLeaf(el);
+  for (const el of [craft, ...puffs]) if (el) forgetLeaf(el);
+  if (dark) gsap.set(dark, { opacity: 0 });
   stage?.classList.remove("is-flying", "is-crashed");
   restBox = { w: 0, h: 0 };
   crashed = false;

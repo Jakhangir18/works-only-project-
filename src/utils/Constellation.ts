@@ -32,7 +32,8 @@ const STARS_WIDE = 420;
 const STARS_NARROW = 220;
 const NARROW_BELOW = 640;
 const BANDS = 4;
-/* In the runway's progress: the field comes in as the black completes. */
+/* In the runway's progress: the field comes in late, well after the black
+   (which plays in with the crash at CRASH_AT) and the star layers. */
 const FIELD_FROM = 0.9;
 
 type Star = {

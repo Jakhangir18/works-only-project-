@@ -1,6 +1,6 @@
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { WIPE_STARTS } from "./RocketFlight";
+import { CRASH_AT } from "./RocketFlight";
 import { writeIfChanged, forgetLeaf } from "./leafWrite";
 import { showWorkStack } from "./WorkSection";
 import {
@@ -24,8 +24,8 @@ import {
  * constellation gathers, so the word is what the eye follows.
  *
  * Two triggers, so no number here encodes the two sections' heights: the
- * reveal reads the rocket's own progress (the wipe starts at WIPE_STARTS of
- * it and has the screen at 1), the travel and the settle read this
+ * reveal reads the rocket's own progress (the black comes in with the
+ * crash at CRASH_AT of it, in time), the travel and the settle read this
  * section's, and the point on this section where the travel begins is
  * derived from the two triggers' scroll positions on every refresh.
  *
@@ -43,13 +43,13 @@ const DIR = { x: -0.985, y: 0.174 };
    (see AnimeSpace.astro), so the field is full at both ends. */
 const NEAR_TRAVEL = 0.45;
 const FAR_TRAVEL = 0.15;
-/* Where the layers come in, in the rocket's progress: only once the wipe
-   has painted the screen black (RocketFlight's DARK ends at 0.64), so no
-   star sits on white — the far ones first, the near ones after, both fully
-   there well before the runway ends, so a reader who stops right after the
-   crash is looking at stars, not at a black screen. */
-const FAR_IN = [0.66, 0.8] as const;
-const NEAR_IN = [0.72, 0.86] as const;
+/* Where the layers come in, in the rocket's progress, from the impact:
+   just after the black has played in with the crash, so no star sits on
+   white — the far ones first, the near ones after, both fully there well
+   before the runway ends, so a reader who stops right after the crash is
+   looking at stars, not at a black screen. */
+const FAR_IN = [CRASH_AT + 0.11, CRASH_AT + 0.25] as const;
+const NEAR_IN = [CRASH_AT + 0.17, CRASH_AT + 0.31] as const;
 /* While the constellation gathers, both layers settle to a faint field, and
    they are gone by the hand-off: WORK's black, scrolling up behind its
    letters, has no stars in it, so none may be left to end at its edge. */
@@ -95,10 +95,10 @@ function measure(): void {
       resizeConstellation(w, h);
     }
   }
-  // The scroll position where the rocket reaches WIPE_STARTS, read back as
+  // The scroll position where the rocket reaches CRASH_AT, read back as
   // this section's progress. Both triggers have their start and end by now.
   if (trigger && rocketTrigger) {
-    const wipeAt = rocketTrigger.start + WIPE_STARTS * (rocketTrigger.end - rocketTrigger.start);
+    const wipeAt = rocketTrigger.start + CRASH_AT * (rocketTrigger.end - rocketTrigger.start);
     moveFrom = Math.min(1, Math.max(0, (wipeAt - trigger.start) / (trigger.end - trigger.start)));
   }
 }
