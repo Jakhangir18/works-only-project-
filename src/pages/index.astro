@@ -24,7 +24,9 @@ import "../styles/global.scss";
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="generator" content={Astro.generator} />
 
-    <meta name="robots" content="noindex, nofollow" />
+    <!-- Indexable since 2026-10-06: the owner's site is in production. The
+         tunnel and the unlisted pages keep noindex. -->
+    <meta name="robots" content="index, follow" />
 
     <link rel="icon" type="image/svg+xml" href="/icons/favicon.svg" />
     <link rel="apple-touch-icon" href="/icons/favicon.svg" />
