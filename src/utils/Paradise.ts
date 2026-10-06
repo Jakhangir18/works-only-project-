@@ -252,7 +252,10 @@ export function initParadise(): void {
   descentTrigger = ScrollTrigger.create({
     trigger: descent,
     start: "top top",
-    end: "bottom bottom",
+    // Where the 100lvh stage stops sticking: "bottom bottom" would follow
+    // innerHeight, which on a phone moves with the toolbar while the stage
+    // does not, and stageTopAt (the grass's pointer) would be off by it.
+    end: () => `bottom top+=${stage?.clientHeight || window.innerHeight}`,
     onUpdate: (self) => applyDescent(self.progress),
     onRefresh: (self) => {
       // The grass's canvas follows the meadow's box, once per refresh.
