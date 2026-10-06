@@ -325,3 +325,17 @@ phase, base = the v6 build measured the same night with the same binary, headles
   resource: WebKit encountered an internal error" messages; not reproduced by a scripted
   WebKit scroll-through, and absent from the build-5 run. Watch for it; the lib ignores only
   the engine's own cancellations, so a recurrence will show.
+
+## v8 round (2026-10-06 night, the owner's notes)
+- The owner's Usher picks pinned (hero desktop-8, g01 desktop-5 starred); g03 moved to
+  desktop-3 so no photo shows twice; the importer caps at the listed widths, takes a
+  quality, prunes on --force.
+- Zyp: "software engineer intern", beside the product team (the owner's words).
+- Phone: the home's sticky stages in lvh (no band under them when the toolbar hides,
+  Safari and Chrome on iPhone; not checkable in Playwright).
+- Phone lag (he felt it everywhere): the descent's scenery leaves the layer tree a
+  screen from the descent; the rays and the tufts animate only while visible; the
+  descent's trigger ends with its lvh stage. A shadow-step change was tried and
+  reverted. Numbers in CLAUDE.md, "v8 numbers", and in each perf commit.
+- Three /code-review rounds acted on; suite 1589 / 1589.
+

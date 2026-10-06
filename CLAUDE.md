@@ -37,6 +37,14 @@ A personal portfolio site built with **Astro**, animation-heavy. Two homes ship:
     horizon, through clouds, onto a painted meadow (`public/paradise/land-*`,
     Gemini, the sky's own picture) with grass the pointer presses down
     (`GrassField.ts`), then a walk along a trail over a painted grass tile.
+    The descent's scenery leaves the layer tree a screen away from the
+    descent itself (`is-near`, once `is-watched`); the rays turn only while
+    shown, the walk's tufts sway only while the walk is on screen.
+  - The home's sticky stages (flight, space, WORK, descent) are `100lvh`,
+    and every length a hand-off depends on uses the same unit: with `svh`
+    a band showed under them once a phone's toolbar hid (the owner,
+    2026-10-06, Safari and Chrome on iPhone). Playwright has no toolbar;
+    only a real phone checks this.
   - `AnimeContact`: no resume link, by the owner's choice.
   - Lenis smooth scroll runs on the home only, off on touch and under reduced
     motion.
@@ -51,8 +59,10 @@ A personal portfolio site built with **Astro**, animation-heavy. Two homes ship:
     `src/components/case/`. Each page has its own composition. Zyp's plays
     the zyp.co hero's 97 frames on a canvas scrubbed by the scroll
     (`src/utils/frameSequence.ts`, `public/projects/zyp/frames/`); below
-    768 px and under reduced motion it shows frame 1, as zyp.co does. Since
-    2026-10-06 it tells the internship (the brief, the four weeks, how the
+    768 px and under reduced motion it shows frame 1, as zyp.co does. The
+    role reads "software engineer intern" (the letter says Frontend Engineer
+    Intern; the owner's word, 2026-10-06), beside Zyp's product team, never
+    "the only engineer". Since 2026-10-06 it tells the internship (the brief, the four weeks, how the
     hero was made, the globe, the rest of the page, what was measured, how
     the work ran) from the signed offer letter and the landing repository's
     own history and measurements; captures of the live site come from
@@ -355,6 +365,16 @@ The measurement harness lives in `perf/` (`harness.mjs`, `regression.mjs`,
   has a fix applied but **unverified on iOS**.
 - Running notes and rejected hypotheses live in `PERF-NOTES.md`. Read it before
   re-proposing something that was already tried.
+- **v8 numbers** (2026-10-06 night, same host and harness; frames over 50 ms
+  per phase, base = v7 with the owner's picks, measured the same night):
+  phone x4 WORK summed over its six phases 89-132 per run (base 130-186),
+  paradise 0-2 (base 1-5), rocket 8-24 (base 7-18), space 0-5; desktop
+  WORK 133-243 at a 50 ms median, as v7, with long tasks 7-74 between two
+  runs of one build. Layer census at 390x844, DPR 3 (`scratchpad
+  census.mjs` pattern: CDP LayerTree, device megapixels): 186.5 -> 156.2
+  at the hero, 205.7 -> 173.4 in WORK, 202.5 -> 155.6 on the walk. The
+  shadow-step change was measured, reverted for a visible step, and is
+  not to be re-proposed in that form.
 - **v7 numbers** (2026-10-06, same host and harness, the final build; frames
   over 50 ms per phase; base = v6 measured the same night): phone x4 WORK
   17-34 (base 18-33), rocket 10 / 15 (base 17 / 15), hero-pointer 6 (base
@@ -442,7 +462,11 @@ The measurement harness lives in `perf/` (`harness.mjs`, `regression.mjs`,
   - The picks, with captions, privacy fixes and the facts the photos
     contradict, are in `docs/media-picks.md`.
   - `scripts/import-media.mjs <manifest>` writes `public/projects/<slug>/media/`
-    and a `media.json` (manifests: `docs/media-manifest*.json`).
+    and a `media.json` (manifests: `docs/media-manifest*.json`). The listed
+    widths are the cap (a source between two of them also gets its own);
+    an entry may set `quality`; existing files are kept, so a changed width
+    list or quality takes `--force`, which also removes the entry's widths
+    no longer listed.
   - Pages read the files through `src/data/media.ts` (`picture`, `video`,
     `slides`), never by hard-coded paths: a small source has fewer widths.
   - iPhone clips are HDR (HLG). Convert them to SDR before the import.
