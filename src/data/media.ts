@@ -47,10 +47,14 @@ function entry<K extends Entry["kind"]>(slug: string, id: string, kind: K): Extr
 
 export type Picture = { src: string; srcset: string; width: number; height: number; thumb: string };
 
-/** An image with every width the import produced; `src` is the widest up to `cap`. */
-export function picture(slug: string, id: string, cap = 1280): Picture {
+/** An image with every width the import produced; `src` is the widest up to
+ *  `cap`. `maxWidth` also keeps the larger files out of `srcset`: for a
+ *  picture on the critical path whose biggest file would cost more than it
+ *  shows. The smallest file always stays, so the list is never empty. */
+export function picture(slug: string, id: string, cap = 1280, maxWidth = Infinity): Picture {
   const e = entry(slug, id, "image");
-  const files = [...e.files].sort((a, b) => a.w - b.w);
+  const sorted = [...e.files].sort((a, b) => a.w - b.w);
+  const files = sorted.filter((f, i) => f.w <= maxWidth || i === 0);
   const best = [...files].reverse().find((f) => f.w <= cap) ?? files[0];
   return {
     src: best.src,
