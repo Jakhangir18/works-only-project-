@@ -597,7 +597,6 @@ class Section {
           mx: 0,
           my: 0,
           lastProgress: null as number | null,
-          shadowHead: null as number | null,
         };
 
         el.style.top = ghost.y + "px";
@@ -843,19 +842,9 @@ class Section {
         if (stateChanged) {
           ghost.shadow.style.opacity = shadowOpacity(state);
         }
-        // The shadow leans with the letter's place in its cycle, by at most
-        // 0.1rem and a shifted origin. In steps of 0.05 of that place the
-        // change is under a tenth of a pixel, and the two writes happen
-        // every few frames instead of on every one: on a phone at 4x CPU
-        // they were the largest source of style recalculation in WORK
-        // (9,274 inline-style recalcs in one traced run).
-        const shadowHead = Math.round(head * 20) / 20;
-        if (stateChanged || shadowHead !== ghost.shadowHead) {
-          ghost.shadowHead = shadowHead;
-          ghost.shadow.style.transform =
-            `scale(1.05, 1.02) translate3d(${shadowHead * 0.1 * state * state}rem, 0, 0)`;
-          ghost.shadow.style.transformOrigin = `${50 - shadowHead * 50}% -50%`;
-        }
+        ghost.shadow.style.transform =
+          `scale(1.05, 1.02) translate3d(${head * 0.1 * state * state}rem, 0, 0)`;
+        ghost.shadow.style.transformOrigin = `${50 - head * 50}% -50%`;
       });
     });
 
