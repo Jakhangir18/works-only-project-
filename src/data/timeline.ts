@@ -59,14 +59,15 @@ export function when(start: string, end?: string): { text: string; from: string;
  */
 export const timeline: readonly TimelineEntry[] = [
   {
-    // Dates: the owner's note ("started in August") and his commits on the
-    // company's site, Aug 16 - Sep 19, 2026.
-    title: "Software engineering intern",
+    // The offer letter: Frontend Engineer Intern, August 2026 (part-time,
+    // remote). His commits on the company's site run Aug 16 - Sep 19, 2026,
+    // with the launch on Sep 13, so the span keeps September.
+    title: "Frontend engineer intern",
     org: "Zyp",
     kind: "work",
     start: "2026-08",
     end: "2026-09",
-    summary: "Motion and 3D on the company's site: a scroll-scrubbed hero, a canvas globe, end-to-end tests.",
+    summary: "The company's public site, zyp.co, from first commit to launch: a scroll-scrubbed hero, a canvas globe, end-to-end tests.",
     href: "/work/zyp/",
     thumb: "/projects/zyp/media/cover-thumb.webp",
   },

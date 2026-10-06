@@ -98,10 +98,13 @@ export const projects: readonly Project[] = [
     href: "/work/zyp/",
     title: "Zyp",
     kind: "Internship",
-    role: "Software engineering intern: frontend, motion and 3D",
-    when: "Summer 2026",
+    // The signed offer letter (2026-07-22): Frontend Engineer Intern, part-time,
+    // remote, August 2026; the site launched 13 September and his last merge
+    // was 19 September (the repository's history).
+    role: "Frontend engineer intern: the public site, from first commit to launch",
+    when: "August – September 2026",
     where: "Zyp, Inc.",
-    line: "The motion and the 3D on zyp.co: a scroll-scrubbed hero, a canvas globe of payment arcs, tests that hold it together.",
+    line: "Zyp's public site, zyp.co, built and launched in four weeks: a scroll-scrubbed hero, a canvas globe of payment arcs, tests that hold it together.",
     cover: {
       ...picture("zyp", "cover", 640),
       alt: "The zyp.co hero: an office with a laptop on a white desk, under 'The back office management platform for global companies'",

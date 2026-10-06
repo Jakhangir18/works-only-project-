@@ -103,5 +103,121 @@
     "bytes": 1273896,
     "src": "/projects/zyp/media/scroll.mp4",
     "poster": "/projects/zyp/media/scroll-poster.webp"
+  },
+  "header": {
+    "kind": "image",
+    "width": 2880,
+    "height": 320,
+    "files": [
+      {
+        "w": 1280,
+        "src": "/projects/zyp/media/header-1280.webp"
+      },
+      {
+        "w": 1920,
+        "src": "/projects/zyp/media/header-1920.webp"
+      },
+      {
+        "w": 2880,
+        "src": "/projects/zyp/media/header-2880.webp"
+      }
+    ],
+    "thumb": "/projects/zyp/media/header-thumb.webp"
+  },
+  "trusted": {
+    "kind": "image",
+    "width": 2880,
+    "height": 1800,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/zyp/media/trusted-640.webp"
+      },
+      {
+        "w": 1280,
+        "src": "/projects/zyp/media/trusted-1280.webp"
+      },
+      {
+        "w": 1920,
+        "src": "/projects/zyp/media/trusted-1920.webp"
+      },
+      {
+        "w": 2880,
+        "src": "/projects/zyp/media/trusted-2880.webp"
+      }
+    ],
+    "thumb": "/projects/zyp/media/trusted-thumb.webp"
+  },
+  "tablet": {
+    "kind": "image",
+    "width": 2880,
+    "height": 1800,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/zyp/media/tablet-640.webp"
+      },
+      {
+        "w": 1280,
+        "src": "/projects/zyp/media/tablet-1280.webp"
+      },
+      {
+        "w": 1920,
+        "src": "/projects/zyp/media/tablet-1920.webp"
+      },
+      {
+        "w": 2880,
+        "src": "/projects/zyp/media/tablet-2880.webp"
+      }
+    ],
+    "thumb": "/projects/zyp/media/tablet-thumb.webp"
+  },
+  "films": {
+    "kind": "image",
+    "width": 2880,
+    "height": 1800,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/zyp/media/films-640.webp"
+      },
+      {
+        "w": 1280,
+        "src": "/projects/zyp/media/films-1280.webp"
+      },
+      {
+        "w": 1920,
+        "src": "/projects/zyp/media/films-1920.webp"
+      },
+      {
+        "w": 2880,
+        "src": "/projects/zyp/media/films-2880.webp"
+      }
+    ],
+    "thumb": "/projects/zyp/media/films-thumb.webp"
+  },
+  "globe": {
+    "kind": "image",
+    "width": 2880,
+    "height": 1800,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/zyp/media/globe-640.webp"
+      },
+      {
+        "w": 1280,
+        "src": "/projects/zyp/media/globe-1280.webp"
+      },
+      {
+        "w": 1920,
+        "src": "/projects/zyp/media/globe-1920.webp"
+      },
+      {
+        "w": 2880,
+        "src": "/projects/zyp/media/globe-2880.webp"
+      }
+    ],
+    "thumb": "/projects/zyp/media/globe-thumb.webp"
   }
 }

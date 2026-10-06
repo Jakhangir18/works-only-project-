@@ -102,12 +102,10 @@ Guessed dates come from when files were saved on the Mac, which is not when the 
 
 ## 7. Current role
 
-- Is "frontend and 3D interaction engineering at ZIP" accurate, and may it be said publicly (check your internship terms)?
-  Answer: ________
-- Spelling: **ZIP** or **Zip**?
-  Answer: ________
-- Start date (guessed **Aug 2026**):
-  Answer: ________
+- ~~Is "frontend and 3D interaction engineering at ZIP" accurate, and may it be said publicly (check your internship terms)?~~
+  **Settled 2026-10-06 by the signed offer letter** (`~/Desktop/05-ZYP/`, dated 22 July 2026, signed 26 July): "Frontend Engineer Intern", part-time, remote, 1–31 August 2026, curricular practical training. The site says "Frontend engineer intern" and names nothing from the letter but the title and the month. The owner (2026-10-06) allowed the numbers and the process from the repository, no internal files, no clients.
+- ~~Spelling: **ZIP** or **Zip**?~~ **Zyp** (the letter, the site).
+- ~~Start date (guessed **Aug 2026**):~~ **August 2026**; his commits on the site run 16 August – 19 September (launch 13 September), so the timeline says "August – September 2026".
 
 ## 8. Timeline entries that are hidden until you confirm them
 
@@ -129,8 +127,8 @@ Anything else that belongs on the timeline? ACM, Microsoft Ambassador and Mangis
   Answer: ________
 - Keep the public email as `tynshimj@oregonstate.edu`?
   Answer: ________
-- Should the site be indexable by search engines? It carries `robots: noindex` today, so nobody can find it.
-  Answer: ________
+- ~~Should the site be indexable by search engines? It carries `robots: noindex` today, so nobody can find it.~~
+  **Switched on 2026-10-06** for the home and the eight listed case pages (the site is in production); `/tunnel/` and the two unlisted pages stay `noindex`. Say so if you want it off again: one prop in `CaseLayout` and one line in `index.astro`.
 
 ## 10. Two design calls
 
