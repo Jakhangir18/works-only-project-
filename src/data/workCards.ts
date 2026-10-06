@@ -3,19 +3,20 @@ import { picture } from "./media";
 import type { ProjectInfo } from "./works";
 
 /**
- * The anime home's WORK cards: the seven of projects.ts in the shape the
+ * The anime home's WORK cards: the eight of projects.ts in the shape the
  * tunnel's cards take (works.ts's ProjectInfo), so the home and /tunnel/
  * share SWork, AWork and the dive. The owner, 2026-10-03: WORK as it was on
  * Vercel, with these projects.
  *
  * Palettes and poster marks carry over from works.ts where the tunnel
- * already had the project; Zyp and GDG get their own. The cover is the
+ * already had the project; Zyp, GDG and Usher get their own. The cover is the
  * project's pinned cover at up to 1440 px: the dive grows it to the full
  * screen (Zyp's is 640 or 1440, nothing between). The blurb is the
  * card's one line from projects.ts.
  */
 
 const LOOK: Record<string, Pick<ProjectInfo, "size" | "palette" | "poster">> = {
+  usher: { size: "hero", palette: { background: "#140f0a", accent: "#ffb978" }, poster: { mark: "US", motif: "signal" } },
   touchpoint: { size: "hero", palette: { background: "#1a1206", accent: "#fbbf24" }, poster: { mark: "TP", motif: "signal" } },
   spoot: { size: "feature", palette: { background: "#08151f", accent: "#38bdf8" }, poster: { mark: "SP", motif: "orbit" } },
   zyp: { size: "feature", palette: { background: "#0c1020", accent: "#8ea2ff" }, poster: { mark: "ZY", motif: "crosshair" } },

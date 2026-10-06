@@ -20,8 +20,10 @@ for (const [ename, engine] of Object.entries({ chromium, webkit })) {
     results.push(check(`${tag} work section exists`, !!box, box ? `${Math.round(box.height)}px tall` : 'missing'));
     if (!box) { await ctx.close(); continue; }
 
+    // The home shows the eight of projects.ts; the tunnel keeps its seven.
+    const expected = path === '/' ? 8 : 7;
     const cards = await page.evaluate(() => document.querySelectorAll('a-work').length);
-    results.push(check(`${tag} seven cards`, cards === 7, `${cards} cards`));
+    results.push(check(`${tag} ${expected} cards`, cards === expected, `${cards} cards`));
 
     const srIndex = await page.evaluate(() => {
       const nav = document.querySelector('.s__index');
@@ -33,7 +35,7 @@ for (const [ename, engine] of Object.entries({ chromium, webkit })) {
     const indexEls = await page.evaluate(() => document.querySelectorAll('.a__card__index').length);
     results.push(check(`${tag} cards carry no index element`, indexEls === 0, `${indexEls} found`));
 
-    results.push(check(`${tag} keyboard project list has every project`, srIndex === 7, `${srIndex} links`));
+    results.push(check(`${tag} keyboard project list has every project`, srIndex === expected, `${srIndex} links`));
 
     // On the tunnel page the covers are warmed before the scrub starts. On the
     // home they load on demand, a few cards ahead of the scrub, so there the
@@ -68,7 +70,7 @@ for (const [ename, engine] of Object.entries({ chromium, webkit })) {
     results.push(check(`${tag} point grid draws through the scrub`, drew >= 4, `${drew}/11 samples lit`));
     results.push(check(`${tag} cards come into view`, samples.some((s) => s.inview > 0), `max inview ${Math.max(...samples.map((s) => s.inview))}`));
     results.push(check(`${tag} covers pre-warm before the scrub`, coversBefore >= 3, `${coversBefore} of ${covers.length} arrived before scrolling`));
-    results.push(check(`${tag} every cover ends ready`, samples[samples.length - 1].ready === 7, `${samples[samples.length - 1].ready}/7 ready`));
+    results.push(check(`${tag} every cover ends ready`, samples[samples.length - 1].ready === expected, `${samples[samples.length - 1].ready}/${expected} ready`));
 
     // The letter shadows survive a resize taken inside the tunnel. setLetters()
     // rebuilds every ghost with no inline opacity over a stylesheet default of

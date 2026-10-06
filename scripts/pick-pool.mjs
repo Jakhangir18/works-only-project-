@@ -40,12 +40,17 @@ import sharp from "sharp";
 const repo = resolve(dirname(new URL(import.meta.url).pathname), "..");
 const IN = join(homedir(), "work/works-only/in");
 const MWE = join(IN, "mwe-2026-10-02");
+// The second drop (2026-10-06): one folder per slug, photos and clips as the
+// owner uploaded them (in/mwe-2026-10-06/README.md in each folder says where
+// each file came from). _sdr/ there holds the import's own SDR masters.
+const MWE2 = join(IN, "mwe-2026-10-06");
+const MWE2_FOLDERS = { usher: "usher" };
 const OUT = join(IN, "pick-pool");
 const MASTERS = join(OUT, "_sdr");
 const force = process.argv.includes("--force");
 sharp.concurrency(2);
 
-const SLUGS = ["touchpoint", "spoot", "zyp", "gdg", "remote-lab-vision", "ams", "engineering-rocket"];
+const SLUGS = ["usher", "touchpoint", "spoot", "zyp", "gdg", "remote-lab-vision", "ams", "engineering-rocket"];
 // _web folder -> case slug.
 const WEB_FOLDERS = {
   touchpoint: "touchpoint",
@@ -184,6 +189,19 @@ for (const slug of SLUGS) {
 for (const [rel, slug] of Object.entries(VIDEO_FILES)) {
   const path = join(MWE, "videos", rel);
   if (existsSync(path)) add({ slug, kind: "video", path, origin: "raw" });
+}
+
+// The second drop: every picture and clip in the folder, the raw clip rather
+// than its SDR master (the pool tone-maps HDR itself, into its own _sdr/).
+for (const [folder, slug] of Object.entries(MWE2_FOLDERS)) {
+  const dir = join(MWE2, folder);
+  if (!existsSync(dir)) continue;
+  for (const f of readdirSync(dir).sort()) {
+    const ext = lower(extname(f));
+    const kind = IMAGE_EXT.has(ext) ? "image" : VIDEO_EXT.has(ext) ? "video" : null;
+    if (!kind) continue;
+    add({ slug, kind, path: join(dir, f), origin: kind === "video" ? "raw" : "mwe" });
+  }
 }
 
 /* ---------- deny, edits ---------- */

@@ -26,7 +26,7 @@ export type TimelineEntry = {
 
 /** One label per kind, shared by the board, the work tags and the campus
  *  rows, so the same project is never "Competition" in one place and
- *  "Hackathon" in another. Both competitions on record are hackathons. */
+ *  "Hackathon" in another. All three competitions on record are hackathons. */
 export const KIND_LABEL: Record<TimelineKind, string> = {
   work: "Work",
   research: "Research",
@@ -58,6 +58,18 @@ export function when(start: string, end?: string): { text: string; from: string;
  * role or dates are still unconfirmed carries `draft: true` and never renders.
  */
 export const timeline: readonly TimelineEntry[] = [
+  {
+    // MHacks 2026, University of Michigan, Oct 3-4 (the Devpost page; no
+    // prize). The owner led the team (2026-10-06).
+    title: "Usher",
+    org: "MHacks 2026, University of Michigan",
+    kind: "competition",
+    start: "2026-10",
+    end: "2026-10",
+    summary: "A headset for Usher syndrome: say “Hello Jax” and a buzz on the temple turns you toward the speaker. Team lead.",
+    href: "/work/usher/",
+    thumb: "/projects/usher/media/cover-thumb.webp",
+  },
   {
     // The offer letter: Frontend Engineer Intern, August 2026 (part-time,
     // remote). His commits on the company's site run Aug 16 - Sep 19, 2026,

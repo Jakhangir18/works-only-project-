@@ -1,0 +1,154 @@
+[
+  {
+    "slug": "usher",
+    "id": "cover",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-06/usher/desktop-8.jpg",
+    "widths": [
+      640,
+      1440
+    ],
+    "note": "the headset on the table, the mic array on its mount (owner's photo 8, 2026-10-05)"
+  },
+  {
+    "slug": "usher",
+    "id": "hero",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-06/usher/desktop-2.jpg",
+    "widths": [
+      640,
+      1280,
+      1600
+    ],
+    "note": "the headset worn, eyepiece down (photo 2)"
+  },
+  {
+    "slug": "usher",
+    "id": "g01",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-06/usher/desktop-3.jpg",
+    "widths": [
+      640,
+      1280
+    ],
+    "note": "the web app on a laptop, him in the camera feed (photo 3)"
+  },
+  {
+    "slug": "usher",
+    "id": "g02",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-06/usher/desktop-1.jpg",
+    "widths": [
+      640,
+      1280
+    ],
+    "note": "a teammate at the curved monitor with the judge app (photo 1)"
+  },
+  {
+    "slug": "usher",
+    "id": "g03",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-06/usher/desktop-5.jpg",
+    "widths": [
+      640,
+      1280
+    ],
+    "note": "the parts on the table: Pi 5, mic array, motors, breadboard (photo 5)"
+  },
+  {
+    "slug": "usher",
+    "id": "g04",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-06/usher/desktop-6.jpg",
+    "widths": [
+      640,
+      1280
+    ],
+    "note": "a teammate seated in the headset, him standing beside (photo 6)"
+  },
+  {
+    "slug": "usher",
+    "id": "g05",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-06/usher/desktop-7.jpg",
+    "widths": [
+      640,
+      1280
+    ],
+    "note": "the headband printing overnight on an Elegoo (photo 7)"
+  },
+  {
+    "slug": "usher",
+    "id": "g06",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-06/usher/desktop-9.jpg",
+    "widths": [
+      640,
+      1280
+    ],
+    "note": "the team on the floor at night (photo 9)"
+  },
+  {
+    "slug": "usher",
+    "id": "g07",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-06/usher/desktop-11.jpg",
+    "widths": [
+      640,
+      1280
+    ],
+    "note": "the breadboard taped to the band, close (photo 11)"
+  },
+  {
+    "slug": "usher",
+    "id": "g08",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-06/usher/desktop-12.jpg",
+    "widths": [
+      640,
+      1280
+    ],
+    "note": "the prototype with the Pi and the hanging OLED; face sketches on the whiteboard (photo 12)"
+  },
+  {
+    "slug": "usher",
+    "id": "g12",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-06/usher/IMG_4213.jpg",
+    "widths": [
+      640,
+      1280,
+      1600
+    ],
+    "note": "the four of them behind the MHACKS letters (IMG_4213)"
+  },
+  {
+    "slug": "usher",
+    "id": "app",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-06/usher/judge-app.png",
+    "widths": [
+      640,
+      1280,
+      1920
+    ],
+    "note": "the judge web app in its scripted demo, captured headless (scripts/usher-app-capture.mjs)"
+  },
+  {
+    "slug": "usher",
+    "id": "demo",
+    "kind": "video",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-06/usher/_sdr/video-1871-sdr.mp4",
+    "maxHeight": 720,
+    "note": "the headset worn at the judging table (video-1871, 12 s, SDR master of the HLG clip); silent"
+  },
+  {
+    "slug": "usher",
+    "id": "table",
+    "kind": "video",
+    "src": "/home/ubuntu/work/works-only/in/mwe-2026-10-06/usher/_sdr/IMG_4190-sdr.mp4",
+    "maxHeight": 720,
+    "keepAudio": true,
+    "note": "fitting and explaining at the team's table (IMG_4190, 62-102 s of the HLG clip, SDR master)"
+  }
+]

@@ -1,53 +1,346 @@
 {
   "about": "Files that must never reach the photo picker's pool (scripts/pick-pool.mjs). Source: docs/media-picks.md and the held items in CLAUDE.md. A candidate is denied when any token in `match` equals, ignoring case, the candidate's file name without extension, its _web id, or the stem of the original it was converted from. Matching ignores the slug, so a file filed under the wrong project is still caught. `edits` are privacy cuts the pool applies to a clip before anyone sees it; pin-picks.mjs copies them into the manifest entry.",
   "entries": [
-    { "slug": "touchpoint", "match": ["touchpoint-04", "dsc03825"], "reason": "asleep under the desk; rejected on the owner's call" },
-    { "slug": "touchpoint", "match": ["touchpoint-09", "dsc04391"], "reason": "organizers, not the team" },
-    { "slug": "touchpoint", "match": ["touchpoint-14", "img_3384"], "reason": "another team" },
-    { "slug": "touchpoint", "match": ["touchpoint-15", "img_4489"], "reason": "organizers, not the team" },
-    { "slug": "touchpoint", "match": ["touchpoint-18", "img_4718"], "reason": "organizers, not the team" },
-    { "slug": "touchpoint", "match": ["touchpoint-11", "img_1794"], "reason": "raw: the visitor's 'HELLO SHABBIR' name tag is readable; the pool uses prepared/touchpoint/touchpoint-11-blur.png" },
-    { "slug": "touchpoint", "match": ["touchpoint-19", "img_4826", "IMG_9344"], "reason": "held: a 'Track: Google' slide naming TouchPoint, while the official winners page lists another team for that track; the owner confirms the wording first" },
-    { "slug": "remote-lab-vision", "match": ["remote-lab-vision-01", "IMG_1987"], "reason": "raw: the colleague's face in close-up; the pool uses prepared/remote-lab-vision/remote-lab-vision-01-crop.png" },
-    { "slug": "ams", "match": ["ams-tablet-02", "IMG_2325"], "reason": "raw: three faces unblurred; the pool uses prepared/ams/IMG_2325-blur.png" },
-    { "slug": "ams", "match": ["ams-tablet-01", "IMG_0408"], "reason": "award photo (Idea Battle); the award is not a confirmed fact" },
-    { "slug": "ams", "match": ["ams-tablet-04", "IMG_2610"], "reason": "award photo (Idea Battle); the award is not a confirmed fact" },
-    { "slug": "ams", "match": ["ams-tablet-05", "IMG_2613"], "reason": "award photo (Idea Battle); the award is not a confirmed fact" },
-    { "slug": "ams", "match": ["ams-tablet-03", "IMG_2326"], "reason": "team photo" },
-    { "slug": "ams", "match": ["ams-tablet-06", "IMG_7644"], "reason": "team photo" },
-    { "slug": "ams", "match": ["ams-manufacture-01", "camphoto_1903590565"], "reason": "raw: the camera IP bar is visible; the pool uses prepared/ams/camphoto_1903590565-crop.png" },
-    { "slug": "ams", "match": ["ams-manufacture-02", "IMG_8163"], "reason": "raw Frigate workshop photo, rejected in docs/media-picks.md; no prepared crop" },
-    { "slug": "ams", "match": ["ams-manufacture-03", "IMG_8164"], "reason": "raw: 'Ulan Aitbay is presenting', the Meet code and participant tiles; the pool uses prepared/ams/IMG_8164-frigate.png" },
-    { "slug": "ams", "match": ["camphoto_959030623"], "reason": "raw Frigate workshop monitoring with IPs and Meet details unblurred; no prepared version" },
-    { "slug": "ams", "match": ["patent"], "reason": "patent No. 9794 does not list Jakhangir as an author, and the site's number was wrong" },
-    { "slug": "ams", "match": ["certification"], "reason": "a supplier's EAEU declaration for the breathalyser, not an AMS certificate" },
-    { "slug": "ams", "match": ["dashboard-mobile"], "reason": "looks AI-edited (watermark, English UI over a Russian original)" },
-    { "slug": "ams", "match": ["deploy-manufacturing"], "reason": "a teammate's face fills half the frame; no consent" },
-    { "slug": "ams", "match": ["ams-p6"], "reason": "raw AMS.pdf p.6: nine names unblurred; the pool uses prepared/ams/ams-p6-blur.png and ams-p6-phone.png" },
-    { "slug": "ams", "match": ["ams-p7"], "reason": "held: AMS deck p.7 is switched off for the owner (src/pages/projects/ams/index.astro), and its third tile is the deploy-manufacturing photo of a teammate's face" },
-    { "slug": "ams", "match": ["ams-p3", "ams-p4", "ams-p8", "ams-p9", "ams-p10", "ams-p11", "ams-p12", "ams-p13", "ams-p14"], "reason": "AMS deck pages kept off the site: p.4 AI art with a typo, p.8-10 business claims, p.12-13 faces (p.13 mislabels his role), p.14 a phone number, p.3 and p.11 not used" },
-    { "slug": "engineering-rocket", "match": ["engineering-rocket-01", "0962115d-b229-4f1f-9608-8e6c44070dc9"], "reason": "GASYR conference: possible minors" },
-    { "slug": "engineering-rocket", "match": ["engineering-rocket-03", "5709889d-e854-4538-9ee1-200b0a72724c"], "reason": "GASYR conference: possible minors" },
-    { "slug": "engineering-rocket", "match": ["engineering-rocket-08", "e5c8ac1e-24e8-4c26-aea7-f0a4261fb3fe"], "reason": "GASYR conference: possible minors" },
-    { "slug": "engineering-rocket", "match": ["engineering-rocket-22", "IMG_3034"], "reason": "another account's Instagram" },
-    { "slug": "engineering-rocket", "match": ["engineering-rocket-23", "IMG_3097"], "reason": "an image-search screenshot" },
-    { "slug": "engineering-rocket", "match": ["engineering-rocket-24", "Screenshot_20230131_185939_WhatsApp"], "reason": "low resolution, possibly another creator's picture" },
-    { "slug": "engineering-rocket", "match": ["engineering-rocket-25", "20230322_173035"], "reason": "home propellant prep: off the fact list, poor safety optics" },
-    { "slug": "engineering-rocket", "match": ["engineering-rocket-26", "20230322_174805"], "reason": "home propellant prep: off the fact list, poor safety optics" },
-    { "slug": "engineering-rocket", "match": ["engineering-rocket-27", "20230322_175257 2"], "reason": "home propellant prep: off the fact list, poor safety optics" },
-    { "slug": "engineering-rocket", "match": ["engineering-rocket-28", "20230322_175257"], "reason": "home propellant prep: off the fact list, poor safety optics" },
-    { "slug": "engineering-rocket", "match": ["engineering-rocket-29"], "reason": "the _web conversion of IMG_1817.MOV is broken (moov atom not found); the intact original in videos/rocket club - presidence/ is pooled instead" },
-    { "slug": "engineering-rocket", "match": ["engineering-rocket-30"], "reason": "the _web conversion of IMG_1818.MOV is broken (moov atom not found); the intact original in videos/rocket club - presidence/ is pooled instead. The board still (prepared engineering-rocket-30-board.png) is not affected" },
-    { "slug": "gdg", "match": ["gdg-club-01", "0309"], "reason": "webcam-quality clip of three people at a curtain; only if the owner confirms it is the chapter's video" },
-    { "slug": "gdg", "match": ["gdg-club-03"], "reason": "held: the Internal (School Heads) report p.1 shows about 300 members for 2026 against the owner's about 200, and lists COE funding" }
+    {
+      "slug": "touchpoint",
+      "match": [
+        "touchpoint-04",
+        "dsc03825"
+      ],
+      "reason": "asleep under the desk; rejected on the owner's call"
+    },
+    {
+      "slug": "touchpoint",
+      "match": [
+        "touchpoint-09",
+        "dsc04391"
+      ],
+      "reason": "organizers, not the team"
+    },
+    {
+      "slug": "touchpoint",
+      "match": [
+        "touchpoint-14",
+        "img_3384"
+      ],
+      "reason": "another team"
+    },
+    {
+      "slug": "touchpoint",
+      "match": [
+        "touchpoint-15",
+        "img_4489"
+      ],
+      "reason": "organizers, not the team"
+    },
+    {
+      "slug": "touchpoint",
+      "match": [
+        "touchpoint-18",
+        "img_4718"
+      ],
+      "reason": "organizers, not the team"
+    },
+    {
+      "slug": "touchpoint",
+      "match": [
+        "touchpoint-11",
+        "img_1794"
+      ],
+      "reason": "raw: the visitor's 'HELLO SHABBIR' name tag is readable; the pool uses prepared/touchpoint/touchpoint-11-blur.png"
+    },
+    {
+      "slug": "touchpoint",
+      "match": [
+        "touchpoint-19",
+        "img_4826",
+        "IMG_9344"
+      ],
+      "reason": "held: a 'Track: Google' slide naming TouchPoint, while the official winners page lists another team for that track; the owner confirms the wording first"
+    },
+    {
+      "slug": "remote-lab-vision",
+      "match": [
+        "remote-lab-vision-01",
+        "IMG_1987"
+      ],
+      "reason": "raw: the colleague's face in close-up; the pool uses prepared/remote-lab-vision/remote-lab-vision-01-crop.png"
+    },
+    {
+      "slug": "ams",
+      "match": [
+        "ams-tablet-02",
+        "IMG_2325"
+      ],
+      "reason": "raw: three faces unblurred; the pool uses prepared/ams/IMG_2325-blur.png"
+    },
+    {
+      "slug": "ams",
+      "match": [
+        "ams-tablet-01",
+        "IMG_0408"
+      ],
+      "reason": "award photo (Idea Battle); the award is not a confirmed fact"
+    },
+    {
+      "slug": "ams",
+      "match": [
+        "ams-tablet-04",
+        "IMG_2610"
+      ],
+      "reason": "award photo (Idea Battle); the award is not a confirmed fact"
+    },
+    {
+      "slug": "ams",
+      "match": [
+        "ams-tablet-05",
+        "IMG_2613"
+      ],
+      "reason": "award photo (Idea Battle); the award is not a confirmed fact"
+    },
+    {
+      "slug": "ams",
+      "match": [
+        "ams-tablet-03",
+        "IMG_2326"
+      ],
+      "reason": "team photo"
+    },
+    {
+      "slug": "ams",
+      "match": [
+        "ams-tablet-06",
+        "IMG_7644"
+      ],
+      "reason": "team photo"
+    },
+    {
+      "slug": "ams",
+      "match": [
+        "ams-manufacture-01",
+        "camphoto_1903590565"
+      ],
+      "reason": "raw: the camera IP bar is visible; the pool uses prepared/ams/camphoto_1903590565-crop.png"
+    },
+    {
+      "slug": "ams",
+      "match": [
+        "ams-manufacture-02",
+        "IMG_8163"
+      ],
+      "reason": "raw Frigate workshop photo, rejected in docs/media-picks.md; no prepared crop"
+    },
+    {
+      "slug": "ams",
+      "match": [
+        "ams-manufacture-03",
+        "IMG_8164"
+      ],
+      "reason": "raw: 'Ulan Aitbay is presenting', the Meet code and participant tiles; the pool uses prepared/ams/IMG_8164-frigate.png"
+    },
+    {
+      "slug": "ams",
+      "match": [
+        "camphoto_959030623"
+      ],
+      "reason": "raw Frigate workshop monitoring with IPs and Meet details unblurred; no prepared version"
+    },
+    {
+      "slug": "ams",
+      "match": [
+        "patent"
+      ],
+      "reason": "patent No. 9794 does not list Jakhangir as an author, and the site's number was wrong"
+    },
+    {
+      "slug": "ams",
+      "match": [
+        "certification"
+      ],
+      "reason": "a supplier's EAEU declaration for the breathalyser, not an AMS certificate"
+    },
+    {
+      "slug": "ams",
+      "match": [
+        "dashboard-mobile"
+      ],
+      "reason": "looks AI-edited (watermark, English UI over a Russian original)"
+    },
+    {
+      "slug": "ams",
+      "match": [
+        "deploy-manufacturing"
+      ],
+      "reason": "a teammate's face fills half the frame; no consent"
+    },
+    {
+      "slug": "ams",
+      "match": [
+        "ams-p6"
+      ],
+      "reason": "raw AMS.pdf p.6: nine names unblurred; the pool uses prepared/ams/ams-p6-blur.png and ams-p6-phone.png"
+    },
+    {
+      "slug": "ams",
+      "match": [
+        "ams-p7"
+      ],
+      "reason": "held: AMS deck p.7 is switched off for the owner (src/pages/projects/ams/index.astro), and its third tile is the deploy-manufacturing photo of a teammate's face"
+    },
+    {
+      "slug": "ams",
+      "match": [
+        "ams-p3",
+        "ams-p4",
+        "ams-p8",
+        "ams-p9",
+        "ams-p10",
+        "ams-p11",
+        "ams-p12",
+        "ams-p13",
+        "ams-p14"
+      ],
+      "reason": "AMS deck pages kept off the site: p.4 AI art with a typo, p.8-10 business claims, p.12-13 faces (p.13 mislabels his role), p.14 a phone number, p.3 and p.11 not used"
+    },
+    {
+      "slug": "engineering-rocket",
+      "match": [
+        "engineering-rocket-01",
+        "0962115d-b229-4f1f-9608-8e6c44070dc9"
+      ],
+      "reason": "GASYR conference: possible minors"
+    },
+    {
+      "slug": "engineering-rocket",
+      "match": [
+        "engineering-rocket-03",
+        "5709889d-e854-4538-9ee1-200b0a72724c"
+      ],
+      "reason": "GASYR conference: possible minors"
+    },
+    {
+      "slug": "engineering-rocket",
+      "match": [
+        "engineering-rocket-08",
+        "e5c8ac1e-24e8-4c26-aea7-f0a4261fb3fe"
+      ],
+      "reason": "GASYR conference: possible minors"
+    },
+    {
+      "slug": "engineering-rocket",
+      "match": [
+        "engineering-rocket-22",
+        "IMG_3034"
+      ],
+      "reason": "another account's Instagram"
+    },
+    {
+      "slug": "engineering-rocket",
+      "match": [
+        "engineering-rocket-23",
+        "IMG_3097"
+      ],
+      "reason": "an image-search screenshot"
+    },
+    {
+      "slug": "engineering-rocket",
+      "match": [
+        "engineering-rocket-24",
+        "Screenshot_20230131_185939_WhatsApp"
+      ],
+      "reason": "low resolution, possibly another creator's picture"
+    },
+    {
+      "slug": "engineering-rocket",
+      "match": [
+        "engineering-rocket-25",
+        "20230322_173035"
+      ],
+      "reason": "home propellant prep: off the fact list, poor safety optics"
+    },
+    {
+      "slug": "engineering-rocket",
+      "match": [
+        "engineering-rocket-26",
+        "20230322_174805"
+      ],
+      "reason": "home propellant prep: off the fact list, poor safety optics"
+    },
+    {
+      "slug": "engineering-rocket",
+      "match": [
+        "engineering-rocket-27",
+        "20230322_175257 2"
+      ],
+      "reason": "home propellant prep: off the fact list, poor safety optics"
+    },
+    {
+      "slug": "engineering-rocket",
+      "match": [
+        "engineering-rocket-28",
+        "20230322_175257"
+      ],
+      "reason": "home propellant prep: off the fact list, poor safety optics"
+    },
+    {
+      "slug": "engineering-rocket",
+      "match": [
+        "engineering-rocket-29"
+      ],
+      "reason": "the _web conversion of IMG_1817.MOV is broken (moov atom not found); the intact original in videos/rocket club - presidence/ is pooled instead"
+    },
+    {
+      "slug": "engineering-rocket",
+      "match": [
+        "engineering-rocket-30"
+      ],
+      "reason": "the _web conversion of IMG_1818.MOV is broken (moov atom not found); the intact original in videos/rocket club - presidence/ is pooled instead. The board still (prepared engineering-rocket-30-board.png) is not affected"
+    },
+    {
+      "slug": "gdg",
+      "match": [
+        "gdg-club-01",
+        "0309"
+      ],
+      "reason": "webcam-quality clip of three people at a curtain; only if the owner confirms it is the chapter's video"
+    },
+    {
+      "slug": "gdg",
+      "match": [
+        "gdg-club-03"
+      ],
+      "reason": "held: the Internal (School Heads) report p.1 shows about 300 members for 2026 against the owner's about 200, and lists COE funding"
+    },
+    {
+      "slug": "usher",
+      "match": [
+        "desktop-4"
+      ],
+      "reason": "a matcha cup, not the work"
+    },
+    {
+      "slug": "usher",
+      "match": [
+        "IMG_4195"
+      ],
+      "reason": "two people in it are not on the team and have not said yes"
+    }
   ],
   "edits": [
     {
       "slug": "engineering-rocket",
-      "match": ["engineering-rocket-31", "VID-20220412-WA0030"],
+      "match": [
+        "engineering-rocket-31",
+        "VID-20220412-WA0030"
+      ],
       "start": 0,
       "duration": 29,
-      "blur": [[17.8, 19.2]],
+      "blur": [
+        [
+          17.8,
+          19.2
+        ]
+      ],
       "reason": "a crowd of schoolchildren after 0:29, and a pan across them at 17.8-19.2 s"
     }
   ]

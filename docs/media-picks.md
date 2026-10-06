@@ -96,3 +96,36 @@ The main thread opens each pick before it ships.
 - TouchPoint: IMG_2819 (glove prototype with motors and breadboard: strong), IMG_2835 (stage, "2nd Overall — TouchPoint"), IMG_9344 (slide "Track: Google — TouchPoint", team with prize boxes; corroborates touchpoint-19)
 - AMS manufacturing: IMG_8163, IMG_8164, camphoto_1903590565, camphoto_959030623 (Frigate workshop monitoring; blur IPs and Meet details)
 - ACM@OSU: IMG_4076 (another club's slide, unused)
+
+## Usher (MHacks 2026, added 2026-10-06)
+Sources: the owner's uploads, copied read-only to `~/work/works-only/in/mwe-2026-10-06/usher/`
+(the Mac stays canonical: `~/Desktop/1..13.jpg` from 2026-10-05, `~/Downloads/IMG_4195/4212/4213.HEIC`,
+`56E07395-….JPG`, and three HLG clips tone-mapped to `_sdr/`). Viewed by the main thread.
+- cover: `desktop-8.jpg` (focal 50% 55%): the headset on the table, the mic array on its mount, the motors taped at the temples
+- hero: `desktop-2.jpg`: the headset worn, eyepiece down (a teammate's face; the team is on Devpost)
+- app: `judge-app.png`: the judge web app in its scripted demo, captured headless from the repo's `frontend/index.html`
+- gallery, in order on the page: g01 `desktop-3` (the web app on a laptop, him in the feed); g02 `desktop-1`
+  (a teammate at the curved monitor with the tunnel-vision overlay); g03 `desktop-5` (the parts);
+  g05 `desktop-7` (the headband printing on an Elegoo); g07 `desktop-11` (breadboard on the band);
+  g08 `desktop-12` (prototype, the OLED hanging, face sketches on the whiteboard); g06 `desktop-9`
+  (the team on the floor at night); g04 `desktop-6` (a teammate seated in the headset, him beside);
+  g12 `IMG_4213` (the four of them behind the MHACKS letters)
+- held, not imported (in the picker's pool only): `desktop-13` (headset + OLED + Pi, a near-duplicate of 12);
+  `hall-selfie` (him in the judging hall); `IMG_4195` is denied in `docs/pick-deny.json` (two people in it are
+  not on the team and have not said yes)
+- clips: `demo` = `video-1871` (12 s, the headset worn at the judging table, the Pi in hand), silent;
+  `table` = `IMG_4190` cut to 62-102 s (a teammate wearing the headset while another wires and explains),
+  with sound. `video-1864` (10 s, two teammates at table 60) not used.
+- rejects: `desktop-4` (a matcha cup)
+- privacy: strangers in the background of 1 and 7 are small and turned away; the judging-hall clips show
+  other teams at their tables in passing.
+
+## Zyp, second round (2026-10-06)
+Captures of the public site by `scripts/zyp-captures.mjs` (chromium, 1440x900 @2x), in
+`~/work/works-only/in/zyp-captures-2026-10-06/`, manifest `docs/media-manifest-zyp-2.json`:
+- header: the glass pill and Book a demo over the blurred office (a 1440x160 clip)
+- trusted: the logo row and the statement under the hero's end
+- tablet: the dashboard band
+- films: the Clients film window with its transport
+- globe: the whole coverage globe (replaces the 2 October crop g04 on the page)
+- not used: ring (the testimonial ring shows "Coming soon" placeholders on the live site)
