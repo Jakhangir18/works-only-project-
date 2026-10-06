@@ -99,3 +99,18 @@
 - git: feat/portfolio-v5@d2f938b
 - next: Owner: try photos on http://100.122.188.86:4401/ and press Send; then pin with scripts/pin-picks.mjs. Decide the Vercel preview route (repo is public). Review on Mac/iPhone at :4400.
 
+## 2026-10-03 10:32 | Portfolio v6 (owner asleep, autonomous): WORK as on Vercel on the home (tunnel wall in home mode, constellation hand-off within 1 px, no numbering, dive with Lenis lock and return), the wall dissolves into the descent's stars, painted Gemini meadow + seamless walk tile + regrained grass, Zyp live 97-frame hero (agent), full-screen explosion flash, picks pinned and picker stopped; two /code-review rounds + a third on fixes acted on; perf cuts measured (phone x4 WORK 9-35 frames >50ms vs tunnel 11-28); full suite green (routes 774, a11y 112, anime 119, work 100, dive 67, others green); clean orphan branch preview/portfolio pushed, Vercel preview built (protected by Vercel Authentication)
+- files: src/utils/WorkSection.ts, src/utils/WorkDust.ts, src/components/SWork.astro, src/components/AWork.astro, src/data/workCards.ts, src/utils/DiveTransition.ts, src/utils/AnimeSite.ts, src/utils/Space.ts, src/utils/Constellation.ts, src/utils/workStack.ts, src/components/AnimeParadise.astro, src/utils/Paradise.ts, src/utils/GrassField.ts, src/styles/helpers/_stars.scss, tests/t-anime.mjs, tests/t-work.mjs, tests/t-dive.mjs, tests/t-a11y.mjs, perf/harness.mjs, CLAUDE.md, docs/portfolio-v5-design.md
+- git: feat/portfolio-v5@b22324c
+- next: Owner: look at v6 on http://100.122.188.86:4400 (Mac, iPhone) or the Vercel preview (his login); decide production or preview protection for the Discord link; verdict on WORK smoothness on real hardware
+
+## 2026-10-03 18:51 | v6 shipped to main as one clean commit 15a1432 (site sources only, no notes, no resume); Vercel Production deployment built successfully, but works-only-project.vercel.app still serves the July deployment: the owner must promote 15a1432 in the Vercel dashboard
+- files: CLAUDE.md
+- git: feat/portfolio-v5@116df8d
+- next: Owner: Vercel dashboard -> project -> Deployments -> 15a1432 'feat: portfolio v6, the anime home' -> Promote to Production (or check Settings -> Domains owns works-only-project.vercel.app); then check the site on Mac and iPhone
+
+## 2026-10-06 04:04 | v7: full review and fixes (rocket hand-off black in time, narrow route tail, five star tiles, meadow greens, return key expiry, indexing + sitemap/robots), Usher case page (MHacks 2026, eighth project, owner's photos and clips, picker pool), Zyp page as the internship story with the offer letter's facts; /simplify and /code-review acted on; suite 1589 checks green; harness within the base band
+- files: src/utils/RocketFlight.ts, src/utils/Space.ts, src/utils/WorkDust.ts, src/styles/helpers/_stars.scss, src/utils/GrassField.ts, src/utils/returnKey.ts, src/pages/work/usher.astro, src/pages/work/zyp.astro, src/data/projects.ts, src/data/timeline.ts, src/data/media.ts, src/layouts/CaseLayout.astro, src/pages/sitemap.xml.ts, tests/t-anime.mjs, scripts/pick-pool.mjs, CLAUDE.md, docs/portfolio-v5-design.md
+- git: feat/portfolio-v5@7c95305
+- next: Owner: open http://100.122.188.86:4400 on Mac and iPhone (rocket hand-off, the dissolve, /work/usher/, /work/zyp/, the meadow); swap Usher pictures on http://100.122.188.86:4401/work/usher/ if wanted (pin-picks, import, rebuild); then ship main as one clean orphan commit like preview/portfolio and promote in Vercel
+

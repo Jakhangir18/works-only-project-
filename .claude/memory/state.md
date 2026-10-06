@@ -1,4 +1,4 @@
 # Project state
-Updated: 2026-10-03 02:37
+Updated: 2026-10-06 04:04
 
-feat/portfolio-v5 @ d2f938b local, not pushed; preview :4400 serves the final build; picker :4401 (user unit portfolio-picker); full suite 1172/1173
+feat/portfolio-v5 @ v7 (18 commits since 116df8d, local, not pushed); main still at 15a1432 (v6); :4400 serves the v7 dist; picker on :4401 with the usher pool

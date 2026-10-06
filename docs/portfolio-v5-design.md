@@ -231,3 +231,97 @@ before the Earth; picker stopped; a clean branch for the Vercel preview.
   tree outside its segment; the settled meadow drops the sky and its mask. Phone x4
   WORK 9-35 frames over 50 ms per phase (the tunnel 11-28; v5 rows 0-2); numbers in
   CLAUDE.md and the perf commits.
+
+## v7 round (2026-10-06, the owner on a train)
+Plan: `~/.claude/plans/vectorized-imagining-gem.md` (approved 2026-10-06). The owner's brief:
+a full review with the errors fixed, MHacks as a new project with a proper preview from his
+photographs, the remaining lags and every transition checked by eye, and the Zyp page as the
+story of the internship. His answers: photos on the Mac Desktop (`1..13.jpg`) plus four more and
+three clips in Downloads; no prize, Devpost https://devpost.com/software/usher; his part: the
+idea and the research, the hardware, the review and the harness, and he led the team; Zyp:
+numbers and process, no internal files, no clients, the coding agents named in one measured line.
+
+### The review (190 screenshots at 1440x900 and 390x844, the suite 1276/1277, the harness)
+- Phone, rocket to space: a blank white then a flat grey screen between the bento and the
+  stars at rest. Cause: the black started at 0.6 of the runway and took until 0.88; the stars
+  came in at 0.9. First fix: a short scrubbed ramp from the impact. The /simplify review's
+  altitude pass pointed out that any scrubbed ramp leaves a band to rest on, so the black now
+  plays in with the crash, in time (0.45 s; out in 0.35 s on the way back up). /code-review then
+  found that the first in-time version, inside the crash's timeline, was cut to 0 by that
+  timeline's pause(0), could be left at 0 by an unkilled tween, kept will-change after an
+  interrupted crash, and let the rocket reappear on black on the way up: the black has its own
+  tweens now (overwrite, will-change only while one runs), is-crashed shares its hysteresis, and
+  the star layers come in at CRASH_AT + 0.16 / + 0.22, past PLAY_WITHIN (`RocketFlight.ts`,
+  `Space.ts`); t-anime samples the runway's progress from 0.58 and checks the crossing both ways.
+
+### /code-review (high) on 116df8d..HEAD, 2026-10-06: 11 findings
+Acted on: the black's tweens, hysteresis and will-change (above); the Usher head's centre read
+in client coordinates and after a scroll (the figure is sticky); the Usher captions (one night,
+not two); the Zyp label uses the project's date string; the Zyp brief without the audience's
+ages and the client-side specifics (the owner's permission covered numbers and process from the
+repository); `picture()` gained a srcset cap and the GDG hero uses it; t-anime exercises the
+crossing. Skipped: a shared Playwright launcher for the three capture scripts (a refactor of
+shots.mjs, outside this round).
+- Phone, the rocket crossed the last card's text on its final S: the narrow route's tail now
+  hooks in along the right edge.
+- The WORK dissolve read as a lattice of dots: the star field was two tiles. Five tiles with
+  periods that share no factor (`_stars.scss`, `LOOKS` in `WorkDust.ts`); a t-anime check
+  samples eleven positions of the segment for drawn pixels.
+- The meadow's blades and tufts read as lime clip art over the painting: the blades keep to
+  the painting's greens at 0.88 alpha, the tufts to its dark green at 0.82.
+- Zyp said "Software engineering intern, Summer 2026": the offer letter says Frontend
+  Engineer Intern, August 2026 (docs/facts-to-confirm.md §7).
+- `noindex` on every page while the site is in production: the home and the eight case
+  pages index now; `sitemap.xml` and `robots.txt` are built from `projects.ts`.
+- Stale `returnScrollY` (PERF-NOTES): `src/utils/returnKey.ts` parks the offset with a
+  timestamp and ignores it after 30 minutes.
+- The bento's hackathon card counts three now.
+
+### The two pages
+- Zyp (`src/pages/work/zyp.astro`): the live hero kept; then the brief (one job, the audience,
+  six of the thirteen rules), the four weeks as a rail with the counts (36 stages, 67 PRs, 510
+  commits, 28 days to launch), how the hero was made in five steps with six of the shipped
+  frames, the whole globe (new capture), the rest of the page (header, trusted-by, dashboard
+  band, films; the testimonial ring on the live site shows "Coming soon", so it is not shown),
+  the measured table with its caveat, how the work ran (briefs, coding agents as executors, his
+  review, the Safari gate, the client log), what he learned. Captures: `scripts/zyp-captures.mjs`
+  → `docs/media-manifest-zyp-2.json`.
+- Usher (`src/pages/work/usher.astro`, dark like SPOOT): the hero (worn, eyepiece down), the
+  trigger phrase with a head from above that answers the pointer (event-driven, one transform
+  and two opacities per event, the display's word only when it changes), who it is for, the
+  three engines, what the judges saw (the judge app captured in its demo mode, no Pi needed),
+  the numbers from the table, five troubles and what held, the frames and two clips, his part
+  and the team. Media: `docs/media-manifest-usher.json` from
+  `~/work/works-only/in/mwe-2026-10-06/usher/` (HLG clips tone-mapped to `_sdr/`).
+- The eighth project: `projects.ts` (first), `workCards.ts` (`LOOK.usher`), `timeline.ts`,
+  `tests/t-work.mjs` (8 on the home, 7 in the tunnel), `tests/t-anime.mjs` (16 wheel cards, 8
+  shots, 8 case pages), `tests/t-timeline.mjs` (11), `scripts/shots.mjs`, `tests/lib.mjs`
+  (ROUTES now carries zyp, gdg and usher too).
+- The picker: `scripts/pick-pool.mjs` reads `in/mwe-2026-10-06/<slug>/` as a second root;
+  `docs/pick-deny.json` keeps the matcha cup and the photo with two non-teammates out.
+
+### v7 numbers (2026-10-06, this host, chromium headless, software raster; frames over 50 ms per
+phase, base = the v6 build measured the same night with the same binary, headless, wheelScale)
+- Phone x4: WORK open/close 9-25 (base 18-33); rocket-down 22 (base 17), rocket-up 13 (base 15);
+  hero-pointer 4 (base 8); space 0-1 (base 0); paradise 0-2 (base 2-3); dive-home 5 (base 1).
+  Heap +1.0 MB over 3 cycles (base +0.8), listeners flat, 18/18 scroll assertions.
+- Desktop (idle floor 33 ms): WORK 144-189 (base 246-316); rocket-down 2 / up 3 (base 87 / 41, an
+  outlier run); hero-pointer 28 (base 98); paradise 13-17 (base 27-19); grass-pointer 12 (base 22);
+  dive-home 71 (base 52). Heap +1.9 MB over 3 cycles (base +1.3), listeners flat.
+- Run-to-run spread on this host is wide (CLAUDE.md): nothing above moved outside the band the
+  base runs set, and the rocket's shorter black ramp costs nothing the harness can see. The
+  owner's Mac and iPhone give the verdict.
+- The fix runs' 2-4 console errors were the hero wheel asking for `shots/usher*.webp` before
+  `scripts/shots.mjs` had been run; the final runs show 0.
+- Final (build 5, the black with its own tweens), phone x4: WORK 17-34 (base 18-33), rocket-down
+  10 / up 15 (base 17 / 15), hero-pointer 6 (base 8), space 3-4 (base 0; one 100 ms frame),
+  paradise 1-6 (base 2-3), dive-home 5; heap +1.0 MB over 3 cycles, listeners flat, console 0.
+  Desktop (idle floor 33 ms): WORK 169-233 (base 246-316), rocket 6 / 5 (base 87 / 41), hero-pointer
+  34 (base 98), paradise 31 / 13 (base 27 / 19), grass-pointer 26 (base 22), dive-home 69 (base
+  52), explore-pointer 8; heap +1.9 MB over 3 cycles, listeners flat, console 0, 19/19 scroll
+  assertions. Files: `perf-results/2026-10-06T03-31-02-774Z-v7-final-mobile-x4.json` and
+  `…T03-34-29-614Z-v7-final-desktop.json`.
+- The suite on build 4 once reported, in WebKit on the desktop home, two "Failed to load
+  resource: WebKit encountered an internal error" messages; not reproduced by a scripted
+  WebKit scroll-through, and absent from the build-5 run. Watch for it; the lib ignores only
+  the engine's own cancellations, so a recurrence will show.

@@ -1,0 +1,86 @@
+[
+  {
+    "id": "F1",
+    "title": "Phone rocket-to-space hand-off: no blank white or flat grey rest state between the bento and the stars",
+    "done_when": "t-anime check at 390x844 samples every 0.25 screen from the bento's end to the first star screen and finds no uniform grey/white frame; phone x4 harness rocket phases within the v7-base range",
+    "passes": true
+  },
+  {
+    "id": "F2",
+    "title": "Phone rocket keeps off the card text",
+    "done_when": "0.4-screen sweep at 390x844 shows the rocket over margins or the runway only; no rocket over a card's text",
+    "passes": true
+  },
+  {
+    "id": "F3",
+    "title": "WORK dissolve has no dead screen",
+    "done_when": "10-position scripted scroll through the home-only dissolve segment shows dust or stars at every position; WORK phases within the v7-base range",
+    "passes": true
+  },
+  {
+    "id": "F4",
+    "title": "Meadow blades take the painting's colour",
+    "done_when": "screenshots at both widths show blades in the painting's greens, no lime clip-art tufts; paradise phases within range",
+    "passes": true
+  },
+  {
+    "id": "F5",
+    "title": "returnScrollY expires",
+    "done_when": "t-journey round-trip still passes; a new check: an entry older than 30 min is ignored and the intro plays",
+    "passes": true
+  },
+  {
+    "id": "F6",
+    "title": "Public pages indexable",
+    "done_when": "home and the eight case pages carry index,follow; the two unlisted pages and /tunnel/ carry noindex; robots.txt and sitemap exist in dist/",
+    "passes": true
+  },
+  {
+    "id": "F7",
+    "title": "Zyp facts corrected everywhere",
+    "done_when": "grep finds no 'Software engineering intern' for Zyp; the page and the timeline say Frontend engineer intern, August 2026",
+    "passes": true
+  },
+  {
+    "id": "F8",
+    "title": "Zyp page rebuilt as the internship story",
+    "done_when": "page has the brief, the stages rail, how the hero was made, the globe, the rest of the page, measured table, how the work ran, what I learned; t-routes and t-a11y green on /work/zyp/; shots re-run",
+    "passes": true
+  },
+  {
+    "id": "F9",
+    "title": "Eighth project plumbed: usher in projects, workCards, timeline, tests, shots",
+    "done_when": "build has 12 pages; t-work 8/8; t-anime 16 cards and 8 shots; t-timeline 11 entries; wall harness within range",
+    "passes": true
+  },
+  {
+    "id": "F10",
+    "title": "Usher media imported from the owner's photos and clips",
+    "done_when": "public/projects/usher/media/media.json has cover, hero, gallery and at least one SDR clip; docs/media-picks.md has the Usher section",
+    "passes": true
+  },
+  {
+    "id": "F11",
+    "title": "Usher case page built",
+    "done_when": "page has hero, Hello Jax head, who it is for, three engines, what the judges saw, numbers, troubles, frames, my part, links; t-routes and t-a11y green; og.jpg present",
+    "passes": true
+  },
+  {
+    "id": "F12",
+    "title": "Owner can change Usher pictures through the picker",
+    "done_when": "pick-pool includes slug usher from in/mwe-2026-10-06; portfolio-picker serves the new dist on :4401; pin-picks dry-run accepts a usher pick",
+    "passes": true
+  },
+  {
+    "id": "F13",
+    "title": "Bento copy updated for three hackathons",
+    "done_when": "the bento card names three hackathons and Usher",
+    "passes": true
+  },
+  {
+    "id": "F14",
+    "title": "Final verification",
+    "done_when": "full suite green (the one known flaky tunnel contrast check excepted); harness v7-final recorded; /simplify and /code-review on 116df8d..HEAD acted on; :4400 serves the new dist; CLAUDE.md, design log, facts-to-confirm updated; task-done run",
+    "passes": true
+  }
+]

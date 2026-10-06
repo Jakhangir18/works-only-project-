@@ -9,21 +9,30 @@ A personal portfolio site built with **Astro**, animation-heavy. Two homes ship:
 - `/` is the **anime home** (v6, branch `feat/portfolio-v5`, from v4). The sections:
   - `AnimeIntro`: the opening cover.
   - `AnimeHero`: the name and the two lines on a cylinder, projected at build
-    time by `src/utils/cylinderText.ts`, behind a CSS 3D wheel of the seven
+    time by `src/utils/cylinderText.ts`, behind a CSS 3D wheel of the eight
     case-page shots, each with a pre-blurred twin.
   - `AnimeRocket` wraps `WhyWorkWithMe`. A sticky stage flies the rocket beside
     the bento, then crashes it on the right into the wipe.
   - `AnimeSpace`: the star field, then the constellation (`Constellation.ts`,
-    one canvas): the stars gather into WORK's opening W/O/R/K stack.
+    one canvas): the stars gather into WORK's opening W/O/R/K stack. The
+    black that takes the page to space plays in with the crash, in time,
+    with its own tweens (`blackTo`/`blackSet` in `RocketFlight.ts`; not
+    scrubbed: a scrubbed ramp leaves a band to rest on, and the 2026-10-06
+    review found a grey one at 390x844; not in the crash's timeline either,
+    whose `pause(0)` would cut it), and the star layers come in from
+    `CRASH_AT + 0.16` of the runway (`Space.ts`), past the crash's
+    `PLAY_WITHIN`, so a flick never shows stars on white.
   - WORK is the `/tunnel/` letter wall in home mode (`SWork items={workCards}
     home`, `WorkSection.ts`, `AWork.astro`, `src/data/workCards.ts` from
-    `projects.ts`): concave W/O/R/K rows, the seven projects as cards flying
+    `projects.ts`): concave W/O/R/K rows, the eight projects as cards flying
     through, a click opens the dive (`DiveTransition.ts`). The constellation
     hands over on the frame the section's top meets the screen's
     (`showWorkStack`); the stack's geometry has one source,
     `src/utils/workStack.ts`, derived from the tunnel's CSS. After the last
     card the wall dissolves into the descent's star field (`WorkDust.ts`,
-    `helpers/_stars.scss`).
+    `helpers/_stars.scss`: five tiles whose periods share no factor, since
+    two read as a lattice of dots at rest; `LOOKS` in WorkDust.ts lists them
+    in the same order).
   - `AnimeParadise`: the timeline. A descent from space past the Earth and its
     horizon, through clouds, onto a painted meadow (`public/paradise/land-*`,
     Gemini, the sky's own picture) with grass the pointer presses down
@@ -31,11 +40,27 @@ A personal portfolio site built with **Astro**, animation-heavy. Two homes ship:
   - `AnimeContact`: no resume link, by the owner's choice.
   - Lenis smooth scroll runs on the home only, off on touch and under reduced
     motion.
-  - The seven case pages use `src/layouts/CaseLayout.astro` and
+  - The home and the eight listed case pages are indexable since 2026-10-06
+    (`index, follow` in `CaseLayout`); `/tunnel/` and the two unlisted pages
+    (on `ProjectLayout`) keep `noindex`. `src/pages/sitemap.xml.ts` and
+    `robots.txt.ts` are built from `projects.ts` and `Astro.site`.
+  - The trip back from a case page: `src/utils/returnKey.ts` parks the
+    offset with a timestamp and ignores it after 30 minutes, on the home
+    (`HOME_RETURN_KEY`) and on `/tunnel/` (`returnScrollY`).
+  - The eight case pages use `src/layouts/CaseLayout.astro` and
     `src/components/case/`. Each page has its own composition. Zyp's plays
     the zyp.co hero's 97 frames on a canvas scrubbed by the scroll
     (`src/utils/frameSequence.ts`, `public/projects/zyp/frames/`); below
-    768 px and under reduced motion it shows frame 1, as zyp.co does.
+    768 px and under reduced motion it shows frame 1, as zyp.co does. Since
+    2026-10-06 it tells the internship (the brief, the four weeks, how the
+    hero was made, the globe, the rest of the page, what was measured, how
+    the work ran) from the signed offer letter and the landing repository's
+    own history and measurements; captures of the live site come from
+    `scripts/zyp-captures.mjs`. Usher (`/work/usher/`, MHacks 2026) is the
+    eighth and newest: a head seen from above that answers the pointer the
+    way the headset answers a voice (event-driven, no loop), the judge web
+    app captured in its demo mode by `scripts/usher-app-capture.mjs`, and
+    the owner's photographs and clips (`docs/media-manifest-usher.json`).
   - Case-page clips play in `CaseClip.astro` + `src/utils/player.ts` (seek,
     sound, full screen, a `playFrom` start point); controls and the case bar are
     liquid glass (`src/styles/helpers/_glass.scss`, refraction on Chromium only).
@@ -67,7 +92,7 @@ it is why the invariants below exist.
 |---|---|
 | `npm run dev` | Dev server on **:4321**. `astro.config.mjs` sets `server.host: true`, so it also binds to the LAN address |
 | `npm start` | Identical to `npm run dev` — same server, same port |
-| `npm run build` | Production build into `dist/`. Astro reports **11 pages** (`/`, `/tunnel/`, `/projects/ams/`, eight `/work/*` including the unlisted `private-clinic` and `portfolio-rocket`); `dist/` ends up with 12 `.html` files because the empty `public/nasa-nns.html` is copied verbatim |
+| `npm run build` | Production build into `dist/`. Astro reports **12 pages** (`/`, `/tunnel/`, `/projects/ams/`, nine `/work/*` including the unlisted `private-clinic` and `portfolio-rocket`) and writes `sitemap.xml` and `robots.txt` beside them; `dist/` ends up with 13 `.html` files because the empty `public/nasa-nns.html` is copied verbatim |
 | `npm run preview` | Serves the built `dist/` on **:4321** |
 | `npm test` | Nine Playwright suites (`tests/run.mjs`, see `tests/README.md`) against a served production build at `SITE` (default `http://127.0.0.1:4347`). Needs `PLAYWRIGHT_HOME` pointing at a `node_modules` with chromium, webkit and firefox; on this host that is `/home/ubuntu/work/landing-page/repo/node_modules` (the built-in default path does not exist here) |
 | `npm run astro` | Astro CLI passthrough (e.g. `npm run astro -- --version`). With no arguments it prints CLI help |
@@ -330,6 +355,17 @@ The measurement harness lives in `perf/` (`harness.mjs`, `regression.mjs`,
   has a fix applied but **unverified on iOS**.
 - Running notes and rejected hypotheses live in `PERF-NOTES.md`. Read it before
   re-proposing something that was already tried.
+- **v7 numbers** (2026-10-06, same host and harness, the final build; frames
+  over 50 ms per phase; base = v6 measured the same night): phone x4 WORK
+  17-34 (base 18-33), rocket 10 / 15 (base 17 / 15), hero-pointer 6 (base
+  8), space 3-4 (base 0), paradise 1-6 (base 2-3); desktop (idle floor 33 ms)
+  WORK 169-233 (base 246-316), rocket 6 / 5 (base 87 / 41, an outlier base
+  run), hero-pointer 34 (base 98), paradise 31 / 13 (base 27 / 19),
+  grass-pointer 26 (base 22), dive-home 69 (base 52). Heap +1.0 / +1.9 MB
+  over 3 cycles (base +0.8 / +1.3), listeners flat, console 0. The eighth
+  card adds one 80svh step to the wall; the black in time after the crash and
+  the five star tiles cost nothing the harness can see. Details in
+  `docs/portfolio-v5-design.md`, "v7 numbers".
 - **v6 numbers** (2026-10-03, same host and harness; frames over 50 ms per phase,
   long tasks in brackets; base = v5 with the v6 explosion, measured the same
   morning):

@@ -1,7 +1,61 @@
 [
-  { "slug": "zyp", "id": "header", "kind": "image", "src": "/home/ubuntu/work/works-only/in/zyp-captures-2026-10-06/header.png", "widths": [1280, 1920], "note": "the liquid-glass header at rest over the hero (www.zyp.co, 2026-10-06, 1440x900 @2x)" },
-  { "slug": "zyp", "id": "trusted", "kind": "image", "src": "/home/ubuntu/work/works-only/in/zyp-captures-2026-10-06/trusted.png", "widths": [640, 1280, 1920], "note": "the Trusted-by logo row under the hero's end and the statement (www.zyp.co, 2026-10-06)" },
-  { "slug": "zyp", "id": "tablet", "kind": "image", "src": "/home/ubuntu/work/works-only/in/zyp-captures-2026-10-06/tablet.png", "widths": [640, 1280, 1920], "note": "the dashboard band, the tablet that plays itself (www.zyp.co, 2026-10-06)" },
-  { "slug": "zyp", "id": "films", "kind": "image", "src": "/home/ubuntu/work/works-only/in/zyp-captures-2026-10-06/films.png", "widths": [640, 1280, 1920], "note": "the Clients film in its window with the transport (www.zyp.co, 2026-10-06)" },
-  { "slug": "zyp", "id": "globe", "kind": "image", "src": "/home/ubuntu/work/works-only/in/zyp-captures-2026-10-06/coverage.png", "widths": [640, 1280, 1920], "note": "Coverage where it matters: the whole canvas globe (www.zyp.co, 2026-10-06)" }
+  {
+    "slug": "zyp",
+    "id": "header",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/zyp-captures-2026-10-06/header.png",
+    "widths": [
+      1280,
+      1920
+    ],
+    "note": "the liquid-glass header at rest over the hero (www.zyp.co, 2026-10-06, 1440x900 @2x)"
+  },
+  {
+    "slug": "zyp",
+    "id": "trusted",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/zyp-captures-2026-10-06/trusted.png",
+    "widths": [
+      640,
+      1280,
+      1920
+    ],
+    "note": "the Trusted-by logo row under the hero's end and the statement (www.zyp.co, 2026-10-06)"
+  },
+  {
+    "slug": "zyp",
+    "id": "tablet",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/zyp-captures-2026-10-06/tablet.png",
+    "widths": [
+      640,
+      1280,
+      1920
+    ],
+    "note": "the dashboard band, the tablet that plays itself (www.zyp.co, 2026-10-06)"
+  },
+  {
+    "slug": "zyp",
+    "id": "films",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/zyp-captures-2026-10-06/films.png",
+    "widths": [
+      640,
+      1280,
+      1920
+    ],
+    "note": "the Clients film in its window with the transport (www.zyp.co, 2026-10-06)"
+  },
+  {
+    "slug": "zyp",
+    "id": "globe",
+    "kind": "image",
+    "src": "/home/ubuntu/work/works-only/in/zyp-captures-2026-10-06/coverage.png",
+    "widths": [
+      640,
+      1280,
+      1920
+    ],
+    "note": "Coverage where it matters: the whole canvas globe (www.zyp.co, 2026-10-06)"
+  }
 ]
