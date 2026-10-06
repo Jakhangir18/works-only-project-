@@ -84,7 +84,7 @@ const DATES = "October 3⁠–⁠4, 2026";
         ]}
       />
     </div>
-    <CaseFigure slug="usher" id="hero" alt="The Usher headset worn with its eyepiece down: the printed band, the motor module taped at the temple, a hand holding the frame" caption="The prototype on the second night, the eyepiece down." ratio="4 / 5" focal="50% 42%" sizes="(max-width: 56em) 100vw, 42vw" eager class="us-hero__media" />
+    <CaseFigure slug="usher" id="hero" alt="The Usher headset worn with its eyepiece down: the printed band, the motor module taped at the temple, a hand holding the frame" caption="The prototype on the build night, the eyepiece down." ratio="4 / 5" focal="50% 42%" sizes="(max-width: 56em) 100vw, 42vw" eager class="us-hero__media" />
   </header>
 
   <section class="case-section us-hello js-us-hello" aria-labelledby="us-hello-title">
@@ -189,7 +189,7 @@ const DATES = "October 3⁠–⁠4, 2026";
     <div class="us-judges__grid">
       <CaseFigure slug="usher" id="app" alt="The judge web app in its demo mode: a camera view with a tunnel-vision circle on the left, a voice-identified transcript and a conversation summary on the right" caption="The judge app, in its scripted demo: no headset needed." sizes="(max-width: 56em) 100vw, 60vw" class="us-judges__app" />
       <CaseFigure slug="usher" id="g01" alt="A laptop showing the web app, 'Stay in the conversation', with Jakhangir in the camera feed" caption="The first version of the page, the camera on me." sizes="(max-width: 56em) 100vw, 40vw" />
-      <CaseFigure slug="usher" id="g02" alt="A teammate at a curved monitor showing the judge app: the tunnel-vision circle on the left and the transcript on the right" caption="The tunnel-vision overlay on the big screen, late on the first night." sizes="(max-width: 56em) 100vw, 40vw" />
+      <CaseFigure slug="usher" id="g02" alt="A teammate at a curved monitor showing the judge app: the tunnel-vision circle on the left and the transcript on the right" caption="The tunnel-vision overlay on the big screen, late in the night." sizes="(max-width: 56em) 100vw, 40vw" />
     </div>
   </section>
 
@@ -199,7 +199,7 @@ const DATES = "October 3⁠–⁠4, 2026";
         <p class="case-label" data-reveal>Measured</p>
         <h2 class="case-h2" data-reveal>Numbers from the table</h2>
         <div class="case-prose" data-reveal>
-          <p>Measured on the hardware on the second night, with the mic on the printed band after calibration. Not a benchmark: one room, one team, and a hotspot.</p>
+          <p>Measured on the hardware during the night, with the mic on the printed band after calibration. Not a benchmark: one room, one team, and a hotspot.</p>
         </div>
       </div>
       <CaseMeta class="us-numbers__meta" rows={numbers} />
@@ -243,7 +243,7 @@ const DATES = "October 3⁠–⁠4, 2026";
       <div class="case-prose" data-reveal>
         <p>I led the team. The idea was mine, and the research behind it: before the hackathon I read what people with Usher syndrome actually struggle with, what aids exist and where each one fails, and picked this from three candidates on the morning call.</p>
         <p>The hardware was mine to bring and to wire: the reSpeaker array and the Pi, and the motor modules from TouchPoint, my earlier glove. The sound-direction and haptics approach carries over from SPOOT and TouchPoint.</p>
-        <p>Through the second night I reviewed the code we had: sixteen findings with patches, an offline test harness of 144 checks that runs anywhere in three seconds, and the runbook we followed to the judging table. Oliver Lai wrote most of the program on the Pi and tested it on the device; Sajjad Akbari built the web page and the camera server; Matthew Palmer modelled and printed the headband and the mic tray.</p>
+        <p>Through the night I reviewed the code we had: sixteen findings with patches, an offline test harness of 144 checks that runs anywhere in three seconds, and the runbook we followed to the judging table. Oliver Lai wrote most of the program on the Pi and tested it on the device; Sajjad Akbari built the web page and the camera server; Matthew Palmer modelled and printed the headband and the mic tray.</p>
       </div>
     </div>
     <ul class="case-links" data-reveal>
@@ -261,9 +261,9 @@ const DATES = "October 3⁠–⁠4, 2026";
      Event-driven, no frame loop (invariant 6): a pointer event writes one
      transform on the speaker's own group, two opacities on the glows and,
      only when it changes, the display's text; every write goes through
-     writeIfChanged, so a value already there is not written again. The figure's centre is read
-     once in page coordinates, and again after a resize or a font swap
-     (invariants 3 and 5). The listeners sit on the section, so nothing runs
+     writeIfChanged, so a value already there is not written again. The figure is sticky, so its centre is read in client coordinates and
+     read again after a scroll, a resize or a font swap, on the next pointer
+     event (invariants 3 and 5). The listeners sit on the section, so nothing runs
      while it is off screen; under reduced motion the voice stays where it
      rests and the display keeps its first word. */
   const section = document.querySelector<HTMLElement>(".js-us-hello");
@@ -284,8 +284,8 @@ const DATES = "October 3⁠–⁠4, 2026";
     const WORDS: Record<string, string> = { LEFT: "←", RIGHT: "→", FRONT: "↑", BEHIND: "↓" };
     const measure = () => {
       const r = svg.getBoundingClientRect();
-      cx = r.left + r.width / 2 + window.scrollX;
-      cy = r.top + r.height / 2 + window.scrollY;
+      cx = r.left + r.width / 2;
+      cy = r.top + r.height / 2;
       dead = r.width * 0.1;
       stale = false;
     };
@@ -308,8 +308,8 @@ const DATES = "October 3⁠–⁠4, 2026";
     };
     const aim = (e: PointerEvent) => {
       if (stale) measure();
-      const dx = e.pageX - cx;
-      const dy = e.pageY - cy;
+      const dx = e.clientX - cx;
+      const dy = e.clientY - cy;
       if (dx * dx + dy * dy < dead * dead) return;
       const target = (Math.atan2(dx, -dy) * 180) / Math.PI;
       const turn = ((((target - angle) % 360) + 540) % 360) - 180;
@@ -322,6 +322,7 @@ const DATES = "October 3⁠–⁠4, 2026";
     section.addEventListener("pointermove", aim, { passive: true });
     section.addEventListener("pointerdown", aim, { passive: true });
     window.addEventListener("resize", () => (stale = true), { passive: true });
+    window.addEventListener("scroll", () => (stale = true), { passive: true });
     document.fonts?.ready.then(() => (stale = true));
   }
 </script>
