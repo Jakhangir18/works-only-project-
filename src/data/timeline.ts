@@ -26,7 +26,7 @@ export type TimelineEntry = {
 
 /** One label per kind, shared by the board, the work tags and the campus
  *  rows, so the same project is never "Competition" in one place and
- *  "Hackathon" in another. Both competitions on record are hackathons. */
+ *  "Hackathon" in another. All three competitions on record are hackathons. */
 export const KIND_LABEL: Record<TimelineKind, string> = {
   work: "Work",
   research: "Research",
@@ -59,14 +59,28 @@ export function when(start: string, end?: string): { text: string; from: string;
  */
 export const timeline: readonly TimelineEntry[] = [
   {
-    // Dates: the owner's note ("started in August") and his commits on the
-    // company's site, Aug 16 - Sep 19, 2026.
-    title: "Software engineering intern",
+    // MHacks 2026, University of Michigan, Oct 3-4 (the Devpost page; no
+    // prize). The owner led the team (2026-10-06).
+    title: "Usher",
+    org: "MHacks 2026, University of Michigan",
+    kind: "competition",
+    start: "2026-10",
+    end: "2026-10",
+    summary: "A headset for Usher syndrome: say “Hello Jax” and a buzz on the temple turns you toward the speaker. Team lead.",
+    href: "/work/usher/",
+    thumb: "/projects/usher/media/cover-thumb.webp",
+  },
+  {
+    // The offer letter: Frontend Engineer Intern, August 2026 (part-time,
+    // remote); on the site the owner (2026-10-06) names it software engineer
+    // intern. His commits on the company's site run Aug 16 - Sep 19, 2026,
+    // with the launch on Sep 13, so the span keeps September.
+    title: "Software engineer intern",
     org: "Zyp",
     kind: "work",
     start: "2026-08",
     end: "2026-09",
-    summary: "Motion and 3D on the company's site: a scroll-scrubbed hero, a canvas globe, end-to-end tests.",
+    summary: "The company's public site, zyp.co, from first commit to launch: a scroll-scrubbed hero, a canvas globe, end-to-end tests.",
     href: "/work/zyp/",
     thumb: "/projects/zyp/media/cover-thumb.webp",
   },

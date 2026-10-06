@@ -1,6 +1,7 @@
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { getSmoothScroll } from "./SmoothScroll";
+import { parkReturn } from "./returnKey";
 
 /**
  * Where the anime home parks the dive's offset for the trip back
@@ -389,7 +390,7 @@ class DiveTransition {
     // tab stays where it is: there is nothing to return to.
     if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     const key = this.section?.home ? HOME_RETURN_KEY : "returnScrollY";
-    sessionStorage.setItem(key, String(this.lockedScrollY));
+    parkReturn(key, this.lockedScrollY);
   };
 
   onKeyDown = (event: KeyboardEvent) => {

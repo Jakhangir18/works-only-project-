@@ -365,15 +365,17 @@ const { items = works, home = false } = Astro.props;
 
   /* One screen up, over the star field's last screen; that screen paints
      nothing until the hand-off, and below it the section is space black.
-     The height is the tunnel's own sum, in svh, as static CSS: the 100svh
-     container, a 140svh intro, one step per project (80svh, 72 on a phone),
-     a 60svh hold, then 100svh where the wall dissolves into stars.
-     WorkSection keeps the same numbers. */
+     The height is the tunnel's own sum, in lvh, as static CSS: the 100lvh
+     container, a 140lvh intro, one step per project (80lvh, 72 on a phone),
+     a 60lvh hold, then 100lvh where the wall dissolves into stars.
+     WorkSection keeps the same numbers. lvh, not the tunnel's svh: the
+     home's stages fill the screen with a phone's toolbar away (see
+     AnimeRocket.astro), and the star field hands over on the same unit. */
   .s-work.s-work--home {
     --step: 80;
-    margin-top: -100svh;
-    height: calc((100 + 140 + var(--steps) * var(--step) + 60 + 100) * 1svh);
-    background: linear-gradient(to bottom, transparent 0 100svh, color(space) 100svh);
+    margin-top: -100lvh;
+    height: calc((100 + 140 + var(--steps) * var(--step) + 60 + 100) * 1lvh);
+    background: linear-gradient(to bottom, transparent 0 100lvh, color(space) 100lvh);
     opacity: 1;
     transition: none;
 
@@ -394,7 +396,27 @@ const { items = works, home = false } = Astro.props;
     .s__inner {
       position: sticky;
       top: 0;
+      height: 100lvh;
       background: transparent;
+    }
+
+    /* The letters follow the stage's unit (workStack.ts holds the same). */
+    .s__title,
+    .s__scene {
+      font-size: min(18.75rem, 25lvh);
+    }
+
+    /* And so do the cards' lanes on a phone (the tunnel's own rule says
+       7svh): with the stage in lvh they clustered tighter than it. */
+    @include mq(phone) {
+      .s__scene :global(.s__scene__work) {
+        transform: rotateY(calc(var(--progress) * -20deg))
+          translate3d(
+            calc(var(--progress) * (50vw + 100%) - 50%),
+            calc(-50% + var(--y) * 7lvh),
+            calc(var(--progress) * var(--progress) * -5rem)
+          );
+      }
     }
 
     /* Before the hand-off the star field draws these letters itself. */

@@ -80,9 +80,9 @@ const near = field(66, 7734121);
        nothing, so the flight shows through and the finished wipe is the
        ground the stars sit on; the rest is the same black, so the hand-off
        has no seam. */
-    margin-top: -100svh;
-    height: 300svh;
-    background: linear-gradient(to bottom, transparent 0 100svh, color(space) 100svh);
+    margin-top: -100lvh;
+    height: 300lvh;
+    background: linear-gradient(to bottom, transparent 0 100lvh, color(space) 100lvh);
     /* clip, not hidden: hidden would make this a scroll container and the
        stage would stick to it instead of to the viewport. */
     overflow: clip;
@@ -92,10 +92,12 @@ const near = field(66, 7734121);
     isolation: isolate;
   }
 
+  /* lvh, as the flight's stage (AnimeRocket.astro): full screen with the
+     toolbar away. */
   .space__stage {
     position: sticky;
     top: 0;
-    height: 100svh;
+    height: 100lvh;
     overflow: clip;
   }
 
@@ -164,7 +166,7 @@ const near = field(66, 7734121);
   @media (prefers-reduced-motion: reduce) {
     .space {
       margin-top: 0;
-      height: 100svh;
+      height: 100lvh;
       background: color(space);
     }
 

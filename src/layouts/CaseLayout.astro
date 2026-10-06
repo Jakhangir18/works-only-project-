@@ -39,7 +39,9 @@ const prev = projects[(index - 1 + projects.length) % projects.length];
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title} — Jakhangir Tynshimov</title>
     <meta name="description" content={description} />
-    <meta name="robots" content="noindex, nofollow" />
+    <!-- Every page on this layout is a listed case page: indexable since
+         2026-10-06. The unlisted pages use ProjectLayout, which says noindex. -->
+    <meta name="robots" content="index, follow" />
     <meta property="og:type" content="article" />
     <meta property="og:title" content={`${title} — Jakhangir Tynshimov`} />
     <meta property="og:description" content={description} />

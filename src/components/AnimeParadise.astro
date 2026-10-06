@@ -213,15 +213,17 @@ const SKY_H = 768;
 
   /* --- 1. The descent ----------------------------------------------------- */
 
+  /* lvh, as the flight's stage (AnimeRocket.astro): full screen with the
+     toolbar away, so no band of the section's black shows under the meadow. */
   .paradise__descent {
     position: relative;
-    height: 400svh;
+    height: 400lvh;
   }
 
   .paradise__stage {
     position: sticky;
     top: 0;
-    height: 100svh;
+    height: 100lvh;
     overflow: clip;
     /* Space, until the sky comes up behind the black thinning out: the
        same star field WORK's wall dissolves into (helpers/_stars.scss). */
@@ -306,7 +308,10 @@ const SKY_H = 768;
     will-change: transform;
   }
 
-  .paradise:global(.is-live) .paradise__rays {
+  /* Turning only while they show (Paradise.ts sets is-shown from the
+     descent's progress), not for the whole screen of margin around the
+     section (invariant 1). */
+  .paradise__descent:global(.is-near) .paradise__rays:global(.is-shown) {
     animation-play-state: running;
   }
 
@@ -482,7 +487,10 @@ const SKY_H = 768;
     height: 54px;
     margin-top: -27px;
     background: no-repeat bottom / contain
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 46 54'%3E%3Cpath fill='%23467f30' d='M2 54C6 40 8 26 6 10c6 12 8 26 7 44zm9 0c2-16 6-30 14-44-4 16-6 30-5 44zm9 0c1-14 0-28-6-42 9 12 12 26 12 42zm8 0c2-12 7-22 16-30-6 10-9 20-9 30z'/%3E%3C/svg%3E");
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 46 54'%3E%3Cpath fill='%233f6b2d' d='M2 54C6 40 8 26 6 10c6 12 8 26 7 44zm9 0c2-16 6-30 14-44-4 16-6 30-5 44zm9 0c1-14 0-28-6-42 9 12 12 26 12 42zm8 0c2-12 7-22 16-30-6 10-9 20-9 30z'/%3E%3C/svg%3E");
+    /* The painting's own dark green, a little translucent: a brighter flat
+       fill read as clip art over the painted grass (2026-10-06). */
+    opacity: 0.82;
     transform: scale(var(--s));
     transform-origin: 50% 100%;
     animation: paradise-sway 3.8s ease-in-out infinite alternate;
@@ -498,7 +506,10 @@ const SKY_H = 768;
     right: 4vw;
   }
 
-  .paradise:global(.is-live) .paradise__tuft {
+  /* Swaying only while the walk is on screen (is-walking, Paradise.ts):
+     under is-live they swayed through the whole descent and the end of
+     WORK, a style recalculation per tuft per frame off screen. */
+  .paradise__walk:global(.is-walking) .paradise__tuft {
     animation-play-state: running;
   }
 
@@ -683,11 +694,22 @@ const SKY_H = 768;
     }
   }
 
+  /* A screen away from the descent (is-near, Paradise.ts), its scenery
+     leaves the layer tree (invariant 11): the rays alone are a 1351px square
+     layer on a phone, and the clouds three more. The ground stays: the
+     grass measures its canvas once, at load. Not under reduced motion,
+     where nothing sets is-near. */
+  @media (prefers-reduced-motion: no-preference) {
+    :global(.paradise__descent.is-watched:not(.is-near)) :is(.paradise__earth, .paradise__horizon, .paradise__sky, .paradise__land, .paradise__rays, .paradise__cloud) {
+      display: none;
+    }
+  }
+
   /* Stillness, not absence: the descent's end state as one plain screen, the
      signs already up, the firefly gone, the grass still. */
   @media (prefers-reduced-motion: reduce) {
     .paradise__descent {
-      height: 100svh;
+      height: 100lvh;
     }
 
     .paradise__stage {

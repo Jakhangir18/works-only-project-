@@ -1,3 +1,4 @@
+import { parkReturn, peekReturn, takeReturn } from "./returnKey";
 import Emitter from "./Emitter";
 import Ticker from "./Ticker";
 
@@ -45,7 +46,7 @@ class Site {
 
     // Returning from a project page skips the loader and restores scroll.
     if (
-      sessionStorage.getItem("returnScrollY") !== null ||
+      peekReturn("returnScrollY") !== null ||
       sessionStorage.getItem("returnToWorks") !== null
     ) {
       this.isReturning = true;
@@ -150,7 +151,7 @@ class Site {
       .querySelectorAll('a[href^="/work/"], a[href^="/projects/"]')
       .forEach((link) => {
         link.addEventListener("click", () => {
-          sessionStorage.setItem("returnScrollY", String(window.scrollY));
+          parkReturn("returnScrollY", window.scrollY);
         });
       });
   }
@@ -252,19 +253,19 @@ class Site {
     const wrapper = document.querySelector(".js-site-wrapper") as HTMLElement;
     const loader = document.querySelector(".js-site-loader") as HTMLElement;
 
-    const returnScrollY = sessionStorage.getItem("returnScrollY");
+    // A stale offset (older than returnKey's MAX_AGE) reads as none.
+    const returnScrollY = takeReturn("returnScrollY");
     const returnToWorks = sessionStorage.getItem("returnToWorks");
 
     // Returning from a project page — skip loader and restore scroll position.
     if (returnScrollY !== null || returnToWorks !== null) {
-      sessionStorage.removeItem("returnScrollY");
       sessionStorage.removeItem("returnToWorks");
       if (loader) loader.remove();
       wrapper.style.opacity = "1";
       document.documentElement.classList.remove("is-scroll-blocked");
 
       if (returnScrollY !== null) {
-        window.scrollTo({ top: parseInt(returnScrollY, 10), behavior: "instant" });
+        window.scrollTo({ top: returnScrollY, behavior: "instant" });
       } else {
         const worksEl = document.getElementById("work");
         if (worksEl) {

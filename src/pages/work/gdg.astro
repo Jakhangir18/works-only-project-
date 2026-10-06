@@ -31,7 +31,12 @@ import { projects } from "../../data/projects";
  * shown as a picture and nothing in it is quoted.
  */
 const p = projects.find((x) => x.slug === "gdg")!;
-const cover = picture("gdg", "hero", 1800);
+/* The eager hero is on the critical path: its candidates stop at 1280 (141
+   KB), since the 1800 file is 243 KB and the route suite holds every page
+   to nothing over 150 KB before load (found 2026-10-06 when /work/gdg/
+   joined the suite). A 2x screen gets the 1280 file, a little soft: the
+   owner's trade to make, in this one number. */
+const cover = picture("gdg", "hero", 1280, 1280);
 /* The report page is held back until the owner confirms it: it is a draft
    template, and it reads out claims that are on no source list (a trip to
    Google I/O, a sponsorship, the chapter's founding year, an older name).

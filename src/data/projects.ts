@@ -1,9 +1,10 @@
 /**
- * The seven pieces of experience the anime home shows in its Work carousel,
+ * The eight pieces of experience the anime home shows in its Work wall,
  * and the facts each project page is built from.
  *
  * Every claim here has a source, named in `sources`. The keys are:
- *   official  the event's own page (2026.quackhacks.org, judge.beaverhacks.org)
+ *   official  the event's own page (2026.quackhacks.org, judge.beaverhacks.org,
+ *             devpost.com/software/usher)
  *   repo      the project's public GitHub repository and its README
  *   resume    the owner's resume (resume-original.tex), via project-inventory.md
  *   owner     the owner's own notes in his work-experience folder, or his
@@ -48,6 +49,30 @@ export type Project = {
 };
 
 export const projects: readonly Project[] = [
+  {
+    // Facts: the Devpost page (team, built-with, no prize), the repository
+    // (Jakhangir18/Usher: README, PITCH_REFERENCE.md, his jak-claudenotes),
+    // and the owner (2026-10-06: his part and that he led the team).
+    slug: "usher",
+    href: "/work/usher/",
+    title: "Usher",
+    kind: "Hackathon",
+    role: "Team lead: the idea and the research, the hardware, the review and the test harness",
+    when: "October 2026",
+    where: "MHacks 2026, University of Michigan",
+    line: "A headset for Usher syndrome: say “Hello Jax” and a buzz on the temple turns the wearer toward you.",
+    cover: {
+      ...picture("usher", "cover", 640),
+      alt: "The Usher headset on the table: the printed headband, the mic array on its mount, the motors taped to the temples",
+      focal: "50% 55%",
+    },
+    links: [
+      { label: "Devpost", href: "https://devpost.com/software/usher" },
+      { label: "Source on GitHub", href: "https://github.com/Jakhangir18/Usher" },
+      { label: "MHacks", href: "https://www.mhacks.org" },
+    ],
+    sources: ["official", "repo", "owner", "media"],
+  },
   {
     slug: "touchpoint",
     href: "/work/touchpoint/",
@@ -98,10 +123,14 @@ export const projects: readonly Project[] = [
     href: "/work/zyp/",
     title: "Zyp",
     kind: "Internship",
-    role: "Software engineering intern: frontend, motion and 3D",
-    when: "Summer 2026",
+    // The signed offer letter (2026-07-22): Frontend Engineer Intern, part-time,
+    // remote, August 2026; the site launched 13 September and his last merge
+    // was 19 September (the repository's history). The owner (2026-10-06)
+    // names the role "software engineer intern" on the site.
+    role: "Software engineer intern: the public site, from first commit to launch",
+    when: "August – September 2026",
     where: "Zyp, Inc.",
-    line: "The motion and the 3D on zyp.co: a scroll-scrubbed hero, a canvas globe of payment arcs, tests that hold it together.",
+    line: "Zyp's public site, zyp.co, built and launched in four weeks: a scroll-scrubbed hero, a canvas globe of payment arcs, tests that hold it together.",
     cover: {
       ...picture("zyp", "cover", 640),
       alt: "The zyp.co hero: an office with a laptop on a white desk, under 'The back office management platform for global companies'",

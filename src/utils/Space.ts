@@ -1,6 +1,6 @@
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { WIPE_STARTS } from "./RocketFlight";
+import { CRASH_AT } from "./RocketFlight";
 import { writeIfChanged, forgetLeaf } from "./leafWrite";
 import { showWorkStack } from "./WorkSection";
 import {
@@ -24,8 +24,8 @@ import {
  * constellation gathers, so the word is what the eye follows.
  *
  * Two triggers, so no number here encodes the two sections' heights: the
- * reveal reads the rocket's own progress (the wipe starts at WIPE_STARTS of
- * it and has the screen at 1), the travel and the settle read this
+ * reveal reads the rocket's own progress (the black comes in with the
+ * crash at CRASH_AT of it, in time), the travel and the settle read this
  * section's, and the point on this section where the travel begins is
  * derived from the two triggers' scroll positions on every refresh.
  *
@@ -43,11 +43,14 @@ const DIR = { x: -0.985, y: 0.174 };
    (see AnimeSpace.astro), so the field is full at both ends. */
 const NEAR_TRAVEL = 0.45;
 const FAR_TRAVEL = 0.15;
-/* Where the layers come in, in the rocket's progress: only once the wipe is
-   well past the middle of the screen, so no star sits on white — the far
-   ones first, the near ones last, both fully there as the wipe completes. */
-const FAR_IN = [0.9, 1] as const;
-const NEAR_IN = [0.95, 1] as const;
+/* Where the layers come in, in the rocket's progress, from the impact. The
+   black plays in over about half a second (RocketFlight), so a flick that
+   lands within its PLAY_WITHIN of the impact would show stars on white if
+   the layers came in at once: they start just past that window (a landing
+   further than it sets the black at once). The far ones first, the near
+   ones after, both fully there well before the runway ends. */
+const FAR_IN = [CRASH_AT + 0.16, CRASH_AT + 0.3] as const;
+const NEAR_IN = [CRASH_AT + 0.22, CRASH_AT + 0.36] as const;
 /* While the constellation gathers, both layers settle to a faint field, and
    they are gone by the hand-off: WORK's black, scrolling up behind its
    letters, has no stars in it, so none may be left to end at its edge. */
@@ -85,7 +88,7 @@ function measure(): void {
   if (stage) {
     const w = stage.clientWidth;
     const h = stage.clientHeight;
-    // The stage is 100svh, so a phone's address bar does not change it; any
+    // The stage is 100lvh, so a phone's address bar does not change it; any
     // change is a real one, and the canvas and its targets follow it.
     if (w !== width || h !== height) {
       width = w;
@@ -93,10 +96,10 @@ function measure(): void {
       resizeConstellation(w, h);
     }
   }
-  // The scroll position where the rocket reaches WIPE_STARTS, read back as
+  // The scroll position where the rocket reaches CRASH_AT, read back as
   // this section's progress. Both triggers have their start and end by now.
   if (trigger && rocketTrigger) {
-    const wipeAt = rocketTrigger.start + WIPE_STARTS * (rocketTrigger.end - rocketTrigger.start);
+    const wipeAt = rocketTrigger.start + CRASH_AT * (rocketTrigger.end - rocketTrigger.start);
     moveFrom = Math.min(1, Math.max(0, (wipeAt - trigger.start) / (trigger.end - trigger.start)));
   }
 }
@@ -150,8 +153,8 @@ export function initSpace(): void {
     start: "top bottom",
     // Ends where WORK pins (its top at the top of the screen, a stage's
     // height above this section's bottom). "bottom bottom" would follow
-    // innerHeight, which on a phone with its address bar away is taller
-    // than the 100svh stage, and the hand-off would jump by the difference.
+    // innerHeight, which on a phone moves with the address bar while the
+    // 100lvh stage does not, and the hand-off would jump by the difference.
     end: () => `bottom top+=${stage?.clientHeight || window.innerHeight}`,
     onUpdate: (self) => {
       spaceP = self.progress;

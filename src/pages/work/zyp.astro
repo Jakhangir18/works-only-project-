@@ -7,14 +7,14 @@ import CaseFigure from "../../components/case/CaseFigure.astro";
 import { projects } from "../../data/projects";
 
 /**
- * Zyp, "The live artefact" (docs/portfolio-v4-design.md): the work is a
- * public website, so the page opens on the website itself: the hero
- * sequence of www.zyp.co, the site's own frames, scrubbed by the scroll
- * inside a browser frame (src/utils/frameSequence.ts), with "See it live"
- * as the first thing to press. Then the details, and three sections named
- * by deliverable instead of Problem / Approach / Solution: the hero, the
- * globe, the tests. It closes on what he learned and a note that the live
- * site moves on.
+ * Zyp, "The live artefact" (docs/portfolio-v4-design.md) told as the
+ * internship it was (the owner, 2026-10-06: numbers and process, nothing
+ * internal). The page opens on the website itself: the hero sequence of
+ * www.zyp.co, the site's own frames, scrubbed by the scroll inside a browser
+ * frame (src/utils/frameSequence.ts), with "See it live" as the first thing
+ * to press. Then the brief he was given, the four weeks in stages, how the
+ * hero was made, the globe, the rest of the page, what was measured, how
+ * the work ran, and what he learned.
  *
  * The stage is a runway of 250svh with the frame sticky inside it, and the
  * scroll across it is the playhead, from the first scroll to where the
@@ -25,17 +25,16 @@ import { projects } from "../../data/projects";
  * Signature: the frame lands once, on load, from a tilt (rotateX 12deg,
  * scale 0.9) to flat. Transform only, laid out at its final size so the
  * scale approaches 1 from below and only ever downsamples (invariant 7), and
- * none under reduced motion. It is a CSS animation, not a reveal: the frame
- * is on the first screen at desktop and phone width, and a reveal there
- * would be added a frame after first paint and never be seen.
+ * none under reduced motion.
  *
- * Facts: the owner's notes (role, dates, his part: the motion and the 3D)
- * and the site's codebase as summarised for him (Astro, the 97-frame
- * sequence, the canvas globe, the product-video takeover, Playwright + axe).
- * The pictures are captures of the public site, 2 October 2026; the
- * sequence is the site's own 97 frames, resized (scripts/zyp-frames.mjs).
- * Nothing internal: no repository, no customers, no numbers about the
- * company.
+ * Facts: the signed offer letter (Frontend Engineer Intern, part-time,
+ * remote, August 2026; "software engineer intern" on the site, the owner's
+ * word, 2026-10-06, as is the product team beside him); the repository's history (first commit 16 August,
+ * launch 13 September, last merge 19 September 2026; 510 commits, 67 of 68
+ * pull requests, 36 stages); its own measurements (Lighthouse on a local
+ * preview, the Playwright suite, the decode-window and scrub benches); the
+ * public site, captured 2 and 6 October 2026. Nothing internal: no
+ * repository link, no customer names, no numbers about the company.
  */
 const p = projects.find((x) => x.slug === "zyp")!;
 const live = p.links[0].href;
@@ -44,15 +43,64 @@ const live = p.links[0].href;
    scripts/zyp-frames.mjs wrote them. */
 const frameDir = "/projects/zyp/frames";
 const seq: { count: number; width: number; height: number } = JSON.parse(readFileSync(join(process.cwd(), "public", frameDir, "frames.json"), "utf8"));
-
-/* The frames of the hero sequence, as a ruler: a tall tick at the first
-   frame and every tenth. */
+/* One pattern names the frames: the sequence reads it from data-frames
+   (frameSequence.ts expands %04d the same way), the strip below expands it. */
+const PATTERN = `${frameDir}/frame_%04d.webp`;
+const frame = (n: number) => PATTERN.replace("%04d", String(n).padStart(4, "0"));
+/* Six of the shipped frames, evenly along the move, for the process strip. */
+const strip = [1, 20, 40, 60, 80, seq.count];
 const ticks = Array.from({ length: seq.count }, (_, i) => ({ x: i + 0.5, major: i === 0 || (i + 1) % 10 === 0 }));
 
 const parts = [
-  { id: "scrub", kind: "Motion", title: "The scroll-scrubbed hero" },
+  { id: "brief", kind: "The brief", title: "One job for the page" },
+  { id: "weeks", kind: "Four weeks", title: "From first commit to launch" },
+  { id: "hero", kind: "Motion", title: "How the hero was made" },
   { id: "globe", kind: "3D", title: "The canvas globe" },
-  { id: "tests", kind: "Tests", title: "The tests that hold it together" },
+  { id: "rest", kind: "The page", title: "The rest of it" },
+  { id: "measured", kind: "Measured", title: "What the numbers said" },
+  { id: "process", kind: "Process", title: "How the work ran" },
+];
+
+/* The rules written before the first line of motion code. */
+const rules = [
+  "One animation loop on the page, and it idles at 0 Hz when nothing subscribes.",
+  "GSAP writes numbers into shared state; the renderers draw on their own tick.",
+  "Exactly one pinned scroll trigger. Reveals are opacity and transform, 200–400 ms.",
+  "No scroll hijacking and no smooth-scroll library: the scroll is the reader's.",
+  "The headline and Book a Demo render on first paint, never behind a loader or an animation.",
+  "Under 768 px and under reduced motion, a photograph: zero animation bytes.",
+];
+
+/* The weeks, from the repository's own dates. */
+const weeks = [
+  { d: "Aug 16", t: "Scaffold", s: "Astro 7, every section's real copy, the motion manager, the first scroll-driven sequence on placeholder frames." },
+  { d: "Aug 22", t: "Real frames", s: "The responsive AVIF and WebP frame pipeline; decoded-frame memory bounded to a sliding window." },
+  { d: "Sep 4", t: "The dive", s: "Production frames, the product-video takeover at the end of the hero, the lower page, the first accessibility pass." },
+  { d: "Sep 5", t: "The stutter", s: "A scroll stutter traced to decode starvation; a direction-aware, byte-budgeted decode window and a WebP scrub path." },
+  { d: "Sep 6", t: "Fifteen pull requests", s: "The liquid-glass header, the studio theme, the canvas globe, the Playwright suite with axe, in one day." },
+  { d: "Sep 13", t: "Launch", s: "The production origin set to www.zyp.co and the build cut from 21 pages to 9." },
+  { d: "Sep 19", t: "Last pass", s: "The loader, the Trusted-by cylinder, the films and the look, after a client call." },
+];
+
+/* How the hero was made, in five steps. */
+const making = [
+  { t: "One photograph", s: "The office, shot once. The hero needed a camera move the photograph did not have." },
+  { t: "A camera move", s: "A generated push-in from the room to the laptop: steady, one direction, the screen blank, the last frame frontal with the screen full-bleed." },
+  { t: "192 frames", s: "The take cut to frames with ffmpeg, then resampled to the 97 that ship, so the sequence spans the whole move." },
+  { t: "The screen, tracked", s: "OpenCV finds the laptop's screen on frame one and follows it through the take with a sub-pixel fit, 0.27 px of jitter at the 90th percentile, and warps the live dashboard onto it." },
+  { t: "A decode window", s: "The frames decode a few ahead of the scroll in the direction it is going, inside a byte budget: peak decoded memory went from 995 MB to 149 MB." },
+];
+
+/* Measured by the repository's own tools, September 2026. */
+const measured = [
+  { label: "Lighthouse, desktop", value: "100 · 100 · 100 · 100 (performance, accessibility, best practices, SEO)" },
+  { label: "Lighthouse, mobile", value: "98 · 100 · 100 · 100; LCP 2.2 s, CLS 0" },
+  { label: "Largest paint, desktop", value: "0.7 s, total blocking time 0 ms" },
+  { label: "Decoded frames in memory", value: "peak 995 MB → 149 MB" },
+  { label: "Held frames at medium wheel speed", value: "69–83% of draws → 0–1%" },
+  { label: "End-to-end tests", value: "128 per engine in Chromium, WebKit and a mobile profile; 0 failures at the last gate" },
+  { label: "Accessibility", value: "axe: 0 violations on 5 routes; 21 colour pairs at AA" },
+  { label: "Phones", value: "hero photograph ≤ 50 KB, 0 bytes of sequence" },
 ];
 ---
 
@@ -65,7 +113,7 @@ const parts = [
           <h1 class="case-title">Zyp</h1>
         </div>
         <div class="zyp-hero__aside">
-          <p class="case-lede">The motion and the 3D on Zyp's public website: a hero you scrub with the scroll, and a globe drawn on a canvas.</p>
+          <p class="case-lede">Zyp's public website, built and launched in four weeks: a hero you scrub with the scroll, a globe drawn on a canvas, and the tests that let it keep changing.</p>
           <a class="zyp-live" href={live} target="_blank" rel="noopener noreferrer">See it live <span class="zyp-live__arrow" aria-hidden="true">↗</span><span class="u-sr-only">(opens in a new tab)</span></a>
         </div>
       </div>
@@ -81,9 +129,9 @@ const parts = [
                   zyp.co
                 </span>
               </div>
-              <div class="zyp-browser__view js-frame-seq" data-frames={`${frameDir}/frame_%04d.webp`} data-count={seq.count} style={`aspect-ratio:${seq.width} / ${seq.height}`}>
+              <div class="zyp-browser__view js-frame-seq" data-frames={PATTERN} data-count={seq.count} style={`aspect-ratio:${seq.width} / ${seq.height}`}>
                 <img
-                  src={`${frameDir}/frame_0001.webp`}
+                  src={frame(1)}
                   width={seq.width}
                   height={seq.height}
                   alt="The first frame of the zyp.co hero: an open-plan office, with a laptop on a white desk by the window and people working at the desks behind"
@@ -104,10 +152,10 @@ const parts = [
     <section class="zyp-details" aria-label="Details">
       <CaseMeta
         rows={[
-          { label: "Role", value: "Software engineering intern, Zyp, Inc." },
-          { label: "My part", value: "The motion and the 3D on the public marketing site" },
-          { label: "When", value: "Summer 2026, August to September" },
-          { label: "Stack", value: "Astro, HTML canvas, Playwright, axe" },
+          { label: "Role", value: "Software engineer intern, Zyp, Inc. (remote, part-time)" },
+          { label: "My part", value: "The whole public site: motion, 3D, the media pipelines, the tests" },
+          { label: "When", value: "August 2026; the site launched 13 September, my last pass 19 September" },
+          { label: "Stack", value: "Astro 7, TypeScript, GSAP, Canvas 2D, Playwright + axe, ffmpeg, OpenCV" },
         ]}
       />
     </section>
@@ -117,8 +165,8 @@ const parts = [
         <div>
           <p class="case-label" data-reveal>The site</p>
           <div class="case-prose zyp-intro__prose" data-reveal>
-            <p>In summer 2026 I worked on Zyp's public marketing site, www.zyp.co, on its motion and its 3D.</p>
-            <p>The site is an Astro static site with a scroll-scrubbed 97-frame hero sequence, a canvas globe with payment arcs, a product-video takeover, and Playwright and axe end-to-end tests. Three of those pieces follow, each named for what it is.</p>
+            <p>In August 2026 I joined Zyp, a company that moves money across borders for outsourcing businesses, to build its public site, www.zyp.co.</p>
+            <p>Zyp's product team builds the platform itself; the public site was my part. It went from an empty repository on 16 August to production on 13 September, and I kept shipping for a week after. Seven parts follow, each named for what it is.</p>
           </div>
         </div>
         <ol class="zyp-index" data-reveal>
@@ -135,15 +183,64 @@ const parts = [
     </section>
 
     <section id={parts[0].id} class="case-section zyp-part zyp-part--ruled">
-      <div class="zyp-scrub__head">
-        <div>
+      <div class="zyp-split zyp-split--even">
+        <div class="zyp-split__text">
           <p class="zyp-tag" data-reveal>{parts[0].kind}</p>
           <h2 class="case-h2" data-reveal>{parts[0].title}</h2>
+          <div class="case-prose" data-reveal>
+            <p>The page has one thing to do: get a visitor to book a demo. The visitors run outsourcing, staffing and consulting businesses that pay people across borders. They evaluate the site before they ever speak to anyone, often forward it to a partner who arrives with no context, and a good share of them arrive on a phone. Zyp moves their money, so the page has to read as trustworthy before it reads as clever.</p>
+            <p>So the motion supports the content and never competes with it. Before the first line of animation I wrote the rules the whole build was reviewed against, thirteen of them. These six did the most work.</p>
+          </div>
+        </div>
+        <ol class="zyp-rules" data-reveal>
+          {rules.map((r) => <li>{r}</li>)}
+        </ol>
+      </div>
+    </section>
+
+    <section id={parts[1].id} class="case-section zyp-part zyp-part--ground">
+      <div class="zyp-weeks__head">
+        <div>
+          <p class="zyp-tag" data-reveal>{parts[1].kind}</p>
+          <h2 class="case-h2" data-reveal>{parts[1].title}</h2>
+        </div>
+        <dl class="zyp-counts" data-reveal>
+          <div><dt>Stages</dt><dd>36</dd></div>
+          <div><dt>Pull requests</dt><dd>67</dd></div>
+          <div><dt>Commits</dt><dd>510</dd></div>
+          <div><dt>Days to launch</dt><dd>28</dd></div>
+        </dl>
+      </div>
+      <ol class="zyp-weeks" data-reveal>
+        {weeks.map((w) => (
+          <li>
+            <time>{w.d}</time>
+            <strong>{w.t}</strong>
+            <span>{w.s}</span>
+          </li>
+        ))}
+      </ol>
+    </section>
+
+    <section id={parts[2].id} class="case-section zyp-part">
+      <div class="zyp-scrub__head">
+        <div>
+          <p class="zyp-tag" data-reveal>{parts[2].kind}</p>
+          <h2 class="case-h2" data-reveal>{parts[2].title}</h2>
         </div>
         <div class="case-prose" data-reveal>
-          <p>The home page opens on an office, and the scroll is the playhead. The hero is a 97-frame sequence scrubbed by scroll position: reading down pushes the shot in from the room to the laptop on the desk, and scrolling back up plays it in reverse. The reader sets the pace.</p>
+          <p>The home page opens on an office, and the scroll is the playhead: reading down pushes the shot in from the room to the laptop on the desk, scrolling back up plays it in reverse, and at the end the laptop's screen becomes the product video. The reader sets the pace. Getting there was a pipeline, not a video file.</p>
         </div>
       </div>
+
+      <ol class="zyp-making" data-reveal>
+        {making.map((m) => (
+          <li>
+            <strong>{m.t}</strong>
+            <span>{m.s}</span>
+          </li>
+        ))}
+      </ol>
 
       <div class="zyp-ruler" aria-hidden="true" data-reveal>
         <svg viewBox={`0 0 ${seq.count} 10`} preserveAspectRatio="none">
@@ -153,35 +250,76 @@ const parts = [
         <p><span>Frame 1</span><span class="zyp-ruler__mid">{seq.count} frames, one scroll</span><span>{seq.count}</span></p>
       </div>
 
-      <div class="zyp-scrub__stills">
-        <CaseFigure slug="zyp" id="hero" alt="The top of www.zyp.co: an office with a laptop on a white desk, under the headline 'The back office management platform for global companies.' and a Launch demo button" caption="The first screen, at the top of the page." sizes="(max-width: 48em) 100vw, 46vw" />
-        <CaseFigure slug="zyp" id="g01" alt="Further into the hero sequence: the shot has moved in to the laptop on the desk, its screen showing the product dashboard" caption="A little further down: the shot has moved in to the laptop." sizes="(max-width: 48em) 100vw, 46vw" />
-      </div>
+      <figure class="zyp-strip" data-reveal>
+        <ol class="zyp-strip__frames">
+          {strip.map((n) => (
+            <li>
+              <img src={frame(n)} width={seq.width} height={seq.height} alt={`Frame ${n} of ${seq.count} of the zyp.co hero`} loading="lazy" decoding="async" />
+              <span>{n}</span>
+            </li>
+          ))}
+        </ol>
+        <figcaption>Six of the {seq.count} shipped frames: the room, the approach, the laptop with the dashboard composited onto its screen.</figcaption>
+      </figure>
     </section>
 
-    <section id={parts[1].id} class="case-section zyp-part zyp-part--ground">
+    <section id={parts[3].id} class="case-section zyp-part zyp-part--ground">
       <div class="zyp-split zyp-split--media-first">
         <div class="zyp-split__text">
-          <p class="zyp-tag" data-reveal>{parts[1].kind}</p>
-          <h2 class="case-h2" data-reveal>{parts[1].title}</h2>
+          <p class="zyp-tag" data-reveal>{parts[3].kind}</p>
+          <h2 class="case-h2" data-reveal>{parts[3].title}</h2>
           <div class="case-prose" data-reveal>
-            <p>Further down, under the heading “Coverage where it matters”, the page draws a globe on an HTML canvas: the land as a field of dots, with payment arcs across it. The heading states the idea and the globe draws it, in 3D, live in the browser rather than as a static image.</p>
+            <p>Under the heading “Coverage where it matters”, the page draws a globe on an HTML canvas: no WebGL, no 3D library. The land comes from Natural Earth through d3-geo at build time and is drawn as dots in depth buckets; the payment arcs lift off the surface and are hidden where the sphere is in the way; a drag turns it. A frame draws in about 1.3 ms, and the globe mounts only when it is near the screen.</p>
           </div>
         </div>
-        <CaseFigure slug="zyp" id="g04" alt="The section 'Coverage where it matters' on www.zyp.co: a pale globe with its land drawn as a field of dots" caption="“Coverage where it matters”, and the globe under it." ratio="2 / 1" focal="50% 100%" sizes="(max-width: 56em) 100vw, 56vw" class="zyp-split__media" />
+        <CaseFigure slug="zyp" id="globe" alt="The section 'Coverage where it matters' on www.zyp.co: a pale globe with its land drawn as a field of dots" caption="“Coverage where it matters”, captured 6 October 2026." sizes="(max-width: 56em) 100vw, 56vw" class="zyp-split__media" />
       </div>
     </section>
 
-    <section id={parts[2].id} class="case-section zyp-part">
-      <div class="zyp-split">
+    <section id={parts[4].id} class="case-section zyp-part zyp-part--ruled">
+      <div class="zyp-scrub__head">
+        <div>
+          <p class="zyp-tag" data-reveal>{parts[4].kind}</p>
+          <h2 class="case-h2" data-reveal>{parts[4].title}</h2>
+        </div>
+        <div class="case-prose" data-reveal>
+          <p>Everything below the hero is the same idea at a smaller scale: a little motion that explains, then stillness. The header is glass at rest and a solid surface the moment the page scrolls, which is what fixed its jank. The logos turn on a cylinder made of CSS transforms. The dashboard band counts up once. The films open at full size with a transport under them.</p>
+        </div>
+      </div>
+      <div class="zyp-rest">
+          <CaseFigure slug="zyp" id="header" alt="The top of www.zyp.co: the Zyp mark, a glass pill with Businesses, Freelancers and People, and the Book a demo button, over the blurred office" caption="The header: liquid glass at rest." sizes="100vw" class="zyp-rest__wide" />
+          <CaseFigure slug="zyp" id="trusted" alt="Under the hero on www.zyp.co: a row of client logos, 'Trusted by growing teams worldwide', and the statement 'Payments, payroll and paperwork for global teams.'" caption="The Trusted-by cylinder and the statement." sizes="(max-width: 56em) 100vw, 46vw" />
+          <CaseFigure slug="zyp" id="tablet" alt="The dashboard band on www.zyp.co: a tablet showing a balance chart, cash flow and payroll due" caption="The dashboard band: it plays itself once." sizes="(max-width: 56em) 100vw, 46vw" />
+          <CaseFigure slug="zyp" id="films" alt="The Clients section on www.zyp.co: a dark product window with a transport under it beside the heading 'Clients'" caption="A film in its window, with its transport." sizes="(max-width: 56em) 100vw, 46vw" />
+          <CaseFigure slug="zyp" id="g03" alt="The Team section of www.zyp.co: a dark product window with playback controls under it, beside the heading 'Team'" caption="The Team section, captured 2 October." sizes="(max-width: 56em) 100vw, 46vw" />
+      </div>
+    </section>
+
+    <section id={parts[5].id} class="case-section zyp-part zyp-part--ground">
+      <div class="zyp-split zyp-split--even">
         <div class="zyp-split__text">
-          <p class="zyp-tag" data-reveal>{parts[2].kind}</p>
-          <h2 class="case-h2" data-reveal>{parts[2].title}</h2>
+          <p class="zyp-tag" data-reveal>{parts[5].kind}</p>
+          <h2 class="case-h2" data-reveal>{parts[5].title}</h2>
           <div class="case-prose" data-reveal>
-            <p>Motion breaks quietly: a sequence that stops short, or a control the keyboard cannot reach, throws no error anyone sees. The site has end-to-end tests in Playwright, which loads it in a real browser, and axe, which checks what renders for accessibility problems. They are what let the motion change without breaking the page.</p>
+            <p>Every claim about the page's speed came from a tool, not a feeling. The scroll stutter was found by tracing: the renderer was starving for decoded frames, 38 misses in 54 ticks, with image decode the top cost in every run. The fix was measured on a scrub bench, and the budgets were written down so the next change had something to be held to.</p>
+            <p class="zyp-measured__note">Lighthouse ran on a local preview build; the frame and memory numbers are from headless Chromium on a four-core machine, for comparison with each other.</p>
           </div>
         </div>
-        <CaseFigure slug="zyp" id="g03" alt="The Team section of www.zyp.co: a dark product window with playback controls under it, beside the heading 'Team' and a list of what it does" caption="The Team section, with its product window." sizes="(max-width: 56em) 100vw, 56vw" class="zyp-split__media" />
+        <CaseMeta class="zyp-measured" rows={measured} />
+      </div>
+    </section>
+
+    <section id={parts[6].id} class="case-section zyp-part">
+      <div class="zyp-split zyp-split--even">
+        <div class="zyp-split__text">
+          <p class="zyp-tag" data-reveal>{parts[6].kind}</p>
+          <h2 class="case-h2" data-reveal>{parts[6].title}</h2>
+        </div>
+        <div class="case-prose" data-reveal>
+          <p>Every stage started as a written brief: the goal, what was in and out of scope, the rules that applied, the edge cases on phones and under reduced motion, and how it would be verified. I ran the implementation of those briefs through coding agents and reviewed every diff myself against the thirteen rules; the architecture, the diagnosis and every merge were mine.</p>
+          <p>Nothing that touched the pinned hero or the scroll merged without the Safari gate: the build on my own iPhone, in real Safari, scrolled fast and slow with the address bar collapsing and returning. A headless browser never caught what that did.</p>
+          <p>The company's side ran as a written request log, each item with what it unblocked; a call became a pull request; a change proposed from their side was reviewed, used as the spec, and rebuilt on the production base.</p>
+        </div>
       </div>
     </section>
 
@@ -190,11 +328,11 @@ const parts = [
         <h2 class="case-h2" data-reveal>What I learned</h2>
         <div>
           <div class="case-prose" data-reveal>
-            <p>People come to a company's public site for the product, not for the effects. Motion there has to carry the message and then step aside, so the interesting decisions were about what moves, how far and when, more than how. End-to-end tests are what make it safe to keep revisiting them.</p>
+            <p>People come to a company's public site for the product, not for the effects. Motion there has to carry the message and then step aside, so the interesting decisions were about what moves, how far and when, more than how. The rest was discipline: write the rules first, measure before claiming, and test on the one device that matters before merging.</p>
           </div>
           <aside class="zyp-note" data-reveal>
             <p class="case-label">A note on the captures</p>
-            <p>The pictures on this page were captured from the public site on 2 October 2026, and the sequence at the top is the site's own frames. The live site may have changed since.</p>
+            <p>The pictures on this page were captured from the public site on 2 and 6 October 2026, and the sequence at the top is the site's own frames. The live site may have changed since.</p>
           </aside>
           <a class="zyp-live" href={live} target="_blank" rel="noopener noreferrer" data-reveal>See it live <span class="zyp-live__arrow" aria-hidden="true">↗</span><span class="u-sr-only">(opens in a new tab)</span></a>
         </div>
@@ -452,7 +590,7 @@ const parts = [
     }
   }
 
-  /* What the site is, and the three deliverables as an index. */
+  /* What the site is, and the seven parts as an index. */
   .zyp-intro__grid {
     display: grid;
     grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
@@ -484,7 +622,7 @@ const parts = [
       grid-template-columns: minmax(0, 1fr) auto;
       align-items: baseline;
       gap: 1rem;
-      padding: 1.15rem 0;
+      padding: 1rem 0;
       border-top: 1px solid var(--case-rule);
       color: inherit;
       text-decoration: none;
@@ -497,7 +635,7 @@ const parts = [
   }
 
   .zyp-index__t {
-    font: 400 clamp(1.25rem, 1.8vw, 1.6rem) / 1.2 font-family(editorial);
+    font: 400 clamp(1.15rem, 1.6vw, 1.45rem) / 1.2 font-family(editorial);
   }
 
   .zyp-index__k {
@@ -507,7 +645,7 @@ const parts = [
     color: var(--case-soft);
   }
 
-  /* The deliverables. Each carries its kind above its name. */
+  /* The parts. Each carries its kind above its name. */
   .zyp-part {
     scroll-margin-top: 3rem;
   }
@@ -550,6 +688,155 @@ const parts = [
     }
   }
 
+  /* The rules, numbered like the index. */
+  .zyp-rules {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: rule;
+    border-bottom: 1px solid var(--case-rule);
+
+    li {
+      display: grid;
+      grid-template-columns: 2.25rem minmax(0, 1fr);
+      gap: 0.75rem;
+      padding: 0.9rem 0;
+      border-top: 1px solid var(--case-rule);
+      counter-increment: rule;
+      font-size: 0.98rem;
+      line-height: 1.5;
+
+      &::before {
+        content: counter(rule, decimal-leading-zero);
+        font: 400 0.6875rem / 1.9 font-family(fraktion);
+        letter-spacing: 0.14em;
+        color: var(--case-soft);
+      }
+    }
+  }
+
+  /* The weeks: the counts beside the heading, the milestones as a rail. */
+  .zyp-weeks__head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: clamp(1rem, 5vw, 5rem);
+    align-items: end;
+    margin-bottom: clamp(2rem, 5vh, 3.5rem);
+
+    @media (max-width: 56em) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .zyp-counts {
+    display: grid;
+    grid-template-columns: repeat(4, auto);
+    gap: clamp(1.25rem, 3vw, 3rem);
+    margin: 0;
+
+    @media (max-width: 40em) {
+      grid-template-columns: repeat(2, auto);
+    }
+
+    dt {
+      margin: 0 0 0.3rem;
+      font: 400 0.6875rem / 1.2 font-family(fraktion);
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--case-soft);
+    }
+
+    dd {
+      margin: 0;
+      font: 400 clamp(2rem, 3.4vw, 3rem) / 1 font-family(bigger);
+    }
+  }
+
+  .zyp-weeks {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 1.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    @media (max-width: 72em) {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    @media (max-width: 48em) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    li {
+      display: grid;
+      gap: 0.4rem;
+      padding-top: 0.75rem;
+      border-top: 2px solid var(--case-ink);
+    }
+
+    time {
+      font: 400 0.6875rem / 1.2 font-family(fraktion);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--case-soft);
+    }
+
+    strong {
+      font: 400 1.1rem / 1.2 font-family(editorial);
+    }
+
+    span {
+      font-size: 0.875rem;
+      line-height: 1.5;
+      color: var(--case-soft);
+    }
+  }
+
+  /* The making of the hero, five steps across. */
+  .zyp-making {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 1.25rem;
+    margin: 0 0 clamp(2.5rem, 6vh, 4rem);
+    padding: 0;
+    list-style: none;
+    counter-reset: step;
+
+    @media (max-width: 72em) {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    @media (max-width: 40em) {
+      grid-template-columns: 1fr;
+    }
+
+    li {
+      display: grid;
+      gap: 0.4rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--case-rule);
+      counter-increment: step;
+
+      &::before {
+        content: counter(step, decimal-leading-zero);
+        font: 400 0.6875rem / 1.2 font-family(fraktion);
+        letter-spacing: 0.14em;
+        color: var(--case-soft);
+      }
+    }
+
+    strong {
+      font: 400 1.1rem / 1.2 font-family(editorial);
+    }
+
+    span {
+      font-size: 0.875rem;
+      line-height: 1.5;
+      color: var(--case-soft);
+    }
+  }
+
   .zyp-ruler {
     margin-bottom: 1.25rem;
 
@@ -587,13 +874,52 @@ const parts = [
     }
   }
 
-  .zyp-scrub__stills {
+  /* Six shipped frames in a row, each named by its number. */
+  .zyp-strip {
+    margin: 0;
+
+    figcaption {
+      margin-top: 0.7rem;
+      font: 400 0.8125rem / 1.45 font-family(geist);
+      color: var(--case-soft);
+    }
+  }
+
+  .zyp-strip__frames {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: clamp(1.25rem, 2vw, 1.75rem);
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
 
     @media (max-width: 48em) {
-      grid-template-columns: 1fr;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    li {
+      position: relative;
+      overflow: hidden;
+      border-radius: 6px;
+      background: var(--case-surface);
+    }
+
+    img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    span {
+      position: absolute;
+      left: 0.4rem;
+      bottom: 0.3rem;
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      background: rgba(11, 11, 12, 0.7);
+      color: #fff;
+      font: 400 0.625rem / 1.2 font-family(fraktion);
+      letter-spacing: 0.1em;
     }
   }
 
@@ -620,12 +946,50 @@ const parts = [
     }
   }
 
+  .zyp-split--even {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+
+    @media (max-width: 56em) {
+      grid-template-columns: 1fr;
+    }
+  }
+
   .zyp-split__text {
     grid-area: text;
   }
 
   :global(.zyp-split__media) {
     grid-area: media;
+  }
+
+  /* The rest of the page: the header across, then the sections two by two. */
+  .zyp-rest {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: clamp(1.25rem, 2vw, 1.75rem);
+
+    @media (max-width: 56em) {
+      grid-template-columns: 1fr;
+    }
+
+    :global(.case-figure__frame) {
+      box-shadow: 0 0 0 1px var(--case-rule);
+    }
+  }
+
+  :global(.zyp-rest__wide) {
+    grid-column: 1 / -1;
+  }
+
+  .zyp-measured {
+    grid-template-columns: 1fr;
+    gap: 0.9rem;
+  }
+
+  .zyp-measured__note {
+    font-size: 0.875rem;
+    color: var(--case-soft);
   }
 
   .zyp-learned {

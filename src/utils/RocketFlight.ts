@@ -15,7 +15,10 @@ import { writeIfChanged, forgetLeaf } from "./leafWrite";
  *     timeline in time, not with the scroll (a white-hot core, a flash over
  *     the whole screen, debris and embers that always end invisible, so
  *     nothing is ever left frozen where the scroll stopped); a full-screen
- *     black, written from the runway's own progress, takes the page to space.
+ *     black plays with it, in time, and stays: no scroll position past the
+ *     impact can rest on a half-grey screen (2026-10-06: a phone showed one
+ *     while the black followed the scroll). Scrolling back above the impact
+ *     fades it out again.
  *
  * Measured once per refresh (resize, font load): the stage's size, the route
  * built for it and sampled into SAMPLES points, and the scroll positions of
@@ -27,11 +30,15 @@ import { writeIfChanged, forgetLeaf } from "./leafWrite";
 
 /* In the runway's progress (its top entering at the bottom of the screen = 0,
    its bottom reaching the bottom of the screen = 1): where the rocket hits,
-   where the page starts turning to space. Exported: the star field reveals
-   on that, and the stars arrive at 0.9, by which the black is near full. */
+   where the black comes in with the crash, and where the star field's
+   travel starts (Space.ts derives its entries from it). */
 export const CRASH_AT = 0.55;
-export const WIPE_STARTS = 0.6;
-const DARK = [WIPE_STARTS, 0.88] as const;
+/* The black's own timing, in seconds: in with the crash, out on the way back.
+   Its tweens are its own, not part of the crash's timeline: pausing that
+   timeline at 0 would re-render the black to 0 at once (the /code-review
+   finding on the first version), and each direction kills the other. */
+const DARK_IN = 0.45;
+const DARK_OUT = 0.35;
 /* A downward crossing plays the crash; a jump that lands further past it
    than this shows the crash's end state (all gone) instead. Scrolling back
    above the impact by RESET resets it. */
@@ -57,8 +64,9 @@ type Waypoint = [number, number] | { loop: [number, number]; r: number; from: nu
    on the right and 72% of the way down (the owner, 2026-10-03: "explode on
    the right"). Not higher: at the moment of impact the runway's top edge is
    at 1 - CRASH_AT = 45% of the screen, so a higher point would land under
-   the last card on a desktop and over text on a phone. The last arc comes in
-   from the left. Keep NARROW_BELOW in step with the stage's z-index rule in
+   the last card on a desktop and over text on a phone. The wide route's last
+   arc comes in from the left; the narrow one hooks in along the right edge.
+   Keep NARROW_BELOW in step with the stage's z-index rule in
    AnimeRocket.astro, and IMPACT with each route's last point. */
 const IMPACT = { wide: [0.8, 0.72], narrow: [0.78, 0.72] } as const;
 const ROUTE_WIDE: Waypoint[] = [
@@ -89,7 +97,10 @@ const ROUTE_WIDE: Waypoint[] = [
 /* On a phone the stage rides above the content (the cards fill the width, so
    behind them the rocket would only ever peek out), and the route keeps to
    the two edge lanes outside the cards' text: it crosses the screen only at
-   the top and the bottom of each lap, fast. */
+   the top and the bottom of each lap, fast. The last stretch stays in the
+   right lane too: a hook down the edge and up into the impact, so the
+   final approach never crosses a card's text the way an S across the
+   middle did (seen 2026-10-06 at 390x844). */
 const ROUTE_NARROW: Waypoint[] = [
   [0.93, 0.97],
   [0.955, 0.78],
@@ -105,11 +116,12 @@ const ROUTE_NARROW: Waypoint[] = [
   [0.5, 0.96],
   [0.88, 0.9],
   [0.955, 0.66],
-  [0.9, 0.36],
-  [0.6, 0.26],
-  [0.36, 0.42],
-  [0.46, 0.6],
-  [0.64, 0.7],
+  [0.975, 0.5],
+  [0.955, 0.36],
+  [0.975, 0.8],
+  [0.94, 0.9],
+  [0.86, 0.86],
+  [0.8, 0.78],
   [...IMPACT.narrow],
 ];
 const NARROW_BELOW = 640;
@@ -305,16 +317,13 @@ function apply(scroll: number): void {
     writeIfChanged(el, "transform", `translate3d(${p.x.toFixed(1)}px, ${p.y.toFixed(1)}px, 0) scale(${s.toFixed(2)})`);
   });
 
-  const nowCrashed = r >= CRASH_AT;
+  // The same hysteresis as the black: past the impact the rocket is gone,
+  // and it is back only once the black has let go (CRASH_AT - RESET), so
+  // it never stands on the black on the way up.
+  const nowCrashed = r >= CRASH_AT ? true : r < CRASH_AT - RESET ? false : crashed;
   if (stage && nowCrashed !== crashed) {
     crashed = nowCrashed;
     stage.classList.toggle("is-crashed", crashed);
-  }
-
-  if (dark) {
-    const t = ramp(r, DARK[0], DARK[1]);
-    // Smoothstep: no step at either end of the turn to black.
-    writeIfChanged(dark, "opacity", (t * t * (3 - 2 * t)).toFixed(3));
   }
 
   // The crash itself runs in time. A crossing on the way down plays it; a
@@ -323,10 +332,16 @@ function apply(scroll: number): void {
   if (boom) {
     const before = lastR;
     if (r >= CRASH_AT && before >= 0 && before < CRASH_AT) {
-      if (r < CRASH_AT + PLAY_WITHIN) boom.restart();
-      else boom.progress(1).pause();
+      if (r < CRASH_AT + PLAY_WITHIN) {
+        boom.restart();
+        blackTo(1, DARK_IN);
+      } else {
+        boom.progress(1).pause();
+        blackSet(1);
+      }
     } else if (r >= CRASH_AT && before < 0) {
       boom.progress(1).pause();
+      blackSet(1);
     } else if (r < CRASH_AT - RESET && before >= CRASH_AT - RESET) {
       resetCrash();
     }
@@ -334,12 +349,40 @@ function apply(scroll: number): void {
   lastR = r;
 }
 
-/* Everything the crash shows, back to hidden and ready to play. */
+/* The black, in time: `overwrite` kills the other direction, and the layer
+   is promoted only while a tween runs (an interrupted crash must not leave
+   a full-screen layer promoted for the rest of the page, invariant 11). */
+function blackTo(opacity: number, duration: number): void {
+  if (!dark) return;
+  const el = dark;
+  gsap.to(el, {
+    opacity,
+    duration,
+    ease: opacity ? "power2.out" : "power1.out",
+    overwrite: true,
+    onStart: () => {
+      el.style.willChange = "opacity";
+    },
+    onComplete: () => {
+      el.style.willChange = "auto";
+    },
+  });
+}
+
+function blackSet(opacity: number): void {
+  if (!dark) return;
+  gsap.killTweensOf(dark);
+  gsap.set(dark, { opacity, willChange: "auto" });
+}
+
+/* Everything the crash shows, back to hidden and ready to play. The black
+   leaves in time rather than at once, so coming back up is not a cut. */
 function resetCrash(): void {
   if (!boom) return;
   boom.pause(0);
   const els = [flash, core, ...shards.map((s) => s.el), ...embers.map((e) => e.el)].filter(Boolean);
   gsap.set(els, { opacity: 0, willChange: "auto" });
+  blackTo(0, DARK_OUT);
 }
 
 /* The one-shot crash: about 1.2 s, every piece ending at opacity 0. Built
@@ -387,8 +430,10 @@ function buildCrash(): void {
   }
   boom = tl;
   // A rebuild after the crash keeps it finished, not replayable by a resize.
-  if (wasDone || lastR >= CRASH_AT) boom.progress(1).pause();
-  else resetCrash();
+  if (wasDone || lastR >= CRASH_AT) {
+    boom.progress(1).pause();
+    blackSet(1);
+  } else resetCrash();
 }
 
 /* The resting pose under reduced motion: the rocket at the start of its route,
@@ -483,7 +528,8 @@ export function destroyRocketFlight(): void {
   boom?.kill();
   boom = null;
   lastR = -1;
-  for (const el of [craft, dark, ...puffs]) if (el) forgetLeaf(el);
+  for (const el of [craft, ...puffs]) if (el) forgetLeaf(el);
+  blackSet(0);
   stage?.classList.remove("is-flying", "is-crashed");
   restBox = { w: 0, h: 0 };
   crashed = false;

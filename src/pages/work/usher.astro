@@ -1,0 +1,723 @@
+---
+import CaseLayout from "../../layouts/CaseLayout.astro";
+import CaseMeta from "../../components/case/CaseMeta.astro";
+import CaseFigure from "../../components/case/CaseFigure.astro";
+import CaseClip from "../../components/case/CaseClip.astro";
+import { projects } from "../../data/projects";
+
+/**
+ * Usher, "Hello Jax": the MHacks 2026 headset, on black like SPOOT (the
+ * other sound-direction project). The page opens on the phrase that wakes
+ * the device, then a head seen from above that answers the pointer the way
+ * the headset answers a voice: the nearer temple glows and the display
+ * names the direction. Then who it is for, the three speech engines each
+ * for what it does best, what the judges saw, the numbers measured at the
+ * table, the troubles and their fixes, the twenty-four hours in frames, and
+ * the team.
+ *
+ * Facts: the Devpost page (team, built with, no prize), the repository
+ * (README, PITCH_REFERENCE.md, the owner's jak-claudenotes), the owner's own
+ * account (2026-10-06: his part, and that he led the team), and his
+ * photographs and clips of the weekend (docs/media-picks.md). Nothing here
+ * claims a result the event did not give.
+ */
+const p = projects.find((x) => x.slug === "usher")!;
+
+/* What happens after the phrase, in the order the device does it. */
+const steps = [
+  { t: "The mic array hears it", d: "Four microphones on top of the head and an on-chip speech flag: the direction the voice came from, averaged over the phrase." },
+  { t: "A buzz on one temple", d: "A soft, continuous buzz on the side to turn toward. It fades as the wearer turns and stops when the speaker is in front." },
+  { t: "An arrow on the display", d: "LEFT, RIGHT, FRONT or BEHIND on a small OLED, confirming what the temple said." },
+  { t: "Catch me up", d: "The last thirty seconds of audio go out for transcription with speakers separated; what the caller said appears on the display." },
+  { t: "Live captions", d: "What people are saying, with an arrow toward whoever is talking now." },
+  { t: "Names and a summary", d: "An introduction turns an unknown speaker into a name; every twelve seconds a short summary of the conversation." },
+];
+
+/* The three speech engines, each for what it is best at. */
+const engines = [
+  { k: "Offline", t: "Whisper on the Pi", d: "A rolling four-second window, transcribed every second. The wake rule: a greeting followed by the name. The name alone never fires, because people say names all the time.", note: "Works with no internet: detection, the buzz and the arrow never need the cloud." },
+  { k: "Live", t: "ElevenLabs Scribe Realtime", d: "Captions as people speak, and a faster second ear for the wake phrase: the same rule and a shared cooldown, so one phrase buzzes once.", note: "Realtime cannot tell speakers apart, so the mic array does: each direction is a person." },
+  { k: "By voice", t: "ElevenLabs batch + Gemini", d: "The catch-up and the judges' transcript: batch Scribe separates speakers by voice; Gemini 3.5 Flash-Lite names them from introductions and writes the summary.", note: "Never on the buzz path. If the cloud fails, the wearer still gets turned toward the voice." },
+];
+
+/* Measured at the table on the second night (PITCH_REFERENCE.md §8). */
+const numbers = [
+  { label: "“Hello Jax” to the arrow", value: "1–2 s (Whisper on the Pi 5)" },
+  { label: "Direction error after calibration", value: "3–11°, about 20 readings a second" },
+  { label: "Catch-up, 30 s of audio", value: "0.6–2.4 s round trip" },
+  { label: "Batch transcript, 20 s", value: "1.3–1.5 s, two speakers kept apart" },
+  { label: "Names and summary", value: "every 12 s" },
+  { label: "Display", value: "3 lines of about 20 characters, legible at 12 px" },
+];
+
+/* Five of the troubles, with the fix that held. */
+const troubles = [
+  { p: "Whisper heard “Jax” as “jacks” or “jack”.", f: "Match by sound (Metaphone), and accept “jack” only right after a greeting." },
+  { p: "The mic dropped off USB in the first full run and the captions died silently.", f: "An audio watchdog: two seconds of silence from the device, and it re-scans and reopens. Motors moved off the 5 V rail." },
+  { p: "Two sources renamed the same person back and forth.", f: "Local rules may only name the unnamed; only Gemini may change a name." },
+  { p: "Four people in a busy room became sixteen voices.", f: "A reference clip for every known voice in each request, 1.5 s of clear speech before a new one, quiet talkers ignored, a cap with a nearest-direction fallback." },
+  { p: "The first buzz pattern was too strong on the temples.", f: "A soft continuous buzz at 10–20% power that gets softer as the wearer turns, instead of counted pulses." },
+];
+
+/* The head from above: 0° is front, clockwise. A point on a ring of radius
+   r at a bearing, as the fixed-decimal pair the SVG takes. */
+const REST = 118;
+const polar = (r: number, deg: number) => {
+  const a = (deg * Math.PI) / 180;
+  return { x: (r * Math.sin(a)).toFixed(1), y: (-r * Math.cos(a)).toFixed(1) };
+};
+const DATES = "October 3⁠–⁠4, 2026";
+---
+
+<CaseLayout slug="usher" title="Usher" description={p.line} theme="dark" shareCard="/projects/usher/og.jpg">
+  <header class="us-hero case-section">
+    <div class="us-hero__copy">
+      <p class="case-label">{p.kind} · {p.where} · {p.when}</p>
+      <h1 class="case-title">Usher</h1>
+      <p class="case-lede">A headset for people who cannot hear where a voice came from and cannot see it unless it is straight ahead. Say “Hello Jax”, and it turns the wearer toward you.</p>
+      <CaseMeta
+        rows={[
+          { label: "My part", value: "Team lead: the idea and the research behind it, the hardware, the review and the test harness" },
+          { label: "Team", value: "Jakhangir Tynshimov, Oliver Lai, Sajjad Akbari, Matthew Palmer" },
+          { label: "Built with", value: "Raspberry Pi 5, reSpeaker XVF3800, vibration motors, SSD1306 OLED, Python, faster-whisper, ElevenLabs Scribe, Gemini, OpenCV, a printed headband" },
+          { label: "Event", value: `MHacks 2026, University of Michigan, ${DATES}` },
+        ]}
+      />
+    </div>
+    <CaseFigure slug="usher" id="hero" alt="The Usher prototype on the build table: the white headset band wrapped in black tape and wired to the boards, the round microphone array on a stand above it" caption="The prototype on the build night." ratio="4 / 5" focal="45% 50%" sizes="(max-width: 56em) 100vw, 42vw" eager class="us-hero__media" />
+  </header>
+
+  <section class="case-section us-hello js-us-hello" aria-labelledby="us-hello-title">
+    <div class="us-hello__text">
+      <p class="case-label" data-reveal>The trigger</p>
+      <h2 id="us-hello-title" class="us-hello__phrase" data-reveal>“Hello Jax.”</h2>
+      <div class="case-prose" data-reveal>
+        <p>Someone across the room says your name. Before you can join the conversation, you have to know where they are. The headset listens for a greeting followed by the wearer's name, works out where the voice came from, and tells the wearer which way to turn: by touch first, then on the display.</p>
+      </div>
+      <ol class="us-steps" data-reveal>
+        {steps.map((s) => (
+          <li>
+            <strong>{s.t}</strong>
+            <span>{s.d}</span>
+          </li>
+        ))}
+      </ol>
+    </div>
+
+    <figure class="us-head js-us-head" data-reveal>
+      <svg class="us-head__svg" viewBox="-130 -130 260 260" role="img" aria-label="The wearer's head seen from above, front at the top: the mic array on top of the head, a motor at each temple, and a speaker on a ring around the head. The temple nearer the speaker lights up, and the display under the head names the direction.">
+        <circle class="us-head__ring" r="108" />
+        {[0, 90, 180, 270].map((d) => {
+          const a = polar(104, d);
+          const b = polar(112, d);
+          return <line class="us-head__tick" x1={a.x} y1={a.y} x2={b.x} y2={b.y} />;
+        })}
+        <text class="us-head__cardinal" x="0" y="-118" text-anchor="middle">front</text>
+        <text class="us-head__cardinal" x="0" y="124" text-anchor="middle">behind</text>
+        {/* The head: a circle with ears and the nose at the top. */}
+        <circle class="us-head__skull" r="66" />
+        <path class="us-head__skull" d="M -14 -64 Q 0 -78 14 -64 Z" />
+        <ellipse class="us-head__skull" cx="-70" cy="-4" rx="6" ry="11" />
+        <ellipse class="us-head__skull" cx="70" cy="-4" rx="6" ry="11" />
+        {/* The temple motors, and the glow each one gives when it buzzes. */}
+        <circle class="us-head__glow js-us-glow-left" cx="-56" cy="-26" r="22" />
+        <circle class="us-head__glow js-us-glow-right" cx="56" cy="-26" r="22" />
+        <rect class="us-head__motor" x="-62" y="-34" width="12" height="16" rx="3" />
+        <rect class="us-head__motor" x="50" y="-34" width="12" height="16" rx="3" />
+        {/* The mic array on top of the head: four microphones on a disc. */}
+        <circle class="us-head__array" r="24" />
+        {[45, 135, 225, 315].map((d) => {
+          const m = polar(15, d);
+          return <circle class="us-head__mic" cx={m.x} cy={m.y} r="3" />;
+        })}
+        {/* The speaker: a dot on the ring, turned by the pointer. */}
+        <g class="us-head__speaker js-us-speaker" data-rest={REST} style={`transform: rotate(${REST}deg)`}>
+          <circle class="us-head__voice" cx="0" cy="-108" r="7" />
+          <path class="us-head__wave" d="M -13 -121 A 18 18 0 0 1 13 -121" />
+          <path class="us-head__wave" d="M -20 -129 A 26 26 0 0 1 20 -129" />
+        </g>
+      </svg>
+      <div class="us-head__oled" aria-hidden="true">
+        <span class="us-head__oled-arrow js-us-arrow">←</span>
+        <span class="us-head__oled-text js-us-label">LEFT</span>
+      </div>
+      <figcaption>
+        The wearer from above, front at the top. The dot is a voice; the temple nearer to it buzzes, and the display names the way.
+        <span class="us-head__try us-head__try--hover">Move your pointer: it is the voice.</span>
+        <span class="us-head__try us-head__try--touch">Tap around the head: the tap is the voice.</span>
+      </figcaption>
+    </figure>
+  </section>
+
+  <section class="case-section us-who">
+    <div class="us-who__grid">
+      <div>
+        <p class="case-label" data-reveal>Who it is for</p>
+        <h2 class="case-h2" data-reveal>Hearing loss, and a field of view that narrows</h2>
+      </div>
+      <div class="case-prose" data-reveal>
+        <p>Usher syndrome is the most common genetic cause of combined deafness and blindness: hearing loss from birth, then retinitis pigmentosa narrows the field of view to a tunnel. Together they make one ordinary moment hard. You cannot hear which way a voice came from, and you cannot see the person unless they are straight in front of you. By the time you have found who is talking, you have missed what they said.</p>
+        <p>Every aid we found helps one of the two senses and fails the other: a cochlear implant gives speech but not direction, a visual sign language fails as the field narrows, a phone app answers in audio. Human interpreters do the thing we wanted the headset to do, by touch: who is talking, and where.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="case-section us-engines">
+    <p class="case-label" data-reveal>Three engines</p>
+    <h2 class="case-h2" data-reveal>Each for what it is best at</h2>
+    <div class="us-engines__grid">
+      {engines.map((e) => (
+        <article class="us-engine" data-reveal>
+          <p class="us-engine__k">{e.k}</p>
+          <h3 class="case-h3">{e.t}</h3>
+          <p>{e.d}</p>
+          <p class="us-engine__note">{e.note}</p>
+        </article>
+      ))}
+    </div>
+    <p class="us-engines__rule" data-reveal>One rule shaped the whole build: the “Hello Jax” path runs on the Pi and works offline. Everything that needs the cloud runs behind it and can fail without touching the buzz.</p>
+  </section>
+
+  <section class="case-section us-judges">
+    <div class="us-judges__head">
+      <p class="case-label" data-reveal>What the judges saw</p>
+      <h2 class="case-h2" data-reveal>Both sides at once</h2>
+      <div class="case-prose" data-reveal>
+        <p>A phone app is little use to someone with tunnel vision and hearing loss, so the web app is for the table, not the wearer. On the left, the headset camera with a tunnel-vision overlay the judge can tighten: what they see. On the right, a transcript with speakers told apart by voice and a running summary: what Usher gives them.</p>
+      </div>
+    </div>
+    <div class="us-judges__grid">
+      <CaseFigure slug="usher" id="app" alt="The judge web app in its demo mode: a camera view with a tunnel-vision circle on the left, a voice-identified transcript and a conversation summary on the right" caption="The judge app, in its scripted demo: no headset needed." sizes="(max-width: 56em) 100vw, 60vw" class="us-judges__app" />
+      <CaseFigure slug="usher" id="g01" alt="The build desk from above: the round microphone array board, microcontroller and breadboards wired together, a laptop and a mouse among the cables" caption="The other side of the table: the hardware, mid-build." sizes="(max-width: 56em) 100vw, 40vw" />
+      <CaseFigure slug="usher" id="g02" alt="A teammate at a curved monitor showing the judge app: the tunnel-vision circle on the left and the transcript on the right" caption="The tunnel-vision overlay on the big screen, late in the night." sizes="(max-width: 56em) 100vw, 40vw" />
+    </div>
+  </section>
+
+  <section class="case-section us-numbers">
+    <div class="us-numbers__grid">
+      <div>
+        <p class="case-label" data-reveal>Measured</p>
+        <h2 class="case-h2" data-reveal>Numbers from the table</h2>
+        <div class="case-prose" data-reveal>
+          <p>Measured on the hardware during the night, with the mic on the printed band after calibration. Not a benchmark: one room, one team, and a hotspot.</p>
+        </div>
+      </div>
+      <CaseMeta class="us-numbers__meta" rows={numbers} />
+    </div>
+  </section>
+
+  <section class="case-section us-troubles">
+    <p class="case-label" data-reveal>Troubles we hit</p>
+    <h2 class="case-h2" data-reveal>And what held</h2>
+    <ol class="us-troubles__list">
+      {troubles.map((t) => (
+        <li data-reveal>
+          <p class="us-trouble__p">{t.p}</p>
+          <p class="us-trouble__f">{t.f}</p>
+        </li>
+      ))}
+    </ol>
+  </section>
+
+  <section class="case-section us-frames">
+    <h2 class="case-h2" data-reveal>Twenty-four hours, in frames</h2>
+    <div class="us-frames__grid">
+      <CaseFigure slug="usher" id="g03" alt="A laptop showing the first version of the web app, 'Stay in the conversation', with Jakhangir in the camera feed" caption="The first page, Saturday: the camera on me." ratio="3 / 4" focal="50% 45%" sizes="(max-width: 48em) 50vw, 24vw" />
+      <CaseFigure slug="usher" id="g05" alt="A teammate kneeling at an Elegoo 3D printer, printing the headband" caption="The headband, printed overnight." ratio="3 / 4" focal="55% 50%" sizes="(max-width: 48em) 50vw, 24vw" />
+      <CaseFigure slug="usher" id="g07" alt="A breadboard taped to the printed headband, jumper wires fanning out of it" caption="The breadboard rides on the band." ratio="3 / 4" focal="50% 50%" sizes="(max-width: 48em) 50vw, 24vw" />
+      <CaseFigure slug="usher" id="g08" alt="The prototype on the table: the Pi beside it, the OLED hanging on its wires, two face sketches on the whiteboard behind" caption="The OLED on its wires; the whiteboard behind has the first sketches." ratio="3 / 4" focal="50% 55%" sizes="(max-width: 48em) 50vw, 24vw" />
+      <CaseFigure slug="usher" id="g06" alt="Jakhangir and two teammates lying on the floor between the chairs at night" caption="Three in the morning." ratio="4 / 3" focal="50% 40%" sizes="(max-width: 48em) 100vw, 48vw" class="us-frames__wide" />
+      <CaseFigure slug="usher" id="g04" alt="A teammate seated wearing the headset, wires running to a laptop; Jakhangir standing beside him" caption="A first fitting, Sunday morning." ratio="4 / 3" focal="50% 45%" sizes="(max-width: 48em) 100vw, 48vw" class="us-frames__wide" />
+      <CaseClip slug="usher" id="demo" label="The headset worn at the judging table, the Raspberry Pi in a teammate's hand" caption="At the judging table." class="us-frames__clip" />
+      <CaseClip slug="usher" id="table" label="A teammate wearing the headset at the team's table while another adjusts the wiring and explains" caption="Fitting and explaining, Sunday morning." class="us-frames__clip" />
+      <CaseFigure slug="usher" id="g12" alt="The four teammates behind the MHACKS marquee letters in the judging hall" caption="The four of us, after judging." sizes="(max-width: 48em) 100vw, 100vw" class="us-frames__full" />
+    </div>
+  </section>
+
+  <section class="case-section us-part">
+    <div class="us-part__grid">
+      <div>
+        <p class="case-label" data-reveal>My part</p>
+        <h2 class="case-h2" data-reveal>What I did</h2>
+      </div>
+      <div class="case-prose" data-reveal>
+        <p>I led the team. The idea was mine, and the research behind it: before the hackathon I read what people with Usher syndrome actually struggle with, what aids exist and where each one fails, and picked this from three candidates on the morning call.</p>
+        <p>The hardware was mine to bring and to wire: the reSpeaker array and the Pi, and the motor modules from TouchPoint, my earlier glove. The sound-direction and haptics approach carries over from SPOOT and TouchPoint.</p>
+        <p>Through the night I reviewed the code we had: sixteen findings with patches, an offline test harness of 144 checks that runs anywhere in three seconds, and the runbook we followed to the judging table. Oliver Lai wrote most of the program on the Pi and tested it on the device; Sajjad Akbari built the web page and the camera server; Matthew Palmer modelled and printed the headband and the mic tray.</p>
+      </div>
+    </div>
+    <ul class="case-links" data-reveal>
+      {p.links.map((l) => (
+        <li><a href={l.href} target="_blank" rel="noopener noreferrer">{l.label} <span aria-hidden="true">↗</span><span class="u-sr-only">(opens in a new tab)</span></a></li>
+      ))}
+    </ul>
+  </section>
+</CaseLayout>
+
+<script>
+  import { writeIfChanged } from "../../utils/leafWrite";
+
+  /* The head answers the pointer the way the headset answers a voice.
+     Event-driven, no frame loop (invariant 6): a pointer event writes one
+     transform on the speaker's own group, two opacities on the glows and,
+     only when it changes, the display's text; every write goes through
+     writeIfChanged, so a value already there is not written again. The figure is sticky, so its centre is read in client coordinates and
+     read again after a scroll, a resize or a font swap, on the next pointer
+     event (invariants 3 and 5). The listeners sit on the section, so nothing runs
+     while it is off screen; under reduced motion the voice stays where it
+     rests and the display keeps its first word. */
+  const section = document.querySelector<HTMLElement>(".js-us-hello");
+  const head = section?.querySelector<HTMLElement>(".js-us-head");
+  const speaker = section?.querySelector<SVGGElement>(".js-us-speaker");
+  const left = section?.querySelector<SVGCircleElement>(".js-us-glow-left");
+  const right = section?.querySelector<SVGCircleElement>(".js-us-glow-right");
+  const label = section?.querySelector<HTMLElement>(".js-us-label");
+  const arrow = section?.querySelector<HTMLElement>(".js-us-arrow");
+  const svg = head?.querySelector<SVGSVGElement>(".us-head__svg");
+  if (section && head && svg && speaker && left && right && label && arrow && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    let cx = 0;
+    let cy = 0;
+    let dead = 0;
+    let stale = true;
+    let angle = Number(speaker.dataset.rest) || 0;
+    let word = "";
+    const WORDS: Record<string, string> = { LEFT: "←", RIGHT: "→", FRONT: "↑", BEHIND: "↓" };
+    const measure = () => {
+      const r = svg.getBoundingClientRect();
+      cx = r.left + r.width / 2;
+      cy = r.top + r.height / 2;
+      dead = r.width * 0.1;
+      stale = false;
+    };
+    const show = (deg: number) => {
+      // The temple nearer the voice buzzes, harder the further round it is,
+      // and neither buzzes once the voice is in front.
+      const s = Math.sin((deg * Math.PI) / 180);
+      const behind = Math.max(0, -Math.cos((deg * Math.PI) / 180));
+      const l = Math.max(0, -s) * 0.9 + (behind > 0.9 && s < 0 ? 0.1 : 0);
+      const rr = Math.max(0, s) * 0.9 + (behind > 0.9 && s >= 0 ? 0.1 : 0);
+      writeIfChanged(left as unknown as HTMLElement, "opacity", l.toFixed(2));
+      writeIfChanged(right as unknown as HTMLElement, "opacity", rr.toFixed(2));
+      const abs = Math.abs(deg);
+      const w = abs < 25 ? "FRONT" : abs > 155 ? "BEHIND" : deg < 0 ? "LEFT" : "RIGHT";
+      if (w !== word) {
+        word = w;
+        label.textContent = w;
+        arrow.textContent = WORDS[w];
+      }
+    };
+    const aim = (e: PointerEvent) => {
+      if (stale) measure();
+      const dx = e.clientX - cx;
+      const dy = e.clientY - cy;
+      if (dx * dx + dy * dy < dead * dead) return;
+      const target = (Math.atan2(dx, -dy) * 180) / Math.PI;
+      const turn = ((((target - angle) % 360) + 540) % 360) - 180;
+      if (Math.abs(turn) < 0.5) return;
+      angle += turn;
+      writeIfChanged(speaker as unknown as HTMLElement, "transform", `rotate(${angle.toFixed(1)}deg)`);
+      show(((((angle % 360) + 540) % 360) - 180));
+    };
+    show(angle);
+    section.addEventListener("pointermove", aim, { passive: true });
+    section.addEventListener("pointerdown", aim, { passive: true });
+    window.addEventListener("resize", () => (stale = true), { passive: true });
+    window.addEventListener("scroll", () => (stale = true), { passive: true });
+    document.fonts?.ready.then(() => (stale = true));
+  }
+</script>
+
+<style lang="scss">
+  @use "../../styles/helpers/fonts" as *;
+
+  /* ---- Hero ---- */
+  .us-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    gap: clamp(2rem, 5vw, 5rem);
+    align-items: end;
+    padding-top: clamp(3rem, 8vh, 6rem);
+
+    @media (max-width: 56em) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .us-hero__copy {
+    display: flex;
+    flex-direction: column;
+    gap: 1.4rem;
+  }
+
+  /* The hero picture is a CaseFigure (eager, its own caption); only its
+     slot in the grid is this page's. */
+  :global(.us-hero__media) {
+    align-self: end;
+  }
+
+  /* ---- The trigger and the head ---- */
+  .us-hello {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: clamp(2rem, 5vw, 5rem);
+    align-items: start;
+    background: var(--case-surface);
+
+    @media (max-width: 56em) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .us-hello__phrase {
+    margin: 0.75rem 0 1.25rem;
+    font: 400 clamp(3rem, 7vw, 7rem) / 0.95 font-family(editorial);
+    letter-spacing: -0.01em;
+  }
+
+  .us-steps {
+    display: grid;
+    gap: 0.9rem;
+    margin: 1.5rem 0 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: step;
+
+    li {
+      display: grid;
+      grid-template-columns: 2rem minmax(0, 1fr);
+      gap: 0.25rem 0.75rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--case-rule);
+      counter-increment: step;
+
+      &::before {
+        content: counter(step);
+        grid-row: span 2;
+        font: 400 0.75rem / 1.6 font-family(fraktion);
+        color: var(--case-soft);
+      }
+    }
+
+    strong {
+      font: 400 1.05rem / 1.3 font-family(editorial);
+    }
+
+    span {
+      font-size: 0.95rem;
+      line-height: 1.5;
+      color: var(--case-soft);
+    }
+  }
+
+  .us-head {
+    position: sticky;
+    top: 4.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0;
+    /* The pointer is read through the section: this figure must not be
+       the only hit target, or a finger beside it does nothing. */
+    touch-action: pan-y;
+
+    @media (max-width: 56em) {
+      position: static;
+    }
+  }
+
+  .us-head__svg {
+    width: min(100%, 30rem, 70svh);
+    height: auto;
+    overflow: visible;
+  }
+
+  .us-head__ring {
+    fill: none;
+    stroke: var(--case-rule);
+    stroke-width: 1;
+  }
+
+  .us-head__tick {
+    stroke: var(--case-soft);
+    stroke-width: 1.5;
+  }
+
+  .us-head__cardinal {
+    font: 400 9px / 1 font-family(fraktion);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    fill: var(--case-soft);
+  }
+
+  .us-head__skull {
+    fill: #15151a;
+    stroke: var(--case-ink);
+    stroke-width: 1.5;
+    stroke-linejoin: round;
+  }
+
+  .us-head__motor {
+    fill: var(--case-ink);
+  }
+
+  /* The glow is the buzz: opacity only, written by the script, with a
+     short transition so it does not snap between pointer events. */
+  .us-head__glow {
+    fill: var(--case-accent);
+    opacity: 0;
+    filter: blur(6px);
+    transition: opacity 180ms ease-out;
+  }
+
+  .us-head__array {
+    fill: #0b0b0e;
+    stroke: var(--case-soft);
+    stroke-width: 1;
+  }
+
+  .us-head__mic {
+    fill: var(--case-ink);
+  }
+
+  /* The voice turns on its own layer, eased by a transition between pointer
+     events, the way SPOOT's bearing mark does. */
+  .us-head__speaker {
+    will-change: transform;
+    transition: transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  .us-head__voice {
+    fill: var(--case-accent);
+  }
+
+  .us-head__wave {
+    fill: none;
+    stroke: var(--case-accent);
+    stroke-width: 2;
+    stroke-linecap: round;
+    opacity: 0.7;
+  }
+
+  .us-head__oled {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-top: 0.5rem;
+    padding: 0.45rem 0.9rem;
+    border: 1px solid var(--case-rule);
+    border-radius: 6px;
+    background: #050508;
+    font: 400 0.8125rem / 1 font-family(fraktion);
+    letter-spacing: 0.16em;
+    color: #ffd166;
+    /* A fixed width, so a changed word cannot move its neighbours. */
+    min-width: 9.5rem;
+    justify-content: center;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .us-head__oled-arrow {
+    font-size: 1rem;
+    line-height: 1;
+  }
+
+  .us-head figcaption {
+    max-width: 30rem;
+    margin-top: 1rem;
+    font: 400 0.8125rem / 1.5 font-family(geist);
+    color: var(--case-soft);
+    text-align: center;
+  }
+
+  .us-head__try {
+    display: block;
+    margin-top: 0.3rem;
+    color: var(--case-ink);
+  }
+
+  .us-head__try--touch {
+    display: none;
+  }
+
+  @media (hover: none) and (pointer: coarse) {
+    .us-head__try--hover {
+      display: none;
+    }
+
+    .us-head__try--touch {
+      display: block;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .us-head__try {
+      display: none;
+    }
+
+    .us-head__glow.js-us-glow-right {
+      opacity: 0.8;
+    }
+
+    .us-head__speaker,
+    .us-head__glow {
+      transition: none;
+    }
+  }
+
+  /* ---- Who, engines, judges ---- */
+  .us-who__grid,
+  .us-numbers__grid,
+  .us-part__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    gap: clamp(1.5rem, 5vw, 5rem);
+    align-items: start;
+
+    @media (max-width: 56em) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .us-engines__grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(1.5rem, 3vw, 3rem);
+    margin-top: 2rem;
+
+    @media (max-width: 56em) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .us-engine {
+    padding-top: 1rem;
+    border-top: 1px solid var(--case-rule);
+
+    p {
+      margin: 0 0 0.8rem;
+      font-size: 0.98rem;
+      line-height: 1.55;
+    }
+  }
+
+  .us-engine__k {
+    font: 400 0.75rem / 1.3 font-family(fraktion);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--case-accent);
+  }
+
+  .us-engine__note {
+    color: var(--case-soft);
+  }
+
+  .us-engines__rule {
+    max-width: var(--case-measure);
+    margin: 2.5rem 0 0;
+    padding: 1rem 1.25rem;
+    border-left: 2px solid var(--case-accent);
+    background: var(--case-surface);
+  }
+
+  .us-judges {
+    background: var(--case-surface);
+  }
+
+  .us-judges__head {
+    max-width: 60rem;
+    margin-bottom: 2rem;
+  }
+
+  .us-judges__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: clamp(1.25rem, 2vw, 2rem);
+
+    @media (max-width: 56em) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  :global(.us-judges__app) {
+    grid-column: 1 / -1;
+  }
+
+  .us-numbers__meta {
+    --case-rule: #2a2a30;
+  }
+
+  /* ---- Troubles ---- */
+  .us-troubles__list {
+    display: grid;
+    gap: 0;
+    margin: 2rem 0 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: trouble;
+
+    li {
+      display: grid;
+      grid-template-columns: 2.5rem minmax(0, 1fr) minmax(0, 1fr);
+      gap: 0.5rem 2rem;
+      padding: 1.1rem 0;
+      border-top: 1px solid var(--case-rule);
+      counter-increment: trouble;
+
+      &::before {
+        content: counter(trouble, decimal-leading-zero);
+        font: 400 0.75rem / 1.7 font-family(fraktion);
+        color: var(--case-soft);
+      }
+
+      @media (max-width: 56em) {
+        grid-template-columns: 2.5rem minmax(0, 1fr);
+      }
+    }
+
+    p {
+      margin: 0;
+      line-height: 1.5;
+    }
+  }
+
+  .us-trouble__p {
+    font: 400 1.05rem / 1.4 font-family(editorial);
+  }
+
+  .us-trouble__f {
+    color: var(--case-soft);
+
+    @media (max-width: 56em) {
+      grid-column: 2;
+    }
+  }
+
+  /* ---- Frames ---- */
+  .us-frames__grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+    margin-top: 2rem;
+
+    @media (max-width: 48em) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  :global(.us-frames__wide),
+  :global(.us-frames__clip) {
+    grid-column: span 2;
+  }
+
+  :global(.us-frames__full) {
+    grid-column: 1 / -1;
+  }
+
+  .us-part {
+    background: var(--case-surface);
+
+    .case-links {
+      margin-top: 2rem;
+    }
+  }
+</style>
