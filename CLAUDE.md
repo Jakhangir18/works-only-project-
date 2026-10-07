@@ -88,11 +88,12 @@ word) `main` carries the site as one commit per release cut like
 `preview/portfolio`: the site's sources only, never a merge of this
 branch (v8: b9598ed, 2026-10-06, built from a temporary index: main's
 tree with src, public without resume.pdf and the configs replaced). The
-owner connected his own domain (2026-10-06); deployment URLs stay behind
-Vercel Authentication, the domain is public. Vercel built it as a
-Production deployment, but works-only-project.vercel.app kept serving the
-July deployment (alias not reassigned; no Vercel CLI or login on this
-host), so the owner promotes it in the Vercel dashboard.
+site is **https://www.tynshimov.com** (the owner's domain, 2026-10-06;
+the apex redirects to www with a 308; sitemap, robots and Open Graph
+URLs follow it through VERCEL_PROJECT_PRODUCTION_URL). Production
+deployments from `main` go live on it without a promote (checked with
+b9598ed); per-deployment URLs stay behind Vercel Authentication, and
+works-only-project.vercel.app answers DEPLOYMENT_NOT_FOUND.
 
 The animation systems were built separately and later composed onto the same page.
 That composition is where every performance bug in this project has come from, and
