@@ -1,14 +1,14 @@
 {
   "redirects": [
     {
-      "source": "/:path*",
+      "source": "/:path(.*)",
       "has": [
         {
           "type": "host",
           "value": "works-only-project.vercel.app"
         }
       ],
-      "destination": "https://www.tynshimov.com/:path*",
+      "destination": "https://www.tynshimov.com/:path",
       "permanent": true
     },
     {
