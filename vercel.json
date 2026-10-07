@@ -1,0 +1,25 @@
+{
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "works-only-project.vercel.app"
+        }
+      ],
+      "destination": "https://www.tynshimov.com/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/work/ams-device",
+      "destination": "/projects/ams/",
+      "permanent": true
+    },
+    {
+      "source": "/work/ams-device/",
+      "destination": "/projects/ams/",
+      "permanent": true
+    }
+  ]
+}
