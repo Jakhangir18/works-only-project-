@@ -92,8 +92,11 @@ site is **https://www.tynshimov.com** (the owner's domain, 2026-10-06;
 the apex redirects to www with a 308; sitemap, robots and Open Graph
 URLs follow it through VERCEL_PROJECT_PRODUCTION_URL). Production
 deployments from `main` go live on it without a promote (checked with
-b9598ed); per-deployment URLs stay behind Vercel Authentication, and
-works-only-project.vercel.app answers DEPLOYMENT_NOT_FOUND.
+b9598ed); per-deployment URLs stay behind Vercel Authentication.
+works-only-project.vercel.app, which the resumes and LinkedIn drafts
+link, serves the same production deployment again (the owner re-added it
+on 2026-10-07; it answers 200 directly, not a redirect, and the pages
+carry og:url on www.tynshimov.com but no canonical link).
 
 The animation systems were built separately and later composed onto the same page.
 That composition is where every performance bug in this project has come from, and
