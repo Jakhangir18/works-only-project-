@@ -94,9 +94,11 @@ URLs follow it through VERCEL_PROJECT_PRODUCTION_URL). Production
 deployments from `main` go live on it without a promote (checked with
 b9598ed); per-deployment URLs stay behind Vercel Authentication.
 works-only-project.vercel.app, which the resumes and LinkedIn drafts
-link, serves the same production deployment again (the owner re-added it
-on 2026-10-07; it answers 200 directly, not a redirect, and the pages
-carry og:url on www.tynshimov.com but no canonical link).
+link, is a domain of the project again (the owner re-added it on
+2026-10-07) and `vercel.json` sends it to the same path on
+www.tynshimov.com with a 308 (`/:path(.*)` on a host condition; `/:path*`
+missed the root and every path ending in a slash). A release to `main`
+carries `vercel.json` with the site's sources.
 
 The animation systems were built separately and later composed onto the same page.
 That composition is where every performance bug in this project has come from, and
