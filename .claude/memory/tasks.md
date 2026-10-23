@@ -114,3 +114,23 @@
 - git: feat/portfolio-v5@7c95305
 - next: Owner: open http://100.122.188.86:4400 on Mac and iPhone (rocket hand-off, the dissolve, /work/usher/, /work/zyp/, the meadow); swap Usher pictures on http://100.122.188.86:4401/work/usher/ if wanted (pin-picks, import, rebuild); then ship main as one clean orphan commit like preview/portfolio and promote in Vercel
 
+## 2026-10-06 23:37 | v8 (owner's notes): Usher picks pinned (no duplicate photo, lighter images, importer width cap/quality/prune), Zyp role 'software engineer intern' beside the product team, home sticky stages in lvh (no band under them on iPhone), phone perf: descent scenery out of the layer tree a screen away, rays/tufts only while visible (phone x4 WORK -30% slow frames, paradise 0-2), three /code-review rounds; suite 1589/1589; shipped to main b9598ed, Vercel production built
+- files: src/components/AnimeRocket.astro, src/components/AnimeSpace.astro, src/components/SWork.astro, src/components/AnimeParadise.astro, src/utils/Paradise.ts, src/utils/Space.ts, src/utils/WorkSection.ts, src/utils/workStack.ts, src/pages/work/usher.astro, src/pages/work/zyp.astro, src/data/projects.ts, src/data/timeline.ts, scripts/import-media.mjs, docs/media-manifest-usher.json, CLAUDE.md, docs/portfolio-v5-design.md
+- git: feat/portfolio-v5@a7a025f
+- next: Owner: tell the domain name so the live site can be checked; open it on iPhone (Safari, Chrome): no band under the stages, scroll smoothness; production deploy b9598ed is built
+
+## 2026-10-07 21:16 | Live: www.tynshimov.com serves v8 (b9598ed); apex 308 to www; sitemap/robots/OG on the domain; desktop and phone load with no console errors; CLAUDE.md records the domain. Old works-only-project.vercel.app answers DEPLOYMENT_NOT_FOUND while resumes and LinkedIn drafts still link it
+- files: CLAUDE.md
+- git: feat/portfolio-v5@20c89d6
+- next: Owner: keep old links alive (Vercel -> Settings -> Domains: add works-only-project.vercel.app redirecting to www.tynshimov.com) or switch the resumes/LinkedIn to tynshimov.com (in ~/work/school); check the site on iPhone
+
+## 2026-10-07 21:23 | Old address works-only-project.vercel.app re-added by the owner: serves the live v8 site (200 on /, /work/zyp/, /work/usher/, /projects/ams/), so resume and LinkedIn links work again
+- files: CLAUDE.md
+- git: feat/portfolio-v5@8e6c239
+- next: Optional: canonical links to www.tynshimov.com (the old address serves duplicates, no redirect); owner checks the site on iPhone
+
+## 2026-10-07 21:29 | works-only-project.vercel.app now 308-redirects every path to www.tynshimov.com (vercel.json host rule, /:path(.*)); shipped to main 74278c1 + 731e2c1; checked /, case pages, query strings, /work/ams-device
+- files: vercel.json, CLAUDE.md
+- git: feat/portfolio-v5@b05bc15
+- next: Owner: check the site on iPhone (band under stages, smoothness)
+

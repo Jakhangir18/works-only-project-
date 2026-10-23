@@ -1,4 +1,4 @@
 # Project state
-Updated: 2026-10-06 04:04
+Updated: 2026-10-07 21:29
 
-feat/portfolio-v5 @ v7 (18 commits since 116df8d, local, not pushed); main still at 15a1432 (v6); :4400 serves the v7 dist; picker on :4401 with the usher pool
+main @ 731e2c1 live on www.tynshimov.com; old vercel.app address redirects; feat/portfolio-v5 local
