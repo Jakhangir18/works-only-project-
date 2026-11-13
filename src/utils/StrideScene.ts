@@ -141,6 +141,10 @@ export function initStrideScene(): void {
   const box = hero?.querySelector<HTMLElement>(".js-zw-box");
   if (!hero || !stage || !box) return;
 
+  // The runway is sized in svh. Where the unit is unknown (Safari before
+  // 15.4) the stylesheet draws no runway, and there is nothing to walk.
+  if (!window.CSS?.supports?.("height", "100svh")) return;
+
   const motion = window.matchMedia(MOTION);
   let stop: ((flip: boolean) => void) | null = null;
   const sync = () => {
@@ -179,7 +183,14 @@ function start(hero: HTMLElement, stage: HTMLElement, box: HTMLElement): (flip: 
      further down it is left as it is, so the page does not jump. */
   const still = () => {
     hero.dataset.scene = "still";
-    if (window.scrollY < 8) hero.classList.add("is-still");
+    if (hero.classList.contains("is-still")) return;
+    // Folding the runway takes height from above a reader who is already
+    // past it; the scroll gives the same amount back, so what they are
+    // reading stays where it is.
+    const before = hero.offsetHeight;
+    const y = window.scrollY;
+    hero.classList.add("is-still");
+    if (y >= 8) window.scrollTo(0, Math.max(0, y - (before - hero.offsetHeight)));
   };
 
   (async () => {
@@ -505,8 +516,12 @@ function start(hero: HTMLElement, stage: HTMLElement, box: HTMLElement): (flip: 
         renderer.setSize(w, h, false);
         camera.aspect = w / h;
         camera.updateProjectionMatrix();
+        // Setting the size cleared the canvas.
+        dirty = true;
       }
-      snap();
+      // Drawn now if anyone can see it; otherwise when it comes on screen.
+      if (onScreen) snap();
+      else dirty = true;
     };
 
     /* ---- listeners, each one taken back off in teardown ---- */
@@ -534,8 +549,9 @@ function start(hero: HTMLElement, stage: HTMLElement, box: HTMLElement): (flip: 
       if (onScreen) snap();
     };
     const resize = new ResizeObserver(size);
-    const watch = new IntersectionObserver(([entry]) => {
-      onScreen = entry.isIntersecting;
+    const watch = new IntersectionObserver((entries) => {
+      // The newest entry: a fast scroll can queue an arrival and a leaving.
+      onScreen = entries[entries.length - 1].isIntersecting;
       if (onScreen) {
         window.addEventListener("scroll", onScroll, { passive: true });
         if (dirty) snap();
@@ -577,6 +593,7 @@ function start(hero: HTMLElement, stage: HTMLElement, box: HTMLElement): (flip: 
     ratio = 2;
     box.append(canvas);
     size();
+    snap();
 
     /* Shaders are linked off the main thread where the browser can, then
        the scene is timed before anyone sees it: a few frames, each read
@@ -605,6 +622,7 @@ function start(hero: HTMLElement, stage: HTMLElement, box: HTMLElement): (flip: 
       ratio = 1;
       width = 0;
       size();
+      snap();
     }
     if (time() > SLOW_MS) {
       teardown(true);

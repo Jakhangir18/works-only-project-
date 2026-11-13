@@ -518,6 +518,9 @@ const DATES = "October 17⁠–⁠18, 2026";
   }
 
   /* ---- The hero, live: a runway, the stage stuck under the bar ---- */
+  /* Only where svh exists (Safari 15.4 on): without it there is no runway
+     and StrideScene.ts does not start, so the hero stays the still one. */
+  @supports (height: 100svh) {
   @media (prefers-reduced-motion: no-preference) {
     .zw-hero:not(.is-still) {
       height: 320svh;
@@ -698,6 +701,7 @@ const DATES = "October 17⁠–⁠18, 2026";
         transform-origin: left center;
       }
     }
+  }
   }
 
   @media (prefers-reduced-motion: reduce) {
