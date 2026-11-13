@@ -54,6 +54,25 @@ No runway. The hero is a still of round two, a step just landed
   half the pixels, and no text over the canvas there.
 - No sky: the camera looks at the floor, as the projector does.
 
+## Second pass (2026-11-13): readable, and the game's own characters
+
+The owner on the first version: it must be clear what is happening, and
+easy to read.
+
+- Flowers, footprints and the cottage are the game's own SVGs (copies in
+  `public/projects/zombie-walk-home/art`), as textures in the scene and as
+  inlined symbols in the posters. A flower stands on the lawn facing the
+  walker; a step puts it over on its back.
+- A flower comes out of the dark by opacity (`flowerShown`), in the scene
+  and in the poster alike, so the two still agree.
+- Per-frame writes added: twelve material opacities (the flowers), two more
+  (the prints). Removed: the instance matrix and colour writes.
+- New section "What you are looking at": a drawing of the rig (Higgsfield,
+  `gpt_image_2_6`, 0.5 credits for two variants, the owner picked the
+  first) with five numbered pins placed by eye.
+- Hero: "Scroll to walk", two tags on the picture (desktop), an icon beside
+  each of the walk's five lines, larger small type on the whole page.
+
 ## Not verified
 
 - Real Safari on an iPhone (the PR lists the checks).
