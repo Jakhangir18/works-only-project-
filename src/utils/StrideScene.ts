@@ -120,9 +120,14 @@ const SPRITE_PIXELS = 512;
 async function loadSprites(): Promise<Record<SpriteId, HTMLCanvasElement>> {
   const entries = await Promise.all(
     (Object.keys(SPRITE_FILES) as SpriteId[]).map(async (id) => {
+      // The load event, not decode(): some engines reject decode() for an
+      // SVG image that has loaded perfectly well.
       const image = new Image();
-      image.src = SPRITE_DIR + SPRITE_FILES[id];
-      await image.decode();
+      await new Promise<void>((resolve, reject) => {
+        image.onload = () => resolve();
+        image.onerror = () => reject(new Error(`sprite ${id}`));
+        image.src = SPRITE_DIR + SPRITE_FILES[id];
+      });
       const canvas = document.createElement("canvas");
       canvas.width = canvas.height = SPRITE_PIXELS;
       canvas.getContext("2d")?.drawImage(image, 0, 0, SPRITE_PIXELS, SPRITE_PIXELS);
