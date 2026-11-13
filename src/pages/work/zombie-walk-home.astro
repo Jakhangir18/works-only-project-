@@ -770,7 +770,7 @@ const DATES = "October 17⁠–⁠18, 2026";
       }
 
       .zw-count__of {
-        font: 400 0.75rem / 1.4 font-family(fraktion);
+        font: 400 0.875rem / 1.4 font-family(fraktion);
         letter-spacing: 0.14em;
         text-transform: uppercase;
         color: var(--case-soft);
@@ -1271,12 +1271,14 @@ const DATES = "October 17⁠–⁠18, 2026";
       @media (min-width: 56.01em) {
         .zw-hero.is-live .zw-tag {
           position: absolute;
+          /* Above the canvas, which the script adds after them. */
+          z-index: 1;
           display: flex;
           align-items: center;
           gap: 0.6rem;
           margin: 0;
           transform: translateY(-50%);
-          font: 400 0.75rem / 1 font-family(fraktion);
+          font: 400 0.8125rem / 1 font-family(fraktion);
           letter-spacing: 0.14em;
           text-transform: uppercase;
           color: var(--case-ink);
