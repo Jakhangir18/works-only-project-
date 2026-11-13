@@ -59,7 +59,7 @@ const { items, class: className } = Astro.props;
 
     /* Two columns on a phone: the left column loses its rule and its inset,
        and rows are told apart by a rule above the second one. */
-    @media (max-width: 34em) {
+    @media (max-width: 48em) {
       &:nth-child(odd) {
         border-left: 0;
         padding-left: 0;
@@ -72,7 +72,7 @@ const { items, class: className } = Astro.props;
   }
 
   .case-stats {
-    @media (max-width: 34em) {
+    @media (max-width: 48em) {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }

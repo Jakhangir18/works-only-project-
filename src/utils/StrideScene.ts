@@ -39,9 +39,10 @@
  * file does nothing), Save-Data, no WebGL or only a software one
  * (failIfMajorPerformanceCaveat), and a device that cannot draw the scene
  * in SLOW_MS a frame even at one device pixel per CSS pixel. Those keep the
- * poster, and if the page is still at its top the runway is folded away
- * (`is-still`); further down it is left alone, so nothing moves under a
- * finger. The hero says which it is in `data-scene` ("live" or "still").
+ * poster, and the runway is folded away (`is-still`); a reader already
+ * below the top gets the folded height back in the scroll, so what they
+ * are reading does not move. The hero says which it is in `data-scene`
+ * ("live" or "still").
  */
 
 import type * as THREEType from "three";
@@ -74,7 +75,9 @@ import {
   TAPE_DEPTH,
   TAPE_HALF,
   TILE,
-  TITLE_END,
+  COPY_END,
+  HUD_END,
+  HUD_FROM,
   WALK_END,
   clamp01,
   dawnAt,
@@ -176,11 +179,14 @@ export function initStrideScene(): void {
 }
 
 function start(hero: HTMLElement, stage: HTMLElement, box: HTMLElement): (flip: boolean) => void {
+  // A hero already folded (an earlier start found the scene could not run)
+  // has no runway to walk.
+  if (hero.classList.contains("is-still")) return () => {};
+
   let dead = false;
   let teardown: ((flip: boolean) => void) | null = null;
 
-  /* The poster stays. At the top of the page the runway folds away too; any
-     further down it is left as it is, so the page does not jump. */
+  /* The poster stays, and the runway folds away. */
   const still = () => {
     hero.dataset.scene = "still";
     if (hero.classList.contains("is-still")) return;
@@ -305,12 +311,15 @@ function start(hero: HTMLElement, stage: HTMLElement, box: HTMLElement): (flip: 
     /* The house at the end of the lane, upright, and the dawn behind it. */
     const house = new THREE.Group();
     scene.add(house);
-    const glowGeometry = keep(new THREE.PlaneGeometry(46, 9, 1, 1));
-    glowGeometry.setAttribute("color", new THREE.Float32BufferAttribute(new Float32Array(12), 3));
+    /* The dawn is a low mound of warm light behind the house: one vertex at
+       the middle of the wall's foot takes the colour, the five round it stay
+       the night's, so it has no edge and ends inside the lane's box. */
+    const glowGeometry = keep(new THREE.PlaneGeometry(7.6, 3.6, 2, 1));
+    glowGeometry.setAttribute("color", new THREE.Float32BufferAttribute(new Float32Array(18), 3));
     const glowMaterial = new THREE.MeshBasicMaterial({ vertexColors: true, fog: false, depthTest: false, depthWrite: false });
     disposables.push(glowMaterial);
     const glow = add(new THREE.Mesh(glowGeometry, glowMaterial), 4, house);
-    glow.position.set(0, 4.5, -1.5);
+    glow.position.set(0, 1.8, -1.5);
     const wall = add(new THREE.Mesh(keep(new THREE.PlaneGeometry(2.7, 1.7)), flat(COLORS.houseWall)), 5, house);
     wall.position.set(0, 0.85, 0);
     const roofGeometry = keep(new THREE.BufferGeometry());
@@ -359,6 +368,10 @@ function start(hero: HTMLElement, stage: HTMLElement, box: HTMLElement): (flip: 
     let width = 0;
     let height = 0;
     let ratio = 1;
+    /** The most device pixels per CSS pixel the buffer may have: 2, or 1
+     *  once the timing below has found 2 too slow. */
+    let cap = 2;
+    let live = false;
     let from = 0;
     let range = 1;
     const impacts: { lane: number; flower: number; at: number }[] = [];
@@ -406,8 +419,8 @@ function start(hero: HTMLElement, stage: HTMLElement, box: HTMLElement): (flip: 
         setFlower(hit.flower, true, out);
         pop[hit.lane] = Math.max(pop[hit.lane], out);
         const dip = Math.sin(Math.PI * clamp01((now - hit.at) / DIP_MS));
-        dipY = Math.max(dipY, dip * 0.06);
-        dipX += dip * 0.035 * (hit.lane ? 1 : -1);
+        dipY = Math.max(dipY, dip * 0.11);
+        dipX += dip * 0.06 * (hit.lane ? 1 : -1);
       }
       camera.position.set(CAMERA.position[0] + dipX, CAMERA.position[1] - dipY, CAMERA.position[2]);
 
@@ -425,23 +438,28 @@ function start(hero: HTMLElement, stage: HTMLElement, box: HTMLElement): (flip: 
         lawnMaterial.color.setRGB(1 + (DAWN_GAIN[0] - 1) * dawn, 1 + (DAWN_GAIN[1] - 1) * dawn, 1 + (DAWN_GAIN[2] - 1) * dawn);
         const low = colour.copy(night).lerp(dawnGlow, dawn * 0.85);
         const attr = glowGeometry.getAttribute("color") as THREEType.BufferAttribute;
-        // PlaneGeometry's first two vertices are its top edge.
-        attr.setXYZ(0, night.r, night.g, night.b);
-        attr.setXYZ(1, night.r, night.g, night.b);
-        attr.setXYZ(2, low.r, low.g, low.b);
-        attr.setXYZ(3, low.r, low.g, low.b);
+        // PlaneGeometry lays its vertices out in rows from the top, left to
+        // right: 0-2 are the top edge, 3-5 the foot, 4 the middle of the foot.
+        for (let i = 0; i < 6; i++) {
+          const c = i === 4 ? low : night;
+          attr.setXYZ(i, c.r, c.g, c.b);
+        }
         attr.needsUpdate = true;
       }
 
+      // Nothing of the page's text is touched until the scene is revealed:
+      // before that the hero is still the title block it loaded as.
+      if (!live) return draw();
+
       // The text. The title block gives way to the HUD over the first part
       // of the runway; both are leaves, written only when a hundredth moves.
-      const intro = smooth(p / TITLE_END);
+      const gone = smooth(p / COPY_END);
       if (copy) {
-        writeIfChanged(copy, "opacity", (1 - intro).toFixed(2));
-        writeIfChanged(copy, "transform", `translateY(${(-intro * 24).toFixed(0)}px)`);
-        writeIfChanged(copy, "visibility", intro >= 1 ? "hidden" : "visible");
+        writeIfChanged(copy, "opacity", (1 - gone).toFixed(2));
+        writeIfChanged(copy, "transform", `translateY(${(-gone * 24).toFixed(0)}px)`);
+        writeIfChanged(copy, "visibility", gone >= 1 ? "hidden" : "visible");
       }
-      if (hud) writeIfChanged(hud, "opacity", intro.toFixed(2));
+      if (hud) writeIfChanged(hud, "opacity", smooth((p - HUD_FROM) / (HUD_END - HUD_FROM)).toFixed(2));
       if (rail) writeIfChanged(rail, "transform", `scaleX(${clamp01(p / WALK_END).toFixed(3)})`);
       if (landed !== shownSteps && countIn && countOut) {
         // After 21st.dev's "Animated Number": the new figure comes in from
@@ -486,6 +504,8 @@ function start(hero: HTMLElement, stage: HTMLElement, box: HTMLElement): (flip: 
     /** Straight to where the scroll is, with no walk and no steps played. */
     const snap = () => {
       target = current = clamp01((window.scrollY - from) / range);
+      // A step caught mid-landing is settled, not left spread.
+      for (const hit of impacts) if (pressedNow[hit.flower]) setFlower(hit.flower, true);
       impacts.length = 0;
       apply(current, performance.now(), false);
     };
@@ -511,7 +531,7 @@ function start(hero: HTMLElement, stage: HTMLElement, box: HTMLElement): (flip: 
       if (w !== width || h !== height) {
         width = w;
         height = h;
-        ratio = Math.min(ratio, window.devicePixelRatio || 1, 2, Math.sqrt(MAX_PIXELS / (w * h)));
+        ratio = Math.min(cap, window.devicePixelRatio || 1, Math.sqrt(MAX_PIXELS / (w * h)));
         renderer.setPixelRatio(ratio);
         renderer.setSize(w, h, false);
         camera.aspect = w / h;
@@ -555,7 +575,11 @@ function start(hero: HTMLElement, stage: HTMLElement, box: HTMLElement): (flip: 
       if (onScreen) {
         window.addEventListener("scroll", onScroll, { passive: true });
         if (dirty) snap();
-        else onScroll();
+        else {
+          onScroll();
+          // A walk that was put to sleep on the way out picks up again.
+          if (current !== target || impacts.length) wake();
+        }
       } else {
         window.removeEventListener("scroll", onScroll);
         sleep();
@@ -590,41 +614,33 @@ function start(hero: HTMLElement, stage: HTMLElement, box: HTMLElement): (flip: 
 
     // From here on a stop() from outside finds `teardown` and uses it, so
     // nothing created above can be left behind by the awaits below.
-    ratio = 2;
     box.append(canvas);
     size();
     snap();
 
-    /* Shaders are linked off the main thread where the browser can, then
-       the scene is timed before anyone sees it: a few frames, each read
+    /* The scene is timed before anyone sees it: a few frames, each read
        back so the time is the drawing's and not the queue's. Too slow at
-       this size drops to one pixel per CSS pixel; too slow there, the
-       poster stays. */
-    try {
-      await renderer.compileAsync(scene, camera);
-    } catch {
-      // No parallel compile: the first render links them instead.
-    }
-    if (dead) return;
+       this size drops to one pixel per CSS pixel; too slow there, or a
+       context already lost, and the poster stays. */
     const pixel = new Uint8Array(4);
     const time = () => {
       const samples: number[] = [];
-      for (let i = 0; i < 5; i++) {
+      for (let i = 0; i < 4; i++) {
         const t = performance.now();
         renderer.render(scene, camera);
         gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
         samples.push(performance.now() - t);
       }
       // The first frame carries the uploads; the median of the rest counts.
-      return samples.slice(1).sort((a, b) => a - b)[2];
+      return samples.slice(1).sort((a, b) => a - b)[1];
     };
     if (time() > SLOW_MS && ratio > 1) {
-      ratio = 1;
+      cap = 1;
       width = 0;
       size();
       snap();
     }
-    if (time() > SLOW_MS) {
+    if (gl.isContextLost() || time() > SLOW_MS) {
       teardown(true);
       teardown = null;
       return still();
@@ -643,6 +659,8 @@ function start(hero: HTMLElement, stage: HTMLElement, box: HTMLElement): (flip: 
     hero.dataset.scene = "live";
     hero.classList.add("is-live");
     canvas.classList.add("is-on");
+    live = true;
+    snap();
   })().catch(() => {
     // No scene: the poster is the page.
     teardown?.(true);

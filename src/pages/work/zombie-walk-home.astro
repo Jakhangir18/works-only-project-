@@ -525,6 +525,11 @@ const DATES = "October 17⁠–⁠18, 2026";
     .zw-hero:not(.is-still) {
       height: 320svh;
 
+      /* A thumb's flick covers more of a short runway than a wheel does. */
+      @media (max-width: 56em) {
+        height: 440svh;
+      }
+
       .zw-hero__stage {
         position: sticky;
         top: var(--zw-bar);
@@ -582,14 +587,22 @@ const DATES = "October 17⁠–⁠18, 2026";
           position: relative;
           isolation: isolate;
 
+          /* Solid for the whole of the block, then gone over the tail
+             below it: every line, the last one too, is on the ground. */
           &::before {
+            --tail: 5rem;
             content: "";
             position: absolute;
             z-index: -1;
-            inset: -1rem calc(var(--case-gutter) * -1) -7rem;
-            background: linear-gradient(to bottom, var(--case-ground) 0 68%, transparent);
+            inset: -1rem calc(var(--case-gutter) * -1) calc(var(--tail) * -1);
+            background: linear-gradient(to bottom, var(--case-ground) 0 calc(100% - var(--tail)), transparent);
             pointer-events: none;
           }
+        }
+
+        /* The HUD is one short row there, so the lane keeps the screen. */
+        .zw-hud::before {
+          --tail: 2.5rem;
         }
       }
 
@@ -618,9 +631,27 @@ const DATES = "October 17⁠–⁠18, 2026";
 
       .zw-count {
         display: flex;
-        align-items: baseline;
+        align-items: flex-end;
         gap: 1rem;
         margin: 0;
+      }
+
+      /* On a phone the counter and the line beside it are one row. */
+      @media (max-width: 56em) {
+        .zw-hud {
+          display: grid;
+          grid-template-columns: auto minmax(0, 1fr);
+          gap: 0 1rem;
+          align-items: center;
+        }
+
+        .zw-count__of {
+          display: none;
+        }
+
+        .zw-rail {
+          grid-column: 1 / -1;
+        }
       }
 
       .zw-count__box {
@@ -661,6 +692,10 @@ const DATES = "October 17⁠–⁠18, 2026";
       .zw-walk {
         margin-top: 1.5rem;
         max-width: 30rem;
+
+        @media (max-width: 56em) {
+          margin-top: 0;
+        }
       }
 
       .zw-walk__phase {
@@ -690,6 +725,10 @@ const DATES = "October 17⁠–⁠18, 2026";
         max-width: 30rem;
         height: 2px;
         margin-top: 1.75rem;
+
+        @media (max-width: 56em) {
+          margin-top: 0.75rem;
+        }
         background: var(--case-rule);
       }
 
@@ -702,6 +741,17 @@ const DATES = "October 17⁠–⁠18, 2026";
       }
     }
   }
+  }
+
+  /* Where nothing will move, the picture is the walk under way, not its
+     empty first frame: under reduced motion, and once the scene has said it
+     cannot run. */
+  .zw-hero.is-still .zw-poster--start {
+    display: none;
+  }
+
+  .zw-hero.is-still .zw-poster--still {
+    display: block;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -765,7 +815,7 @@ const DATES = "October 17⁠–⁠18, 2026";
         content: counter(step, decimal-leading-zero);
         grid-row: span 2;
         font: 400 0.75rem / 1.8 font-family(fraktion);
-        color: var(--case-accent);
+        color: var(--case-soft);
       }
     }
 
@@ -924,7 +974,7 @@ const DATES = "October 17⁠–⁠18, 2026";
     display: grid;
     grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
     gap: 1rem;
-    align-items: start;
+    align-items: stretch;
     margin-top: 2rem;
 
     @media (max-width: 56em) {
@@ -932,8 +982,11 @@ const DATES = "October 17⁠–⁠18, 2026";
     }
   }
 
+  /* The two tiles take what the tall picture leaves, so both columns end
+     on one line. */
   .zw-bento__side {
     display: grid;
+    grid-template-rows: auto 1fr;
     gap: 1rem;
   }
 

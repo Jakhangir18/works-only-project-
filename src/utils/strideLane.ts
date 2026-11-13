@@ -102,7 +102,9 @@ export const smooth = (v: number) => {
    the rules as the project's README and its Devpost draft state them.
    Twelve steps, not more: at the runway's length each one gets room to land
    before the next arrives (the motion review, 2026-11-12). */
-const FIRST = 6.9;
+const FIRST = 7.6;
+/** A round is announced this far before its first flower reaches the line. */
+const LEAD = 0.8;
 const GAPS = [3.6, 2.8, 2.15] as const;
 const REST = 5;
 export const PER_ROUND = 4;
@@ -115,7 +117,7 @@ function schedule(): { flowers: Flower[]; rounds: { from: number; to: number }[]
   let at = FIRST;
   let n = 0;
   GAPS.forEach((gap, r) => {
-    const from = at - gap * 0.5;
+    const from = at - LEAD;
     for (let i = 0; i < PER_ROUND; i++) {
       n++;
       flowers.push({ lane: (n % 2) as 0 | 1, at, kind: n % 4 === 0 ? "gold" : KINDS[n % KINDS.length], round: (r + 1) as 1 | 2 | 3 });
@@ -135,8 +137,12 @@ export const TOTAL = PLAN.total;
 /** The walk ends at this share of the runway's scroll; the rest is a still
  *  hold, so the stage lets go of the screen with nothing moving in it. */
 export const WALK_END = 0.92;
-/** The title gives way to the walk over this share of the runway. */
-export const TITLE_END = 0.12;
+/** The title block has left by this share of the runway, and the HUD comes
+ *  in between the next two: one after the other, never both at once, and
+ *  early enough that the warm-up line is read before round one. */
+export const COPY_END = 0.045;
+export const HUD_FROM = 0.04;
+export const HUD_END = 0.08;
 /** Where the house's doorstep is, in metres of walk: it comes out of the
  *  dark over the last stretch and stops just past the hit line. */
 export const HOUSE_AT = TOTAL + 2.6;
