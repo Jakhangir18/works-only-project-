@@ -537,7 +537,7 @@ const DATES = "October 17⁠–⁠18, 2026";
         padding: 0;
         /* The lane's column is never wider than the stage is tall, so its
            box is never wider than tall: the one framing fits (strideLane.ts). */
-        grid-template-columns: minmax(0, 1fr) min(50vw, calc(100svh - var(--zw-bar)));
+        grid-template-columns: minmax(0, 1fr) min(42vw, calc((100svh - var(--zw-bar)) * 0.8));
         align-items: stretch;
 
         /* A phone gives the lane the whole stage, and the text lies over
@@ -609,8 +609,11 @@ const DATES = "October 17⁠–⁠18, 2026";
       .zw-hero__lane {
         min-height: 0;
 
+        /* Edge to edge on a phone: the dawn's light then ends at the
+           screen, not at a line a gutter in from it. */
         @media (max-width: 56em) {
           grid-area: 1 / 1;
+          margin-inline: calc(var(--case-gutter) * -1);
         }
       }
 
@@ -629,10 +632,13 @@ const DATES = "October 17⁠–⁠18, 2026";
         display: none;
       }
 
+      /* The label sits under the figure, so one digit or two, nothing
+         beside it moves. */
       .zw-count {
         display: flex;
-        align-items: flex-end;
-        gap: 1rem;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.6rem;
         margin: 0;
       }
 
@@ -682,7 +688,6 @@ const DATES = "October 17⁠–⁠18, 2026";
       }
 
       .zw-count__of {
-        max-width: 8rem;
         font: 400 0.75rem / 1.4 font-family(fraktion);
         letter-spacing: 0.14em;
         text-transform: uppercase;

@@ -311,15 +311,36 @@ function start(hero: HTMLElement, stage: HTMLElement, box: HTMLElement): (flip: 
     /* The house at the end of the lane, upright, and the dawn behind it. */
     const house = new THREE.Group();
     scene.add(house);
-    /* The dawn is a low mound of warm light behind the house: one vertex at
-       the middle of the wall's foot takes the colour, the five round it stay
-       the night's, so it has no edge and ends inside the lane's box. */
-    const glowGeometry = keep(new THREE.PlaneGeometry(7.6, 3.6, 2, 1));
-    glowGeometry.setAttribute("color", new THREE.Float32BufferAttribute(new Float32Array(18), 3));
-    const glowMaterial = new THREE.MeshBasicMaterial({ vertexColors: true, fog: false, depthTest: false, depthWrite: false });
+    /* The dawn is light, so it is added: a fan behind the house whose hub
+       takes the colour and whose rim stays black, which adds nothing. It
+       has no edge, it warms the lawn it falls across instead of covering
+       it, and at night it is not there at all. (Seen on the first build: a
+       plane with one lit vertex drew a hard-edged lozenge.) */
+    const GLOW_RIM = 28;
+    const glowGeometry = keep(new THREE.BufferGeometry());
+    {
+      const positions = [0, 0, 0];
+      const index: number[] = [];
+      for (let i = 0; i < GLOW_RIM; i++) {
+        const a = (i / GLOW_RIM) * Math.PI * 2;
+        positions.push(Math.cos(a) * 3.6, Math.sin(a) * 3.1, 0);
+        index.push(0, 1 + i, 1 + ((i + 1) % GLOW_RIM));
+      }
+      glowGeometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+      glowGeometry.setAttribute("color", new THREE.Float32BufferAttribute(new Float32Array((GLOW_RIM + 1) * 3), 3));
+      glowGeometry.setIndex(index);
+    }
+    const glowMaterial = new THREE.MeshBasicMaterial({
+      vertexColors: true,
+      fog: false,
+      depthTest: false,
+      depthWrite: false,
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+    });
     disposables.push(glowMaterial);
     const glow = add(new THREE.Mesh(glowGeometry, glowMaterial), 4, house);
-    glow.position.set(0, 1.8, -1.5);
+    glow.position.set(0, 1.2, -1.5);
     const wall = add(new THREE.Mesh(keep(new THREE.PlaneGeometry(2.7, 1.7)), flat(COLORS.houseWall)), 5, house);
     wall.position.set(0, 0.85, 0);
     const roofGeometry = keep(new THREE.BufferGeometry());
@@ -329,7 +350,6 @@ function start(hero: HTMLElement, stage: HTMLElement, box: HTMLElement): (flip: 
     door.position.set(0, 0.475, 0);
     const porch = add(new THREE.Mesh(keep(new THREE.CircleGeometry(PORCH_RADIUS, 20)), flat(COLORS.porch, false)), 7, house);
     porch.position.set(0, PORCH_Y, 0);
-    const night = new THREE.Color(NIGHT);
     const dawnGlow = new THREE.Color(COLORS.dawnGlow);
 
     /* The hit line and the two prints the walker stands on. */
@@ -436,14 +456,10 @@ function start(hero: HTMLElement, stage: HTMLElement, box: HTMLElement): (flip: 
       if (dawn !== shownDawn) {
         shownDawn = dawn;
         lawnMaterial.color.setRGB(1 + (DAWN_GAIN[0] - 1) * dawn, 1 + (DAWN_GAIN[1] - 1) * dawn, 1 + (DAWN_GAIN[2] - 1) * dawn);
-        const low = colour.copy(night).lerp(dawnGlow, dawn * 0.85);
+        // Only the fan's hub, vertex 0, carries light; the rim stays black.
+        const hub = colour.copy(dawnGlow).multiplyScalar(dawn * 0.8);
         const attr = glowGeometry.getAttribute("color") as THREEType.BufferAttribute;
-        // PlaneGeometry lays its vertices out in rows from the top, left to
-        // right: 0-2 are the top edge, 3-5 the foot, 4 the middle of the foot.
-        for (let i = 0; i < 6; i++) {
-          const c = i === 4 ? low : night;
-          attr.setXYZ(i, c.r, c.g, c.b);
-        }
+        attr.setXYZ(0, hub.r, hub.g, hub.b);
         attr.needsUpdate = true;
       }
 
