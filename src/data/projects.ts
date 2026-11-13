@@ -53,8 +53,9 @@ export const projects: readonly Project[] = [
     // Facts: the Devpost page (devpost.com/software/stride-defense: submitted
     // as "Stride Defense", the four of the team, "Winner, [MLH] Best Use of
     // Gemini API"), the repository (Jakhangir18/Dubhacks2026: the README,
-    // docs/DEVPOST.md, docs/TEAM_PLAN.md and the history), and the owner's
-    // photographs of the weekend. The game's own name is Zombie Walk Home.
+    // docs/DEVPOST.md, docs/TEAM_PLAN.md and the history), the owner's
+    // photographs of the weekend, and the owner (2026-11-12: his part, as
+    // `role` states it). The game's own name is Zombie Walk Home.
     slug: "zombie-walk-home",
     href: "/work/zombie-walk-home/",
     title: "Zombie Walk Home",
@@ -74,7 +75,7 @@ export const projects: readonly Project[] = [
       { label: "Source on GitHub", href: "https://github.com/Jakhangir18/Dubhacks2026" },
       { label: "Demo video", href: "https://youtu.be/fvdUs95cf9k" },
     ],
-    sources: ["official", "repo", "media"],
+    sources: ["official", "repo", "owner", "media"],
   },
   {
     // Facts: the Devpost page (team, built-with, no prize), the repository
