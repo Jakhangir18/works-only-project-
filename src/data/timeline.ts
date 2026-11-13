@@ -26,7 +26,7 @@ export type TimelineEntry = {
 
 /** One label per kind, shared by the board, the work tags and the campus
  *  rows, so the same project is never "Competition" in one place and
- *  "Hackathon" in another. All three competitions on record are hackathons. */
+ *  "Hackathon" in another. All four competitions on record are hackathons. */
 export const KIND_LABEL: Record<TimelineKind, string> = {
   work: "Work",
   research: "Research",
@@ -69,6 +69,22 @@ export const timeline: readonly TimelineEntry[] = [
     summary: "A headset for Usher syndrome: say “Hello Jax” and a buzz on the temple turns you toward the speaker. Team lead.",
     href: "/work/usher/",
     thumb: "/projects/usher/media/cover-thumb.webp",
+  },
+  {
+    // DubHacks '26, University of Washington, Oct 17-18 (the repository's
+    // README); "Winner, [MLH] Best Use of Gemini API" on the Devpost page,
+    // devpost.com/software/stride-defense. It sits after Usher although it
+    // is two weeks newer: both start in 2026-10, the sorts are stable, and
+    // the home's walk (AnimeParadise) runs oldest first, so this order keeps
+    // MHacks before DubHacks there.
+    title: "Zombie Walk Home",
+    org: "DubHacks '26, University of Washington",
+    kind: "competition",
+    start: "2026-10",
+    end: "2026-10",
+    summary: "A walking game projected onto a walking pad, coached by an AI therapist. Winner, MLH Best Use of Gemini API.",
+    href: "/work/zombie-walk-home/",
+    thumb: "/projects/zombie-walk-home/media/cover-thumb.webp",
   },
   {
     // The offer letter: Frontend Engineer Intern, August 2026 (part-time,

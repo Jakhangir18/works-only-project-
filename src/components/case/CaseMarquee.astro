@@ -1,0 +1,196 @@
+---
+/**
+ * The tools of a project as rows of badges that drift past each other.
+ *
+ * After 21st.dev's "Toolchain Marquee" (johnmamanao): rows in alternating
+ * directions, a coloured mark on each badge, and a control that stops them.
+ * That one moves its rows from a frame loop in React; this one is a CSS
+ * animation of one transform per row, so the page gains no loop
+ * (CLAUDE.md 6). It runs only while the strip is on screen (`is-live`, set
+ * by the observer below) and until the visitor stops it (invariant 1), and
+ * under reduced motion it does not run at all: the rows wrap and stand still.
+ *
+ * Each row holds its badges twice; the second set is hidden from assistive
+ * technology and exists only so the loop has no seam. A set is at least as
+ * wide as the strip, so two are always enough, at any width.
+ */
+interface Props {
+  rows: { label: string; accent: string }[][];
+  /** Names the strip for assistive technology. */
+  label: string;
+  class?: string;
+}
+const { rows, label, class: className } = Astro.props;
+---
+
+<div class:list={["case-marquee js-case-marquee", className]} data-reveal>
+  <div class="case-marquee__rows" role="group" aria-label={label}>
+    {
+      rows.map((row, r) => (
+        <div class="case-marquee__row">
+          <div class:list={["case-marquee__track", { "case-marquee__track--back": r % 2 === 1 }]} style={`--dur:${32 + r * 6}s`}>
+            {[0, 1].map((copy) => (
+              <ul class="case-marquee__set" aria-hidden={copy ? "true" : undefined}>
+                {row.map((item) => (
+                  <li class="case-marquee__badge" style={`--mark:${item.accent}`}>
+                    {item.label}
+                  </li>
+                ))}
+              </ul>
+            ))}
+          </div>
+        </div>
+      ))
+    }
+  </div>
+  <button class="case-marquee__control js-case-marquee-toggle" type="button" aria-pressed="false">
+    <span class="case-marquee__control-pause">Pause</span>
+    <span class="case-marquee__control-play">Play</span>
+    <span class="u-sr-only"> the moving list</span>
+  </button>
+</div>
+
+<script>
+  /* One observer for every strip on the page; nothing runs per frame. The
+     animation's play state is two classes on the strip itself. */
+  const strips = [...document.querySelectorAll<HTMLElement>(".js-case-marquee")];
+  if (strips.length) {
+    const watch = new IntersectionObserver((entries) => {
+      for (const entry of entries) entry.target.classList.toggle("is-live", entry.isIntersecting);
+    });
+    for (const strip of strips) {
+      watch.observe(strip);
+      const toggle = strip.querySelector<HTMLButtonElement>(".js-case-marquee-toggle");
+      toggle?.addEventListener("click", () => {
+        const stopped = strip.classList.toggle("is-stopped");
+        toggle.setAttribute("aria-pressed", String(stopped));
+      });
+    }
+  }
+</script>
+
+<style lang="scss">
+  @use "../../styles/helpers/fonts" as *;
+
+  .case-marquee {
+    position: relative;
+  }
+
+  .case-marquee__rows {
+    display: grid;
+    gap: 0.75rem;
+    overflow: hidden;
+    /* The badges fade out at both edges instead of being cut. */
+    mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
+  }
+
+  .case-marquee__track {
+    display: flex;
+    width: max-content;
+    min-width: 200%;
+    animation: case-marquee var(--dur, 32s) linear infinite;
+    animation-play-state: paused;
+  }
+
+  .case-marquee__track--back {
+    animation-direction: reverse;
+  }
+
+  .case-marquee.is-live:not(.is-stopped) .case-marquee__track {
+    animation-play-state: running;
+  }
+
+  .case-marquee__set {
+    display: flex;
+    flex: 1 0 50%;
+    justify-content: space-around;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0 0.375rem;
+    list-style: none;
+  }
+
+  .case-marquee__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.7rem 1.1rem;
+    border: 1px solid var(--case-rule);
+    border-radius: 999px;
+    background: var(--case-surface);
+    font: 400 0.8125rem / 1 font-family(fraktion);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    white-space: nowrap;
+
+    &::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--mark, var(--case-accent));
+    }
+  }
+
+  .case-marquee__control {
+    margin-top: 1rem;
+    padding: 0.5rem 0.9rem;
+    border: 1px solid var(--case-rule);
+    border-radius: 999px;
+    background: none;
+    color: var(--case-soft);
+    font: 400 0.6875rem / 1 font-family(fraktion);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--case-ink);
+      border-color: var(--case-accent);
+    }
+  }
+
+  .case-marquee__control-play,
+  .case-marquee.is-stopped .case-marquee__control-pause {
+    display: none;
+  }
+
+  .case-marquee.is-stopped .case-marquee__control-play {
+    display: inline;
+  }
+
+  @keyframes case-marquee {
+    to {
+      transform: translateX(-50%);
+    }
+  }
+
+  /* Still: one set per row, wrapped, nothing to stop. */
+  @media (prefers-reduced-motion: reduce) {
+    .case-marquee__rows {
+      mask-image: none;
+    }
+
+    .case-marquee__track {
+      width: auto;
+      min-width: 0;
+      animation: none;
+    }
+
+    .case-marquee__set {
+      flex: 1 1 auto;
+      flex-wrap: wrap;
+      justify-content: flex-start;
+      padding: 0;
+
+      &[aria-hidden="true"] {
+        display: none;
+      }
+    }
+
+    .case-marquee__control {
+      display: none;
+    }
+  }
+</style>
