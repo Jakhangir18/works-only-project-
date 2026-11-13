@@ -106,7 +106,7 @@ for (const [ename, engine] of Object.entries({ chromium, webkit })) {
 
     await page.waitForTimeout(1200);
 
-    // 2. The hero: one real heading, the arched name, seven cards on the wheel.
+    // 2. The hero: one real heading, the arched name, the cards on the wheel.
     const hero = await page.evaluate(() => {
       // The name is laid on a cylinder one glyph at a time, in one SVG per
       // layout (wide and narrow); read the glyphs of the layout this viewport
@@ -131,12 +131,13 @@ for (const [ename, engine] of Object.entries({ chromium, webkit })) {
     results.push(check(`${tag} exactly one name layout is shown`, hero.nameLayouts === 1, `${hero.nameLayouts}`));
     results.push(check(`${tag} the drawn name matches the heading`, hero.headline.toLowerCase() === hero.h1Text.replace(/\s+/g, '').toLowerCase(), `${hero.headline} vs ${hero.h1Text}`));
     // The ring is concave, so only its far half is ever on screen; each
-    // project sits on it twice to keep that half full. Sixteen cards, eight
-    // distinct shots (Usher joined on 2026-10-06).
-    results.push(check(`${tag} sixteen cards on the wheel`, hero.cards === 16, `${hero.cards} cards`));
-    results.push(check(`${tag} eight distinct shots on the wheel`, new Set(hero.shots).size === 8, `${new Set(hero.shots).size} distinct`));
+    // project sits on it twice to keep that half full. Eighteen cards, nine
+    // distinct shots (Usher joined on 2026-10-06, Zombie Walk Home on
+    // 2026-11-13).
+    results.push(check(`${tag} eighteen cards on the wheel`, hero.cards === 18, `${hero.cards} cards`));
+    results.push(check(`${tag} nine distinct shots on the wheel`, new Set(hero.shots).size === 9, `${new Set(hero.shots).size} distinct`));
     // Every card carries its pre-blurred twin, the same project's shot.
-    results.push(check(`${tag} every card has its blurred twin`, hero.twins.length === 16 && hero.twins.every((src, i) => src === hero.shots[i].replace('.webp', '-blur.webp')), `${hero.twins.length} twins`));
+    results.push(check(`${tag} every card has its blurred twin`, hero.twins.length === 18 && hero.twins.every((src, i) => src === hero.shots[i].replace('.webp', '-blur.webp')), `${hero.twins.length} twins`));
 
     // Every shot must actually resolve: a missing screenshot leaves a hole
     // where a project should be, and nothing else on the page would notice.
@@ -257,7 +258,7 @@ for (const [ename, engine] of Object.entries({ chromium, webkit })) {
     }
 
     // 5. WORK (the letter tunnel, as on /tunnel/) and the timeline walk.
-    const CASES = ['/work/usher/', '/work/touchpoint/', '/work/spoot/', '/work/zyp/', '/work/gdg/', '/work/remote-lab-vision/', '/projects/ams/', '/work/engineering-rocket/'];
+    const CASES = ['/work/zombie-walk-home/', '/work/usher/', '/work/touchpoint/', '/work/spoot/', '/work/zyp/', '/work/gdg/', '/work/remote-lab-vision/', '/projects/ams/', '/work/engineering-rocket/'];
     const sections = await page.evaluate(() => ({
       section: !!document.querySelector('section#work.s-work.s-work--home'),
       cards: [...document.querySelectorAll('#work a-work a[href]')].map((a) => a.getAttribute('href')),
@@ -269,8 +270,8 @@ for (const [ename, engine] of Object.entries({ chromium, webkit })) {
     }));
     const sameSet = (list) => list.length === CASES.length && [...list].sort().join() === [...CASES].sort().join();
     results.push(check(`${tag} WORK is the letter tunnel section`, sections.section, 'no section#work.s-work.s-work--home'));
-    results.push(check(`${tag} eight cards link to the eight case pages`, sameSet(sections.cards), sections.cards.join(',')));
-    results.push(check(`${tag} the keyboard route lists the eight case pages`, sameSet(sections.listed), sections.listed.join(',')));
+    results.push(check(`${tag} nine cards link to the nine case pages`, sameSet(sections.cards), sections.cards.join(',')));
+    results.push(check(`${tag} the keyboard route lists the nine case pages`, sameSet(sections.listed), sections.listed.join(',')));
     results.push(check(`${tag} no "0n / 0n" counter in WORK`, sections.counters.length === 0, sections.counters.join(', ')));
 
     // 5b. The dissolve: between the last card's hold and the descent the
@@ -320,7 +321,7 @@ for (const [ename, engine] of Object.entries({ chromium, webkit })) {
     results.push(check(`${tag} WORK's letters land on the constellation's pixels`, !!handOff && handOff.before === 4 && handOff.after === 4 && handOff.off.every((d) => d <= 3), handOff ? `${handOff.before} then ${handOff.after} letters, ${handOff.off ? handOff.off.join('/') + ' px' : 'unmatched'}` : 'missing'));
     results.push(check(`${tag} the tunnel shows its own letters after the hand-off (is-on)`, afterOn === true, `is-on=${afterOn}`));
     // Eleven stops since Usher joined the walk (2026-10-06); pinned like t-timeline's count.
-    results.push(check(`${tag} every stop on the walk is dated`, sections.notes === 11 && sections.notes === sections.pins, `${sections.notes} stops, ${sections.pins} dated`));
+    results.push(check(`${tag} every stop on the walk is dated`, sections.notes === 12 && sections.notes === sections.pins, `${sections.notes} stops, ${sections.pins} dated`));
     // The one entry whose role is still unconfirmed must not reach the page;
     // GDG and Rowerlab were confirmed by the owner on 2026-10-02.
     const leaked = sections.drafts.filter((t) => /STEP Academy/i.test(t));
@@ -402,7 +403,7 @@ for (const [ename, engine] of Object.entries({ chromium, webkit })) {
       cards: document.querySelectorAll('#work a-work a[href]').length,
       on: document.querySelector('#work')?.classList.contains('is-on'),
     }));
-    results.push(check(`${tag} WORK is there without the star field's hand-off`, redWork.cards === 8 && !redWork.on, `${redWork.cards} cards, is-on=${redWork.on}`));
+    results.push(check(`${tag} WORK is there without the star field's hand-off`, redWork.cards === 9 && !redWork.on, `${redWork.cards} cards, is-on=${redWork.on}`));
     results.push(check(`${tag} no runtime errors`, errors.length === 0, errors.slice(0, 2).join(' | ')));
     await ctx.close();
   }

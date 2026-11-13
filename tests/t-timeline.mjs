@@ -41,9 +41,10 @@ for (const [ename, engine] of Object.entries({ chromium, webkit })) {
 
   const tag = ename;
   results.push(check(`${tag} timeline section exists`, info.exists, 'missing'));
-  // Eleven since Usher (MHacks, October 2026) joined on 2026-10-06; the
-  // count is pinned so an entry cannot slip in or out unnoticed.
-  results.push(check(`${tag} eleven live entries`, info.entries === 11, `${info.entries}`));
+  // Twelve since Zombie Walk Home (DubHacks, October 2026) joined on
+  // 2026-11-13 (eleven since Usher, 2026-10-06); the count is pinned so an
+  // entry cannot slip in or out unnoticed.
+  results.push(check(`${tag} twelve live entries`, info.entries === 12, `${info.entries}`));
   results.push(check(`${tag} draft entries stay hidden`, info.drafts === 0, `${info.drafts} rendered`));
   results.push(check(`${tag} every entry has a machine-readable date`, info.times.length === info.entries && info.times.every((t) => /^\d{4}-\d{2}$/.test(t)), info.times.join(',')));
   results.push(check(`${tag} years run newest first`, JSON.stringify(info.yearsAscending) === JSON.stringify([...info.yearsAscending].sort().reverse()), info.yearsAscending.join(',')));

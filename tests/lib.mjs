@@ -33,6 +33,7 @@ export const ROUTES = [
   '/',
   '/tunnel/',
   '/projects/ams/',
+  '/work/zombie-walk-home/',
   '/work/usher/',
   '/work/touchpoint/',
   '/work/spoot/',

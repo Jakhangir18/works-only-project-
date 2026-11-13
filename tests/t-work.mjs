@@ -20,8 +20,8 @@ for (const [ename, engine] of Object.entries({ chromium, webkit })) {
     results.push(check(`${tag} work section exists`, !!box, box ? `${Math.round(box.height)}px tall` : 'missing'));
     if (!box) { await ctx.close(); continue; }
 
-    // The home shows the eight of projects.ts; the tunnel keeps its seven.
-    const expected = path === '/' ? 8 : 7;
+    // The home shows the nine of projects.ts; the tunnel keeps its seven.
+    const expected = path === '/' ? 9 : 7;
     const cards = await page.evaluate(() => document.querySelectorAll('a-work').length);
     results.push(check(`${tag} ${expected} cards`, cards === expected, `${cards} cards`));
 

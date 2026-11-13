@@ -82,8 +82,9 @@ const require = createRequire(
 );
 const { chromium } = require("playwright");
 
-/* The anime home's eight (src/data/projects.ts), in its order. */
+/* The anime home's nine (src/data/projects.ts), in its order. */
 const ROUTES = [
+  ["zombie-walk-home", "/work/zombie-walk-home/"],
   ["usher", "/work/usher/"],
   ["touchpoint", "/work/touchpoint/"],
   ["spoot", "/work/spoot/"],
