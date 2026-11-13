@@ -52,24 +52,28 @@ import {
   COLORS,
   DAWN_GAIN,
   FLOWERS,
-  FLOWER_RADIUS,
+  FLOWER_SINK,
   FOG_FAR,
   FOG_NEAR,
-  GOLD_SCALE,
-  HEART_RADIUS,
+  FOOT_LENGTH,
+  FOOT_REST,
+  FOOT_WIDTH,
+  HALO_RADIUS,
   HOUSE_AT,
+  HOUSE_HEIGHT,
+  HOUSE_SINK,
+  HOUSE_WIDTH,
   LANE_WIDTH,
   LANE_X,
   NIGHT,
-  PETAL_RING,
   PHASES,
   PORCH_RADIUS,
   PORCH_Y,
-  PRESSED_FADE,
-  PRESSED_SCALE,
-  PRINT_LENGTH,
-  PRINT_PARTS,
+  PRESSED_SPREAD,
   PRINT_Z,
+  SPRITE_DIR,
+  SPRITE_FILES,
+  SPRITE_OF,
   ROWS_AHEAD,
   ROWS_BEHIND,
   TAPE_DEPTH,
@@ -82,11 +86,14 @@ import {
   clamp01,
   dawnAt,
   distanceAt,
+  flowerShown,
+  flowerSize,
   lawnShift,
   phaseAt,
   printGlow,
   smooth,
   stepsLanded,
+  type SpriteId,
 } from "./strideLane";
 
 /** The stylesheet draws the runway under the same query. */
@@ -103,6 +110,27 @@ const DIP_MS = 250;
 const SLOW_MS = 30;
 
 type Three = typeof THREEType;
+
+const SPRITE_PIXELS = 512;
+
+/** Each picture decoded and drawn once into a square canvas. A canvas, not
+ *  the SVG image itself, is what becomes a texture: some engines rasterise
+ *  an SVG image at its own small size when it is uploaded directly. The
+ *  square stretches the picture; the plane it goes on puts the shape back. */
+async function loadSprites(): Promise<Record<SpriteId, HTMLCanvasElement>> {
+  const entries = await Promise.all(
+    (Object.keys(SPRITE_FILES) as SpriteId[]).map(async (id) => {
+      const image = new Image();
+      image.src = SPRITE_DIR + SPRITE_FILES[id];
+      await image.decode();
+      const canvas = document.createElement("canvas");
+      canvas.width = canvas.height = SPRITE_PIXELS;
+      canvas.getContext("2d")?.drawImage(image, 0, 0, SPRITE_PIXELS, SPRITE_PIXELS);
+      return [id, canvas] as const;
+    }),
+  );
+  return Object.fromEntries(entries) as Record<SpriteId, HTMLCanvasElement>;
+}
 
 function hasWebGL(): boolean {
   try {
@@ -203,7 +231,7 @@ function start(hero: HTMLElement, stage: HTMLElement, box: HTMLElement): (flip: 
     const saveData = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData === true;
     if (saveData || !hasWebGL()) return still();
 
-    const [THREE, { gsap }] = await Promise.all([import("three"), import("gsap")]);
+    const [THREE, { gsap }, art] = await Promise.all([import("three"), import("gsap"), loadSprites()]);
     if (dead) return;
 
     /* ---- the renderer, on the existing path (DottedSurface.astro) ---- */
@@ -283,33 +311,47 @@ function start(hero: HTMLElement, stage: HTMLElement, box: HTMLElement): (flip: 
       return add(new THREE.Mesh(geometry, lawnMaterial), 1);
     })();
 
-    /* The flowers: twelve instances of one rosette and one heart, standing
-       where the walk will meet them, under a group the distance slides. */
+    /* The game's own pictures as textures. Each was drawn once into a
+       canvas (loadSprites); a picture's material is its own, because each
+       flower fades and each print lights on its own. */
+    const textures = {} as Record<SpriteId, THREEType.CanvasTexture>;
+    for (const id of Object.keys(art) as SpriteId[]) {
+      const texture = keep(new THREE.CanvasTexture(art[id]));
+      texture.colorSpace = THREE.SRGBColorSpace;
+      textures[id] = texture;
+    }
+    const picture = (id: SpriteId, fog = false) => {
+      const material = new THREE.MeshBasicMaterial({ map: textures[id], fog, depthTest: false, depthWrite: false, transparent: true });
+      disposables.push(material);
+      return material;
+    };
+
+    /* The flowers: twelve cut-outs standing where the walk will meet them,
+       facing the walker so their faces read, under a group the distance
+       slides. They come out of the dark by opacity, as the poster's do. */
     const flowers = new THREE.Group();
     scene.add(flowers);
-    const petalGeometry = keep(floorDiscs(THREE, PETAL_RING.map(([x, z, r]) => [x, z, r, r] as const), 14));
-    const heartGeometry = keep(floorDiscs(THREE, [[0, 0, HEART_RADIUS, HEART_RADIUS]], 14));
-    const petals = add(keep(new THREE.InstancedMesh(petalGeometry, flat("#ffffff"), FLOWERS.length)), 2, flowers);
-    const hearts = add(keep(new THREE.InstancedMesh(heartGeometry, flat(COLORS.heart), FLOWERS.length)), 3, flowers);
-    const matrix = new THREE.Matrix4();
+    const cutout = keep(new THREE.PlaneGeometry(1, 1));
+    cutout.translate(0, 0.5 - FLOWER_SINK, 0);
+    const haloGeometry = keep(floorDiscs(THREE, [[0, 0, HALO_RADIUS, HALO_RADIUS]], 24));
+    const haloMaterial = flat(COLORS.gold);
+    const blooms = FLOWERS.map((f) => {
+      if (f.kind === "gold") add(new THREE.Mesh(haloGeometry, haloMaterial), 1.5, flowers).position.set(LANE_X[f.lane], 0, -f.at);
+      const mesh = add(new THREE.Mesh(cutout, picture(SPRITE_OF[f.kind])), 2, flowers);
+      mesh.position.set(LANE_X[f.lane], 0, -f.at);
+      return mesh;
+    });
     const colour = new THREE.Color();
-    const lawnGreen = new THREE.Color(COLORS.lawnB);
     const pressedNow: boolean[] = FLOWERS.map(() => false);
-    /** One flower's instance, whole or pressed, with a pop while it lands. */
-    const setFlower = (i: number, pressed: boolean, pop = 0) => {
-      const f = FLOWERS[i];
-      const r = FLOWER_RADIUS * (f.kind === "gold" ? GOLD_SCALE : 1) * (pressed ? PRESSED_SCALE * (1 + pop * 0.3) : 1);
-      matrix.makeScale(r, 1, r).setPosition(LANE_X[f.lane], 0, -f.at);
-      petals.setMatrixAt(i, matrix);
-      colour.set(COLORS[f.kind]);
-      if (pressed) colour.lerp(lawnGreen, PRESSED_FADE);
-      petals.setColorAt(i, colour);
-      matrix.makeScale(pressed ? 0 : r, 1, pressed ? 0 : r).setPosition(LANE_X[f.lane], 0, -f.at);
-      hearts.setMatrixAt(i, matrix);
+    /** One flower, standing or stepped on. `landing` runs from 1 to 0 while
+     *  the step lands: the flower goes over backwards onto the lawn and
+     *  spreads, a little too far, and settles. */
+    const setFlower = (i: number, pressed: boolean, landing = 0) => {
+      const done = 1 - landing;
+      const spread = pressed ? (1 + (PRESSED_SPREAD - 1) * done) * (1 + 0.16 * Math.sin(Math.PI * done)) : 1;
+      blooms[i].rotation.x = pressed ? (-Math.PI / 2) * done : 0;
+      blooms[i].scale.setScalar(flowerSize(FLOWERS[i]) * spread);
       pressedNow[i] = pressed;
-      petals.instanceMatrix.needsUpdate = true;
-      hearts.instanceMatrix.needsUpdate = true;
-      if (petals.instanceColor) petals.instanceColor.needsUpdate = true;
     };
     FLOWERS.forEach((_, i) => setFlower(i, false));
 
@@ -346,27 +388,24 @@ function start(hero: HTMLElement, stage: HTMLElement, box: HTMLElement): (flip: 
     disposables.push(glowMaterial);
     const glow = add(new THREE.Mesh(glowGeometry, glowMaterial), 4, house);
     glow.position.set(0, 1, -1.5);
-    const wall = add(new THREE.Mesh(keep(new THREE.PlaneGeometry(2.7, 1.7)), flat(COLORS.houseWall)), 5, house);
-    wall.position.set(0, 0.85, 0);
-    const roofGeometry = keep(new THREE.BufferGeometry());
-    roofGeometry.setAttribute("position", new THREE.Float32BufferAttribute([-1.7, 1.7, 0, 1.7, 1.7, 0, 0, 2.9, 0], 3));
-    add(new THREE.Mesh(roofGeometry, flat(COLORS.houseRoof)), 5, house);
-    const door = add(new THREE.Mesh(keep(new THREE.PlaneGeometry(0.56, 0.95)), flat(COLORS.heart)), 6, house);
-    door.position.set(0, 0.475, 0);
+    /* The game's cottage, standing; it comes out of the dark by fog, and
+       the light in its gable window shows through the dark from the start. */
+    const cottage = keep(new THREE.PlaneGeometry(HOUSE_WIDTH, HOUSE_HEIGHT));
+    cottage.translate(0, HOUSE_HEIGHT * (0.5 - HOUSE_SINK), 0);
+    add(new THREE.Mesh(cottage, picture("house", true)), 5, house);
     const porch = add(new THREE.Mesh(keep(new THREE.CircleGeometry(PORCH_RADIUS, 20)), flat(COLORS.porch, false)), 7, house);
     porch.position.set(0, PORCH_Y, 0);
     const dawnGlow = new THREE.Color(COLORS.dawnGlow);
 
-    /* The hit line and the two prints the walker stands on. */
+    /* The hit line and the two footprints the walker stands on: the game's
+       own, arrows pointing down the lane. */
     const tape = add(new THREE.Mesh(keep(new THREE.PlaneGeometry(TAPE_HALF * 2, TAPE_DEPTH * 2)), flat(COLORS.tape)), 8);
     tape.rotation.x = -Math.PI / 2;
-    const printGeometry = keep(floorDiscs(THREE, PRINT_PARTS, 18));
-    const printRest = new THREE.Color(COLORS.printRest);
-    const printLit = new THREE.Color(COLORS.print);
-    const prints = LANE_X.map((x) => {
-      const mesh = add(new THREE.Mesh(printGeometry, flat(COLORS.printRest)), 9);
+    const decal = keep(new THREE.PlaneGeometry(FOOT_WIDTH, FOOT_LENGTH));
+    decal.rotateX(-Math.PI / 2);
+    const prints = LANE_X.map((x, lane) => {
+      const mesh = add(new THREE.Mesh(decal, picture(lane ? "foot-r" : "foot-l")), 9);
       mesh.position.set(x, 0, PRINT_Z);
-      mesh.scale.setScalar(PRINT_LENGTH);
       return mesh;
     });
 
@@ -451,8 +490,12 @@ function start(hero: HTMLElement, stage: HTMLElement, box: HTMLElement): (flip: 
 
       prints.forEach((mesh, lane) => {
         const lit = Math.max(printGlow(lane, d), pop[lane]);
-        (mesh.material as THREEType.MeshBasicMaterial).color.copy(printRest).lerp(printLit, lit);
-        mesh.scale.setScalar(PRINT_LENGTH * (1 + pop[lane] * 0.22));
+        (mesh.material as THREEType.MeshBasicMaterial).opacity = FOOT_REST + (1 - FOOT_REST) * lit;
+        mesh.scale.setScalar(1 + pop[lane] * 0.22);
+      });
+      // Each flower comes out of the dark as it nears, as in the poster.
+      FLOWERS.forEach((f, i) => {
+        (blooms[i].material as THREEType.MeshBasicMaterial).opacity = flowerShown(f, d);
       });
 
       // The dawn: the lawn's one colour gains, the wall behind the house

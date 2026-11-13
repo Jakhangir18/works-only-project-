@@ -5,8 +5,10 @@ import CaseFigure from "../../components/case/CaseFigure.astro";
 import CaseStats from "../../components/case/CaseStats.astro";
 import CaseMarquee from "../../components/case/CaseMarquee.astro";
 import { projects } from "../../data/projects";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { picture } from "../../data/media";
-import { lanePoster, FLOWERS, PHASES, POSTER, NIGHT, STILL_AT, COLORS } from "../../utils/strideLane";
+import { lanePoster, FLOWERS, PHASES, POSTER, NIGHT, STILL_AT, COLORS, SPRITE_DIR, SPRITE_FILES, type SpriteId } from "../../utils/strideLane";
 
 /**
  * Zombie Walk Home (on Devpost: Stride Defense), DubHacks '26: a walking
@@ -46,6 +48,40 @@ const demo = p.links[2].href;
    starts, and a step just landed in round two. */
 const posterStart = lanePoster(0);
 const posterStill = lanePoster(STILL_AT);
+
+/* The game's own pictures (its repository's web/art; copies in
+   public/projects/zombie-walk-home/art), read once at build time and inlined
+   as symbols: the posters place them, the walk's five lines use them as
+   icons, and the scene loads the same files as textures. */
+const sprites = (Object.keys(SPRITE_FILES) as SpriteId[]).map((id) => {
+  const svg = readFileSync(join(process.cwd(), "public", SPRITE_DIR, SPRITE_FILES[id]), "utf8");
+  const [, , w, h] = (svg.match(/viewBox="([^"]+)"/)?.[1] ?? "0 0 128 128").split(/\s+/).map(Number);
+  const inner = svg
+    .replace(/^[\s\S]*?<svg[^>]*>/, "")
+    .replace(/<\/svg>\s*$/, "")
+    .replace(/<title>[\s\S]*?<\/title>/, "");
+  return { id, w, h, inner };
+});
+const spriteById = Object.fromEntries(sprites.map((s) => [s.id, s])) as Record<SpriteId, (typeof sprites)[number]>;
+/* Each of the walk's five lines, with the picture of what it is about. */
+const PHASE_ICON: Record<(typeof PHASES)[number]["key"], SpriteId> = {
+  "warm-up": "foot-l",
+  "round-1": "bell",
+  "round-2": "marigold",
+  "round-3": "rose",
+  home: "house",
+};
+
+/* The rig, part by part: each has a numbered pin on the drawing, placed by
+   eye as a share of the picture's width and height. */
+const rig = picture(p.slug, "rig", 1344);
+const setup = [
+  { x: 88, y: 12, t: "The projector", d: "Throws the game onto the pad and the floor in front of the walker's feet." },
+  { x: 52, y: 70, t: "The game", d: "Flowers come down two lanes, one per foot. Step on each one as it reaches the white line." },
+  { x: 59, y: 8, t: "The camera above", d: "Finds each shoe, so the game knows where every foot lands." },
+  { x: 78, y: 60, t: "The phone at the side", d: "Films the walk. Knee bend, stride, step time and left–right balance are measured from it." },
+  { x: 4, y: 24, t: "Maya", d: "The AI therapist, on Gemini: a short tip every 20 seconds, what went well between rounds, a review after the walk." },
+];
 
 const stats = [
   { value: "8", label: "jobs for Gemini", note: "As Maya, the AI therapist: coach, review, plan, notes, chat, reward and voice." },
@@ -124,16 +160,22 @@ const DATES = "October 17⁠–⁠18, 2026";
 
 <CaseLayout slug={p.slug} title={p.title} description={p.line} theme="dark" shareCard="/projects/zombie-walk-home/og.jpg">
   <div class="zw">
+    {/* The game's own pictures, once, for the posters and the icons. */}
+    <svg class="zw-sprites" width="0" height="0" aria-hidden="true" focusable="false">
+      {sprites.map((s) => <symbol id={`zw-${s.id}`} viewBox={`0 0 ${s.w} ${s.h}`} preserveAspectRatio="none" set:html={s.inner} />)}
+    </svg>
+
     <header class="zw-hero js-zw-hero" data-scene="still">
       <div class="zw-hero__stage js-zw-stage">
         <div class="zw-hero__text">
           <div class="zw-hero__copy js-zw-copy">
             <p class="case-label">{p.kind} · {p.where} · {p.when}</p>
             <h1 class="case-title zw-hero__title">Zombie Walk Home</h1>
-            <p class="case-lede">A walking game that a projector throws onto a walking pad. It turns the exercises a physical therapist assigns into play, and an AI therapist coaches every walk.</p>
+            <p class="case-lede">A walking game that a projector throws onto a walking pad. Flowers come down the lawn; you step on each one as it reaches the line. An AI therapist coaches every walk.</p>
             <a class="case-award zw-hero__award" href={devpost} target="_blank" rel="noopener noreferrer">
               Winner, MLH Best Use of Gemini API, DubHacks '26 <span aria-hidden="true">↗</span><span class="u-sr-only">(the Devpost page, opens in a new tab)</span>
             </a>
+            <p class="zw-hero__hint">Scroll to walk <span aria-hidden="true">↓</span></p>
           </div>
 
           <div class="zw-hud js-zw-hud">
@@ -147,12 +189,18 @@ const DATES = "October 17⁠–⁠18, 2026";
             <p class="case-label zw-walk__title">The walk, in five lines</p>
             <ol class="zw-walk">
               {
-                PHASES.map((phase) => (
-                  <li class="zw-walk__phase js-zw-phase">
-                    <span class="zw-walk__label">{phase.label}</span>
-                    <span class="zw-walk__caption">{phase.caption}</span>
-                  </li>
-                ))
+                PHASES.map((phase) => {
+                  const icon = spriteById[PHASE_ICON[phase.key]];
+                  return (
+                    <li class="zw-walk__phase js-zw-phase">
+                      <svg class="zw-walk__icon" viewBox={`0 0 ${icon.w} ${icon.h}`} aria-hidden="true" focusable="false">
+                        <use href={`#zw-${icon.id}`} width={icon.w} height={icon.h} />
+                      </svg>
+                      <span class="zw-walk__label">{phase.label}</span>
+                      <span class="zw-walk__caption">{phase.caption}</span>
+                    </li>
+                  );
+                })
               }
             </ol>
             <div class="zw-rail" aria-hidden="true"><span class="zw-rail__fill js-zw-rail"></span></div>
@@ -161,18 +209,52 @@ const DATES = "October 17⁠–⁠18, 2026";
 
         <div class="zw-hero__lane">
           <div class="zw-hero__box js-zw-box">
-            <svg class="zw-poster zw-poster--start" viewBox={`0 0 ${POSTER.width} ${POSTER.height}`} preserveAspectRatio="xMidYMid slice" role="img" aria-label="The game as the walker sees it: a lawn of two lanes on a dark floor, flowers coming down the lanes toward a white line, a footprint in each lane on the near side of it, and a porch light at the far end">
+            <svg class="zw-poster zw-poster--start" viewBox={`0 0 ${POSTER.width} ${POSTER.height}`} preserveAspectRatio="xMidYMid slice" role="img" aria-label="The game as the walker sees it: a lawn of two lanes on a dark floor, cartoon flowers with grumpy faces coming down the lanes toward a white line, a footprint with an arrow in each lane on the near side of it, and a light at the far end">
               <rect width={POSTER.width} height={POSTER.height} fill={NIGHT}></rect>
-              {posterStart.map((s) => <polygon points={s.points} fill={s.fill} />)}
+              {posterStart.map((s) => ("points" in s ? <polygon points={s.points} fill={s.fill} /> : <use href={`#zw-${s.sprite}`} width="1" height="1" transform={s.transform} opacity={s.opacity} />))}
             </svg>
-            <svg class="zw-poster zw-poster--still" viewBox={`0 0 ${POSTER.width} ${POSTER.height}`} preserveAspectRatio="xMidYMid slice" role="img" aria-label="The game as the walker sees it, in the second round: a flower pressed flat under a lit footprint at the white line, more flowers coming down both lanes, and a porch light at the far end">
+            <svg class="zw-poster zw-poster--still" viewBox={`0 0 ${POSTER.width} ${POSTER.height}`} preserveAspectRatio="xMidYMid slice" role="img" aria-label="The game as the walker sees it, in the second round: a flower lying flat under a lit footprint at the white line, more flowers with grumpy faces coming down both lanes, and a light at the far end">
               <rect width={POSTER.width} height={POSTER.height} fill={NIGHT}></rect>
-              {posterStill.map((s) => <polygon points={s.points} fill={s.fill} />)}
+              {posterStill.map((s) => ("points" in s ? <polygon points={s.points} fill={s.fill} /> : <use href={`#zw-${s.sprite}`} width="1" height="1" transform={s.transform} opacity={s.opacity} />))}
             </svg>
+            {/* Two words on the picture itself, where there is room for them
+                (a desktop's column): what the line is, and whose prints. */}
+            <p class="zw-tag zw-tag--line" aria-hidden="true">Step on the line</p>
+            <p class="zw-tag zw-tag--feet" aria-hidden="true">Your feet</p>
           </div>
         </div>
       </div>
     </header>
+
+    <section class="case-section zw-setup">
+      <p class="case-label" data-reveal>The setup</p>
+      <h2 class="case-h2" data-reveal>What you are looking at</h2>
+      <div class="zw-map">
+        <figure class="zw-map__figure" data-reveal>
+          <div class="zw-map__frame">
+            <img src={rig.src} srcset={rig.srcset} sizes="(max-width: 56em) 100vw, 60vw" width={rig.width} height={rig.height} loading="lazy" decoding="async" alt="A drawing of the rig in a dark room: a projector on a chair throws a green lawn of two lanes onto a walking pad; a teenager walking on the pad steps on a grumpy orange flower at a white line while two more flowers come down the lanes; a camera on a stand looks down at the belt; a phone on a tripod films the walker's legs; a laptop on a table shows a cartoon coach" />
+            {
+              setup.map((part, i) => (
+                <span class="zw-map__pin" style={`left:${part.x}%;top:${part.y}%`} data-n={i + 1} aria-hidden="true">
+                  {i + 1}
+                </span>
+              ))
+            }
+          </div>
+          <figcaption>A drawing of the rig, made for this page with an image model. The photographs of the real one are further down.</figcaption>
+        </figure>
+        <ol class="zw-map__list">
+          {
+            setup.map((part, i) => (
+              <li data-n={i + 1} data-reveal>
+                <strong>{part.t}</strong>
+                <span>{part.d}</span>
+              </li>
+            ))
+          }
+        </ol>
+      </div>
+    </section>
 
     <section class="case-section zw-facts">
       <CaseMeta
@@ -721,7 +803,7 @@ const DATES = "October 17⁠–⁠18, 2026";
       }
 
       .zw-walk__caption {
-        font-size: clamp(1.25rem, 1.9vw, 1.7rem);
+        font-size: clamp(1.4rem, 2.1vw, 1.95rem);
         line-height: 1.25;
       }
 
@@ -829,7 +911,7 @@ const DATES = "October 17⁠–⁠18, 2026";
     }
 
     span {
-      font-size: 0.95rem;
+      font-size: 1.02rem;
       line-height: 1.5;
       color: var(--case-soft);
     }
@@ -869,7 +951,7 @@ const DATES = "October 17⁠–⁠18, 2026";
 
     p {
       margin: 0;
-      font-size: 0.95rem;
+      font-size: 1.02rem;
       line-height: 1.55;
       color: var(--case-soft);
     }
@@ -922,7 +1004,7 @@ const DATES = "October 17⁠–⁠18, 2026";
 
     dd {
       margin: 0;
-      font-size: 0.95rem;
+      font-size: 1.02rem;
       line-height: 1.55;
       color: var(--case-soft);
     }
@@ -1072,7 +1154,7 @@ const DATES = "October 17⁠–⁠18, 2026";
   }
 
   .zw-tile__note {
-    font-size: 0.875rem;
+    font-size: 0.95rem;
     line-height: 1.5;
     color: var(--case-soft);
   }
@@ -1115,5 +1197,207 @@ const DATES = "October 17⁠–⁠18, 2026";
 
   .zw-part .case-links {
     margin-top: 2rem;
+  }
+
+  /* ---- Reading: this page's small type is a size up from the shared
+     case scale and its soft ink is lighter, because the page is long, dark
+     and mostly explanation. ---- */
+  .zw {
+    --case-soft: #b9b9c2;
+  }
+
+  .zw :global(.case-label) {
+    font-size: 0.8125rem;
+    letter-spacing: 0.13em;
+  }
+
+  .zw :global(.case-prose) {
+    font-size: 1.125rem;
+    line-height: 1.65;
+  }
+
+  .zw :global(.case-stats__note) {
+    font-size: 0.98rem;
+  }
+
+  .zw-sprites {
+    position: absolute;
+  }
+
+  /* ---- The hero's helpers: the hint, the icons, the two tags ---- */
+  .zw-hero__hint {
+    display: none;
+    margin: 0;
+    font: 400 0.8125rem / 1 font-family(fraktion);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--case-accent);
+  }
+
+  .zw-walk__icon {
+    display: none;
+  }
+
+  .zw-tag {
+    display: none;
+  }
+
+  @supports (height: 100svh) {
+    @media (prefers-reduced-motion: no-preference) {
+      .zw-hero.is-live .zw-hero__hint {
+        display: block;
+      }
+
+      /* The line's picture beside its words: a flower, a footprint, the
+         house. Sized by height; each keeps its own shape. */
+      .zw-hero.is-live .zw-walk__phase {
+        grid-template-columns: auto minmax(0, 1fr);
+        column-gap: 1rem;
+        align-items: center;
+      }
+
+      .zw-hero.is-live .zw-walk__icon {
+        display: block;
+        grid-row: 1 / span 2;
+        height: clamp(3.25rem, 5vw, 4.75rem);
+        width: auto;
+      }
+
+      .zw-hero.is-live .zw-walk__label,
+      .zw-hero.is-live .zw-walk__caption {
+        grid-column: 2;
+      }
+
+      @media (min-width: 56.01em) {
+        .zw-hero.is-live .zw-tag {
+          position: absolute;
+          display: flex;
+          align-items: center;
+          gap: 0.6rem;
+          margin: 0;
+          transform: translateY(-50%);
+          font: 400 0.75rem / 1 font-family(fraktion);
+          letter-spacing: 0.14em;
+          text-transform: uppercase;
+          color: var(--case-ink);
+          pointer-events: none;
+
+          &::before,
+          &::after {
+            width: 2.25rem;
+            height: 1px;
+            background: var(--case-soft);
+          }
+        }
+
+        /* Heights are the scene's own: where the camera puts the line and
+           the prints, as shares of the box (strideLane.ts). */
+        .zw-hero.is-live .zw-tag--line {
+          top: 74.8%;
+          right: 0;
+
+          &::before {
+            content: "";
+          }
+        }
+
+        .zw-hero.is-live .zw-tag--feet {
+          top: 83%;
+          left: 0;
+
+          &::after {
+            content: "";
+          }
+        }
+      }
+    }
+  }
+
+  /* ---- The setup: a drawing with numbered pins, and what each is ---- */
+  .zw-map {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+    gap: clamp(1.5rem, 4vw, 4rem);
+    align-items: start;
+    margin-top: 2rem;
+
+    @media (max-width: 56em) {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  .zw-map__figure {
+    margin: 0;
+
+    figcaption {
+      margin-top: 0.7rem;
+      font-size: 0.95rem;
+      line-height: 1.45;
+      color: var(--case-soft);
+    }
+  }
+
+  .zw-map__frame {
+    position: relative;
+    overflow: hidden;
+    border-radius: 12px;
+    background: #000;
+
+    img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+  }
+
+  .zw-map__pin,
+  .zw-map__list li::before {
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    background: var(--case-accent);
+    color: #08080a;
+    font: 400 0.9375rem / 1 font-family(fraktion);
+  }
+
+  .zw-map__pin {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 0 3px #08080a;
+  }
+
+  .zw-map__list {
+    display: grid;
+    gap: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: part;
+
+    li {
+      display: grid;
+      grid-template-columns: 2rem minmax(0, 1fr);
+      gap: 0.2rem 1rem;
+      padding: 1rem 0;
+      border-top: 1px solid var(--case-rule);
+      counter-increment: part;
+
+      &::before {
+        content: counter(part);
+        grid-row: span 2;
+      }
+    }
+
+    strong {
+      font: 400 1.35rem / 1.2 font-family(editorial);
+    }
+
+    span {
+      font-size: 1.02rem;
+      line-height: 1.5;
+      color: var(--case-soft);
+    }
   }
 </style>

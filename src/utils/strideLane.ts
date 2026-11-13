@@ -67,13 +67,36 @@ export const LAWN_FAR = -ROWS_AHEAD * TILE;
 export const FOG_NEAR = 8.5;
 export const FOG_FAR = 25;
 
-export const FLOWER_RADIUS = 0.34;
-export const GOLD_SCALE = 1.28;
-export const PETALS = 8;
-/** A flower that has been stepped on lies flat: wider, and most of the way
- *  to the lawn's own green. */
-export const PRESSED_SCALE = 1.22;
-export const PRESSED_FADE = 0.62;
+/* The flowers and the footprints are the game's own pictures (the SVGs in
+   public/projects/zombie-walk-home/art, from the game's repository): a
+   flower stands on the lawn like a cut-out, facing the walker, so its face
+   can be read; a footprint lies on the floor. Sizes in metres. */
+export type SpriteId = "marigold" | "bell" | "rose" | "foot-l" | "foot-r" | "house";
+/** Where the site serves them from, and each one's file. The page inlines
+ *  them at build time for the posters; the scene loads them as textures. */
+export const SPRITE_DIR = "/projects/zombie-walk-home/art/";
+export const SPRITE_FILES: Record<SpriteId, string> = {
+  marigold: "flower-marigold.svg",
+  bell: "flower-bell.svg",
+  rose: "flower-rose.svg",
+  "foot-l": "foot-l.svg",
+  "foot-r": "foot-r.svg",
+  house: "house.svg",
+};
+export const FLOWER_SIZE = 1.05;
+export const GOLD_SCALE = 1.25;
+/** The share of a flower's picture below the floor line: the shadow drawn
+ *  under it sits on the lawn. */
+export const FLOWER_SINK = 0.1;
+/** A flower that has been stepped on lies flat on the lawn, spread a
+ *  little wider than it stood. */
+export const PRESSED_SPREAD = 1.15;
+/** The golden one stands on a disc of gold. */
+export const HALO_RADIUS = 0.52;
+export const FOOT_WIDTH = 0.46;
+export const FOOT_LENGTH = 0.71;
+/** A footprint at rest is this opaque; lit by a step, fully. */
+export const FOOT_REST = 0.5;
 /** Metres a footprint stays lit after its step. */
 export const STEP_GLOW = 1.5;
 
@@ -148,8 +171,14 @@ export const HUD_END = 0.08;
 export const HOUSE_AT = TOTAL + 2.6;
 /** The porch light: the one thing that shows through the dark from the
  *  first frame, so the walk has somewhere to go. Height above the floor. */
-export const PORCH_Y = 1.3;
-export const PORCH_RADIUS = 0.24;
+export const PORCH_Y = 1.79;
+export const PORCH_RADIUS = 0.22;
+/** The cottage: the game's own picture (260 x 240), this wide in metres.
+ *  The light above is its round gable window. `HOUSE_SINK` is the share of
+ *  the picture below the floor line, where its drawn shadow is. */
+export const HOUSE_WIDTH = 3.4;
+export const HOUSE_HEIGHT = (HOUSE_WIDTH * 240) / 260;
+export const HOUSE_SINK = 0.08;
 /** The lawn starts to warm here: sunrise is near. */
 export const DAWN_FROM = ROUNDS[2].from;
 
@@ -261,21 +290,21 @@ export function projector(cam: CameraSpec, width: number, height: number): (p: V
 
 /* ---------- shapes both readers share ---------- */
 
-/** A flower's petals as circles round its heart, in the flower's own floor
- *  plane: [x, z, radius] for a flower of radius 1. */
-export const PETAL_RING: readonly (readonly [number, number, number])[] = Array.from({ length: PETALS }, (_, k) => {
-  const a = (k / PETALS) * Math.PI * 2;
-  return [Math.cos(a) * 0.62, Math.sin(a) * 0.62, 0.4] as const;
-});
-export const HEART_RADIUS = 0.36;
+/** Which picture a flower is. The golden one is the marigold, larger, on
+ *  its disc of gold. */
+export const SPRITE_OF: Record<FlowerKind, SpriteId> = { marigold: "marigold", bell: "bell", rose: "rose", gold: "marigold" };
+export const flowerSize = (f: Flower) => FLOWER_SIZE * (f.kind === "gold" ? GOLD_SCALE : 1);
 
-/** A shoe print in two parts, toe toward -z, for a print one unit long:
- *  the sole and the heel, each an ellipse [x, z, rx, rz]. */
-export const PRINT_PARTS = [
-  [0, -0.16, 0.24, 0.34],
-  [0, 0.36, 0.17, 0.14],
-] as const;
-export const PRINT_LENGTH = 0.66;
+/** How far in front of the camera a point is: what the fog goes by. */
+export const viewDepth: (p: Vec3) => number = (() => {
+  const project = projector(CAMERA, 1, 1);
+  return (p: Vec3) => project(p).depth;
+})();
+
+/** How much of a flower shows at walk distance `d`: nothing in the dark at
+ *  the far end, all of it by the time it matters. */
+export const flowerShown = (f: Flower, d: number) => 1 - fogAt(viewDepth([LANE_X[f.lane], FLOWER_SIZE / 2, -(f.at - d)]));
+
 /** The prints wait this far on the walker's side of the hit line. */
 export const PRINT_Z = 0.68;
 /** Half the white tape's length across both lanes, and half its width. */
@@ -292,10 +321,12 @@ export function floorEllipse(cx: number, cz: number, rx: number, rz: number, n =
 
 /* ---------- the posters ---------- */
 
-export type PosterShape = { points: string; fill: string };
+/** One thing in a poster: a filled polygon, or one of the game's pictures
+ *  placed by a matrix that carries the unit square onto where it stands. */
+export type PosterShape = { points: string; fill: string } | { sprite: SpriteId; transform: string; opacity: string };
 
-/** The scene at distance `d` as flat SVG polygons, back to front, drawn with
- *  the scene's own camera. At 0 it is the frame the canvas opens on; further
+/** The scene at distance `d` as flat SVG, back to front, drawn with the
+ *  scene's own camera. At 0 it is the frame the canvas opens on; further
  *  along it is the still the page shows where nothing may move. */
 export function lanePoster(d = 0, cam: CameraSpec = CAMERA, box: { width: number; height: number } = POSTER): PosterShape[] {
   const project = projector(cam, box.width, box.height);
@@ -309,6 +340,14 @@ export function lanePoster(d = 0, cam: CameraSpec = CAMERA, box: { width: number
       depth,
       layer,
     });
+  };
+  /* A picture on a rectangle in the scene, given three of its corners: the
+     affine map of the unit square onto them. A rectangle this small and
+     this far is a parallelogram to within a pixel. */
+  const place = (sprite: SpriteId, tl: Vec3, tr: Vec3, bl: Vec3, opacity: number, layer: number) => {
+    const [a, b, c] = [project(tl), project(tr), project(bl)];
+    const m = [b.x - a.x, b.y - a.y, c.x - a.x, c.y - a.y, a.x, a.y].map((v) => v.toFixed(2)).join(" ");
+    shapes.push({ sprite, transform: `matrix(${m})`, opacity: opacity.toFixed(2), depth: (a.depth + c.depth) / 2, layer });
   };
   const dawn = dawnAt(d);
 
@@ -347,16 +386,20 @@ export function lanePoster(d = 0, cam: CameraSpec = CAMERA, box: { width: number
       );
     }
   }
-  // The flowers in sight: whole ahead of the line, pressed flat behind it.
+  // The flowers in sight: standing ahead of the line, squashed behind it.
   for (const f of FLOWERS) {
     const z = -(f.at - d);
-    if (z < LAWN_FAR || z > LAWN_NEAR - 0.2) continue;
+    const shown = flowerShown(f, d);
+    if (shown < 0.02 || z > LAWN_NEAR - 0.2) continue;
     const pressed = d >= f.at;
-    const r = FLOWER_RADIUS * (f.kind === "gold" ? GOLD_SCALE : 1) * (pressed ? PRESSED_SCALE : 1);
     const x = LANE_X[f.lane];
-    const colour = pressed ? mix(COLORS[f.kind], COLORS.lawnB, PRESSED_FADE) : COLORS[f.kind];
-    for (const [px, pz, pr] of PETAL_RING) push(floorEllipse(x + px * r, z + pz * r, pr * r, pr * r, 12), colour, 2);
-    if (!pressed) push(floorEllipse(x, z, HEART_RADIUS * r, HEART_RADIUS * r, 12), COLORS.heart, 2.5);
+    const s = flowerSize(f) * (pressed ? PRESSED_SPREAD : 1);
+    const [top, foot] = [s * (1 - FLOWER_SINK), s * FLOWER_SINK];
+    if (f.kind === "gold") push(floorEllipse(x, z, HALO_RADIUS, HALO_RADIUS, 18), COLORS.gold, 1.5);
+    // Standing, the picture rises from the floor; stepped on, it lies on
+    // the floor with its head away from the walker.
+    if (pressed) place(SPRITE_OF[f.kind], [x - s / 2, 0, z - top], [x + s / 2, 0, z - top], [x - s / 2, 0, z + foot], shown, 2);
+    else place(SPRITE_OF[f.kind], [x - s / 2, top, z], [x + s / 2, top, z], [x - s / 2, -foot, z], shown, 2);
   }
   // The hit line and the two prints, lit by the last step in their lane.
   push(
@@ -370,14 +413,14 @@ export function lanePoster(d = 0, cam: CameraSpec = CAMERA, box: { width: number
     3,
   );
   for (let lane = 0; lane < 2; lane++) {
-    const colour = mix(COLORS.printRest, COLORS.print, printGlow(lane, d));
-    for (const [x, z, rx, rz] of PRINT_PARTS) {
-      push(floorEllipse(LANE_X[lane] + x * PRINT_LENGTH, PRINT_Z + z * PRINT_LENGTH, rx * PRINT_LENGTH, rz * PRINT_LENGTH), colour, 4);
-    }
+    const x = LANE_X[lane];
+    const [w, l] = [FOOT_WIDTH / 2, FOOT_LENGTH / 2];
+    // Toe toward the lane's far end: the picture's top edge is the far one.
+    place(lane ? "foot-r" : "foot-l", [x - w, 0, PRINT_Z - l], [x + w, 0, PRINT_Z - l], [x - w, 0, PRINT_Z + l], FOOT_REST + (1 - FOOT_REST) * printGlow(lane, d), 4);
   }
   // Farthest first inside a layer, layers in order: a painter's sort.
   shapes.sort((a, b) => a.layer - b.layer || b.depth - a.depth);
-  return shapes.map(({ points, fill }) => ({ points, fill }));
+  return shapes.map(({ depth: _depth, layer: _layer, ...shape }) => shape as PosterShape);
 }
 
 /** The still for where nothing may move: round two, a step just landed. */
