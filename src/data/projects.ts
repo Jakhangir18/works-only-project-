@@ -1,10 +1,10 @@
 /**
- * The eight pieces of experience the anime home shows in its Work wall,
+ * The nine pieces of experience the anime home shows in its Work wall,
  * and the facts each project page is built from.
  *
  * Every claim here has a source, named in `sources`. The keys are:
  *   official  the event's own page (2026.quackhacks.org, judge.beaverhacks.org,
- *             devpost.com/software/usher)
+ *             devpost.com/software/usher, devpost.com/software/stride-defense)
  *   repo      the project's public GitHub repository and its README
  *   resume    the owner's resume (resume-original.tex), via project-inventory.md
  *   owner     the owner's own notes in his work-experience folder, or his
@@ -49,6 +49,33 @@ export type Project = {
 };
 
 export const projects: readonly Project[] = [
+  {
+    // Facts: the Devpost page (devpost.com/software/stride-defense: submitted
+    // as "Stride Defense", the four of the team, "Winner, [MLH] Best Use of
+    // Gemini API"), the repository (Jakhangir18/Dubhacks2026: the README,
+    // docs/DEVPOST.md, docs/TEAM_PLAN.md and the history), and the owner's
+    // photographs of the weekend. The game's own name is Zombie Walk Home.
+    slug: "zombie-walk-home",
+    href: "/work/zombie-walk-home/",
+    title: "Zombie Walk Home",
+    kind: "Hackathon",
+    role: "The rig and the room, the game and the server that joins the parts, the Devpost and the demo",
+    when: "October 2026",
+    where: "DubHacks '26, University of Washington",
+    result: "Winner, MLH Best Use of Gemini API",
+    line: "A walking game projected onto a walking pad: step on the flowers in time, and an AI therapist coaches every walk.",
+    cover: {
+      ...picture("zombie-walk-home", "cover", 640),
+      alt: "The walking pad in a dark room with the game projected onto it: a lawn in two lanes, a pink flower and a violet one coming down them",
+      focal: "50% 48%",
+    },
+    links: [
+      { label: "Devpost", href: "https://devpost.com/software/stride-defense" },
+      { label: "Source on GitHub", href: "https://github.com/Jakhangir18/Dubhacks2026" },
+      { label: "Demo video", href: "https://youtu.be/fvdUs95cf9k" },
+    ],
+    sources: ["official", "repo", "media"],
+  },
   {
     // Facts: the Devpost page (team, built-with, no prize), the repository
     // (Jakhangir18/Usher: README, PITCH_REFERENCE.md, his jak-claudenotes),

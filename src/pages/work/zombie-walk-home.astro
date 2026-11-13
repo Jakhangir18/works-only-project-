@@ -1,0 +1,1057 @@
+---
+import CaseLayout from "../../layouts/CaseLayout.astro";
+import CaseMeta from "../../components/case/CaseMeta.astro";
+import CaseFigure from "../../components/case/CaseFigure.astro";
+import CaseStats from "../../components/case/CaseStats.astro";
+import CaseMarquee from "../../components/case/CaseMarquee.astro";
+import { projects } from "../../data/projects";
+import { picture } from "../../data/media";
+import { lanePoster, FLOWERS, PHASES, POSTER, NIGHT, STILL_AT, COLORS } from "../../utils/strideLane";
+
+/**
+ * Zombie Walk Home (on Devpost: Stride Defense), DubHacks '26: a walking
+ * game a projector throws onto a walking pad, with an AI therapist that
+ * coaches every walk. Winner of MLH's Best Use of Gemini API.
+ *
+ * The page opens on the thing itself: a lawn of two lanes on the floor of a
+ * dark room, seen from where the walker stands, and the scroll is the walk.
+ * Flowers come down the lanes, a step lands on each at the white line, three
+ * rounds, and home before sunrise (src/utils/StrideScene.ts, three.js, the
+ * numbers in src/utils/strideLane.ts). The first frame is an SVG projected
+ * at build time by the scene's own camera; under reduced motion, without
+ * WebGL, or on a device too slow for it, a still of the walk is the hero and
+ * the five things the walk says are a list beside it.
+ *
+ * Then what it is for and the numbers behind that, how a session runs, the
+ * eight jobs Gemini does as Maya, what each other tool does, the rig and
+ * what broke, the pictures, what the project will not claim, and my part.
+ *
+ * Page furniture after three 21st.dev components, rebuilt in this site's
+ * own type and tokens with no new dependency: the stat strip and the step
+ * counter after "Animated Number" (ikascom), the tool rows after "Toolchain
+ * Marquee" (johnmamanao), the picture grid and its full-screen view after
+ * "Bento Gallery" (ravikatiyar162).
+ *
+ * Facts: the Devpost page (devpost.com/software/stride-defense: the award,
+ * the team), the repository (Jakhangir18/Dubhacks2026: the README, and
+ * docs/DEVPOST.md, TEAM_PLAN.md, VENUE_RIG.md, ART_DIRECTION.md), and my
+ * photographs of the weekend. Numbers about children and therapy are the
+ * README's, with the sources it names.
+ */
+const p = projects.find((x) => x.slug === "zombie-walk-home")!;
+const devpost = p.links[0].href;
+const demo = p.links[2].href;
+
+/* The two stills of the lane, drawn by the scene's camera: where the walk
+   starts, and a step just landed in round two. */
+const posterStart = lanePoster(0);
+const posterStill = lanePoster(STILL_AT);
+
+const stats = [
+  { value: "8", label: "jobs for Gemini", note: "As Maya, the AI therapist: coach, review, plan, notes, chat, reward and voice." },
+  { value: "3", label: "rounds a walk", note: "Flowers on a beat, alternating feet, each round a little faster." },
+  { value: "2", label: "cameras", note: "One above the belt finds the shoes. A phone at the side measures the walk." },
+  { value: "20", unit: "s", label: "between tips", note: "One short tip at a time, and only inside the therapist's limits." },
+];
+
+/* A session, in the order it happens (the README's "How a session works"). */
+const session = [
+  { t: "Set up", d: "The therapist or a parent picks the player, sets safe limits (pace, flowers, rounds, session length) and chooses which AI features may be used." },
+  { t: "Walk and play", d: "The player walks on the pad while the game is projected in front of their feet. Gus the zombie has to get home before sunrise; the player steps onto the flowers in time with the beat." },
+  { t: "See the feet", d: "A camera above the belt finds each shoe, so the game knows where every foot lands. Perceptron can double-check each step the game scores." },
+  { t: "Measure the walk", d: "A phone at the side films the walk. MediaPipe measures knee bend, stride, step time and left–right balance while they play." },
+  { t: "Coach live", d: "Gemini puts a short tip on screen every 20 seconds and, in the rest between rounds, says out loud what went well and one thing to fix." },
+  { t: "Review", d: "After the walk Gemini writes a review from the numbers: what went well, what to work on, suggested settings, and a note each for the player, the parent and the therapist." },
+  { t: "Remember", d: "Backboard keeps a memory for each player, so the next session starts with last time's focus." },
+];
+
+/* Gemini is Maya, end to end: the eight jobs, as the README lists them. */
+const jobs = [
+  { t: "A cue during the walk", d: "One short line from the live numbers. Any change to the game is clamped to the therapist's limits." },
+  { t: "Analysis between rounds", d: "The world stops and Maya says what went well and the one thing to fix. Then 3-2-1, and the next round starts by itself." },
+  { t: "The session plan", d: "The greeting and today's focus, built from the player's past walks." },
+  { t: "The end-of-walk note", d: "One note for the player, one for the parent, one for the therapist." },
+  { t: "The gait review", d: "A structured review of the side camera's numbers. Every finding must cite a measured metric." },
+  { t: "A chat with photos", d: "The walk's numbers, its review and up to four annotated leg photos go in as images, so Maya answers about what she sees in your own steps." },
+  { t: "The reward pick", d: "After a completed walk, the reward from the parents' wishlist that fits the effort." },
+  { t: "The voice", d: "Every spoken line is Gemini text-to-speech, cached per line, with the player's name taken out." },
+];
+
+/* The rest of the stack, each for the one thing it does here. */
+const tools = [
+  { k: "Backboard", d: "Memory across sessions: one assistant per player. After every saved walk the result is written to it, and the next plan, greeting and coach context read it back." },
+  { k: "Perceptron", d: "A second pair of eyes. After each flower, a few timestamped frames of the feet: did the named foot really land on the target? Feet and lower legs only, never a face, and only with consent." },
+  { k: "MediaPipe Pose", d: "The phone at the side: knee bend, stride, step time and left–right balance, a live skeleton for the dashboard, and annotated photos of notable steps." },
+  { k: "YOLO-World", d: "The camera above the belt: it finds each shoe, run locally, so the game knows which flower each foot landed on. A bright-blob fallback covers a dark room." },
+  { k: "Phaser", d: "The projected game: the scenes, the flowers, scoring at the hit line, the coach's lines and the end-of-walk screen." },
+  { k: "FastAPI", d: "The game server: it relays camera events over a WebSocket, stores players, limits and sessions, and runs every AI call with a rule-based fallback." },
+  { k: "Next.js", d: "The dashboard for the player, the parent and the therapist: live cameras, game controls, each walk with its review, Maya's chat, settings and consent." },
+  { k: "Tailscale Funnel", d: "The public link, so judges and phones outside our network could open the dashboard." },
+];
+
+const marquee = [
+  [
+    { label: "Gemini", accent: COLORS.gold },
+    { label: "Backboard", accent: COLORS.bell },
+    { label: "Perceptron", accent: COLORS.rose },
+    { label: "MediaPipe Pose", accent: COLORS.print },
+    { label: "YOLO-World", accent: COLORS.marigold },
+  ],
+  [
+    { label: "Phaser", accent: COLORS.lawnA },
+    { label: "FastAPI", accent: COLORS.print },
+    { label: "Next.js", accent: COLORS.tape },
+    { label: "Tailscale Funnel", accent: COLORS.bell },
+    { label: "Python", accent: COLORS.gold },
+    { label: "TypeScript", accent: COLORS.rose },
+  ],
+];
+
+/* What broke, and the fix that held (docs/DEVPOST.md, "Challenges"). */
+const troubles = [
+  { p: "Walking in place lands every step in its own lane, so plain walking scored everything.", f: "A step counts only for a timed lift above the player's own normal step." },
+  { p: "One camera cannot measure a millimetre of toe clearance.", f: "Measure what it can, centimetre lifts and step timing, and say so." },
+  { p: "A projector of about 150 lumens disappears in a lit hall.", f: "High-contrast art on a white board, inside a cardboard booth lined black." },
+  { p: "Gemini's voice needs about four seconds to arrive, and a safety timer cut lines mid-sentence.", f: "The timer is sized to the line being spoken." },
+];
+
+const pad = picture(p.slug, "cover", 1920);
+const team = picture(p.slug, "team", 1920);
+const PAD_ALT = "The walking pad in a dark room, seen from its front end, with the game projected over it: a lawn in two lanes on the belt, a pink flower in one and a violet one in the other, and the four corner marks of the walking zone on the floor around it";
+const TEAM_ALT = "The four of us standing on the DubHacks stage under purple light, lanyards on, two of us holding small navy pouches";
+const DATES = "October 17⁠–⁠18, 2026";
+---
+
+<CaseLayout slug={p.slug} title={p.title} description={p.line} theme="dark" shareCard="/projects/zombie-walk-home/og.jpg">
+  <div class="zw">
+    <header class="zw-hero js-zw-hero" data-scene="still">
+      <div class="zw-hero__stage js-zw-stage">
+        <div class="zw-hero__text">
+          <div class="zw-hero__copy js-zw-copy">
+            <p class="case-label">{p.kind} · {p.where} · {p.when}</p>
+            <h1 class="case-title zw-hero__title">Zombie Walk Home</h1>
+            <p class="case-lede">A walking game that a projector throws onto a walking pad. It turns the exercises a physical therapist assigns into play, and an AI therapist coaches every walk.</p>
+            <a class="case-award zw-hero__award" href={devpost} target="_blank" rel="noopener noreferrer">
+              Winner, MLH Best Use of Gemini API, DubHacks '26 <span aria-hidden="true">↗</span><span class="u-sr-only">(the Devpost page, opens in a new tab)</span>
+            </a>
+          </div>
+
+          <div class="zw-hud js-zw-hud">
+            <p class="zw-count" aria-hidden="true">
+              <span class="zw-count__box">
+                <span class="zw-count__out js-zw-count-out"></span>
+                <span class="zw-count__in js-zw-count-in">0</span>
+              </span>
+              <span class="zw-count__of">of {FLOWERS.length} steps landed</span>
+            </p>
+            <p class="case-label zw-walk__title">The walk, in five lines</p>
+            <ol class="zw-walk">
+              {
+                PHASES.map((phase) => (
+                  <li class="zw-walk__phase js-zw-phase">
+                    <span class="zw-walk__label">{phase.label}</span>
+                    <span class="zw-walk__caption">{phase.caption}</span>
+                  </li>
+                ))
+              }
+            </ol>
+            <div class="zw-rail" aria-hidden="true"><span class="zw-rail__fill js-zw-rail"></span></div>
+          </div>
+        </div>
+
+        <div class="zw-hero__lane">
+          <div class="zw-hero__box js-zw-box">
+            <svg class="zw-poster zw-poster--start" viewBox={`0 0 ${POSTER.width} ${POSTER.height}`} preserveAspectRatio="xMidYMid slice" role="img" aria-label="The game as the walker sees it: a lawn of two lanes on a dark floor, flowers coming down the lanes toward a white line, a footprint in each lane on the near side of it, and a porch light at the far end">
+              <rect width={POSTER.width} height={POSTER.height} fill={NIGHT}></rect>
+              {posterStart.map((s) => <polygon points={s.points} fill={s.fill} />)}
+            </svg>
+            <svg class="zw-poster zw-poster--still" viewBox={`0 0 ${POSTER.width} ${POSTER.height}`} preserveAspectRatio="xMidYMid slice" role="img" aria-label="The game as the walker sees it, in the second round: a flower pressed flat under a lit footprint at the white line, more flowers coming down both lanes, and a porch light at the far end">
+              <rect width={POSTER.width} height={POSTER.height} fill={NIGHT}></rect>
+              {posterStill.map((s) => <polygon points={s.points} fill={s.fill} />)}
+            </svg>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <section class="case-section zw-facts">
+      <CaseMeta
+        rows={[
+          { label: "My part", value: "The rig and the room, the game and the server that joins the parts, the Devpost and the demo" },
+          { label: "Team", value: "Jakhangir Tynshimov, Rahul Vikram, Arturo, Tram-Anh Truong" },
+          { label: "Built with", value: "Gemini, Backboard, Perceptron, MediaPipe Pose, YOLO-World, Phaser, FastAPI, Next.js, a projector and a walking pad" },
+          { label: "Event", value: `DubHacks '26, University of Washington, ${DATES}` },
+        ]}
+      />
+      <CaseStats class="zw-facts__stats" items={stats} />
+    </section>
+
+    <section class="case-section zw-why">
+      <div class="zw-split">
+        <div>
+          <p class="case-label" data-reveal>Why</p>
+          <h2 class="case-h2" data-reveal>Home exercises that do not get done</h2>
+        </div>
+        <div class="case-prose" data-reveal>
+          <p>Children and teens who are given movement exercises do most of them at home, and home programmes fall apart. Across 13 studies, 34% to 79.2% of parents of children with cerebral palsy did not keep up the home exercise programme (PLOS ONE, 2024). About 1 in 345 children in the United States has cerebral palsy (CDC), and 5% to 6% of school-aged children have developmental coordination disorder (CMAJ, 2015).</p>
+          <p>Games help when they are part of therapy: across 12 trials, active video games improved gross motor skills in children with developmental disabilities, and the authors ask for caution. What a game at home is missing is someone watching every step. We built an AI therapist to do that, and hid it inside a game.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="case-section zw-session">
+      <p class="case-label" data-reveal>How a session works</p>
+      <h2 class="case-h2" data-reveal>Seven steps, the last one is memory</h2>
+      <ol class="zw-steps">
+        {
+          session.map((s) => (
+            <li data-reveal>
+              <strong>{s.t}</strong>
+              <span>{s.d}</span>
+            </li>
+          ))
+        }
+      </ol>
+    </section>
+
+    <section class="case-section zw-maya">
+      <div class="zw-split">
+        <div>
+          <p class="case-label" data-reveal>Best Use of Gemini API</p>
+          <h2 class="case-h2" data-reveal>Maya, eight jobs</h2>
+        </div>
+        <div class="case-prose" data-reveal>
+          <p>Gemini is Maya, the AI therapist, end to end. Seven of her eight jobs run on a small fast model that answers in about a second; the eighth is her voice.</p>
+        </div>
+      </div>
+      <ol class="zw-jobs">
+        {
+          jobs.map((j) => (
+            <li class="zw-job" data-reveal>
+              <h3 class="case-h3">{j.t}</h3>
+              <p>{j.d}</p>
+            </li>
+          ))
+        }
+      </ol>
+      <p class="zw-rule" data-reveal>Two rules shaped all eight. The therapist sets the limits and Maya cannot exceed them. And nothing depends on her: without a key every job falls back to fixed rules and the browser's own voice.</p>
+    </section>
+
+    <section class="case-section zw-tools">
+      <p class="case-label" data-reveal>The rest of the stack</p>
+      <h2 class="case-h2" data-reveal>Each for one thing</h2>
+      <CaseMarquee class="zw-tools__marquee" rows={marquee} label="What the project is built with" />
+      <dl class="zw-tools__list">
+        {
+          tools.map((t) => (
+            <div class="zw-tool" data-reveal>
+              <dt>{t.k}</dt>
+              <dd>{t.d}</dd>
+            </div>
+          ))
+        }
+      </dl>
+    </section>
+
+    <section class="case-section zw-rig">
+      <div class="zw-split">
+        <div>
+          <p class="case-label" data-reveal>The rig</p>
+          <h2 class="case-h2" data-reveal>The hard part was physical</h2>
+        </div>
+        <div class="case-prose" data-reveal>
+          <p>Every time we rebuilt the rig, five things had to line up again: the projector's four corners on the belt, the overhead camera's calibration to the same field, the shoe detector's sensitivity to the room's light, the phone at knee height with the whole body in frame, and the browser's permission to play sound.</p>
+          <p>The moment it paid for itself: the first time a projected flower splashed under a real foot on the walking pad.</p>
+        </div>
+      </div>
+      <ol class="zw-troubles">
+        {
+          troubles.map((t) => (
+            <li data-reveal>
+              <p class="zw-trouble__p">{t.p}</p>
+              <p class="zw-trouble__f">{t.f}</p>
+            </li>
+          ))
+        }
+      </ol>
+    </section>
+
+    <section class="case-section zw-frames">
+      <h2 class="case-h2" data-reveal>The weekend, in frames</h2>
+      <div class="zw-bento">
+        <div class="zw-bento__photo zw-bento__photo--tall">
+          <CaseFigure slug={p.slug} id="cover" alt={PAD_ALT} caption="Saturday night, in a dark room: the game on the pad, and the four corners of the walking zone being marked." ratio="3 / 4" focal="50% 48%" sizes="(max-width: 56em) 100vw, 46vw" />
+          <a class="zw-bento__zoom js-zw-zoom" href={pad.src} data-alt={PAD_ALT}><span class="u-sr-only">View the picture of the pad larger</span></a>
+        </div>
+        <div class="zw-bento__side">
+          <div class="zw-bento__photo">
+            <CaseFigure slug={p.slug} id="team" alt={TEAM_ALT} caption="The four of us on the DubHacks stage, Sunday afternoon." ratio="4 / 3" focal="50% 45%" sizes="(max-width: 56em) 100vw, 46vw" />
+            <a class="zw-bento__zoom js-zw-zoom" href={team.src} data-alt={TEAM_ALT}><span class="u-sr-only">View the picture of the team larger</span></a>
+          </div>
+          <div class="zw-bento__tiles">
+            <a class="zw-tile zw-tile--demo" href={demo} target="_blank" rel="noopener noreferrer" data-reveal>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 5.5v13l10.5-6.5z"></path></svg>
+              <span class="zw-tile__title">Watch the demo</span>
+              <span class="zw-tile__note">YouTube <span aria-hidden="true">↗</span><span class="u-sr-only">(opens in a new tab)</span></span>
+            </a>
+            <div class="zw-tile" data-reveal>
+              <p class="zw-tile__k">The booth</p>
+              <p class="zw-tile__note">Three cardboard walls and a roof, lined with black bags. A white board for the picture, a hole for the lens, a lower one for the phone.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <dialog class="zw-lightbox js-zw-lightbox" aria-label="A picture, larger">
+        <form method="dialog"><button class="zw-lightbox__close" type="submit">Close</button></form>
+        <img class="js-zw-lightbox-img" alt="" />
+      </dialog>
+    </section>
+
+    <section class="case-section zw-claims">
+      <div class="zw-split">
+        <div>
+          <p class="case-label" data-reveal>What it does not claim</p>
+          <h2 class="case-h2" data-reveal>A tool for the therapist, not a replacement</h2>
+        </div>
+        <div class="case-prose" data-reveal>
+          <p>It is not a medical device and it does not replace therapy. The wording in the app stays with coordination, balance, strength and general mobility; there are no disease names and no recovery claims in it. On the walking pad it is for teens and adults within the pad's rated age, with a person beside them, a low speed and a stop button.</p>
+          <p>The side camera's numbers and the annotated leg photos reach Gemini only with the family's consent, and the player's name is taken out of anything spoken. Perceptron sees pictures of feet and lower legs only. The server keeps no video.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="case-section zw-part">
+      <div class="zw-split">
+        <div>
+          <p class="case-label" data-reveal>My part</p>
+          <h2 class="case-h2" data-reveal>What I did</h2>
+        </div>
+        <div class="case-prose" data-reveal>
+          <p>The rig and the room were mine: the projector in its cardboard booth, the walking pad, the camera above the belt and the phone at the side, and lining all of it up again every time we rebuilt it. So were the game on the floor and the server that joins the parts, the Devpost page and the demo video.</p>
+          <p>My teammates built the shoe detection and the side-camera gait analysis, the Perceptron checks, Gemini's voice and the review.</p>
+        </div>
+      </div>
+      <ul class="case-links" data-reveal>
+        {
+          p.links.map((l) => (
+            <li>
+              <a href={l.href} target="_blank" rel="noopener noreferrer">
+                {l.label} <span aria-hidden="true">↗</span>
+                <span class="u-sr-only">(opens in a new tab)</span>
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+  </div>
+</CaseLayout>
+
+<script>
+  import { initStrideScene } from "../../utils/StrideScene";
+
+  initStrideScene();
+
+  /* The pictures' full-screen view, after 21st.dev's "Bento Gallery": there
+     a React modal, here the platform's own <dialog>, which brings the focus
+     trap, Escape and the backdrop with it. Each picture's link goes to its
+     file, so without a dialog (Safari before 15.4) or without this script
+     the link still shows the picture. Event-driven; nothing runs per frame. */
+  const dialog = document.querySelector<HTMLDialogElement>(".js-zw-lightbox");
+  const image = dialog?.querySelector<HTMLImageElement>(".js-zw-lightbox-img");
+  if (dialog && image && typeof dialog.showModal === "function") {
+    document.querySelectorAll<HTMLAnchorElement>(".js-zw-zoom").forEach((link) => {
+      link.addEventListener("click", (event) => {
+        // Only a plain primary click: a modified one opens the file as usual.
+        if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        event.preventDefault();
+        image.src = link.href;
+        image.alt = link.dataset.alt ?? "";
+        dialog.showModal();
+      });
+    });
+    // A click on the backdrop is a click on the dialog itself.
+    dialog.addEventListener("click", (event) => {
+      if (event.target === dialog) dialog.close();
+    });
+  }
+</script>
+
+<style lang="scss">
+  @use "../../styles/helpers/fonts" as *;
+
+  /* The page takes the lawn's lime for its accent, shell included. Where
+     :has() is missing (Safari before 15.4) the shell keeps the theme's own. */
+  :global(html.case-page--dark:has(.zw)) {
+    --case-accent: #9cff5a;
+  }
+
+  .zw {
+    /* The case bar's height: the stage sticks under it, so the canvas never
+       sits behind the bar's glass. */
+    --zw-bar: 3.875rem;
+    --case-accent: #9cff5a;
+  }
+
+  /* ---- The hero, still: text beside a picture of the lane ---- */
+  .zw-hero {
+    padding: 0 var(--case-gutter);
+  }
+
+  .zw-hero__stage {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+    gap: clamp(1.5rem, 4vw, 4rem);
+    align-items: center;
+    padding: clamp(2rem, 6vh, 4rem) 0 clamp(3rem, 8vh, 6rem);
+
+    @media (max-width: 56em) {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  .zw-hero__text,
+  .zw-hero__copy {
+    display: flex;
+    flex-direction: column;
+    gap: 1.4rem;
+  }
+
+  .zw-hero__text {
+    gap: 2.5rem;
+  }
+
+  .zw-hero__title {
+    font-size: clamp(3.25rem, 8.4vw, 9rem);
+  }
+
+  .zw-hero__award {
+    color: inherit;
+    text-decoration: none;
+    transition: border-color 200ms ease;
+
+    &:hover,
+    &:focus-visible {
+      border-color: var(--case-accent);
+    }
+  }
+
+  .zw-hero__box {
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    max-width: 34rem;
+    margin-inline: auto;
+    aspect-ratio: 4 / 5;
+    background: var(--case-ground);
+
+    /* The lawn runs out of the bottom of the picture; this lets it go into
+       the ground instead of stopping at an edge. */
+    &::after {
+      content: "";
+      position: absolute;
+      inset: auto 0 0;
+      height: 16%;
+      background: linear-gradient(to top, var(--case-ground), transparent);
+      pointer-events: none;
+    }
+  }
+
+  .zw-poster,
+  :global(.zw-hero__canvas) {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .zw-poster--still {
+    display: none;
+  }
+
+  /* The canvas is opaque and comes in over the poster it matches. */
+  :global(.zw-hero__canvas) {
+    opacity: 0;
+    transition: opacity 500ms ease;
+  }
+
+  :global(.zw-hero__canvas.is-on) {
+    opacity: 1;
+  }
+
+  /* The walk as a list: what the page shows where the scene does not run. */
+  .zw-count,
+  .zw-rail {
+    display: none;
+  }
+
+  .zw-walk {
+    display: grid;
+    gap: 0;
+    margin: 0.75rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .zw-walk__phase {
+    display: grid;
+    grid-template-columns: 8.5rem minmax(0, 1fr);
+    gap: 0.25rem 1rem;
+    padding: 0.7rem 0;
+    border-top: 1px solid var(--case-rule);
+
+    @media (max-width: 30em) {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  .zw-walk__label {
+    font: 400 0.75rem / 1.6 font-family(fraktion);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--case-accent);
+  }
+
+  .zw-walk__caption {
+    font: 400 1.05rem / 1.35 font-family(editorial);
+  }
+
+  /* ---- The hero, live: a runway, the stage stuck under the bar ---- */
+  @media (prefers-reduced-motion: no-preference) {
+    .zw-hero:not(.is-still) {
+      height: 320svh;
+
+      .zw-hero__stage {
+        position: sticky;
+        top: var(--zw-bar);
+        height: calc(100svh - var(--zw-bar));
+        padding: 0;
+        /* The lane's column is never wider than the stage is tall, so its
+           box is never wider than tall: the one framing fits (strideLane.ts). */
+        grid-template-columns: minmax(0, 1fr) min(50vw, calc(100svh - var(--zw-bar)));
+        align-items: stretch;
+
+        /* A phone gives the lane the whole stage, and the text lies over
+           its far end, where the lawn has already gone into the dark. */
+        @media (max-width: 56em) {
+          grid-template-columns: minmax(0, 1fr);
+          grid-template-rows: minmax(0, 1fr);
+          gap: 0;
+        }
+      }
+
+      /* The title block and the HUD share one cell: one leaves as the
+         other comes (StrideScene.ts writes both opacities). */
+      .zw-hero__text {
+        display: grid;
+        align-content: center;
+
+        > * {
+          grid-area: 1 / 1;
+          align-self: center;
+        }
+
+        @media (max-width: 56em) {
+          position: relative;
+          z-index: 1;
+          grid-area: 1 / 1;
+          align-self: start;
+          padding-top: 0.75rem;
+
+          > * {
+            align-self: start;
+          }
+        }
+      }
+
+      .zw-hud {
+        opacity: 0;
+      }
+
+      /* On a phone each block of text brings its own piece of the dark with
+         it: a scrim that is the page's ground at the text and nothing a
+         little below it, so no line of type ever sits on lit lawn. It
+         belongs to the block, so it fades with the block. */
+      @media (max-width: 56em) {
+        .zw-hero__copy,
+        .zw-hud {
+          position: relative;
+          isolation: isolate;
+
+          &::before {
+            content: "";
+            position: absolute;
+            z-index: -1;
+            inset: -1rem calc(var(--case-gutter) * -1) -7rem;
+            background: linear-gradient(to bottom, var(--case-ground) 0 68%, transparent);
+            pointer-events: none;
+          }
+        }
+      }
+
+      .zw-hero__lane {
+        min-height: 0;
+
+        @media (max-width: 56em) {
+          grid-area: 1 / 1;
+        }
+      }
+
+      .zw-hero__box {
+        /* Never wider than the stage is tall (a phone on its side). */
+        max-width: calc(100svh - var(--zw-bar));
+        height: 100%;
+        aspect-ratio: auto;
+      }
+    }
+
+    /* Only once the scene is drawing: the counter, the rail, and the five
+       lines one at a time. Until then the title block is all there is. */
+    .zw-hero.is-live {
+      .zw-walk__title {
+        display: none;
+      }
+
+      .zw-count {
+        display: flex;
+        align-items: baseline;
+        gap: 1rem;
+        margin: 0;
+      }
+
+      .zw-count__box {
+        position: relative;
+        display: inline-block;
+        overflow: hidden;
+        /* Two figures wide, always: a changed number cannot move the line. */
+        min-width: 1.15em;
+        padding: 0.06em 0 0.02em;
+        font: 400 clamp(5rem, 13vw, 13rem) / 0.86 font-family(bigger);
+        font-variant-numeric: tabular-nums;
+        color: var(--case-accent);
+
+        @media (max-width: 56em) {
+          font-size: clamp(3.5rem, 18vw, 5.5rem);
+        }
+      }
+
+      .zw-count__in,
+      .zw-count__out {
+        display: inline-block;
+      }
+
+      .zw-count__out {
+        position: absolute;
+        inset: 0.06em auto auto 0;
+        opacity: 0;
+      }
+
+      .zw-count__of {
+        max-width: 8rem;
+        font: 400 0.75rem / 1.4 font-family(fraktion);
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--case-soft);
+      }
+
+      .zw-walk {
+        margin-top: 1.5rem;
+        max-width: 30rem;
+      }
+
+      .zw-walk__phase {
+        grid-area: 1 / 1;
+        grid-template-columns: minmax(0, 1fr);
+        padding: 0;
+        border: 0;
+        opacity: 0;
+        transform: translateY(10px);
+        transition:
+          opacity 320ms ease,
+          transform 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
+
+        &:global(.is-on) {
+          opacity: 1;
+          transform: none;
+        }
+      }
+
+      .zw-walk__caption {
+        font-size: clamp(1.25rem, 1.9vw, 1.7rem);
+        line-height: 1.25;
+      }
+
+      .zw-rail {
+        display: block;
+        max-width: 30rem;
+        height: 2px;
+        margin-top: 1.75rem;
+        background: var(--case-rule);
+      }
+
+      .zw-rail__fill {
+        display: block;
+        height: 100%;
+        background: var(--case-accent);
+        transform: scaleX(0);
+        transform-origin: left center;
+      }
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .zw-poster--start {
+      display: none;
+    }
+
+    .zw-poster--still {
+      display: block;
+    }
+  }
+
+  /* ---- Facts ---- */
+  .zw-facts {
+    padding-top: clamp(2.5rem, 6vh, 4rem);
+  }
+
+  :global(.zw-facts__stats) {
+    margin-top: clamp(2.5rem, 6vh, 4.5rem);
+  }
+
+  /* ---- A heading beside its prose ---- */
+  .zw-split {
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    gap: clamp(1.5rem, 5vw, 5rem);
+    align-items: start;
+
+    @media (max-width: 56em) {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  .zw-why,
+  .zw-maya,
+  .zw-rig,
+  .zw-part {
+    background: var(--case-surface);
+  }
+
+  /* ---- The session ---- */
+  .zw-steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+    gap: 0 clamp(1.5rem, 3vw, 3rem);
+    margin: 2rem 0 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: step;
+
+    li {
+      display: grid;
+      grid-template-columns: 2.25rem minmax(0, 1fr);
+      gap: 0.25rem 0.75rem;
+      align-content: start;
+      padding: 1rem 0 1.4rem;
+      border-top: 1px solid var(--case-rule);
+      counter-increment: step;
+
+      &::before {
+        content: counter(step, decimal-leading-zero);
+        grid-row: span 2;
+        font: 400 0.75rem / 1.8 font-family(fraktion);
+        color: var(--case-accent);
+      }
+    }
+
+    strong {
+      font: 400 1.2rem / 1.3 font-family(editorial);
+    }
+
+    span {
+      font-size: 0.95rem;
+      line-height: 1.5;
+      color: var(--case-soft);
+    }
+  }
+
+  /* ---- Maya ---- */
+  .zw-jobs {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: clamp(1.25rem, 2.5vw, 2.5rem);
+    margin: 2.5rem 0 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: job;
+
+    @media (max-width: 64em) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    @media (max-width: 34em) {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  .zw-job {
+    padding-top: 1rem;
+    border-top: 1px solid var(--case-rule);
+    counter-increment: job;
+
+    &::before {
+      content: counter(job);
+      display: block;
+      margin-bottom: 0.6rem;
+      font: 400 2.4rem / 1 font-family(bigger);
+      color: var(--case-accent);
+    }
+
+    p {
+      margin: 0;
+      font-size: 0.95rem;
+      line-height: 1.55;
+      color: var(--case-soft);
+    }
+  }
+
+  .zw-rule {
+    max-width: var(--case-measure);
+    margin: 2.5rem 0 0;
+    padding: 1rem 1.25rem;
+    border-left: 2px solid var(--case-accent);
+    background: var(--case-ground);
+  }
+
+  /* ---- The tools ---- */
+  :global(.zw-tools__marquee) {
+    margin: 2rem calc(var(--case-gutter) * -1) 0;
+  }
+
+  .zw-tools :global(.case-marquee__control) {
+    margin-left: var(--case-gutter);
+  }
+
+  .zw-tools__list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 clamp(1.5rem, 4vw, 4rem);
+    margin: 2.5rem 0 0;
+
+    @media (max-width: 56em) {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  .zw-tool {
+    display: grid;
+    grid-template-columns: 9.5rem minmax(0, 1fr);
+    gap: 0.25rem 1.25rem;
+    padding: 1rem 0;
+    border-top: 1px solid var(--case-rule);
+
+    @media (max-width: 30em) {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    dt {
+      font: 400 0.75rem / 1.7 font-family(fraktion);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    dd {
+      margin: 0;
+      font-size: 0.95rem;
+      line-height: 1.55;
+      color: var(--case-soft);
+    }
+  }
+
+  /* ---- Troubles ---- */
+  .zw-troubles {
+    display: grid;
+    gap: 0;
+    margin: 2.5rem 0 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: trouble;
+
+    li {
+      display: grid;
+      grid-template-columns: 2.5rem minmax(0, 1fr) minmax(0, 1fr);
+      gap: 0.5rem 2rem;
+      padding: 1.1rem 0;
+      border-top: 1px solid var(--case-rule);
+      counter-increment: trouble;
+
+      &::before {
+        content: counter(trouble, decimal-leading-zero);
+        font: 400 0.75rem / 1.7 font-family(fraktion);
+        color: var(--case-soft);
+      }
+
+      @media (max-width: 56em) {
+        grid-template-columns: 2.5rem minmax(0, 1fr);
+      }
+    }
+
+    p {
+      margin: 0;
+      line-height: 1.5;
+    }
+  }
+
+  .zw-trouble__p {
+    font: 400 1.05rem / 1.4 font-family(editorial);
+  }
+
+  .zw-trouble__f {
+    color: var(--case-soft);
+
+    @media (max-width: 56em) {
+      grid-column: 2;
+    }
+  }
+
+  /* ---- The pictures ---- */
+  .zw-bento {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    gap: 1rem;
+    align-items: start;
+    margin-top: 2rem;
+
+    @media (max-width: 56em) {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  .zw-bento__side {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .zw-bento__photo {
+    position: relative;
+  }
+
+  /* The link covers the picture's frame, not its caption: the frame's shape
+     is the figure's ratio, so the link takes the same one. */
+  .zw-bento__zoom {
+    position: absolute;
+    inset: 0 0 auto;
+    aspect-ratio: 4 / 3;
+    border-radius: 12px;
+    cursor: zoom-in;
+  }
+
+  .zw-bento__photo--tall .zw-bento__zoom {
+    aspect-ratio: 3 / 4;
+  }
+
+  .zw-bento__tiles {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+
+    @media (max-width: 30em) {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  .zw-tile {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    min-height: 11rem;
+    padding: 1.25rem;
+    border: 1px solid var(--case-rule);
+    border-radius: 12px;
+    background: var(--case-surface);
+    color: inherit;
+    text-decoration: none;
+
+    p {
+      margin: 0;
+    }
+  }
+
+  .zw-tile--demo {
+    transition: border-color 200ms ease;
+
+    svg {
+      width: 2.75rem;
+      height: 2.75rem;
+      margin-bottom: auto;
+      padding: 0.6rem;
+      border-radius: 50%;
+      background: var(--case-accent);
+      fill: var(--case-ground);
+    }
+
+    &:hover,
+    &:focus-visible {
+      border-color: var(--case-accent);
+    }
+  }
+
+  .zw-tile__title {
+    font: 400 1.5rem / 1.15 font-family(editorial);
+  }
+
+  .zw-tile__k {
+    font: 400 0.75rem / 1.3 font-family(fraktion);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--case-accent);
+  }
+
+  .zw-tile__note {
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: var(--case-soft);
+  }
+
+  .zw-lightbox {
+    max-width: min(96vw, 110rem);
+    max-height: 96svh;
+    padding: 0;
+    border: 0;
+    border-radius: 12px;
+    background: var(--case-ground);
+    color: var(--case-ink);
+
+    &::backdrop {
+      background: rgb(0 0 0 / 0.86);
+    }
+
+    img {
+      display: block;
+      max-width: 100%;
+      max-height: 96svh;
+      object-fit: contain;
+    }
+  }
+
+  .zw-lightbox__close {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    padding: 0.6rem 0.9rem;
+    border: 1px solid var(--case-rule);
+    border-radius: 999px;
+    background: var(--case-ground);
+    color: inherit;
+    font: 400 0.6875rem / 1 font-family(fraktion);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+
+  .zw-part .case-links {
+    margin-top: 2rem;
+  }
+</style>
