@@ -1,0 +1,141 @@
+---
+/**
+ * A strip of the few numbers a case stands on: a large figure, what it
+ * counts, and a line of context.
+ *
+ * The roll is taken from 21st.dev's "Animated Number" (ikascom): a figure
+ * comes up from below inside a clipped box, so the eye reads it arriving.
+ * There it is a spring in React; here it is one CSS transition per figure,
+ * started by the page's one-shot reveal (case.ts adds `is-in`), with no
+ * script of its own. Figures are text in the page either way: without the
+ * reveal class, and under reduced motion, they are simply there.
+ */
+interface Props {
+  items: { value: string; unit?: string; label: string; note?: string }[];
+  class?: string;
+}
+const { items, class: className } = Astro.props;
+---
+
+<ul class:list={["case-stats", className]} data-reveal>
+  {
+    items.map((s, i) => (
+      <li class="case-stats__item" style={`--i:${i}`}>
+        <p class="case-stats__value">
+          <span class="case-stats__clip">
+            <span class="case-stats__num">{s.value}</span>
+          </span>
+          {s.unit && <span class="case-stats__unit">{s.unit}</span>}
+        </p>
+        <p class="case-stats__label">{s.label}</p>
+        {s.note && <p class="case-stats__note">{s.note}</p>}
+      </li>
+    ))
+  }
+</ul>
+
+<style lang="scss">
+  @use "../../styles/helpers/fonts" as *;
+
+  .case-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+    gap: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-top: 1px solid var(--case-rule);
+    border-bottom: 1px solid var(--case-rule);
+  }
+
+  .case-stats__item {
+    padding: clamp(1.25rem, 2.5vw, 2rem) clamp(1rem, 2vw, 1.75rem);
+    border-left: 1px solid var(--case-rule);
+
+    &:first-child {
+      border-left: 0;
+      padding-left: 0;
+    }
+
+    /* Two columns on a phone: the left column loses its rule and its inset,
+       and rows are told apart by a rule above the second one. */
+    @media (max-width: 48em) {
+      &:nth-child(odd) {
+        border-left: 0;
+        padding-left: 0;
+      }
+
+      &:nth-child(n + 3) {
+        border-top: 1px solid var(--case-rule);
+      }
+    }
+  }
+
+  .case-stats {
+    @media (max-width: 48em) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  p {
+    margin: 0;
+  }
+
+  .case-stats__value {
+    display: flex;
+    align-items: baseline;
+    gap: 0.35rem;
+    font: 400 clamp(3rem, 6.2vw, 6rem) / 0.9 font-family(bigger);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* The clip is the figure's own box, a little taller than the cap height so
+     the display face is not cut, and it never changes size: the figure moves
+     inside it. */
+  .case-stats__clip {
+    display: inline-block;
+    overflow: hidden;
+    padding: 0.06em 0 0.02em;
+  }
+
+  .case-stats__num {
+    display: inline-block;
+  }
+
+  .case-stats__unit {
+    font: 400 0.8125rem / 1 font-family(fraktion);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--case-accent);
+  }
+
+  .case-stats__label {
+    margin-top: 0.75rem;
+    font: 400 1.05rem / 1.3 font-family(editorial);
+  }
+
+  .case-stats__note {
+    margin-top: 0.35rem;
+    font-size: 0.875rem;
+    line-height: 1.45;
+    color: var(--case-soft);
+  }
+
+  /* The roll: only once case.ts is running, and only until the strip is in. */
+  :global(.js-case) .case-stats .case-stats__num {
+    transform: translateY(110%);
+    transition: transform 800ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    transition-delay: calc(120ms + var(--i) * 90ms);
+  }
+
+  :global(.js-case) .case-stats:global(.is-in) .case-stats__num {
+    transform: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :global(.js-case) .case-stats .case-stats__num {
+      transform: none;
+      transition: none;
+    }
+  }
+</style>

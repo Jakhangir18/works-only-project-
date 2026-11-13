@@ -1,0 +1,58 @@
+{
+  "cover": {
+    "kind": "image",
+    "width": 4284,
+    "height": 5712,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/zombie-walk-home/media/cover-640.webp"
+      },
+      {
+        "w": 1440,
+        "src": "/projects/zombie-walk-home/media/cover-1440.webp"
+      }
+    ],
+    "thumb": "/projects/zombie-walk-home/media/cover-thumb.webp"
+  },
+  "team": {
+    "kind": "image",
+    "width": 5712,
+    "height": 4284,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/zombie-walk-home/media/team-640.webp"
+      },
+      {
+        "w": 1280,
+        "src": "/projects/zombie-walk-home/media/team-1280.webp"
+      },
+      {
+        "w": 1920,
+        "src": "/projects/zombie-walk-home/media/team-1920.webp"
+      }
+    ],
+    "thumb": "/projects/zombie-walk-home/media/team-thumb.webp"
+  },
+  "rig": {
+    "kind": "image",
+    "width": 1344,
+    "height": 752,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/zombie-walk-home/media/rig-640.webp"
+      },
+      {
+        "w": 1280,
+        "src": "/projects/zombie-walk-home/media/rig-1280.webp"
+      },
+      {
+        "w": 1344,
+        "src": "/projects/zombie-walk-home/media/rig-1344.webp"
+      }
+    ],
+    "thumb": "/projects/zombie-walk-home/media/rig-thumb.webp"
+  }
+}
