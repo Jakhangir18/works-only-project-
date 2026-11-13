@@ -231,10 +231,15 @@ function start(hero: HTMLElement, stage: HTMLElement, box: HTMLElement): (flip: 
     camera.lookAt(...CAMERA.target);
 
     /* Everything lies in one plane or stands behind it, so nothing tests
-       depth: the order is the painter's, by renderOrder, as in the poster. */
+       depth: the order is the painter's, by renderOrder, as in the poster.
+       Every material is marked transparent, though only the dawn blends:
+       three draws its transparent list after its opaque one whatever the
+       renderOrder, and the dawn, which must blend, has to come before the
+       house (seen on the preview: the light lay over the house). In one
+       list, renderOrder decides. */
     const disposables: { dispose(): void }[] = [];
     const flat = (colour: string, fog = true) => {
-      const material = new THREE.MeshBasicMaterial({ color: colour, fog, depthTest: false, depthWrite: false });
+      const material = new THREE.MeshBasicMaterial({ color: colour, fog, depthTest: false, depthWrite: false, transparent: true });
       disposables.push(material);
       return material;
     };
@@ -251,7 +256,7 @@ function start(hero: HTMLElement, stage: HTMLElement, box: HTMLElement): (flip: 
 
     /* The lawn: one mesh, vertex colours, two rows longer than it shows, so
        sliding it by less than its two-row period never uncovers an end. */
-    const lawnMaterial = new THREE.MeshBasicMaterial({ vertexColors: true, depthTest: false, depthWrite: false });
+    const lawnMaterial = new THREE.MeshBasicMaterial({ vertexColors: true, depthTest: false, depthWrite: false, transparent: true });
     disposables.push(lawnMaterial);
     const lawn = (() => {
       const positions: number[] = [];
@@ -340,7 +345,7 @@ function start(hero: HTMLElement, stage: HTMLElement, box: HTMLElement): (flip: 
     });
     disposables.push(glowMaterial);
     const glow = add(new THREE.Mesh(glowGeometry, glowMaterial), 4, house);
-    glow.position.set(0, 1.2, -1.5);
+    glow.position.set(0, 1, -1.5);
     const wall = add(new THREE.Mesh(keep(new THREE.PlaneGeometry(2.7, 1.7)), flat(COLORS.houseWall)), 5, house);
     wall.position.set(0, 0.85, 0);
     const roofGeometry = keep(new THREE.BufferGeometry());
@@ -457,7 +462,7 @@ function start(hero: HTMLElement, stage: HTMLElement, box: HTMLElement): (flip: 
         shownDawn = dawn;
         lawnMaterial.color.setRGB(1 + (DAWN_GAIN[0] - 1) * dawn, 1 + (DAWN_GAIN[1] - 1) * dawn, 1 + (DAWN_GAIN[2] - 1) * dawn);
         // Only the fan's hub, vertex 0, carries light; the rim stays black.
-        const hub = colour.copy(dawnGlow).multiplyScalar(dawn * 0.8);
+        const hub = colour.copy(dawnGlow).multiplyScalar(dawn * 0.5);
         const attr = glowGeometry.getAttribute("color") as THREEType.BufferAttribute;
         attr.setXYZ(0, hub.r, hub.g, hub.b);
         attr.needsUpdate = true;
