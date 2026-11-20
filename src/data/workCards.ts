@@ -3,7 +3,7 @@ import { picture } from "./media";
 import type { ProjectInfo } from "./works";
 
 /**
- * The anime home's WORK cards: the nine of projects.ts in the shape the
+ * The anime home's WORK cards: the ten of projects.ts in the shape the
  * tunnel's cards take (works.ts's ProjectInfo), so the home and /tunnel/
  * share SWork, AWork and the dive. The owner, 2026-10-03: WORK as it was on
  * Vercel, with these projects.
@@ -17,6 +17,7 @@ import type { ProjectInfo } from "./works";
  */
 
 const LOOK: Record<string, Pick<ProjectInfo, "size" | "palette" | "poster">> = {
+  "atlas-blend": { size: "hero", palette: { background: "#16100a", accent: "#ef5a26" }, poster: { mark: "AB", motif: "orbit" } },
   "zombie-walk-home": { size: "hero", palette: { background: "#07110a", accent: "#9cff5a" }, poster: { mark: "ZW", motif: "trajectory" } },
   usher: { size: "hero", palette: { background: "#140f0a", accent: "#ffb978" }, poster: { mark: "US", motif: "signal" } },
   touchpoint: { size: "hero", palette: { background: "#1a1206", accent: "#fbbf24" }, poster: { mark: "TP", motif: "signal" } },
