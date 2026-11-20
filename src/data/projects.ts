@@ -1,5 +1,5 @@
 /**
- * The nine pieces of experience the anime home shows in its Work wall,
+ * The ten pieces of experience the anime home shows in its Work wall,
  * and the facts each project page is built from.
  *
  * Every claim here has a source, named in `sources`. The keys are:
@@ -49,6 +49,34 @@ export type Project = {
 };
 
 export const projects: readonly Project[] = [
+  {
+    // Facts: the Devpost page (devpost.com/software/atlas-blend: the four of
+    // the team, submitted to HackPrinceton Fall '26, no prize listed), the
+    // team's write-up in the repository (docs/devpost.md on OwenLi8888/
+    // vector-imaging main, public copy OwenLi8888/Atlas-Blend) and the
+    // repository history for his part (checked 2026-11-20). The pictures are
+    // the Devpost gallery's, except the studio clip, recorded from
+    // src/scene/studioScene.js. No placement: none is on record.
+    slug: "atlas-blend",
+    href: "/work/atlas-blend/",
+    title: "Atlas Blend",
+    kind: "Hackathon",
+    role: "The painted 3D studio the app opens in, the two-player prototype, the gallery wall and the app icon",
+    when: "November 2026",
+    where: "HackPrinceton Fall '26, Princeton University",
+    line: "Spotify Blend for art: heart the paintings you like, blend your taste with a friend's, and watch a new piece get painted for the two of you.",
+    cover: {
+      ...picture("atlas-blend", "cover", 1440),
+      alt: "The app's painted studio: a pink painter character on an easel in front of a gold folding screen, sunflowers and painted canvases around it",
+      focal: "45% 50%",
+    },
+    links: [
+      { label: "Devpost", href: "https://devpost.com/software/atlas-blend" },
+      { label: "Source on GitHub", href: "https://github.com/OwenLi8888/Atlas-Blend" },
+      { label: "Demo video", href: "https://youtu.be/gX9ZpMqreFs" },
+    ],
+    sources: ["official", "repo", "owner", "media"],
+  },
   {
     // Facts: the Devpost page (devpost.com/software/stride-defense: submitted
     // as "Stride Defense", the four of the team, "Winner, [MLH] Best Use of

@@ -1,0 +1,311 @@
+---
+import CaseLayout from "../../layouts/CaseLayout.astro";
+import CaseMeta from "../../components/case/CaseMeta.astro";
+import CaseFigure from "../../components/case/CaseFigure.astro";
+import CaseClip from "../../components/case/CaseClip.astro";
+import { picture } from "../../data/media";
+import { projects } from "../../data/projects";
+
+/**
+ * Atlas Blend, HackPrinceton Fall '26. The page follows the outline the owner
+ * approved on 2026-11-20: what it does, the taste engine, the two agents, my
+ * part (the painted studio), what was hard, the weekend in frames, links.
+ *
+ * Facts: devpost.com/software/atlas-blend (the team, the submission, no prize
+ * listed), the team's write-up (docs/devpost.md on the repository's main; the
+ * numbers in "The taste engine" are the team's own measurements, and the page
+ * says so), and the repository history for my part (the studio scene,
+ * src/scene/studioScene.js, and the studio entrance are my commits; the
+ * gallery, the agents and the taste engine are my teammates'). Pictures: the
+ * Devpost gallery, except the studio clip, recorded from the scene itself.
+ * No placement is claimed: none is on record.
+ */
+const p = projects.find((x) => x.slug === "atlas-blend")!;
+const hero = picture("atlas-blend", "cover", 1920);
+
+const steps = [
+  { t: "Pick what you like", d: "One work from each of 31 visual families: ukiyo-e prints, Indian miniatures, Fauve landscapes, geometric abstraction. Tap a few; it takes about fifteen seconds." },
+  { t: "Get a wall made for you", d: "Twelve works chosen for you, each saying which of your hearts it came from. Heart more and the wall rehangs." },
+  { t: "Meet your curator", d: "An agent that keeps notes on you, writes a portrait of your taste, asks easy questions and hangs whole rooms. Tell it what you dislike and it remembers." },
+  { t: "Blend with a friend", d: "A match score, each person's leanings, and a shared wall: what you both hearted, what of theirs you would like, and what sits between you." },
+  { t: "Watch your piece get painted", d: "Every blend commissions a new painting from both tastes. Your painter paints it stroke by stroke while a wall label says what it took from each of you." },
+];
+---
+
+<CaseLayout slug="atlas-blend" title="Atlas Blend" description={p.line} shareCard="/projects/atlas-blend/og.jpg">
+  <header class="ab-hero case-section">
+    <div class="ab-hero__copy">
+      <p class="case-label">Hackathon · {p.where} · {p.when}</p>
+      <h1 class="case-title">Atlas Blend</h1>
+      <p class="case-lede">Spotify Blend for art. You heart the paintings you like, blend your taste with a friend's, and watch a new piece get painted for the two of you. Built in 36 hours by a team of four.</p>
+      <CaseMeta
+        rows={[
+          { label: "My part", value: "The painted 3D studio the app opens in, the two-player prototype, the gallery wall and the app icon" },
+          { label: "Team", value: "Jakhangir Tynshimov, Owen Li, Alissa Wu, Pritika Lahiri" },
+          { label: "Built with", value: "React, TypeScript, three.js, Node, LangChain deepagents, Gemini, SigLIP 2, Supabase, Typesense" },
+          { label: "Event", value: "HackPrinceton Fall '26, Princeton University, November 13-15, 2026" },
+        ]}
+      />
+    </div>
+    <figure class="ab-hero__media">
+      <img src={hero.src} srcset={hero.srcset} sizes="(max-width: 56em) 100vw, 46vw" alt="The app's painted studio: a pink painter character on an easel in front of a gold folding screen, sunflowers and painted canvases around it" width={hero.width} height={hero.height} fetchpriority="high" decoding="async" />
+    </figure>
+  </header>
+
+  <section class="case-section ab-why">
+    <h2 class="case-h2" data-reveal>Nobody knows their friends' taste in art</h2>
+    <div class="case-prose" data-reveal>
+      <p>Everyone knows what music their friends like. Spotify Blend turned listening into something you compare and argue about. Art has nothing like it: the works are spread across museums, the one near you was not hung with you in mind, and most people could not say what their own taste is.</p>
+      <p>We wanted the quiz feeling of "that is so you" and the Blend feeling of "we both like this", for paintings, across many collections at once.</p>
+    </div>
+  </section>
+
+  <section class="case-section ab-steps">
+    <p class="case-label" data-reveal>What it does</p>
+    <h2 class="case-h2" data-reveal>Five steps, three taps to your own wall</h2>
+    <ol class="ab-steps__list">
+      {steps.map((s, i) => (
+        <li data-reveal>
+          <span class="ab-steps__n" aria-hidden="true">{String(i + 1).padStart(2, "0")}</span>
+          <h3 class="case-h3">{s.t}</h3>
+          <p>{s.d}</p>
+        </li>
+      ))}
+    </ol>
+    <div class="ab-pair">
+      <CaseFigure slug="atlas-blend" id="onboarding" alt="The first screen: 'Which of these would you stop for?', a grid of artworks to choose from" caption="The first question: which of these would you stop for?" sizes="(max-width: 56em) 100vw, 40vw" />
+      <CaseFigure slug="atlas-blend" id="gallery" alt="A round 3D gallery room with three framed works, the middle one made for both people, and two painter characters on the floor" caption="A blend's room: the middle piece was made for both of you." sizes="(max-width: 56em) 100vw, 60vw" />
+    </div>
+  </section>
+
+  <section class="case-section ab-engine">
+    <div class="ab-split">
+      <div>
+        <p class="case-label" data-reveal>The taste engine</p>
+        <h2 class="case-h2" data-reveal>Taste is plural</h2>
+        <div class="case-prose" data-reveal>
+          <p>Every work in the collection, 6,757 of them from more than forty museums and galleries, is embedded with SigLIP 2. The whole set is small enough to score exactly, in memory, on every request: the team measured about 0.1 s for a wall and 0.2 s for a blend.</p>
+          <p>A person is not one average vector. Averaging made everyone a 93% match, because averaged embeddings drift to the middle of the collection. So each person's hearts are split into up to twelve separate tastes, each anchored on a real artwork. A blend scores every work by the lower of its closeness to the two of you, across every pairing of your tastes, so it rewards what you would both like over what one of you loves.</p>
+        </div>
+      </div>
+      <CaseFigure slug="atlas-blend" id="atlas" alt="The visual atlas: thousands of artworks as coloured points in two large clouds, with a list of visual families down the left" caption="The atlas: every work as a point, coloured by its visual family." sizes="(max-width: 56em) 100vw, 55vw" />
+    </div>
+  </section>
+
+  <section class="case-section ab-agents">
+    <div class="ab-split ab-split--flip">
+      <CaseFigure slug="atlas-blend" id="agents" alt="Diagram of the two agents: the curator with its per-person memory files and room-maker subagents, and the atelier with an art director, a label writer and a critic" caption="The curator and the atelier, as the team drew them." sizes="(max-width: 56em) 100vw, 45vw" />
+      <div>
+        <p class="case-label" data-reveal>Two deep agents</p>
+        <h2 class="case-h2" data-reveal>A curator that remembers, an atelier that paints</h2>
+        <div class="case-prose" data-reveal>
+          <p>Both run on LangChain's deepagents with Gemini. The curator keeps a folder of notes per person, rewrites its own portrait of their taste, and hands rooms to room-maker subagents that search the collection by words and by look.</p>
+          <p>The atelier takes a blend: an art director writes the painting brief and starts the image model the moment the brief exists, a label writer writes the title and story, and a critic checks that each person is credited only with what their taste supports.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="case-section ab-mine">
+    <p class="case-label" data-reveal>My part</p>
+    <h2 class="case-h2" data-reveal>The studio you walk into</h2>
+    <CaseClip slug="atlas-blend" id="studio" label="The painted studio assembling: walls fold up like a pop-up book, the easels rise, the palette slides in and six painter characters appear on it" caption="The studio's arrival, recorded from the scene: the room unfolds, then the painters are painted onto the palette." loop />
+    <div class="case-prose ab-mine__prose" data-reveal>
+      <p>I built the painted studio the app opens in, in three.js. It is a 2.5D diorama: every piece is a painted cutout standing at its own depth, so the moving camera gives real parallax. On arrival the camera comes down from the upper corner while the room unfolds like a pop-up book, each piece landing a little past its place and settling back, and then the painters are painted onto the palette stroke by stroke by a shader that reveals them along their brush order. After that they breathe, blink and hop, and you pick yours by tapping it.</p>
+      <p>The same room is where a blend gets painted: the cast stands on the floor and paints the commissioned piece on an easel's canvas. Before the team settled on the final gallery, I also built the first two-player version, with room codes, a shared canvas and a wall of saved paintings; the final app replaced it with the gallery and kept the studio as its entrance. I merged the museum look and the studio entrance into the submitted app and made its icon, Ember, from the painters' artwork.</p>
+    </div>
+  </section>
+
+  <section class="case-section ab-hard">
+    <h2 class="case-h2" data-reveal>What was hard</h2>
+    <div class="ab-hard__grid">
+      <div data-reveal>
+        <h3 class="case-h3">Everyone was a 93% match</h3>
+        <p>The first profile averaged a person's hearts, and any two people came out nearly identical. Splitting taste into several anchored clusters, and recalibrating the score against measured similarities, made the number mean something.</p>
+      </div>
+      <div data-reveal>
+        <h3 class="case-h3">Agents are slow, a reveal can't be</h3>
+        <p>A full agent run takes about fifteen seconds. The brief goes to the image model as soon as it is written, the blend itself answers at once, and the screen paints a preview while the real piece is made.</p>
+      </div>
+      <div data-reveal>
+        <h3 class="case-h3">A pivot on day one</h3>
+        <p>We started the weekend repainting museum paintings in new styles and switched to taste and blending on the first day. The painting engine survived the pivot and became the reveal.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="case-section ab-sheet">
+    <h2 class="case-h2" data-reveal>The app, in four frames</h2>
+    <div class="ab-sheet__grid">
+      <CaseFigure slug="atlas-blend" id="studio-pearl" alt="Girl with a Pearl Earring on an easel in the painted studio, a small orange painter at its foot" caption="A work up close, in the studio." ratio="4 / 3" focal="55% 50%" sizes="(max-width: 48em) 100vw, 50vw" />
+      <CaseFigure slug="atlas-blend" id="explore" alt="The Explore screen: a grid of artworks from many collections" caption="Explore: the whole collection, with picks for you along the way." ratio="4 / 3" focal="50% 30%" sizes="(max-width: 48em) 100vw, 50vw" />
+      <CaseFigure slug="atlas-blend" id="blends" alt="The blends screen: a room code and four saved blends, each with its painted piece" caption="Your blends: trade a code with a friend, keep every piece." ratio="4 / 3" focal="50% 60%" sizes="(max-width: 48em) 100vw, 50vw" />
+      <CaseFigure slug="atlas-blend" id="ember" alt="Close-up of one of the app's painter characters, in thick oil paint" caption="One of the painters, up close." ratio="4 / 3" focal="40% 50%" sizes="(max-width: 48em) 100vw, 50vw" />
+    </div>
+  </section>
+
+  <section class="case-section ab-end">
+    <h2 class="case-h2" data-reveal>Where it stands</h2>
+    <div class="case-prose" data-reveal>
+      <p>Atlas Blend was submitted to HackPrinceton Fall '26. It is a 36-hour prototype, and its agents still take seconds that the painting covers rather than removes.</p>
+    </div>
+    <ul class="case-links" data-reveal>
+      {p.links.map((l) => (
+        <li><a href={l.href} target="_blank" rel="noopener noreferrer">{l.label} <span aria-hidden="true">↗</span><span class="u-sr-only">(opens in a new tab)</span></a></li>
+      ))}
+    </ul>
+  </section>
+</CaseLayout>
+
+<style lang="scss">
+  .ab-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    gap: clamp(2rem, 5vw, 5rem);
+    align-items: end;
+    padding-top: clamp(3rem, 8vh, 6rem);
+
+    @media (max-width: 56em) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .ab-hero__copy {
+    display: flex;
+    flex-direction: column;
+    gap: 1.4rem;
+  }
+
+  .ab-hero__media {
+    margin: 0;
+    overflow: hidden;
+    border-radius: 14px;
+
+    img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+  }
+
+  .ab-why {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: clamp(2rem, 5vw, 5rem);
+    align-items: start;
+
+    @media (max-width: 56em) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .ab-steps__list {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 1.5rem;
+    margin: 2rem 0 3rem;
+    padding: 0;
+    list-style: none;
+
+    @media (max-width: 64em) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    @media (max-width: 36em) {
+      grid-template-columns: 1fr;
+    }
+
+    li {
+      border-top: 1px solid var(--case-rule);
+      padding-top: 1rem;
+    }
+
+    p {
+      margin: 0.5rem 0 0;
+      font-size: 0.95rem;
+      line-height: 1.55;
+    }
+  }
+
+  .ab-steps__n {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--case-accent);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .ab-pair {
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    gap: clamp(1rem, 3vw, 2.5rem);
+    align-items: start;
+
+    @media (max-width: 56em) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .ab-engine,
+  .ab-mine {
+    background: var(--case-surface);
+  }
+
+  .ab-split {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    gap: clamp(2rem, 5vw, 5rem);
+    align-items: center;
+
+    @media (max-width: 56em) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .ab-split--flip {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+
+    @media (max-width: 56em) {
+      grid-template-columns: 1fr;
+
+      > :first-child {
+        order: 2;
+      }
+    }
+  }
+
+  .ab-mine__prose {
+    max-width: 52rem;
+    margin-top: 2rem;
+  }
+
+  .ab-hard__grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(1.5rem, 3vw, 3rem);
+    margin-top: 2rem;
+
+    @media (max-width: 56em) {
+      grid-template-columns: 1fr;
+    }
+
+    p {
+      margin: 0.5rem 0 0;
+      line-height: 1.6;
+    }
+  }
+
+  .ab-sheet__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    margin-top: 2rem;
+
+    @media (max-width: 48em) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .ab-end .case-links {
+    margin-top: 1.5rem;
+  }
+</style>

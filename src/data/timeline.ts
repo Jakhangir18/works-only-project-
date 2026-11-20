@@ -87,6 +87,18 @@ export const timeline: readonly TimelineEntry[] = [
     thumb: "/projects/zombie-walk-home/media/cover-thumb.webp",
   },
   {
+    // HackPrinceton Fall '26, Princeton, Nov 13-15; devpost.com/software/
+    // atlas-blend lists the four of the team and no prize, so no result here.
+    title: "Atlas Blend",
+    org: "HackPrinceton Fall '26, Princeton University",
+    kind: "competition",
+    start: "2026-11",
+    end: "2026-11",
+    summary: "Spotify Blend for art: two people's taste in paintings, blended into one new piece painted for both of them.",
+    href: "/work/atlas-blend/",
+    thumb: "/projects/atlas-blend/media/cover-thumb.webp",
+  },
+  {
     // The offer letter: Frontend Engineer Intern, August 2026 (part-time,
     // remote); on the site the owner (2026-10-06) names it software engineer
     // intern. His commits on the company's site run Aug 16 - Sep 19, 2026,

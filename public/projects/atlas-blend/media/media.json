@@ -1,0 +1,183 @@
+{
+  "cover": {
+    "kind": "image",
+    "width": 3000,
+    "height": 2000,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/atlas-blend/media/cover-640.webp"
+      },
+      {
+        "w": 1280,
+        "src": "/projects/atlas-blend/media/cover-1280.webp"
+      },
+      {
+        "w": 1920,
+        "src": "/projects/atlas-blend/media/cover-1920.webp"
+      }
+    ],
+    "thumb": "/projects/atlas-blend/media/cover-thumb.webp"
+  },
+  "studio-pearl": {
+    "kind": "image",
+    "width": 1866,
+    "height": 984,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/atlas-blend/media/studio-pearl-640.webp"
+      },
+      {
+        "w": 1280,
+        "src": "/projects/atlas-blend/media/studio-pearl-1280.webp"
+      }
+    ],
+    "thumb": "/projects/atlas-blend/media/studio-pearl-thumb.webp"
+  },
+  "ember": {
+    "kind": "image",
+    "width": 3840,
+    "height": 2160,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/atlas-blend/media/ember-640.webp"
+      },
+      {
+        "w": 1280,
+        "src": "/projects/atlas-blend/media/ember-1280.webp"
+      },
+      {
+        "w": 1920,
+        "src": "/projects/atlas-blend/media/ember-1920.webp"
+      }
+    ],
+    "thumb": "/projects/atlas-blend/media/ember-thumb.webp"
+  },
+  "explore": {
+    "kind": "image",
+    "width": 3000,
+    "height": 2000,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/atlas-blend/media/explore-640.webp"
+      },
+      {
+        "w": 1280,
+        "src": "/projects/atlas-blend/media/explore-1280.webp"
+      },
+      {
+        "w": 1920,
+        "src": "/projects/atlas-blend/media/explore-1920.webp"
+      }
+    ],
+    "thumb": "/projects/atlas-blend/media/explore-thumb.webp"
+  },
+  "blends": {
+    "kind": "image",
+    "width": 3000,
+    "height": 2000,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/atlas-blend/media/blends-640.webp"
+      },
+      {
+        "w": 1280,
+        "src": "/projects/atlas-blend/media/blends-1280.webp"
+      },
+      {
+        "w": 1920,
+        "src": "/projects/atlas-blend/media/blends-1920.webp"
+      }
+    ],
+    "thumb": "/projects/atlas-blend/media/blends-thumb.webp"
+  },
+  "gallery": {
+    "kind": "image",
+    "width": 3000,
+    "height": 2000,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/atlas-blend/media/gallery-640.webp"
+      },
+      {
+        "w": 1280,
+        "src": "/projects/atlas-blend/media/gallery-1280.webp"
+      },
+      {
+        "w": 1920,
+        "src": "/projects/atlas-blend/media/gallery-1920.webp"
+      }
+    ],
+    "thumb": "/projects/atlas-blend/media/gallery-thumb.webp"
+  },
+  "agents": {
+    "kind": "image",
+    "width": 1720,
+    "height": 1949,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/atlas-blend/media/agents-640.webp"
+      },
+      {
+        "w": 1280,
+        "src": "/projects/atlas-blend/media/agents-1280.webp"
+      }
+    ],
+    "thumb": "/projects/atlas-blend/media/agents-thumb.webp"
+  },
+  "onboarding": {
+    "kind": "image",
+    "width": 3000,
+    "height": 2000,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/atlas-blend/media/onboarding-640.webp"
+      },
+      {
+        "w": 1280,
+        "src": "/projects/atlas-blend/media/onboarding-1280.webp"
+      },
+      {
+        "w": 1920,
+        "src": "/projects/atlas-blend/media/onboarding-1920.webp"
+      }
+    ],
+    "thumb": "/projects/atlas-blend/media/onboarding-thumb.webp"
+  },
+  "atlas": {
+    "kind": "image",
+    "width": 2550,
+    "height": 1898,
+    "files": [
+      {
+        "w": 640,
+        "src": "/projects/atlas-blend/media/atlas-640.webp"
+      },
+      {
+        "w": 1280,
+        "src": "/projects/atlas-blend/media/atlas-1280.webp"
+      },
+      {
+        "w": 1920,
+        "src": "/projects/atlas-blend/media/atlas-1920.webp"
+      }
+    ],
+    "thumb": "/projects/atlas-blend/media/atlas-thumb.webp"
+  },
+  "studio": {
+    "kind": "video",
+    "width": 1280,
+    "height": 800,
+    "duration": 8.0,
+    "bytes": 2146073,
+    "src": "/projects/atlas-blend/media/studio.mp4",
+    "poster": "/projects/atlas-blend/media/studio-poster.webp"
+  }
+}
