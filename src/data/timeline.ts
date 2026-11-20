@@ -115,14 +115,19 @@ export const timeline: readonly TimelineEntry[] = [
     thumb: "/projects/gdg/media/cover-thumb.webp",
   },
   {
-    title: "Robot arm and hand in simulation",
+    // Checked 2026-11-20 against the README and git log of
+    // github.com/Extended-reality-Lab/quest-shadow-hand-teleop. Built: the
+    // Quest (Godot) hand stream, IK teleoperation of a Shadow Hand in MuJoCo,
+    // the Unity render in the headset. Not built: arm control, any RL or
+    // imitation learning. Next (assigned November 2026): the AHAP app in Unity.
+    title: "Robot hand teleoperation in simulation",
     org: "Prof. Raffaele De Amicis's lab, Oregon State",
     kind: "research",
     start: "2026-06",
     status: "in progress",
     campus: true,
     summary:
-      "MuJoCo simulation of a robot arm and hand: RL in MuJoCo Playground, imitation learning with LeRobot and ACT, VR teleoperation on a Quest. In progress.",
+      "VR teleoperation of a Shadow Hand in MuJoCo: a Quest streams my hand skeleton to the simulation, and Unity renders it back in the headset. Next: an AHAP grasping app in Unity. In progress.",
   },
   {
     title: "TouchPoint",
